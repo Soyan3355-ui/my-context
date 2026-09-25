@@ -85,6 +85,7 @@
     gk(t) { return this.players.find((p) => p.team === t && p.gk); }
     stat(p, k) {
       let v = p.st[k];
+      if (p.team === 1) v += this.opp.boost || 0;
       if (p.team === 0) {
         v *= this.moraleMul[0];
         if (this.boost[k]) v += this.boost[k];

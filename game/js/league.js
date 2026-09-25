@@ -35,20 +35,20 @@
   const CLUBS = [];
   function club(c) { CLUBS.push(c); return c; }
 
-  club({ id: 'yamaoroshi', name: 'ヤマオロシ鉄工団', short: 'ヤマオロシ', en: 'YAMAOROSHI', color: '#b8323a', dark: '#7c1e2c', light: '#e86a6a', ink: '#4a1018',
+  club({ id: 'yamaoroshi', boost: 5, name: 'ヤマオロシ鉄工団', short: 'ヤマオロシ', en: 'YAMAOROSHI', color: '#b8323a', dark: '#7c1e2c', light: '#e86a6a', ink: '#4a1018',
     tactic: 'long', planB: 'press', coach: '鬼瓦監督', coachLook: 'onigawara', captain: 'tetsuyama', rating: 52, ground: '山颪スタジアム',
     blurb: '去年2位の強豪。前線の大きい選手へ放り込み、こぼれ球を拾って押し込む。', shouts: ['押し込めぇ！', '鉄の意地を見せろ！', '踏ん張れぇ！'],
     roster: () => Data.AWAY });
-  club({ id: 'shiomi', name: '潮見商店街FC', short: '商店街FC', en: 'SHIOMI', color: '#e8b83a', dark: '#b08420', light: '#ffe08a', ink: '#27305a',
+  club({ id: 'shiomi', boost: 4, name: '潮見商店街FC', short: '商店街FC', en: 'SHIOMI', color: '#e8b83a', dark: '#b08420', light: '#ffe08a', ink: '#27305a',
     tactic: 'possession', planB: 'long', coach: '会長', captain: 'kaoru', rating: 50, ground: '潮見アーケード裏グラウンド',
     blurb: '商店街の店主たち。ボールを大事につなぐ、渋いパスワークが持ち味。', shouts: ['いらっしゃい、いらっしゃい！', 'つないで崩しなさい！', '商売は信用第一！'] });
-  club({ id: 'chikurin', name: '竹林大学OB', short: '竹林OB', en: 'CHIKURIN', color: '#5aa84a', dark: '#3a7a30', light: '#a8e08a', ink: '#1a3a14',
+  club({ id: 'chikurin', boost: 3, name: '竹林大学OB', short: '竹林OB', en: 'CHIKURIN', color: '#5aa84a', dark: '#3a7a30', light: '#a8e08a', ink: '#1a3a14',
     tactic: 'press', planB: 'press', coach: '竹中監督', captain: 'tatsumi', rating: 48, ground: '竹林大学グラウンド',
     blurb: '体育会の卒業生たち。90分走り続ける前線からのハイプレス。', shouts: ['走れ走れぇ！', '竹のようにしなれ！', '前から行けぇ！'] });
-  club({ id: 'yukemuri', name: '湯けむり旅館組合', short: '旅館組合', en: 'YUKEMURI', color: '#8a3a6a', dark: '#5e2448', light: '#c87aa8', ink: '#2a0e20',
+  club({ id: 'yukemuri', boost: 3, name: '湯けむり旅館組合', short: '旅館組合', en: 'YUKEMURI', color: '#8a3a6a', dark: '#5e2448', light: '#c87aa8', ink: '#2a0e20',
     tactic: 'counter', planB: 'possession', coach: '大女将', captain: 'oyuki', rating: 46, ground: '湯けむり温泉グラウンド',
     blurb: '温泉街の旅館の人たち。しっかり引いて守り、若女将の一撃で仕留める。', shouts: ['おもてなしの守備を！', '慌てず、じっくりと。', '湯冷めしますよ！'] });
-  club({ id: 'minori', name: '実り農協', short: '農協', en: 'MINORI', color: '#c8702a', dark: '#8a4a18', light: '#f0a868', ink: '#3a1a08',
+  club({ id: 'minori', boost: 4, name: '実り農協', short: '農協', en: 'MINORI', color: '#c8702a', dark: '#8a4a18', light: '#f0a868', ink: '#3a1a08',
     tactic: 'long', planB: 'counter', coach: '組合長', captain: 'gonzo', rating: 47, ground: 'あぜ道グラウンド',
     blurb: '畑仕事で鍛えた大男ぞろい。空中戦とセカンドボールにめっぽう強い。', shouts: ['耕せぇ！', '米俵を運ぶ気持ちで！', '豊作じゃあ！'] });
 

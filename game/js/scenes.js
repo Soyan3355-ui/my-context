@@ -728,7 +728,7 @@
       if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
         const x = 254 + dx + i * 54, T = Data.TACTICS[k];
         text(g, T.short, x, 139, { size: 8, color: '#6d4f3a' });
-        g.fillStyle = '#3a3050'; g.fillRect(x + 22, 142, 26, 3); g.fillStyle = T.color; g.fillRect(x + 22, 142, Math.round(26 * p.tacU[k] / 100), 3);
+        g.fillStyle = '#3a3050'; g.fillRect(x + 28, 142, 22, 3); g.fillStyle = T.color; g.fillRect(x + 28, 142, Math.round(22 * p.tacU[k] / 100), 3);
       });
       // stats
       STAT_KEYS.forEach((key, i) => {
@@ -1423,7 +1423,7 @@
       if (me || r.id === hl) { g.fillStyle = me ? 'rgba(79,180,232,0.22)' : 'rgba(255,255,255,0.08)'; g.fillRect(x + 4, yy - 1, w - 8, 16); }
       text(g, String(i + 1), x + 14, yy + 2, { size: 10, align: 'center', color: i === 0 ? '#ffd24a' : '#c9d6e6' });
       g.fillStyle = OUT; g.fillRect(x + 24, yy + 3, 8, 8); g.fillStyle = teamColor(r.id); g.fillRect(x + 25, yy + 4, 6, 6);
-      text(g, League.TEAM_NAME(r.id), x + 36, yy + 2, { size: 9, color: me ? '#ffffff' : '#e0e6f0' });
+      text(g, w < 300 ? League.TEAM_SHORT(r.id) : League.TEAM_NAME(r.id), x + 36, yy + 2, { size: 9, color: me ? '#ffffff' : '#e0e6f0' });
       const gd = r.gf - r.ga;
       [[r.p, w - 150], [r.w, w - 124], [r.d, w - 104], [r.l, w - 84], [(gd > 0 ? '+' : '') + gd, w - 58], [r.pts, w - 24]].forEach(([v, cx], j) =>
         text(g, String(v), x + cx, yy + 2, { size: j === 5 ? 10 : 9, align: 'center', color: j === 5 ? '#ffd24a' : '#ffffff' }));
@@ -1564,7 +1564,8 @@
   const SQUAD_MAX = 16;
 
   function Applicant(next) {
-    const def = Data.FREE_AGENTS.find((d) => d.id === pick(State.freeAgents));
+    const faId = pick(State.freeAgents);
+    const def = Data.FREE_AGENTS.find((d) => d.id === faId);
     const s = { t: 0, phase: 'talk', menu: null, done: false };
     const talk = Dialog({
       bgm: 'hub', crowd: 0, title: '練習後のクラブハウスに、来客が…',
@@ -1700,7 +1701,7 @@
       .concat(LISTED.filter((l) => !State.joined.includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })));
     const destinationFor = (p) => {
       const avg = (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5;
-      if ((p.age && p.age >= 55)) return { kind: 'staff', text: p.name + 'はクラブに残り、ジュニアチームのコーチになった。（来季の練習効果アップ）' };
+      if ((p.age && p.age >= 55)) return { kind: 'staff', text: p.name + 'はクラブに残り、ジュニアチームのコーチになった。「ときどき、トップの練習も見に来るぞ」' };
       if (avg >= 44) { const c = pick(League.CLUBS); return { kind: 'rival', club: c.id, text: p.name + 'は' + c.name + 'へ移籍した。来季、敵として再会する…。' }; }
       return { kind: 'away', text: p.name + 'は町を出た。「いつか、もっとうまくなって戻ってくるよ」' };
     };
@@ -1715,6 +1716,8 @@
         const act = (keep) => {
           if (keep) { if (State.budget < keepCost) { Sound.play('cancel'); s.flash = { text: '予算が足りない', t: 0 }; return; } State.budget -= keepCost; State.morale[rq.p.id] = 60; s.log.push(rq.p.name + 'を引き止めた（-' + keepCost + '万円）'); Sound.play('select'); }
           else {
+            const gks = State.roster.filter((q) => q.pos === 'GK').length;
+            if (State.roster.length <= 11 || (rq.p.pos === 'GK' && gks <= 1)) { State.morale[rq.p.id] = 45; s.log.push(rq.p.name + 'は「' + (rq.p.pos === 'GK' && gks <= 1 ? 'GKがいなくなる' : '人数が足りない') + 'なら、もう1年だけ」と残ってくれた'); Sound.play('page'); s.idx++; if (s.idx >= reqs.length) s.phase = 'sign'; return; }
             const d = destinationFor(rq.p);
             State.roster = State.roster.filter((q) => q !== rq.p); State.lineup = State.lineup.map((id) => (id === rq.p.id ? null : id));
             State.departed.push({ id: rq.p.id, name: rq.p.name, dest: d.kind, club: d.club });
@@ -1770,7 +1773,7 @@
         wrap(g, rq.why, 330, 11).forEach((l, i) => text(g, l, 126, 108 + i * 14, { size: 11, color: '#2a1a24' }));
         const d = destinationFor(rq.p);
         text(g, '送り出すと：' + (d.kind === 'staff' ? 'クラブにコーチとして残る' : d.kind === 'rival' ? 'ライバルクラブへ移籍する' : '町を出る（いつか戻るかも）'), 20, 172, { size: 9, color: '#2f86c4' });
-        text(g, '引き止めると：予算 -10万円、やる気が戻る。ただし出番の問題は残る', 20, 186, { size: 9, color: '#6d4f3a' });
+        text(g, rq.p.age >= 80 ? '引き止めると：予算 -10万円、もう1年だけ現役を続けてくれる' : '引き止めると：予算 -10万円、やる気が戻る。ただし出番の問題は残る', 20, 186, { size: 9, color: '#6d4f3a' });
         panel(g, 250, 200, 106, 24, E.hoverIn({ x: 250, y: 200, w: 106, h: 24 }) ? 'gold' : 'sky'); text(g, '← 引き止める', 303, 206, { size: 9, align: 'center', color: '#10304f' });
         panel(g, 360, 200, 106, 24, E.hoverIn({ x: 360, y: 200, w: 106, h: 24 }) ? 'gold' : 'crimson'); text(g, '送り出す →', 413, 206, { size: 9, align: 'center', color: '#ffffff' });
         if (s.flash) text(g, s.flash.text, 250, 232, { size: 9, color: '#e0474c' });
