@@ -891,11 +891,29 @@
       for (y = 0; y < 16; y++) { b.px(15, y, C.ol); if (y > 0 && y < 15) b.px(14, y, (N || y > 4) ? c[0] : R[0]); }
     }
   }
+  function karahafu(b, cx) {
+    var R = 22;
+    for (var x = 0; x < 16; x++) {
+      var gx = x + 0.5 - cx;
+      if (Math.abs(gx) > R) continue;
+      var y = Math.round(5 + (gx * gx) / (R * R) * 7);
+      for (var yy = y + 3; yy < 12; yy++) b.px(x, yy, (yy === y + 3) ? C.cu0 : '#2a4a46');
+      b.px(x, y - 1, C.ol); b.px(x, y, C.cu3); b.px(x, y + 1, C.wd1); b.px(x, y + 2, C.wd0);
+      if ((Math.round(gx) % 4) === 0) b.px(x, y + 1, C.ye1);
+    }
+    // gold gegyo ornament at the apex
+    if (cx > -3 && cx < 19) {
+      b.rect(cx - 2, 7, 4, 3, C.ye1); b.hl(cx - 1, cx, 7, C.ye2); b.hl(cx - 2, cx + 1, 9, C.ye0);
+      b.px(cx - 3, 8, C.ye0); b.px(cx + 2, 8, C.ye0); b.px(cx - 1, 10, C.ye0); b.px(cx, 10, C.ye0);
+    }
+  }
   function roofDraw(code) {
     return function (nb) {
       var m = mask(nb, function (c) { return c === code; }, 4);
       var ext = code === 'a' && !(m & 1) ? 3 : 0;
-      return cached(code + 'R' + m, 16, 16 + ext, 0, ext, function (b) { roofTile(b, code, m); });
+      var cx = 99;
+      if (code === 'a' && !(m & 4)) cx = 8 + (runLen(nb, 'a', 1) - runLen(nb, 'a', -1)) * 8;
+      return cached(code + 'R' + m + '_' + cx, 16, 16 + ext, 0, ext, function (b) { roofTile(b, code, m); if (cx !== 99) karahafu(b, cx); });
     };
   }
   TILES.r = roofDraw('r');
@@ -1035,7 +1053,7 @@
     var ln = runLen(nb, 'J', -1), rn = runLen(nb, 'J', 1);
     var cx = 8 + (rn - ln) * 8; // centre of the whole gate in tile-local coords
     var key = 'J' + (L ? 1 : 0) + (R ? 1 : 0) + (P ? 1 : 0) + '_' + cx;
-    return cached(key, 24, 18, 4, 2, function (b) {
+    return cached(key, 24, 19, 4, 3, function (b) {
       var x0 = L ? 0 : -3, x1 = R ? 15 : 18;
       if (P) {
         pillar(b, 7, 15);
@@ -1060,13 +1078,13 @@
         var lift = 0;
         if (!L && x < 0) lift = x === -3 ? 2 : 1;
         if (!R && x > 15) lift = x === 18 ? 2 : 1;
-        var y = 0 - lift;
-        b.px(x, y, C.dk2);
-        b.px(x, y + 1, C.dk1); b.px(x, y + 2, C.dk1);
-        b.px(x, y + 3, C.dk0);
-        if (lift) b.px(x, y + 4, C.dk0);
+        var y = -1 - lift;
+        b.px(x, y, C.dk2); b.px(x, y + 1, '#3a3446');
+        b.px(x, y + 2, C.dk1); b.px(x, y + 3, C.dk1);
+        b.px(x, y + 4, C.dk0);
+        if (lift) b.px(x, y + 5, C.dk0);
       }
-      for (x = x0 + 2; x <= x1 - 1; x += 6) b.px(x, 0, '#6a6278');
+      for (x = x0 + 2; x <= x1 - 1; x += 6) b.px(x, -1, '#6a6278');
     });
   }
   TILES.J = toriiBeam;
@@ -1106,7 +1124,8 @@
     var L = nb(-1, 0) === 'A', R = nb(1, 0) === 'A';
     var ln = runLen(nb, 'A', -1), rn = runLen(nb, 'A', 1);
     var cx = 8 + (rn - ln) * 8;
-    return tileC('A' + (L ? 1 : 0) + (R ? 1 : 0) + '_' + cx, function (b) {
+    var odd = ln % 2;
+    return tileC('A' + (L ? 1 : 0) + (R ? 1 : 0) + '_' + cx + odd, function (b) {
       // hall interior with lattice doors
       b.rect(0, 0, 16, 16, '#3a2228');
       for (var y = 3; y < 13; y++) for (var x = 0; x < 16; x++) {
@@ -1130,8 +1149,8 @@
         b.px(x, 0, '#6a5430');
       }
       // shide (paper zigzag)
-      var sx = 4;
-      if (Math.abs(cx - sx) > 3) {
+      var sx = 6;
+      if (Math.abs(cx - 8) > 12 && !odd) {
         b.px(sx, 4, C.wh); b.px(sx + 1, 4, C.wh); b.px(sx + 1, 5, C.wh); b.px(sx + 2, 5, C.wh1);
         b.px(sx, 6, C.wh); b.px(sx + 1, 6, C.wh); b.px(sx + 1, 7, C.wh); b.px(sx + 2, 7, C.wh1); b.px(sx, 8, C.wh1);
       }
@@ -1208,7 +1227,7 @@
   TILES.o = function () { return tileC('o', floorBase); };
   TILES.x = function () { return tileC('x', function (b) { b.rect(0, 0, 16, 16, C.void); }); };
   TILES.q = function (nb) {
-    var lower = nb(0, 1) !== 'q', top = nb(0, -1) !== 'q';
+    var lower = !has('qkm', nb(0, 1)), top = nb(0, -1) !== 'q';
     return tileC('q' + (lower ? 1 : 0) + (top ? 1 : 0), function (b) {
       b.rect(0, 0, 16, 16, '#eadbb8');
       b.px(3, 4, '#dccaa4'); b.px(12, 6, '#dccaa4');
@@ -1231,9 +1250,15 @@
   TILES.k = function (nb) {
     var alt = runLen(nb, 'k', -1) % 2;
     var L = nb(-1, 0) === 'k', R = nb(1, 0) === 'k';
-    return tileC('k' + alt + (L ? 1 : 0) + (R ? 1 : 0), function (b) {
-      b.rect(0, 0, 16, 16, C.fl1);
-      b.rect(0, 0, 16, 1, C.fl0);
+    var crown = nb(0, -1) === 'q' ? 5 : 0;
+    return cached('k' + alt + (L ? 1 : 0) + (R ? 1 : 0) + crown, 16, 16 + crown, 0, crown, function (b) {
+      b.rect(0, -crown, 16, 16 + crown, C.fl1);
+      b.rect(0, -crown, 16, 1, C.fl0);
+      if (crown) {
+        b.hl(0, 15, -crown + 1, C.fl3); b.rect(1, -crown + 2, 14, crown - 2, C.fl2);
+        b.hl(1, 14, -1, C.fl0);
+        if (!alt) { b.rect(3, -3, 3, 2, C.pl2); b.px(4, -3, C.ver1); } else { b.rect(9, -3, 4, 2, '#5a78a8'); b.hl(9, 12, -3, '#8aa8d0'); }
+      }
       var shelves = [1, 6, 11];
       for (var s = 0; s < 3; s++) {
         var y0 = shelves[s];
@@ -1265,8 +1290,8 @@
           b.rect(10, y0 + 1, 4, 3, '#5a78a8'); b.hl(10, 13, y0 + 1, '#8aa8d0'); b.px(10, y0 + 3, '#3a5078');
         }
       }
-      if (!L) { b.vl(0, 0, 15, C.fl0); b.vl(1, 1, 15, C.fl3); }
-      if (!R) { b.vl(15, 0, 15, C.fl0); b.vl(14, 1, 15, C.fl1); }
+      if (!L) { b.vl(0, -crown, 15, C.fl0); b.vl(1, 1 - crown, 15, C.fl3); }
+      if (!R) { b.vl(15, -crown, 15, C.fl0); b.vl(14, 1 - crown, 15, C.fl1); }
       b.hl(0, 15, 15, C.fl0);
     });
   };
@@ -1698,9 +1723,9 @@
         break;
       case 'eboshi':
         baseHair(S);
-        if (d === 'down') { H(6, -1, 4, 1, C.dk1); H(5, 0, 6, 3, C.dk1); H(4, 3, 8, 1, C.dk0); H(6, 0, 1, 3, C.dk2); Hp(7, -1, C.dk2); H(3, 4, 1, 3, '#f2f4f8'); H(12, 4, 1, 3, '#c4ccd8'); }
-        else if (d === 'up') { H(6, -1, 4, 1, C.dk1); H(5, 0, 6, 3, C.dk1); H(4, 3, 8, 1, C.dk0); H(6, 0, 1, 3, C.dk2); H(7, 4, 2, 6, '#f2f4f8'); }
-        else { H(4, -1, 3, 1, C.dk1); H(4, 0, 6, 3, C.dk1); H(4, 3, 7, 1, C.dk0); H(5, 0, 1, 3, C.dk2); Hp(3, 0, C.dk1); H(7, 4, 1, 4, '#f2f4f8'); }
+        if (d === 'down') { H(6, -1, 4, 1, C.dk1); H(5, 0, 6, 3, C.dk1); H(4, 3, 8, 1, C.dk0); H(6, 0, 1, 3, C.dk2); Hp(7, -1, C.dk2); }
+        else if (d === 'up') { H(6, -1, 4, 1, C.dk1); H(5, 0, 6, 3, C.dk1); H(4, 3, 8, 1, C.dk0); H(6, 0, 1, 3, C.dk2); }
+        else { H(4, -1, 3, 1, C.dk1); H(4, 0, 6, 3, C.dk1); H(4, 3, 7, 1, C.dk0); H(5, 0, 1, 3, C.dk2); Hp(3, 0, C.dk1); }
         break;
       case 'ponytail':
         baseHair(S);

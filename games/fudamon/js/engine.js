@@ -196,7 +196,7 @@ function renderWorld(t){
   const x0=Math.max(0,Math.floor(cx/TS)),y0=Math.max(0,Math.floor(cy/TS)),x1=Math.min(m.w-1,Math.floor((cx+VW)/TS)),y1=Math.min(m.h-1,Math.floor((cy+VH)/TS)+1);
   const P=window.PIX;
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){let c=m.rows[y][x];const px=x*TS-cx,py=y*TS-cy;
-    if(P){if(c==='J'){P.drawTile(ctx,':',px,py,t,nbFn(x,y))}else P.drawTile(ctx,c,px,py,t,nbFn(x,y))}
+    if(P){if(c==='J'){P.drawTile(ctx,':',px,py,t,nbFn(x,y),x,y)}else P.drawTile(ctx,c,px,py,t,nbFn(x,y),x,y)}
     else{ctx.fillStyle=SOLID.has(c)?'#3d6b3a':'#8fcf7a';ctx.fillRect(px,py,TS,TS)}}
   // items
   for(const it of ITEMSPOTS[G.mapId]||[]){if(S.picked[it.id])continue;const px=it.x*TS-cx,py=it.y*TS-cy;if(px<-16||py<-16||px>VW||py>VH)continue;P&&P.drawItem(ctx,px,py,t)}
@@ -207,7 +207,7 @@ function renderWorld(t){
   for(const e of ents){const px=Math.round(e.x-cx),py=Math.round(e.y-cy);if(px<-20||py<-24||px>VW+4||py>VH+4)continue;
     if(P)P.drawChar(ctx,e.id,e.dir,e.frame,px,py);else{ctx.fillStyle=e.id==='hero'?'#d33':'#36c';ctx.fillRect(px+3,py-2,10,16)}
     if(e.n&&e.n.alert&&P)P.drawAlert(ctx,px,py)}
-  if(P)for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const c=m.rows[y][x];if(c==='"'||c==='T'||c==='J'||c==='O')P.drawOverlay(ctx,c,x*TS-cx,y*TS-cy,t,nbFn(x,y))}
+  if(P)for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const c=m.rows[y][x];P.drawOverlay(ctx,c,x*TS-cx,y*TS-cy,t,nbFn(x,y),x,y)}
   drawParts(ctx,G.parts,cx,cy);
   // ambience
   if(G.mapId==='field'){
