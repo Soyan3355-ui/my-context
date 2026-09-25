@@ -77,16 +77,22 @@ function cardDetail(uid,back){
   const acts=[];
   if(inP){if(idx>0)acts.push(`<button class="pbtn" data-nav data-a="lead">先頭にする</button>`);const lastOk=c.hp>0&&partyCards().filter(x=>x.hp>0&&x.uid!==uid).length===0;acts.push(`<button class="pbtn" data-nav data-a="out" ${S.party.length<=1||lastOk?'disabled':''}>${lastOk&&S.party.length>1?'元気なカードが いなくなる':'パーティから外す'}</button>`)}
   else acts.push(`<button class="pbtn shu" data-nav data-a="in" ${S.party.length>=3?'disabled':''}>${S.party.length>=3?'パーティが満員':'パーティに入れる'}</button>`);
+  const E=EVO[c.id];let evoInfo='';
+  if(E){const dups=S.cards.filter(x=>x.id===c.id&&x.uid!==uid).length;const ok=c.lv>=E.lv&&dups>=E.dup;
+    acts.unshift(`<button class="pbtn ${ok?'shu evo':''}" data-nav data-a="evo" ${ok?'':'disabled'}>${ok?'進化させる！':'進化の 条件を 満たしていない'}</button>`);
+    evoInfo=`<div class="evoreq"><b>進化 → ${S.dex[E.to]?MON[E.to].name:'？？？'}</b><span class="${c.lv>=E.lv?'ok':''}">Lv${E.lv} 以上（いま Lv${c.lv}）</span>${E.dup?`<span class="${dups>=E.dup?'ok':''}">重ねる 同じ札 ${Math.min(dups,E.dup)}/${E.dup}枚</span>`:''}</div>`}
   acts.push(`<button class="pbtn" data-nav data-a="sell" ${inP?'disabled':''}>手放す +${sellPrice(c)}両</button>`);
   openPanel(`${head(m.name,`No.${pad3(m.id)} ・ ${TYPES[m.t].n}タイプ ・ ${RAR[m.r].n}`)}<div class="pbody detailwrap"><div class="detail">${cardHTML(c)}</div>
   <div class="dinfo"><div class="stats"><div><small>HP</small><b>${c.hp}/${st.hp}</b></div><div><small>こうげき</small><b>${st.atk}</b></div><div><small>ぼうぎょ</small><b>${st.def}</b></div><div><small>すばやさ</small><b>${st.spd}</b></div></div>
   <div class="expl"><span>次のLvまで ${need(c.lv)-c.exp} EXP</span><span class="bar exp"><i style="width:${c.exp/need(c.lv)*100}%"></i></span></div>
-  <div class="mvl">${mv}${nb}</div><p class="flav">${m.flavor}</p><div class="acts">${acts.join('')}</div></div></div>`,{onBack:back});
+  ${evoInfo}<div class="mvl">${mv}${nb}</div><p class="flav">${m.flavor}</p><div class="acts">${acts.join('')}</div></div></div>`,{onBack:back});
   wireBack(back);tiltCard($('#panel .detail'));
   $('#panel').querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',async()=>{const a=b.dataset.a;
     if(a==='lead'){S.party=[uid,...S.party.filter(x=>x!==uid)];snd('confirm');cardDetail(uid,back)}
     if(a==='out'){S.party=S.party.filter(x=>x!==uid);snd('confirm');cardDetail(uid,back)}
     if(a==='in'){S.party.push(uid);snd('confirm');cardDetail(uid,back)}
+    if(a==='evo'){const E=EVO[c.id];const p=$('#panel');p.hidden=true;const i=await ask(`${m.name}を 進化させる？${E.dup?`<br>同じ札 ${E.dup}枚を 重ねて 封じこむよ。`:''}`,null,['進化させる','やめる']);p.hidden=false;
+      if(i===0){closePanel();await evolveCard(uid);cardDetail(uid,back)}else panelNav&&panelNav.refresh(true);return}
     if(a==='sell'){const p=$('#panel');p.hidden=true;const i=await ask(`${m.name}（Lv${c.lv}）を 手放して<br>${sellPrice(c)}両に する？`,null,['手放す','やめる']);p.hidden=false;
       if(i===0){S.coins+=sellPrice(c);S.cards=S.cards.filter(x=>x.uid!==uid);snd('coin');toast(`${sellPrice(c)}両 を受け取った`);back()}else panelNav&&panelNav.refresh(true)}
   }));
@@ -124,7 +130,7 @@ function dexDetail(id,v,back){
 function bagScreen(back){
   const row=k=>{const I=ITEMS[k];return `<div class="bagrow"><span class="ico${k==='potion'?' pot':''}" style="--fc:${I.fc||'#fff'}"></span><div><b>${I.n}</b><small>${I.d}</small></div><span class="cnt">×${S.items[k]}</span></div>`};
   openPanel(`${head('どうぐ',`${fmt(S.coins)} 両`)}<div class="pbody"><div class="bag">${row('white')}${row('silver')}${row('gold')}${row('potion')}
-  ${S.flags.badge?`<div class="bagrow"><span class="ico badge"></span><div><b>封札師の印</b><small>祠守りイワオに認められた証。見習い卒業！</small></div><span class="cnt"></span></div>`:''}</div>
+  ${[['badge','封札師の印','祠守りイワオに 認められた証。'],['b2','水鏡の印','霧の渓谷の 祠守りミナモに 認められた証。'],['b3','焔の印','ほむら岳の 祠守りゴウエンに 認められた証。'],['b4','月の印','月影の森の 祠守りヨイに 認められた証。']].filter(([f])=>S.flags[f]).map(([f,n,d],i)=>`<div class="bagrow"><span class="ico badge b${i}"></span><div><b>${n}</b><small>${d}</small></div><span class="cnt"></span></div>`).join('')}</div>
   ${S.items.potion?'<button class="pbtn" data-nav data-use>回復の香を使う</button>':''}</div>`,{onBack:back});
   wireBack(back);
   const u=$('#panel [data-use]');u&&u.addEventListener('click',()=>{snd('confirm');pickCard('どのカードに使う？',c=>c.hp<maxHP(c),async c=>{const mx=maxHP(c),h=Math.min(mx-c.hp,Math.ceil(mx/2));S.items.potion--;c.hp+=h;snd('heal');toast(`${MON[c.id].name}のHPが ${h} 回復した`);bagScreen(back)},()=>bagScreen(back))});
@@ -151,14 +157,9 @@ function optScreen(back){
 /* ---------------- shop (traveling merchant) ---------------- */
 function shopScreen(back,title='行商人マツの店'){
   const row=k=>{const I=ITEMS[k];return `<button class="shoprow" data-nav data-k="${k}" ${S.coins<I.price?'disabled':''}><span class="ico${k==='potion'?' pot':''}" style="--fc:${I.fc||'#fff'}"></span><span><b>${I.n}</b><small>${I.d}</small></span><span class="pr">${I.price}両<small>所持${S.items[k]}</small></span></button>`};
-  openPanel(`${head(title,`所持金 ${fmt(S.coins)} 両`)}<div class="pbody"><div class="bag">${row('white')}${row('silver')}${row('potion')}
-  <button class="shoprow" data-nav data-k="pack" ${S.coins<PACK_PRICE?'disabled':''}><span class="ico pack"></span><span><b>封札パック</b><small>ランダムなカードが3枚。R以上1枚確定。その場で開封！</small></span><span class="pr">${PACK_PRICE}両</span></button></div></div>`,{onBack:back});
+  openPanel(`${head(title,`所持金 ${fmt(S.coins)} 両`)}<div class="pbody"><div class="bag">${row('white')}${row('silver')}${S.flags.b2?row('gold'):''}${row('potion')}</div>${S.flags.b2?'':'<p class="muted">金の封札は、祠守りに 認められた 封札師に だけ 売られるらしい。</p>'}</div>`,{onBack:back});
   wireBack(back);
   $('#panel').querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',async()=>{const k=b.dataset.k;
-    if(k==='pack'){if(S.coins<PACK_PRICE)return;S.coins-=PACK_PRICE;G.bought=true;snd('coin');closePanel();
-      const pool=[];for(let i=1;i<=TOTAL;i++)if(MON[i].r<4)pool.push(i);const ids=[pickWeighted(pool),pickWeighted(pool),pickWeighted(pool)];
-      if(ids.every(i=>MON[i].r<2))ids[2]=pickWeighted(pool.filter(i=>MON[i].r>=2));
-      const got=ids.map(id=>addCard(id,rnd(4,9),rollVariant(.15,.03)));await reveal(got,'封札パック開封！');shopScreen(back,title);return}
     const I=ITEMS[k];if(S.coins<I.price)return;S.coins-=I.price;S.items[k]++;G.bought=true;snd('coin');toast(`${I.n}を 買った`);shopScreen(back,title);panelNav.set([...$('#panel').querySelectorAll('[data-nav]')].indexOf($(`#panel [data-k="${k}"]`)))}));
 }
 
@@ -204,3 +205,33 @@ function initPad(){
   const bu=()=>{Bb.classList.remove('on');TouchPad.run=false};Bb.addEventListener('pointerup',bu);Bb.addEventListener('pointercancel',bu);
   M.addEventListener('click',()=>{unlockAudio();if(!UI.top()&&G.scene==='world'&&!G.lock)openMainMenu()});
 }
+
+/* ---------------- evolution (重ね封じ) ---------------- */
+async function evolveCard(uid){
+  const c=card(uid);const E=EVO[c.id];if(!c||!E)return;
+  // consume duplicates: prefer non-party, lowest level
+  const dups=S.cards.filter(x=>x.id===c.id&&x.uid!==uid).sort((a,b)=>(S.party.includes(a.uid)-S.party.includes(b.uid))||a.lv-b.lv).slice(0,E.dup);
+  const gone=new Set(dups.map(d=>d.uid));S.cards=S.cards.filter(x=>!gone.has(x.uid));S.party=S.party.filter(u=>!gone.has(u));
+  const from=c.id,to=E.to;G.lock++;
+  const md=$('#modal');
+  md.innerHTML=`<div class="evobox"><div class="evo-stage"><div class="evo-a">${art(MON[from])}</div><div class="evo-b">${art(MON[to])}</div></div><p class="evo-msg">おや…？ ${MON[from].name}の 札が 光りだした！</p></div>`;md.hidden=false;
+  const A=md.querySelector('.evo-a'),Bn=md.querySelector('.evo-b'),msg=md.querySelector('.evo-msg');
+  snd('charge');
+  const st=md.querySelector('.evo-stage').getBoundingClientRect(),sr=$('#screen').getBoundingClientRect();const cx=st.left-sr.left+st.width/2,cy=st.top-sr.top+st.height/2;
+  for(let i=0;i<24;i++){const a=Math.random()*Math.PI*2,r=120+Math.random()*60;fxAdd({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,vx:-Math.cos(a)*r*1.4,vy:-Math.sin(a)*r*1.4,life:.7,max:.7,size:3+Math.random()*3,color:['#fff1b0','#ffffff','#8fe8ff'][i%3],shape:'star',rot:0,vr:6})}
+  await sleep(RM?0:900);
+  // silhouette flicker between forms, speeding up
+  A.classList.add('glow');Bn.classList.add('glow');
+  let d=420;for(let i=0;i<9;i++){A.style.opacity=i%2?0:1;Bn.style.opacity=i%2?1:0;snd('wobble');await sleep(RM?0:d);d=Math.max(80,d*.72)}
+  A.style.opacity=0;Bn.style.opacity=1;
+  snd('stamp');sparkBurst(cx,cy,48,true);
+  const flash=document.createElement('div');flash.className='evoflash';md.appendChild(flash);flash.animate([{opacity:1},{opacity:0}],{duration:RM?1:700,fill:'forwards'});
+  await sleep(RM?0:250);Bn.classList.remove('glow');
+  const oldMax=maxHP(c);c.id=to;c.hp=Math.min(maxHP(c),c.hp+maxHP(c)-oldMax);c.pp={};
+  const dx=S.dex[to]||(S.dex[to]={n:0,holo:false,gold:false});dx.n++;if(c.v==='holo')dx.holo=true;if(c.v==='gold')dx.gold=true;S.seen[to]=true;
+  snd('sealOk');msg.innerHTML=`やった！ ${MON[from].name}は <b>${MON[to].name}</b>に 進化した！`;
+  await sleep(RM?300:2200);md.hidden=true;md.innerHTML='';
+  await reveal([{c,isNew:dx.n===1}],`${MON[to].name}の 札`);
+  saveGame();G.lock--;
+}
+function canEvolve(c){const E=EVO[c.id];if(!E)return false;return c.lv>=E.lv&&S.cards.filter(x=>x.id===c.id&&x.uid!==c.uid).length>=E.dup}

@@ -128,7 +128,7 @@ function updatePlayer(dt){
 }
 function onStep(){
   const p=G.p,c=tileAt(p.x,p.y);
-  if(c==='z'){const w=WARPS[G.mapId+':'+p.x+','+p.y];if(w){warp(w);return}}
+  {const w=WARPS[G.mapId+':'+p.x+','+p.y];if(w){warp(w);return}}
   if(c==='"'){snd('grass');for(let i=0;i<5;i++)G.parts.push({x:p.x*TS+8,y:p.y*TS+10,vx:(Math.random()-.5)*40,vy:-20-Math.random()*30,ay:90,life:.5,max:.5,size:2,color:Math.random()<.5?'#3f8f45':'#7ccf64',shape:'leaf',rot:Math.random()*6,vr:(Math.random()-.5)*10})}
   else if(!p.run)snd('step');
   const nm=areaAt(G.mapId,p.y);if(nm!==G.areaName){G.areaName=nm;showBanner(nm);updateBGM()}
@@ -139,6 +139,7 @@ function onStep(){
 }
 function updateBGM(){
   if(G.scene!=='world')return;
+  const MB={valley:'valley',mount:'volcano',forest:'forest'};if(MB[G.mapId]){bgm(MB[G.mapId]);return}
   if(G.mapId!=='field'){bgm('village');return}
   const y=G.p.y;bgm(y<=11?'shrine':y<=44?'route':'village');
 }
@@ -219,9 +220,19 @@ function renderWorld(t){
     ctx.fillStyle='rgba(20,30,60,.10)';for(const c of G.clouds){const x=((c.x+t*c.v)%(m.w*TS+240))-120-cx,y=c.y-cy;ctx.beginPath();ctx.ellipse(x,y,c.r,c.r*.55,0,0,7);ctx.ellipse(x+c.r*.6,y+8,c.r*.7,c.r*.4,0,0,7);ctx.fill()}
     if(p.y<=17){// shrine motes
       for(let i=0;i<14;i++){const sx=((i*53.7+t*6*(1+i%3))%(VW+20))-10,sy=VH-((i*37.1+t*(8+i%5*3))%(VH+20));const a=.35+.35*Math.sin(t*2+i);ctx.fillStyle=`rgba(255,244,200,${a})`;ctx.fillRect(Math.round(sx),Math.round(sy),1+(i%3===0),1+(i%3===0))}}
+  }else if(G.mapId==='valley'){// drifting mist banks
+    for(let i=0;i<7;i++){const w=90+i*17,x=((i*97+t*(5+i%3*2))%(VW+w*2))-w,y=((i*61)%(VH+40))-20+Math.sin(t*.3+i)*6;const g2=ctx.createRadialGradient(x,y,4,x,y,w*.6);g2.addColorStop(0,'rgba(235,245,250,.30)');g2.addColorStop(1,'rgba(235,245,250,0)');ctx.fillStyle=g2;ctx.fillRect(x-w,y-w,w*2,w*2)}
+  }else if(G.mapId==='mount'){// rising embers + heat
+    for(let i=0;i<22;i++){const sx=((i*47.3+Math.sin(t*1.3+i)*8)%VW),sy=VH-((i*31.7+t*(14+i%4*6))%(VH+10));const a=.5+.4*Math.sin(t*6+i);ctx.fillStyle=i%3?`rgba(255,150,60,${a})`:`rgba(255,220,120,${a})`;ctx.fillRect(Math.round(sx),Math.round(sy),1+(i%4===0),1)}
+  }else if(G.mapId==='forest'){// night: darkness with player light + lantern glows
+    const lx=Math.round(ppx-cx+8),ly=Math.round(ppy-cy+6);const dk=ctx.createRadialGradient(lx,ly,18,lx,ly,86);dk.addColorStop(0,'rgba(6,6,28,0)');dk.addColorStop(1,'rgba(6,6,28,.78)');ctx.fillStyle=dk;ctx.fillRect(0,0,VW,VH);
+    ctx.globalCompositeOperation='lighter';for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const c=m.rows[y][x];if(c==='l'||c==='M'||c==='W'){const gx=x*TS-cx+8,gy=y*TS-cy+6,r=c==='l'?34:22;const lg=ctx.createRadialGradient(gx,gy,1,gx,gy,r);lg.addColorStop(0,c==='l'?'rgba(255,190,110,.55)':'rgba(140,200,255,.45)');lg.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=lg;ctx.fillRect(gx-r,gy-r,r*2,r*2)}}
+    for(let i=0;i<16;i++){const fx=((i*61.3+Math.sin(t*.7+i*2)*22)%VW+VW)%VW,fy=((i*43.1+Math.cos(t*.5+i)*14)%VH+VH)%VH;const a=.4+.5*Math.sin(t*3+i*1.7);ctx.fillStyle=`rgba(200,255,150,${Math.max(0,a)})`;ctx.fillRect(Math.round(fx),Math.round(fy),1,1)}
+    ctx.globalCompositeOperation='source-over';
   }else{for(let i=0;i<10;i++){const sx=((i*41.3+t*3)%VW),sy=((i*29.7+Math.sin(t*.5+i)*10+t*2)%VH);ctx.fillStyle='rgba(255,240,210,.35)';ctx.fillRect(Math.round(sx),Math.round(sy),1,1)}}
   // light grading
-  const bgc=G.mapId==='field'?(p.y<=11?'rgba(120,80,170,.10)':p.y<=17?'rgba(90,90,170,.07)':null):'rgba(255,170,90,.06)';
+  const GR={valley:'rgba(150,190,210,.10)',mount:'rgba(255,110,50,.10)',forest:null};
+  const bgc=G.mapId in GR?GR[G.mapId]:G.mapId==='field'?(p.y<=11?'rgba(120,80,170,.10)':p.y<=17?'rgba(90,90,170,.07)':null):'rgba(255,170,90,.06)';
   if(bgc){ctx.fillStyle=bgc;ctx.fillRect(0,0,VW,VH)}
   const g=ctx.createRadialGradient(VW/2,VH/2,VH*.45,VW/2,VH/2,VW*.72);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(10,8,30,.35)');ctx.fillStyle=g;ctx.fillRect(0,0,VW,VH);
 }

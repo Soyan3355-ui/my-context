@@ -289,21 +289,27 @@
     b.px(3, 4, C.d1); b.px(11, 10, C.d1); b.px(12, 10, C.d3); b.px(6, 12, C.d3); b.px(7, 13, C.d1);
   }
   function groundType(nb, def) {
-    var pave = 0, floor = 0, dirt = 0;
+    var pave = 0, floor = 0, dirt = 0, ash = 0, dark = 0;
     for (var i = 0; i < 4; i++) {
       var c = nb(N4[i][0], N4[i][1]);
       if (has(':sIJlA', c)) pave++;
       if (has('otuyzmkq', c)) floor++;
       if (c === 'P') dirt++;
+      if (c === 'G') ash++;
+      if (c === 'D') dark++;
     }
     if (floor) return 'f';
     if (pave) return 'p';
+    // volcanic ash / night-forest floor under props (only when those new grounds are adjacent)
+    if (ash || dark) return ash >= dark ? 'a' : 'n';
     return def || 'g';
   }
   function ground(b, type, v) {
     if (type === 'p') paveBase(b, v % 4);
     else if (type === 'f') floorBase(b);
     else if (type === 'd') dirtBase(b);
+    else if (type === 'a') ashBase(b, v, null);
+    else if (type === 'n') nightBase(b, v, 0);
     else grassBase(b, v);
   }
   function shadowEll(b, cx, cy, rx, ry, a) { b.ell(cx, cy, rx, ry, '#1a1430', a == null ? 0.28 : a); }
@@ -394,7 +400,11 @@
   var WOB = [0, 1, 1, 0, 0, 1, 2, 1, 0, 0, 1, 1, 0, 1, 1, 0];
   TILES.P = function (nb) {
     var m = mask(nb, pathLike, 8);
-    return tileC('P' + m, function (b) {
+    var gA = 0, gD = 0;
+    for (var q = 0; q < 8; q++) { var qc = nb(N8[q][0], N8[q][1]); if (qc === 'G') gA++; else if (qc === 'D') gD++; }
+    var eg = gA || gD ? (gA >= gD ? ASHG : NIGHTG) : null; // edge "grass" colours [dark, mid, light]
+    return tileC('P' + m + (eg ? (eg === ASHG ? 'a' : 'n') : ''), function (b) {
+      var g1 = eg ? eg[0] : C.g1, g2 = eg ? eg[1] : C.g2, g3 = eg ? eg[2] : C.g3;
       var N = m & 1, E = m & 2, S = m & 4, W = m & 8, NE = m & 16, SE = m & 32, SW = m & 64, NW = m & 128;
       var g = [];
       function isG(x, y) {
@@ -417,9 +427,9 @@
       for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) {
         var c;
         if (G(x, y)) {
-          c = C.g2;
-          if (G(x, y + 1) === false && y < 15 || (x < 15 && !G(x + 1, y)) || (x > 0 && !G(x - 1, y))) c = C.g3;
-          if (y > 0 && !G(x, y - 1) && !(y === 0)) c = C.g1;
+          c = g2;
+          if (G(x, y + 1) === false && y < 15 || (x < 15 && !G(x + 1, y)) || (x > 0 && !G(x - 1, y))) c = g3;
+          if (y > 0 && !G(x, y - 1) && !(y === 0)) c = g1;
         } else {
           c = C.d2;
           if ((y > 0 && G(x, y - 1)) || (x > 0 && G(x - 1, y))) c = C.d1;
@@ -1392,6 +1402,339 @@
     });
   };
 
+  // ================================================================== volcano, hot spring, night forest
+  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  function bay(x, y) { return (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16; }
+
+  // ---- 'G' ash / volcanic gravel
+  var ASH = ['#3a2e31', '#54454a', '#6e5d5b', '#88756b', '#a18b7c', '#bba592'];
+  var ASHR = '#a0604c';
+  var ASHG = [ASH[2], ASH[3], ASH[4]]; // path-edge stand-ins for grass
+  var ASHT = [0, 0.12, 0.24, 0.36].map(function (k) { return mix(ASH[3], ASHR, k); });
+  // smooth low-frequency reddish tint, sampled at tile corners (seamless across tiles)
+  function ashLevel(tx, ty) {
+    var gx = tx / 3.3, gy = ty / 2.7, ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy;
+    var a = h2(ix, iy, 71), b = h2(ix + 1, iy, 71), c = h2(ix, iy + 1, 71), d = h2(ix + 1, iy + 1, 71);
+    fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
+    var v = (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
+    return Math.max(0, Math.min(3, Math.round((v - 0.18) / 0.64 * 3)));
+  }
+  function ashPebble(b, x, y, k) {
+    if (k === 0) { // dark cinder pebble
+      b.px(x, y, ASH[1]); b.px(x + 1, y, ASH[0]); b.px(x, y + 1, ASH[0]); b.px(x + 1, y + 1, ASH[0]);
+      b.px(x, y - 1, ASH[4]); b.px(x + 2, y + 1, ASH[2]);
+    } else if (k === 1) { // grit speck
+      b.px(x, y, ASH[1]); b.px(x, y - 1, ASH[5]);
+    } else if (k === 2) { // pale pumice stone
+      b.hl(x, x + 2, y, ASH[5]); b.px(x + 2, y, ASH[4]); b.hl(x, x + 2, y + 1, ASH[4]); b.px(x, y + 1, ASH[5]);
+      b.hl(x, x + 2, y + 2, ASH[2]); b.px(x + 3, y + 1, ASH[2]);
+    } else { // small reddish scoria
+      b.px(x, y, '#7a4a40'); b.px(x + 1, y, '#5e3a36'); b.px(x, y - 1, '#b07a64'); b.px(x + 1, y + 1, ASH[1]);
+    }
+  }
+  function ashBase(b, v, lv) {
+    // lv: tint level at the four tile corners [tl,tr,bl,br] or null
+    for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+      var c = ASH[3];
+      if (lv) {
+        var fx = (x + 0.5) / 16, fy = (y + 0.5) / 16;
+        var l = (lv[0] * (1 - fx) + lv[1] * fx) * (1 - fy) + (lv[2] * (1 - fx) + lv[3] * fx) * fy;
+        var li = Math.floor(l), fr = l - li;
+        c = ASHT[Math.min(3, li + (fr > bay(x, y) ? 1 : 0))];
+      }
+      b.px(x, y, c);
+    }
+    v = v & 7;
+    // soft grain: short darker drifts and lighter crusts (kept inside the tile)
+    var n = 0;
+    for (var i = 0; i < 7; i++) {
+      var px = 1 + Math.floor(h2(v, i, 301) * 13), py = 1 + Math.floor(h2(v, i, 302) * 13);
+      if (i < 3) { b.hl(px, px + 1, py, ASH[2]); b.px(px + 2, py, mix(ASH[2], ASH[3], 0.5)); }
+      else b.px(px, py, ASH[4]);
+    }
+    if (v === 2 || v === 6) { // cinder patch
+      b.ell(8 + (v - 4) * 0.5, 8, 4.5, 2.6, ASH[2], 0.55); b.ell(7.5 + (v - 4) * 0.5, 7.6, 2.5, 1.2, ASH[1], 0.35);
+    }
+    if (v === 3) { // hairline crack
+      b.px(4, 5, ASH[1]); b.px(5, 6, ASH[1]); b.px(6, 6, ASH[1]); b.px(7, 7, ASH[1]); b.px(8, 8, ASH[1]); b.px(8, 9, ASH[1]);
+      b.px(5, 7, ASH[4]); b.px(7, 8, ASH[4]); b.px(9, 9, ASH[4]);
+    }
+    var cnt = 2 + (v % 3);
+    for (i = 0; i < cnt; i++) {
+      var qx = 2 + Math.floor(h2(v, i, 311) * 11), qy = 2 + Math.floor(h2(v, i, 312) * 11);
+      var k = Math.floor(h2(v, i, 313) * 4.4) % 4;
+      if (i === 0) k = 0;
+      ashPebble(b, qx, qy, k);
+    }
+  }
+  function grassy(c) { return has('.,"', c); }
+  TILES.G = function (nb, t, tx, ty) {
+    var v = Math.floor(variant(nb, tx, ty, 41) * 8);
+    var lv = tx != null && ty != null ? [ashLevel(tx, ty), ashLevel(tx + 1, ty), ashLevel(tx, ty + 1), ashLevel(tx + 1, ty + 1)] : null;
+    var m = mask(nb, grassy, 8);
+    return tileC('G' + v + (lv ? lv.join('') : '-') + '_' + m, function (b) {
+      ashBase(b, v, lv);
+      if (!m) return;
+      // grass creeping onto the ash from grassy neighbours
+      var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+      function gr(x, y) {
+        if (x < 0 || y < 0 || x > 15 || y > 15) return true;
+        if (N && y < 2 + WOB[x]) return true;
+        if (S && y > 13 - WOB[(x + 5) & 15]) return true;
+        if (W && x < 2 + WOB[(y + 3) & 15]) return true;
+        if (E && x > 13 - WOB[(y + 9) & 15]) return true;
+        if ((m & 128) && !N && !W && x + y < 3) return true;
+        if ((m & 16) && !N && !E && (15 - x) + y < 3) return true;
+        if ((m & 64) && !S && !W && x + (15 - y) < 3) return true;
+        if ((m & 32) && !S && !E && (15 - x) + (15 - y) < 3) return true;
+        return false;
+      }
+      for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+        if (gr(x, y)) {
+          var c = C.g2;
+          if (!gr(x, y + 1)) c = C.g1;
+          else if (!gr(x + 1, y) || !gr(x - 1, y)) c = C.g3;
+          b.px(x, y, c);
+        } else if (gr(x, y - 1) && (N || (m & 144))) b.px(x, y, ASH[2]); // shade below grass lip
+      }
+    });
+  };
+
+  // ---- 'L' lava (animated; cooled basalt rim against land)
+  var LV = { c0: '#1e141c', c1: '#2e1d24', c2: '#43282b', c3: '#5e3530', m0: '#8a2224', m1: '#c43a1c', m2: '#ea6a1e', m3: '#ffa032', m4: '#ffe478' };
+  var BAS = ['#17131c', '#262029', '#3a3139', '#524650', '#6e5f66'];
+  var LCELL = 12, LPER = 8; // voronoi cell size (px) and period (cells) -> repeats every 6 tiles
+  function lseed(i, j) {
+    var I = ((i % LPER) + LPER) % LPER, J = ((j % LPER) + LPER) % LPER;
+    return [i * LCELL + 2 + h2(I, J, 91) * (LCELL - 4), j * LCELL + 2 + h2(I, J, 92) * (LCELL - 4), h2(I, J, 93), h2(I, J, 94)];
+  }
+  function lavaish(c) { return c === '' || c == null || c === 'L'; }
+  function lavaTile(b, wx0, wy0, f, m) {
+    var pools = [];
+    for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+      var wx = wx0 + x + 0.5, wy = wy0 + y + 0.5;
+      var ci = Math.floor(wx / LCELL), cj = Math.floor(wy / LCELL);
+      var d1 = 1e9, d2 = 1e9, s1 = null;
+      for (var j = cj - 1; j <= cj + 1; j++) for (var i = ci - 1; i <= ci + 1; i++) {
+        var s = lseed(i, j), dx = wx - s[0], dy = wy - s[1], d = Math.sqrt(dx * dx + dy * dy);
+        if (d < d1) { d2 = d1; d1 = d; s1 = s; } else if (d < d2) d2 = d;
+      }
+      var e = d2 - d1, pool = s1[2] < 0.24, c;
+      var glint = ((Math.floor(wx) + Math.floor(wy) * 2 + 64 - f * 5) % 16 + 16) % 16 < 3;
+      if (pool) {
+        // open molten pool: swirling bands
+        var sw = Math.sin((wx * 0.5 + wy * 0.9) + f * 1.57 + s1[3] * 6);
+        c = d1 < 2.2 ? LV.m3 : sw > 0.55 ? LV.m3 : sw < -0.6 ? LV.m1 : LV.m2;
+        if (e < 1.1) c = LV.m1;
+        if (pools.indexOf(s1) < 0) pools.push(s1);
+      } else if (e < 0.9) c = glint ? LV.m4 : LV.m3;
+      else if (e < 1.9) c = (f & 1) ? LV.m1 : mix(LV.m1, LV.m2, 0.3);
+      else if (e < 2.7) c = LV.c3;
+      else {
+        // crust plate, lit from the top-left and from the glow below
+        var lx = wx - s1[0], ly = wy - s1[1];
+        c = LV.c1;
+        if (lx + ly < -3) c = LV.c2;
+        else if (lx + ly > 3.5) c = LV.c0;
+        if (((Math.floor(wx) * 7 + Math.floor(wy) * 3) % 23) === 0) c = LV.c0;
+      }
+      b.px(x, y, c);
+    }
+    // bubbles in pools (slow 4-phase cycle, offset per pool)
+    for (var p = 0; p < pools.length; p++) {
+      var q = pools[p], bx = Math.floor(q[0] - wx0), by = Math.floor(q[1] - wy0);
+      var ph = (f + Math.floor(q[3] * 4)) % 4;
+      if (ph === 0) { b.px(bx, by, LV.m4); }
+      else if (ph === 1) { b.hl(bx - 1, bx + 1, by, LV.m3); b.hl(bx - 1, bx + 1, by + 1, LV.m1); b.px(bx - 1, by - 1, LV.m4); b.px(bx, by - 1, LV.m3); b.px(bx + 1, by - 1, LV.m3); b.px(bx - 1, by, LV.m4); }
+      else if (ph === 2) {
+        b.hl(bx - 1, bx + 1, by - 2, LV.m4); b.vl(bx - 2, by - 1, by + 1, LV.m4); b.vl(bx + 2, by - 1, by + 1, LV.m3); b.hl(bx - 1, bx + 1, by + 2, LV.m1);
+        b.rect(bx - 1, by - 1, 3, 3, LV.m1); b.px(bx, by, LV.m0);
+      } else { b.px(bx - 2, by - 1, LV.m4); b.px(bx + 2, by - 2, LV.m3); b.px(bx + 1, by + 1, LV.m3); }
+    }
+    if (!m) return;
+    // cooled basalt rim against non-lava ground
+    var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+    for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) {
+      var dN = N ? y - WOB[x] * 0.9 : 99;
+      var dS = S ? 15 - y - WOB[(x + 7) & 15] * 0.8 : 99;
+      var dW = W ? x - WOB[(y + 3) & 15] * 0.9 : 99;
+      var dE = E ? 15 - x - WOB[(y + 11) & 15] * 0.9 : 99;
+      if (N && W) dN = dW = Math.min(dN, dW, Math.hypot(x + 0.5, y + 0.5) - 2.2);
+      if (N && E) dN = dE = Math.min(dN, dE, Math.hypot(15.5 - x, y + 0.5) - 2.2);
+      if (S && W) dS = dW = Math.min(dS, dW, Math.hypot(x + 0.5, 15.5 - y) - 2.2);
+      if (S && E) dS = dE = Math.min(dS, dE, Math.hypot(15.5 - x, 15.5 - y) - 2.2);
+      var dC = 99;
+      if ((m & 128) && !N && !W) dC = Math.min(dC, Math.hypot(x + 0.5, y + 0.5) - 1);
+      if ((m & 16) && !N && !E) dC = Math.min(dC, Math.hypot(15.5 - x, y + 0.5) - 1);
+      if ((m & 64) && !S && !W) dC = Math.min(dC, Math.hypot(x + 0.5, 15.5 - y) - 1);
+      if ((m & 32) && !S && !E) dC = Math.min(dC, Math.hypot(15.5 - x, 15.5 - y) - 1);
+      var dd = Math.min(dN, dS, dW, dE, dC), col = null;
+      if (dd < 0.6) col = dd === dS ? BAS[1] : (dd === dN || dd === dW) ? BAS[3] : BAS[2];
+      else if (dd < 1.6) col = dd === dS ? BAS[0] : BAS[2];
+      else if (dd < 2.6) col = dd === dS ? BAS[1] : ((x * 5 + y * 3) % 7 === 0 ? BAS[3] : BAS[1]);
+      else if (dd < 3.4) col = LV.m0;
+      else if (dd < 4.3) col = mix(b.get(x, y).length ? hex.apply(null, b.get(x, y)) : LV.m2, LV.m1, 0.5);
+      if (col) b.px(x, y, col);
+      if (dd >= 0.6 && dd < 2.6 && ((x * 3 + y * 7) % 11) === 0) b.px(x, y, BAS[4]);
+    }
+  }
+  TILES.L = function (nb, t, tx, ty) {
+    var f = Math.floor(t * 1.6) % 4;
+    var m = mask(nb, function (c) { return !lavaish(c); }, 8);
+    var ox, oy;
+    if (tx != null && ty != null) { ox = ((tx % 6) + 6) % 6; oy = ((ty % 6) + 6) % 6; }
+    else { var r = variant(nb, tx, ty, 57); ox = Math.floor(r * 6); oy = Math.floor(r * 36) % 6; }
+    return tileC('L' + ox + oy + '_' + m + '_' + f, function (b) { lavaTile(b, ox * 16, oy * 16, f, m); });
+  };
+
+  // ---- 'Y' hot spring (steam, smooth stone rim)
+  var SPA = ['#1b4a5a', '#217684', '#2d9e9e', '#4cc4b8', '#8fe4d6', '#e0fff6'];
+  function springish(c) { return c === '' || c == null || c === 'Y'; }
+  function steam(b, x, y, f, a) {
+    // a curling wisp that rises and thins over 4 frames
+    var pts = [[0, 0], [1, -1], [1, -2], [0, -3], [0, -4], [1, -5], [1, -6]];
+    var lift = f * 2, n = 7 - f;
+    for (var i = 0; i < n; i++) {
+      var px = x + pts[i][0] + (f & 1), py = y + pts[i][1] - lift;
+      var al = a * (1 - i / 8) * (1 - f * 0.18);
+      b.px(px, py, SPA[5], al);
+      if (i < 3) b.px(px - 1, py, SPA[5], al * 0.45);
+    }
+  }
+  TILES.Y = function (nb, t, tx, ty) {
+    var f = Math.floor(t * 2.2) % 4;
+    var m = mask(nb, function (c) { return !springish(c); }, 8);
+    var v = Math.floor(variant(nb, tx, ty, 61) * 3);
+    return tileC('Y' + m + f + v, function (b) {
+      var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+      b.rect(0, 0, 16, 16, SPA[2]);
+      // soft deep centre
+      b.ell(8, 9, 6, 4, SPA[1], 0.45);
+      for (var i = 0; i < RIPS.length; i++) {
+        var p = RIPS[(i + v) % 4], ph = (f + i) % 4;
+        if (ph === 1) { b.hl(p[0] - 1, p[0] + 1, p[1], SPA[3]); }
+        else if (ph === 2) { b.hl(p[0] - 2, p[0] + 2, p[1], SPA[3]); b.px(p[0], p[1], SPA[4]); }
+        else if (ph === 3) { b.px(p[0] - 2, p[1], SPA[3]); b.px(p[0] + 2, p[1], SPA[3]); }
+      }
+      // rising bubbles
+      var bx = 5 + v * 3, byy = 12 - ((f * 3) % 10);
+      b.px(bx, byy, SPA[5], 0.8); b.px(bx + 4, (byy + 5) % 12 + 2, SPA[4], 0.8);
+      // stone rim
+      var list = [], k, jit = function (s) { return (h2(tx | 0, ty | 0, s) - 0.5) * 0.7; };
+      if (N) list.push([2.5, 1.3, 3.1 + jit(1)], [8, 0.9, 3.4 + jit(2)], [13.5, 1.3, 3.1 + jit(3)]);
+      if (W) list.push([1.3, 2.5, 3.1], [0.9, 8, 3.4 + jit(4)], [1.3, 13.5, 3.1]);
+      if (E) list.push([14.7, 2.5, 3.1], [15.1, 8, 3.4 + jit(5)], [14.7, 13.5, 3.1]);
+      if ((m & 128) && !N && !W) list.push([0.3, 0.3, 3]);
+      if ((m & 16) && !N && !E) list.push([15.7, 0.3, 3]);
+      if (S) list.push([2.5, 14.7, 3.1 + jit(6)], [8, 15.1, 3.4 + jit(7)], [13.5, 14.7, 3.1 + jit(8)]);
+      if ((m & 64) && !S && !W) list.push([0.3, 15.7, 3]);
+      if ((m & 32) && !S && !E) list.push([15.7, 15.7, 3]);
+      var inS = function (x, y) {
+        for (k = 0; k < list.length; k++) { var o = list[k], dx = x + 0.5 - o[0], dy = y + 0.5 - o[1]; if (dx * dx + dy * dy <= o[2] * o[2]) return true; }
+        return false;
+      };
+      if (list.length) {
+        // water edge: shadow under the stones, pale foam beside them
+        for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
+          if (inS(x, y)) continue;
+          if (inS(x, y - 1) || inS(x, y - 2)) b.px(x, y, SPA[1]);
+          else if (inS(x - 1, y) || inS(x + 1, y) || inS(x, y + 1)) b.px(x, y, ((x + y + f) & 3) ? SPA[4] : SPA[5]);
+        }
+        blobs(b, 0, 0, 15, 15, list, STONE, {});
+        // wet sheen on the waterline side of the stones
+        for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) if (inS(x, y) && !inS(x, y + 1) && y < 15 && N && y < 6) b.px(x, y, C.st0);
+      }
+      // steam wisps (inside the tile)
+      steam(b, 4 + v, 11, f, 0.55);
+      steam(b, 11 - v, 14, (f + 2) % 4, 0.5);
+    });
+  };
+  OVER.Y = function (nb, t) {
+    if (nb(0, -1) === 'Y') return null;
+    var f = Math.floor(t * 2.2) % 4;
+    return cached('Yo' + f, 16, 14, 0, 12, function (b) {
+      steam(b, 6, 1, f, 0.4);
+      steam(b, 12, 0, (f + 1) % 4, 0.3);
+    });
+  };
+
+  // ---- 'D' dark (night) forest floor
+  var NIGHT = ['#0a1720', '#10262b', '#163532', '#1d443c', '#28574a', '#3b7058'];
+  var NIGHTG = [NIGHT[1], NIGHT[2], NIGHT[3]];
+  var LEAF = [['#4a2426', '#7a3a2c', '#a05834'], ['#3e3020', '#6e5a2c', '#98803a'], ['#3a2032', '#5e3042', '#84485a']];
+  var MUSH = ['#2a8a8c', '#56e0d2', '#c4fff4'];
+  function nightBase(b, v, glow) {
+    b.rect(0, 0, 16, 16, NIGHT[2]);
+    v = v & 7;
+    // moss cushions (soft domes: light top, dark underside)
+    for (var i = 0; i < 3; i++) {
+      var x = 1 + Math.floor(h2(v, i, 401) * 12), y = 2 + Math.floor(h2(v, i, 402) * 11);
+      b.hl(x, x + 2, y, NIGHT[3]); b.px(x + 1, y - 1, NIGHT[4]); b.px(x, y - 1, NIGHT[3]);
+      b.hl(x, x + 2, y + 1, NIGHT[1]); if (i === 0) b.px(x + 1, y - 1, NIGHT[5]);
+    }
+    if (v === 1 || v === 5) { b.ell(8, 8, 4, 2.2, NIGHT[1], 0.5); }
+    if (v === 3) { b.px(3, 12, NIGHT[1]); b.px(4, 12, NIGHT[1]); b.px(4, 11, NIGHT[3]); }
+    // fallen leaves
+    var nl = 1 + (v % 3);
+    for (i = 0; i < nl; i++) {
+      var lx = 2 + Math.floor(h2(v, i, 411) * 11), ly = 2 + Math.floor(h2(v, i, 412) * 11), L = LEAF[Math.floor(h2(v, i, 413) * 3)];
+      if (h2(v, i, 414) < 0.5) { b.px(lx, ly, L[2]); b.px(lx + 1, ly, L[1]); b.px(lx + 1, ly + 1, L[1]); b.px(lx + 2, ly + 1, L[0]); b.px(lx, ly + 1, NIGHT[1]); }
+      else { b.px(lx + 1, ly, L[2]); b.px(lx, ly + 1, L[1]); b.px(lx + 1, ly + 1, L[1]); b.px(lx, ly + 2, L[0]); b.px(lx + 2, ly + 1, NIGHT[1]); }
+    }
+    // twig
+    if (v === 4) { b.px(9, 5, '#4a3428'); b.px(10, 5, '#4a3428'); b.px(11, 6, '#4a3428'); b.px(12, 6, '#3a2820'); b.px(10, 4, '#6a4a34'); }
+    // glowing mushrooms on some tiles
+    if (v === 2 || v === 6) {
+      var mx = v === 2 ? 10 : 4, my = v === 2 ? 10 : 6;
+      b.ell(mx + 0.5, my + 0.5, 3.6, 2.6, MUSH[1], glow ? 0.2 : 0.12);
+      b.ell(mx + 0.5, my + 0.5, 2, 1.5, MUSH[1], glow ? 0.18 : 0.1);
+      b.px(mx, my + 1, '#a8d4c8'); b.px(mx, my + 2, NIGHT[0]);
+      b.hl(mx - 1, mx + 1, my, MUSH[1]); b.px(mx, my - 1, MUSH[2]); b.px(mx - 1, my, glow ? MUSH[2] : MUSH[1]); b.px(mx + 1, my, MUSH[0]);
+      b.px(mx + 2, my + 2, MUSH[1]); b.px(mx + 2, my + 3, '#a8d4c8'); b.px(mx + 2, my + 1, glow ? MUSH[2] : MUSH[1]);
+    }
+  }
+  TILES.D = function (nb, t, tx, ty) {
+    var v = Math.floor(variant(nb, tx, ty, 43) * 8), g = (v === 2 || v === 6) ? (Math.floor(t * 1.3 + v * 0.37) % 2) : 0;
+    return tileC('D' + v + g, function (b) { nightBase(b, v, g); });
+  };
+
+  // ---- 'M' mossy stone with a glowing moon rune
+  var MOSS = ['#17332a', '#244f34', '#36703e', '#52924a', '#80b85e'];
+  var RUNE = ['#3a78c8', '#86cdf6', '#e6fbff'];
+  TILES.M = function (nb, t, tx, ty) {
+    var gt = groundType(nb, 'g'), v = grassVar(variant(nb, tx, ty, 11)), f = Math.floor(t * 1.8) % 4;
+    return cached('M' + gt + v + f, 16, 19, 0, 3, function (b) {
+      ground(b, gt, v);
+      shadowEll(b, 8.5, 14.2, 8, 2.2, 0.4);
+      var list = [[8, 4.5, 6.2], [4, 9.5, 4.2], [12, 9.5, 4.2], [8, 10.5, 5.2]];
+      blobs(b, 0, -3, 15, 15, list, STONE, {});
+      // moss cap: recolour the stone's top band into moss, keeping its shading
+      var idx = {};
+      for (var i = 0; i < 5; i++) idx[STONE[i]] = i;
+      var drip = [0, 0, 1, 3, 2, 0, 0, 0, 0, 1, 0, 2, 4, 1, 0, 0];
+      for (var y = -3; y < 16; y++) for (var x = 0; x < 16; x++) {
+        var px = b.get(x, y); if (px[3] < 250) continue;
+        var hx = hex(px[0], px[1], px[2]), k = idx[hx];
+        if (k == null) continue;
+        var edge = 2 + ((x * 5) % 3 === 0 ? 1 : 0) + drip[x];
+        if (y <= edge - (x < 3 || x > 12 ? 2 : 0)) b.px(x, y, MOSS[k]);
+        else if (y === edge + 1 - (x < 3 || x > 12 ? 2 : 0) && k > 1) b.px(x, y, STONE[1]);
+      }
+      b.px(6, -2, MOSS[4]); b.px(9, -1, MOSS[4]); b.px(4, 1, MOSS[3]); b.px(11, 1, MOSS[4]);
+      // carved crescent rune (groove shadow + glow)
+      var cres = [[8, 5], [7, 6], [6, 7], [6, 8], [6, 9], [7, 10], [8, 11]];
+      var inner = [[9, 6], [8, 7], [8, 9], [9, 10]];
+      var ga = [0.14, 0.26, 0.38, 0.26][f];
+      b.ell(7.8, 8.5, 4.5, 4.8, RUNE[1], ga * 0.6);
+      for (i = 0; i < cres.length; i++) b.px(cres[i][0] + 1, cres[i][1] + 1, C.st0);
+      for (i = 0; i < cres.length; i++) b.px(cres[i][0], cres[i][1], (i + f) % 4 === 0 ? RUNE[2] : RUNE[1]);
+      for (i = 0; i < inner.length; i++) b.px(inner[i][0], inner[i][1], RUNE[0]);
+      // three rune ticks beside the moon
+      b.px(10, 8, RUNE[1]); b.px(11, 8, C.st0); b.px(10, 6, RUNE[0]); b.px(10, 10, RUNE[0]);
+      b.px(7, 8, RUNE[2]);
+    });
+  };
+
   // ================================================================== characters
   var SK = [C.sk0, C.sk1, C.sk2];
   var CHARS = {
@@ -1435,6 +1778,36 @@
     villager: {
       hair: ['#2a2220', '#3e3230', '#5a4a44'], hat: 'towel', hatC: ['#c8d4e4', '#f2f6fa', '#ffffff'], stripe: '#3c64b4',
       top: ['#8a7048', '#b8985e', '#d6b87a'], bot: ['#2c3a5a', '#3e4e76'], botStyle: 'pants', shoe: ['#1e3a28', '#2e5a3a'], skinTan: true
+    },
+    // ミナモ: valley shrine keeper, ama diver
+    ama: {
+      hair: ['#16121e', '#272030', '#433a52'], hat: 'hachimaki', hatC: ['#c6c2d8', '#f4f1ea', '#ffffff'],
+      top: ['#bcb8cc', '#eeebf2', '#ffffff'], bot: ['#bcb8cc', '#eeebf2'], botStyle: 'shorts', shoe: ['#8a6a38', '#c4a060'],
+      skinTan: true, sash: ['#1c3a7a', '#2f62b6', '#5a8ee0'], bucket: true
+    },
+    // ゴウエン: mountain monk (yamabushi)
+    yamabushi: {
+      hair: ['#16111a', '#2a2026', '#463840'], hat: 'tokin', top: ['#bcb8cc', '#f0eef2', '#ffffff'], topStyle: 'robe',
+      bot: ['#8e8878', '#bcb6a4', '#d8d2c0'], botStyle: 'hakama', shoe: ['#8a7040', '#c4a462'], inner: '#d8d2c0',
+      big: true, brow: true, skinTan: true, bigbeard: ['#16111a', '#2a2026', '#4e4048'], yuigesa: true, shakujo: true
+    },
+    // ヨイ: moon shrine maiden
+    miko: {
+      hair: ['#110e1a', '#201a2c', '#3c3452'], hat: 'mikohair', top: ['#c4c0d8', '#f6f3ec', '#ffffff'], topStyle: 'haori',
+      bot: ['#8c2626', '#d0412e', '#ee6a44'], botStyle: 'hakama', shoe: [C.wh1, C.wh], inner: C.ver1, kagura: true
+    },
+    hiker: {
+      hair: ['#3a2a1e', '#5a4030', '#7a5a40'], hat: 'bucket', hatC: ['#6a6636', '#948e52', '#bcb67a'],
+      top: ['#8c2626', '#c43c30', '#e8664a'], bot: ['#4a4030', '#6e6048'], botStyle: 'pants', shoe: ['#3a2418', '#6a4028'],
+      skinTan: true, hikepack: true, stick: true
+    },
+    girl: {
+      hair: ['#5a2c1a', '#8a4a2a', '#b46e3e'], hat: 'twintails', ribbon: ['#a82a3e', '#e8455a'],
+      top: [C.ye0, C.ye1, C.ye2], bot: [C.ye0, C.ye1], botStyle: 'skirt', shoe: ['#8a2e3a', '#d0485a'], net: true, collar: true
+    },
+    monk: {
+      hair: ['#c89c80', '#e8bea0', '#f8dcc0'], hat: 'bald', top: ['#16121e', '#27213a', '#403858'], topStyle: 'robe',
+      bot: ['#16121e', '#27213a', '#403858'], botStyle: 'hakama', shoe: [C.wh1, C.wh], inner: C.wh1, beads: true
     }
   };
   var TAN = ['#b87650', '#dca47a', '#f0c49a'];
@@ -1453,6 +1826,7 @@
     var S = { b: b, d: d, frame: frame, bob: bob, U: U, Up: Up, H: H, Hp: Hp, cfg: cfg, sk: sk, big: big };
 
     if (cfg.bigpack) packBehind(S);
+    if (cfg.hikepack) hikeBehind(S);
     legs(S);
     body(S);
     if (d === 'right' && cfg.pack) { U(2, 11, 3, 4, cfg.pack[1]); Up(2, 11, cfg.pack[2]); U(2, 14, 3, 1, cfg.pack[0]); Up(4, 12, cfg.pack[0]); }
@@ -1739,8 +2113,116 @@
         else if (d === 'up') { H(4, 2, 8, 1, c[1]); H(3, 3, 10, 3, c[1]); H(5, 2, 3, 1, c[2]); }
         else { H(5, 2, 6, 1, c[1]); H(3, 3, 9, 2, c[1]); H(10, 5, 3, 1, c[0]); H(5, 2, 2, 1, c[2]); }
         break;
+      case 'hachimaki':
+        baseHair(S);
+        if (d === 'down') {
+          H(3, 4, 10, 2, c[1]); H(3, 4, 9, 1, c[2]); H(12, 4, 1, 2, c[0]); Hp(3, 5, c[1]);
+          Hp(13, 5, c[1]); Hp(13, 6, c[0]);
+        } else if (d === 'up') {
+          H(6, 9, 4, 2, h[1]); Hp(7, 10, h[2]); H(9, 9, 1, 2, h[0]);
+          H(3, 4, 10, 2, c[1]); H(3, 4, 10, 1, c[2]); H(7, 5, 2, 2, c[1]); Hp(8, 6, c[0]);
+          Hp(6, 7, c[1]); Hp(6 - (S.frame === 1 ? 1 : 0), 8, c[0]); Hp(9, 7, c[1]); Hp(9 + (S.frame === 2 ? 1 : 0), 8, c[0]);
+        } else {
+          H(1, 6, 3, 3, h[1]); Hp(1, 8, h[0]); Hp(2, 6, h[2]);
+          H(3, 4, 9, 2, c[1]); H(3, 4, 8, 1, c[2]); Hp(11, 5, c[0]);
+          H(2, 4, 2, 2, c[1]); Hp(1, 4, c[0]);
+          Hp(0, 5 + (S.frame ? 1 : 0), c[1]); Hp(1, 6, c[0]);
+        }
+        break;
+      case 'tokin':
+        baseHair(S, true);
+        if (d === 'down') {
+          Hp(2, 5, h[1]); Hp(13, 5, h[0]); Hp(3, 2, h[1]); Hp(12, 2, h[0]);
+          H(6, 1, 4, 3, C.dk1); H(7, 0, 2, 1, C.dk1); H(6, 1, 1, 2, C.dk2); Hp(7, 0, C.dk2); Hp(8, 1, C.dk0); H(6, 3, 4, 1, C.dk0);
+          H(4, 4, 2, 1, C.dk0); H(10, 4, 2, 1, C.dk0);
+        } else if (d === 'up') {
+          Hp(2, 5, h[1]); Hp(13, 5, h[0]); H(4, 10, 8, 1, h[0]);
+          H(6, 1, 4, 3, C.dk1); H(7, 0, 2, 1, C.dk1); H(6, 1, 1, 2, C.dk2); H(6, 3, 4, 1, C.dk0);
+          H(7, 4, 2, 1, C.dk0); Hp(7, 5, C.dk0); Hp(8, 6, C.dk0);
+        } else {
+          Hp(2, 4, h[1]); Hp(2, 7, h[1]); Hp(3, 2, h[1]);
+          H(8, 1, 4, 3, C.dk1); H(9, 0, 2, 1, C.dk1); H(8, 1, 1, 2, C.dk2); Hp(9, 0, C.dk2); H(8, 3, 4, 1, C.dk0); Hp(10, 1, C.dk0);
+          H(5, 4, 3, 1, C.dk0);
+        }
+        break;
+      case 'mikohair':
+        baseHair(S, true);
+        var moon = ['#c8962e', '#f4d26a', '#fff6c8'];
+        if (d === 'down') {
+          H(3, 6, 1, 7, h[1]); H(12, 6, 1, 7, h[0]); Hp(3, 12, h[0]); Hp(12, 12, h[0]);
+          Hp(11, 1, moon[2]); Hp(12, 2, moon[1]); Hp(12, 3, moon[1]); Hp(11, 4, moon[0]); Hp(10, 1, moon[1]);
+        } else if (d === 'up') {
+          H(5, 10, 6, 2, h[1]); H(6, 12, 4, 5, h[1]); H(9, 12, 1, 5, h[0]); Hp(6, 12, h[2]); H(7, 17, 2, 1, h[0]);
+          H(6, 11, 4, 1, C.wh); H(6, 12, 4, 1, C.ver1); Hp(9, 11, C.wh1);
+          Hp(3, 1, moon[2]); Hp(2, 2, moon[1]); Hp(2, 3, moon[1]); Hp(3, 4, moon[0]); Hp(4, 1, moon[1]);
+        } else {
+          H(3, 9, 3, 2, h[1]); H(3, 11, 3, 5, h[1]); H(3, 11, 1, 5, h[2]); Hp(5, 15, h[0]); H(4, 16, 2, 1, h[0]);
+          H(3, 11, 3, 1, C.wh); H(3, 12, 3, 1, C.ver1);
+          Hp(6, 1, moon[2]); Hp(5, 2, moon[1]); Hp(5, 3, moon[1]); Hp(6, 4, moon[0]); Hp(7, 1, moon[1]);
+        }
+        break;
+      case 'bucket':
+        if (d === 'down') {
+          H(3, 6, 1, 3, h[1]); H(12, 6, 1, 3, h[0]);
+          H(5, 1, 6, 1, c[1]); H(4, 2, 8, 2, c[1]); H(5, 1, 3, 1, c[2]); H(11, 2, 1, 2, c[0]);
+          H(4, 3, 8, 1, '#4a3e28'); H(2, 4, 12, 1, c[1]); H(2, 5, 12, 1, c[0]); H(3, 4, 3, 1, c[2]);
+          Hp(9, 3, C.ver1);
+        } else if (d === 'up') {
+          H(3, 6, 10, 3, h[1]); H(4, 9, 8, 1, h[0]);
+          H(5, 1, 6, 1, c[1]); H(4, 2, 8, 2, c[1]); H(5, 1, 3, 1, c[2]); H(4, 3, 8, 1, '#4a3e28');
+          H(2, 4, 12, 1, c[1]); H(2, 5, 12, 1, c[0]); H(3, 4, 3, 1, c[2]);
+        } else {
+          H(3, 5, 4, 4, h[1]); H(4, 9, 3, 1, h[1]); Hp(3, 8, h[0]);
+          H(5, 1, 5, 1, c[1]); H(4, 2, 7, 2, c[1]); H(5, 1, 2, 1, c[2]); H(4, 3, 7, 1, '#4a3e28'); Hp(5, 3, C.ver1);
+          H(2, 4, 12, 1, c[1]); H(2, 5, 12, 1, c[0]); H(3, 4, 3, 1, c[2]);
+        }
+        break;
+      case 'twintails':
+        baseHair(S);
+        var rb = cfg.ribbon, sw = S.frame === 1 ? -1 : S.frame === 2 ? 1 : 0;
+        if (d === 'down' || d === 'up') {
+          H(1, 5, 2, 5, h[1]); Hp(1, 5, h[2]); H(1, 10, 2, 1, h[0]); Hp(1 + (sw < 0 ? 0 : 1), 11, h[0]);
+          H(13, 5, 2, 5, h[1]); H(14, 5, 1, 5, h[0]); H(13, 10, 2, 1, h[0]); Hp(13 + (sw > 0 ? 1 : 0), 11, h[0]);
+          Hp(1, 4, rb[1]); Hp(3, 4, rb[1]); Hp(2, 4, rb[0]); Hp(2, 5, rb[0]);
+          Hp(12, 4, rb[1]); Hp(14, 4, rb[1]); Hp(13, 4, rb[0]); Hp(13, 5, rb[0]);
+          if (d === 'down') { Hp(7, 6, h[1]); Hp(8, 6, h[2]); }
+        } else {
+          H(0, 5, 3, 5, h[1]); Hp(0, 5, h[2]); H(1, 10, 2, 1, h[0]); Hp(S.frame ? 1 : 0, 11, h[0]);
+          Hp(2, 3, rb[1]); Hp(4, 3, rb[1]); Hp(3, 3, rb[0]); Hp(3, 4, rb[0]);
+        }
+        break;
+      case 'bald':
+        var s0 = h[0], s1 = mix(h[1], '#9aa0c8', 0.16), s2 = h[2];
+        if (d === 'down') {
+          H(5, 2, 6, 1, s1); H(4, 3, 8, 1, s1); H(3, 4, 10, 2, s1); H(5, 3, 3, 1, s2); Hp(4, 4, s2); Hp(5, 2, s2);
+          H(12, 4, 1, 2, s0); Hp(11, 3, s0);
+          Hp(3, 7, S.sk[0]); Hp(12, 7, S.sk[0]);
+        } else if (d === 'up') {
+          H(5, 2, 6, 1, s1); H(4, 3, 8, 1, s1); H(3, 4, 10, 5, s1); H(4, 9, 8, 1, s0); H(5, 3, 3, 1, s2); Hp(4, 4, s2);
+          H(12, 4, 1, 5, s0); Hp(2, 6, S.sk[1]); Hp(13, 6, S.sk[0]);
+        } else {
+          H(6, 2, 5, 1, s1); H(4, 3, 8, 1, s1); H(3, 4, 4, 5, s1); H(4, 9, 3, 1, s0); H(3, 8, 1, 1, s0);
+          H(6, 2, 3, 1, s2); Hp(5, 3, s2); Hp(4, 4, s2);
+          Hp(6, 7, S.sk[0]); Hp(6, 6, S.sk[1]);
+        }
+        break;
       default:
         baseHair(S);
+    }
+  }
+
+  function hikeBehind(S) {
+    var U = S.U, Up = S.Up, d = S.d;
+    var P = ['#2c4222', '#46663a', '#628a48', '#8cb25e'], R = ['#22407a', '#3c64b4', '#6a90d8'];
+    if (d === 'down') {
+      U(3, 1, 10, 11, P[1]); U(3, 1, 10, 1, P[2]); U(12, 1, 1, 11, P[0]);
+      U(2, -1, 12, 2, R[1]); U(2, -1, 12, 1, R[2]); Up(2, -1, R[1]); Up(2, 0, R[0]); Up(13, -1, R[0]); Up(13, 0, R[0]);
+      U(5, -1, 1, 2, '#6a4a2a'); U(10, -1, 1, 2, '#6a4a2a');
+    } else if (d === 'right') {
+      U(0, 3, 5, 12, P[1]); U(0, 3, 5, 1, P[2]); U(0, 4, 1, 11, P[2]); U(0, 14, 5, 1, P[0]);
+      U(0, 9, 4, 4, P[0]); U(1, 10, 2, 2, P[1]); Up(1, 10, P[3]);
+      U(0, 1, 5, 2, R[1]); U(0, 1, 5, 1, R[2]); Up(4, 1, R[0]); Up(4, 2, R[0]);
+      Up(2, 1, '#6a4a2a'); Up(2, 2, '#6a4a2a');
     }
   }
 
@@ -1793,6 +2275,110 @@
       if (d === 'down') { for (i = 0; i < 11; i++) b.px(12 + (i > 6 ? 2 : i > 3 ? 1 : 0), 13 - i + S.bob, i < 3 ? C.wd1 : '#8a6a42'); }
       else if (d === 'up') { for (i = 0; i < 11; i++) b.px(3 - (i > 6 ? 2 : i > 3 ? 1 : 0), 13 - i + S.bob, i < 3 ? C.wd1 : '#8a6a42'); }
       else { for (i = 0; i < 9; i++) b.px(6 - Math.floor(i * 0.6), 12 - i + S.bob, i < 2 ? C.wd1 : '#8a6a42'); }
+    }
+    if (cfg.sash) {
+      var sa = cfg.sash;
+      if (d === 'down') { U(4, 14, 8, 1, sa[1]); Up(4, 14, sa[2]); Up(11, 14, sa[0]); U(9, 15, 1, 2, sa[1]); Up(10, 15, sa[0]); Up(9, 16 + (f === 1 ? 1 : 0), sa[0]); }
+      else if (d === 'up') { U(4, 14, 8, 1, sa[1]); Up(4, 14, sa[2]); U(7, 14, 2, 1, sa[0]); U(6, 15, 1, 2, sa[1]); Up(9, 15, sa[1]); Up(9, 16, sa[0]); }
+      else { U(5, 14, 6, 1, sa[1]); Up(10, 14, sa[0]); U(4, 14, 1, 2, sa[1]); Up(3, 15 + (f ? 1 : 0), sa[0]); }
+    }
+    if (cfg.bucket) {
+      var bxk = d === 'down' ? 12 : d === 'up' ? 0 : 7;
+      if (d !== 'right') {
+        U(bxk, 14, 4, 4, C.wd2); U(bxk, 14, 4, 1, C.wd4); U(bxk + 1, 15, 2, 1, C.wd0);
+        U(bxk, 16, 4, 1, '#5a4a36'); U(bxk, 15, 1, 3, C.wd3); U(bxk + 3, 15, 1, 3, C.wd1); Up(bxk + 1, 17, C.wd1);
+      } else {
+        U(bxk, 15, 3, 3, C.wd2); U(bxk, 15, 3, 1, C.wd4); Up(bxk + 1, 16, C.wd0); U(bxk, 16, 3, 1, '#5a4a36'); Up(bxk + 2, 17, C.wd1); Up(bxk, 17, C.wd3);
+        Up(bxk, 14, cfg.sash[0]);
+      }
+    }
+    if (cfg.bigbeard) {
+      var bb = cfg.bigbeard;
+      if (d === 'down') {
+        H(3, 7, 1, 3, bb[1]); H(12, 7, 1, 3, bb[0]); H(4, 9, 8, 2, bb[1]); H(5, 11, 6, 1, bb[1]); H(6, 12, 4, 1, bb[0]);
+        H(6, 9, 4, 1, bb[0]); H(7, 10, 2, 1, '#6a3a34'); Hp(5, 10, bb[2]); Hp(9, 11, bb[2]); Hp(11, 10, bb[0]);
+      } else if (d === 'right') {
+        H(6, 7, 1, 3, bb[1]); H(7, 9, 5, 2, bb[1]); H(8, 11, 4, 1, bb[1]); H(9, 12, 2, 1, bb[0]);
+        H(9, 9, 3, 1, bb[0]); Hp(11, 10, '#6a3a34'); Hp(8, 10, bb[2]); Hp(10, 11, bb[2]);
+      } else { H(3, 8, 1, 2, bb[1]); H(12, 8, 1, 2, bb[0]); }
+    }
+    if (cfg.yuigesa) {
+      var chk = function (x, y) { return ((x + y) & 1) ? C.wh : '#3a3246'; };
+      var pom = function (x, y) { U(x, y, 2, 2, C.ver1); Up(x, y, C.ver2); Up(x + 1, y + 1, C.ver0); };
+      if (d === 'down') {
+        for (var yy = 11; yy <= 14; yy++) { Up(5, yy, chk(5, yy)); Up(10, yy, chk(10, yy)); }
+        pom(4, 11); pom(10, 11); pom(4, 13); pom(10, 13);
+      } else if (d === 'up') {
+        for (var xx = 3; xx <= 12; xx++) Up(xx, 11, chk(xx, 11));
+        for (yy = 12; yy <= 14; yy++) { Up(7, yy, chk(7, yy)); Up(8, yy, chk(8, yy)); }
+      } else {
+        for (yy = 11; yy <= 14; yy++) Up(9, yy, chk(9, yy));
+        pom(9, 11); pom(9, 13);
+      }
+    }
+    if (cfg.shakujo) {
+      var sx0 = d === 'down' ? 14 : d === 'up' ? 1 : 13;
+      for (var sy = 3; sy <= 19; sy++) Up(sx0, sy, sy < 6 ? C.ye0 : (sy & 3) ? C.wd1 : C.wd2);
+      Up(sx0, -1, C.ye2); Up(sx0 - 1, 0, C.ye1); Up(sx0 + 1, 0, C.ye0); Up(sx0 - 1, 1, C.ye1); Up(sx0 + 1, 1, C.ye0); Up(sx0, 2, C.ye1);
+      Up(sx0, 0, C.ye2); Up(sx0 - 2, 2, C.ye1); Up(sx0 + (sx0 < 15 ? 2 : -2), 2 + (f & 1), C.ye0);
+      if (d === 'right') Up(12, 13, S.sk[1]);
+    }
+    if (cfg.kagura) {
+      var kx = d === 'down' ? 13 : d === 'up' ? 2 : 12, jg = f === 1 ? 1 : 0;
+      Up(kx, 10, C.wd2); Up(kx, 11, C.wd1); Up(kx, 12, C.wd1); Up(kx, 13, C.wd0);
+      Up(kx, 7 + jg, C.ye2); Up(kx - 1, 8, C.ye1); Up(kx + 1, 8, C.ye1); Up(kx, 8 + jg, C.ye1); Up(kx - 1, 9, C.ye0); Up(kx + 1, 9, C.ye0); Up(kx, 9, C.ye1);
+      if (f === 2) Up(kx + 1, 7, '#ffffff');
+      var rib = ['#d0412e', '#3c64b4', '#efbd40', '#4f9a48'], rs = f === 1 ? 1 : f === 2 ? -1 : 0;
+      for (var ri = 0; ri < 4; ri++) Up(kx - 1 + (ri & 1) + (ri > 1 ? rs : 0) + (ri === 3 ? 1 : 0), 14 + (ri >> 1), rib[ri]);
+      if (d === 'right') Up(kx - 1, 12, S.sk[1]);
+    }
+    if (cfg.hikepack) {
+      var PK = ['#2c4222', '#46663a', '#628a48', '#8cb25e'], RL = ['#22407a', '#3c64b4', '#6a90d8'];
+      if (d === 'down') { U(4, 11, 1, 3, PK[0]); U(11, 11, 1, 3, PK[0]); Up(4, 11, PK[2]); }
+      else if (d === 'up') {
+        U(3, 7, 10, 10, PK[1]); U(3, 7, 10, 1, PK[2]); U(3, 8, 1, 9, PK[2]); U(12, 8, 1, 9, PK[0]); U(3, 16, 10, 1, PK[0]);
+        U(4, 8, 8, 3, PK[2]); U(4, 10, 8, 1, PK[0]); Up(7, 10, C.ye1); Up(8, 10, C.ye1);
+        U(5, 12, 6, 3, PK[0]); U(6, 12, 4, 1, PK[1]);
+        U(2, 5, 12, 2, RL[1]); U(2, 5, 12, 1, RL[2]); Up(2, 6, RL[0]); Up(13, 5, RL[0]); Up(13, 6, RL[0]);
+        U(5, 5, 1, 2, '#6a4a2a'); U(10, 5, 1, 2, '#6a4a2a');
+      } else { U(6, 11, 1, 3, PK[0]); }
+    }
+    if (cfg.stick) {
+      var stc = ['#5a3c22', '#8a6038', '#b08450'];
+      var stx = d === 'down' ? 2 : d === 'up' ? 13 : 12;
+      for (var ty2 = 11; ty2 <= 19; ty2++) Up(stx, ty2, ty2 === 11 ? stc[2] : (ty2 & 1) ? stc[1] : stc[0]);
+      Up(stx, 10, stc[1]);
+      if (d === 'right') Up(11, 13, S.sk[1]);
+    }
+    if (cfg.collar && d === 'down') { Up(6, 11, C.wh); Up(7, 11, C.wh1); Up(8, 11, C.wh1); Up(9, 11, C.wh); Up(7, 12, cfg.ribbon[1]); Up(8, 12, cfg.ribbon[0]); }
+    if (cfg.collar && d === 'right') { Up(9, 11, C.wh); Up(10, 11, C.wh1); }
+    if (cfg.net) {
+      var hd = ['#8a6038', '#b08450'], hp = ['#9a98b0', '#e8e6f0'];
+      if (d === 'down' || d === 'up') {
+        var nx = d === 'down' ? 13 : 2;
+        for (var ny = 3; ny <= 15; ny++) Up(nx, ny, (ny & 1) ? hd[1] : hd[0]);
+        U(nx - 1, -1, 3, 1, hp[1]); Up(nx - 2, 0, hp[1]); Up(nx - 2, 1, hp[0]); Up(nx + 2, 0, hp[0]); Up(nx + 2, 1, hp[0]); U(nx - 1, 2, 3, 1, hp[0]);
+        for (var mx2 = -1; mx2 <= 1; mx2++) for (var my2 = 0; my2 <= 1; my2++) b.px(nx + mx2, my2 + S.bob, ((mx2 + my2) & 1) ? C.wh : C.wh1, 0.6);
+      } else {
+        var line = [[6, 12], [6, 11], [5, 10], [5, 9], [4, 8], [4, 7], [3, 6], [3, 5]];
+        for (var li = 0; li < line.length; li++) Up(line[li][0], line[li][1], (li & 1) ? hd[1] : hd[0]);
+        U(1, -1, 3, 1, hp[1]); Up(0, 0, hp[1]); Up(0, 1, hp[0]); Up(4, 0, hp[0]); Up(4, 1, hp[0]); U(1, 2, 3, 1, hp[0]); Up(3, 3, hd[0]); Up(3, 4, hd[1]);
+        for (mx2 = 1; mx2 <= 3; mx2++) for (my2 = 0; my2 <= 1; my2++) b.px(mx2, my2 + S.bob, ((mx2 + my2) & 1) ? C.wh : C.wh1, 0.6);
+      }
+    }
+    if (cfg.beads) {
+      var bd = ['#4a2a1e', '#8a5230', '#c08650'], ts = ['#5a3a86', '#8a6ac0'];
+      if (d === 'down') {
+        var bp = [[5, 11], [5, 12], [6, 13], [7, 14], [8, 14], [9, 13], [10, 12], [10, 11]];
+        for (var bi = 0; bi < bp.length; bi++) Up(bp[bi][0], bp[bi][1], (bi & 1) ? bd[1] : bd[2]);
+        Up(7, 15, bd[0]); Up(8, 15, bd[1]); U(7, 16, 2, 1, ts[1]); Up(8, 17, ts[0]); Up(7, 17, ts[0]);
+      } else if (d === 'up') {
+        for (var bx2 = 5; bx2 <= 10; bx2++) Up(bx2, 11, (bx2 & 1) ? bd[1] : bd[2]);
+      } else {
+        var bq = [[9, 11], [9, 12], [10, 13], [10, 14]];
+        for (bi = 0; bi < bq.length; bi++) Up(bq[bi][0], bq[bi][1], (bi & 1) ? bd[1] : bd[2]);
+        Up(10, 15, ts[1]); Up(10, 16, ts[0]);
+      }
     }
     if (cfg.cane) {
       var cc = ['#6a4a2a', '#8a6a3a'];

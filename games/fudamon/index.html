@@ -370,6 +370,27 @@ button{font:inherit;color:inherit}
 .bk-txt{font-family:var(--f-dot);color:var(--gold);font-size:6.5cqw;letter-spacing:.25em}
 
 
+.evoreq{display:flex;flex-wrap:wrap;gap:.6cqw 1.6cqw;align-items:center;font-size:min(2.2cqw,13px);background:#e6b34f14;border:1px solid #e6b34f55;border-radius:1.2cqw;padding:1cqw 1.6cqw}
+.evoreq b{color:var(--gold);width:100%}
+.evoreq span{color:var(--muted);font-weight:700}
+.evoreq span::before{content:"□ "}
+.evoreq span.ok{color:var(--good)}
+.evoreq span.ok::before{content:"■ "}
+.pbtn.evo{animation:evopulse 1.2s ease-in-out infinite}
+@keyframes evopulse{50%{box-shadow:0 .6cqw 0 var(--ink),0 0 2cqw #ffe9a0}}
+.evobox{display:flex;flex-direction:column;align-items:center;gap:3cqh;width:100%}
+.evo-stage{position:relative;width:34cqw;aspect-ratio:1}
+.evo-stage>div{position:absolute;inset:0;transition:opacity .06s}
+.evo-stage .evo-b{opacity:0}
+.evo-stage .glow .pxm,.evo-stage .glow svg{filter:brightness(0) invert(1) drop-shadow(0 0 2cqw #fff6c8)}
+.evo-msg{margin:0;font-family:var(--f-dot);font-size:min(3.4cqw,22px);color:#fff;text-align:center}
+.evo-msg b{color:var(--gold)}
+.evoflash{position:absolute;inset:0;background:#fff;pointer-events:none}
+.chapter{display:flex;flex-direction:column;align-items:center;gap:1.6cqh;text-align:center;color:var(--paper)}
+.chapter small{font-family:var(--f-dot);font-size:min(3cqw,20px);color:var(--gold);letter-spacing:.3em}
+.chapter b{font-family:var(--f-disp);font-weight:400;font-size:min(5cqw,40px)}
+.ico.badge.b1{box-shadow:inset 0 0 0 .6cqw #3a88de}.ico.badge.b2{box-shadow:inset 0 0 0 .6cqw #ea6436}.ico.badge.b3{box-shadow:inset 0 0 0 .6cqw #6e4fcf}
+
 </style>
 
 <div id="game">
@@ -406,8 +427,12 @@ button{font:inherit;color:inherit}
 <script src="js/pixmon_2.js"></script>
 <script src="js/pixmon_3.js"></script>
 <script src="js/pixmon_4.js"></script>
+<script src="js/pixmon_5.js"></script>
+<script src="js/pixmon_6.js"></script>
+<script src="js/pixmon_7.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/battle.js"></script>
 <script src="js/story.js"></script>
+<script src="js/chapter2.js"></script>

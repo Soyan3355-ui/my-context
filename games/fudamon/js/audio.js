@@ -109,6 +109,18 @@
       var pat = [0, ci.ch.fifth, 12, ci.ch.fifth];
       return [pat[(s >> 1) % 4], 1.5, 1];
     },
+    riff: function (s, ci) {              // volcano: stomping riff built from chord tones
+      var R = { 0: [0, 2, 1], 2: [0, 1, 0.7], 3: [12, 1, 0.8], 4: [ci.ch.fifth, 2, 0.9], 6: [0, 2, 0.8],
+                8: [12, 1, 1], 9: [0, 1, 0.7], 10: [ci.ch.fifth, 2, 0.85], 12: [ci.ch.third, 2, 0.85], 14: [ci.ch.fifth, 2, 0.8] };
+      return R[s] || null;
+    },
+    gallop: function (s) {                // legend: 8th + two 16ths per beat
+      var q = s % 4;
+      if (q === 0) return [0, 1.5, 1];
+      if (q === 2) return [0, 0.9, 0.7];
+      if (q === 3) return [12, 0.9, 0.75];
+      return null;
+    },
     sustain: function (s, ci, k) {        // long drone per chord
       return k === 0 ? [0, ci.segLen, 1] : null;
     },
@@ -133,6 +145,11 @@
       for (var i = 0; i < e.length; i++) ud.push(i);
       for (i = e.length - 2; i > 0; i--) ud.push(i);
       return [[e[ud[(k >> 1) % ud.length]], 2, s % 4 ? 0.75 : 1]];
+    },
+    ripple: function (s, ci, k) {         // valley: 16th up-and-down over two octaves, like running water
+      var t = ci.ch.tones, e = [t[0], t[1], t[2], t[0] + 12, t[1] + 12, t[2] + 12];
+      var seq = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1];
+      return [[e[seq[k % seq.length]], 1, s % 4 ? 0.65 : 0.9]];
     },
     stab: function (s, ci) {              // offbeat chord chops
       if (s % 4 !== 2) return null;
@@ -323,6 +340,96 @@
       bass: { style: 'half' },
       harm: [{ style: 'broken', inst: 'epiano', vol: 1 }, { style: 'pad', inst: 'pad', vol: 0.9 }],
       drums: null
+    },
+
+    /* ---------------- Chapter 2 ---------------- */
+
+    // 霧の渓谷 — A Dorian (bright F#), 112 bpm — airy, adventurous; rippling water arps, misty flute (16 bars)
+    valley: {
+      bpm: 112, swing: 0, echo: [0.75, 0.38, 0.25], verb: 0.4, crashEvery: 0,
+      chords: 'Am | D | Am | G | Fmaj7 | G | Am Em | D | Fmaj7 | G | Am | Em | Fmaj7 | G | Dsus2 D | Esus4 E',
+      mel:
+        'E5.6 A5.2 B5.4 C6.4 | B5.6 A5.2 F#5.8 | E5.4 A5.2 G5.2 E5.4 C5.4 | D5.8 B4.4 D5.4 |' +
+        'C5.6 E5.2 A5.4 G5.4 | B5.6 A5.2 G5.4 D5.4 | C6.4 B5.4 G5.4 B5.4 | A5.12 F#5.4 |' +
+        'A5.4 C6.4 E6.8 | D6.6 B5.2 G5.8 | A5.4 C6.2 B5.2 A5.4 E5.4 | G5.6 F#5.2 E5.8 |' +
+        'F5.4 A5.4 C6.4 E6.4 | D6.6 C6.2 B5.4 G5.4 | E5.4 A5.4 F#5.4 A5.4 | A5.6 G#5.2 B5.8',
+      lead: { inst: 'flute' },
+      bass: { style: 'bounce' },
+      harm: [{ style: 'ripple', inst: 'drop', vol: 1 }, { style: 'pad', inst: 'pad', vol: 0.8 }],
+      drums: {
+        pats: [['k.....k.........', '............r...', 'x.x.x.x.x.x.x.x.']],
+        fill: ['k.....k.....k.k.', '....r.......r.r.', 'x.x.x.x.x.x.xxxx'], every: 8, vol: 0.75
+      }
+    },
+
+    // ほむら岳 — D minor, 126 bpm — hot, driving exploration; taiko + bass riff, koto colour (16 bars)
+    volcano: {
+      bpm: 126, swing: 0, echo: [0.5, 0.25, 0.15], verb: 0.25, crashEvery: 8,
+      chords: 'Dm | Dm | Bb | C | Dm | Dm | Gm | A7 | Bb | C | Dm | Dm | Gm | Bb | C | A',
+      mel:
+        'D5.4 A4.2 D5.2 F5.4 E5.2 D5.2 | A5.6 G5.2 F5.4 E5.4 | F5.4 D5.2 F5.2 Bb5.6 A5.2 | G5.6 E5.2 C5.8 |' +
+        'D5.4 A4.2 D5.2 F5.4 A5.4 | D6.6 C6.2 A5.4 F5.4 | G5.4 Bb5.4 D6.4 C6.2 Bb5.2 | A5.6 G5.2 E5.4 C#5.4 |' +
+        'D6.8 F5.4 Bb5.4 | C6.6 G5.2 E5.8 | F5.2 G5.2 A5.4 D6.6 C6.2 | A5.12 r.4 |' +
+        'Bb5.6 A5.2 G5.4 D5.4 | F5.6 G5.2 Bb5.4 D6.4 | E6.6 D6.2 C6.4 G5.4 | A5.8 E5.4 C#5.4',
+      lead: { inst: 'lead' },
+      lead2: { inst: 'koto', oct: -12, vol: 0.7 },
+      bass: { style: 'riff' },
+      harm: [{ style: 'backbeat', inst: 'harm25', vol: 1 }, { style: 'pad', inst: 'pad', vol: 0.8 }],
+      drums: {
+        pats: [['T.....T.T.......', '....s.......s...', 'h.hhh.h.h.hhh.h.']],
+        fill: ['T.....T.T.......', '....s.......s...', 'h.h.h.h.m.m.t.tt'], every: 4, vol: 0.75
+      }
+    },
+
+    // 月影の森 — E minor with a Phrygian F, 84 bpm — hushed night forest; music box, firefly bells, soft pulse (12 bars)
+    forest: {
+      bpm: 84, swing: 0, echo: [0.75, 0.4, 0.3], verb: 0.6,
+      chords: 'Em | Cmaj7 | Em | Fmaj7 | Am | Em | Cmaj7 | Bsus4 B | Gmaj7 | Cmaj7 | Am Fmaj7 | B7',
+      mel:
+        'B5.4 G5.2 E5.2 F#5.4 G5.4 | E5.6 B5.2 G5.8 | B5.4 E6.4 D6.2 B5.2 G5.4 | A5.6 C6.2 E6.8 |' +
+        'E6.4 C6.2 B5.2 A5.8 | G5.4 B5.2 G5.2 E5.8 | G5.4 B5.4 E6.4 D6.4 | E6.6 D#6.2 B5.8 |' +
+        'D6.4 B5.2 D6.2 F#6.8 | E6.6 D6.2 C6.4 B5.4 | A5.4 C6.4 E6.4 A5.4 | D#6.4 B5.4 A5.4 F#5.4',
+      mel2:
+        'r.12 B6.4 | r.16 | r.8 E6.8 | r.16 | r.4 C7.4 r.8 | r.16 | r.12 G6.4 | r.16 |' +
+        'r.8 F#6.8 | r.16 | r.4 E6.4 r.8 | r.16',
+      lead: { inst: 'mbox' },
+      lead2: { inst: 'bell', vol: 0.6 },
+      bass: { style: 'half', inst: 'drone' },
+      harm: [{ style: 'pad', inst: 'pad', vol: 1.2 }, { style: 'arp8', inst: 'drop', vol: 0.6 }],
+      drums: {
+        pats: [['k.......k.......', '......x.......x.']], every: 0, vol: 0.45
+      }
+    },
+
+    // オーロラクジラ / クロガネオロチ — F minor, 150 bpm — epic legendary battle: 4-bar grand intro + 24-bar loop
+    legend: {
+      bpm: 150, swing: 0, echo: [0.75, 0.25, 0.15], verb: 0.25, crashEvery: 8,
+      intro: {
+        chords: 'Fm | Db | Eb | C',
+        mel: 'C5.8 F5.8 | Ab5.12 Bb5.4 | G5.8 Eb5.4 G5.4 | C6.12 r.4',
+        bass: 'sustain',
+        harm: [{ style: 'pad', inst: 'pad', vol: 1.4 }, { style: 'arp8', inst: 'harm25', vol: 0.8 }],
+        drums: ['T.......T...T.T.', 'c...............', '............m.t.']
+      },
+      chords:
+        'Fm | Fm | Db | Eb | Fm | Fm | Db | C |' +
+        'Bbm | Eb | Ab | Db | Bbm | Db | Eb | C |' +
+        'Db | Eb | Ab | Fm | Bbm | Gb | C | C',
+      mel:
+        'F5.4 C5.2 F5.2 G5.2 Ab5.6 | G5.2 F5.2 Eb5.2 F5.2 C5.8 | Db5.4 F5.2 Ab5.2 Db6.8 | C6.4 Bb5.4 G5.4 Eb5.4 |' +
+        'F5.4 C5.2 F5.2 Ab5.2 C6.6 | Eb6.4 Db6.2 C6.2 Ab5.8 | Db6.6 C6.2 Bb5.4 Ab5.4 | G5.8 E5.4 C5.4 |' +
+        'Db6.6 C6.2 Bb5.8 | Bb5.4 G5.4 Eb6.8 | C6.6 Bb5.2 Ab5.4 Eb5.4 | F5.6 Ab5.2 Db6.8 |' +
+        'F6.8 Db6.4 Bb5.4 | Ab5.6 Bb5.2 C6.4 Db6.4 | Eb6.6 Db6.2 Bb5.4 G5.4 | C6.4 E5.4 G5.4 Bb5.4 |' +
+        'Db6.12 C6.2 Db6.2 | Eb6.12 Db6.2 Eb6.2 | C6.8 Eb6.4 Ab6.4 | F6.12 r.4 |' +
+        'Db6.8 F6.4 Db6.4 | Bb5.6 Db6.2 Gb6.8 | E6.8 C6.4 G5.4 | C6.4 Bb5.2 Ab5.2 G5.4 E5.4',
+      lead: { inst: 'epic' },
+      lead2: { inst: 'harm25', oct: -12, vol: 0.6 },
+      bass: { style: 'gallop' },
+      harm: [{ style: 'arp16', inst: 'harm', oct: 12, vol: 0.7 }, { style: 'pad', inst: 'pad', vol: 1.1 }],
+      drums: {
+        pats: [['k.k.k...k.k.k...', '....s.......s...', 'T.h.h.h.h.h.h.h.']],
+        fill: ['k.k.k...k.......', '....s.....s.ssss', 'T.h.h.h.mmmmtttt'], every: 8, vol: 0.8
+      }
     }
   };
 
@@ -478,6 +585,10 @@
     bell:   { kind: 'bell', vol: 0.09, decay: 2.2, gate: 1, echo: 1, verb: 1.2, pan: 0.4 },
     epiano: { kind: 'ep', vol: 0.11, decay: 1.1, gate: 1, echo: 0.4, verb: 0.8, pan: -0.25 },
     pad:    { kind: 'pad', vol: 0.02, cut: 1300, att: 0.5, dec: 0.5, sus: 0.9, rel: 0.9, gate: 1, echo: 0, verb: 1, pan: 0.15 },
+    // Chapter 2 voices
+    epic:   { kind: 'pulse', duty: 0.25, vol: 0.095, chorus: 9, vib: 18, cut: 4800, att: 0.01, dec: 0.15, sus: 0.8, rel: 0.12, gate: 0.95, echo: 1, verb: 0.8, pan: 0 },
+    drop:   { kind: 'ep', vol: 0.06, decay: 0.45, gate: 1, echo: 0.9, verb: 0.9, pan: -0.3 },
+    mbox:   { kind: 'mbox', vol: 0.12, decay: 1.6, gate: 1, echo: 0.8, verb: 1.1, pan: 0 },
     drums:  { echo: 0, verb: 0.3, pan: 0, vol: 0.65 }
   };
 
@@ -571,6 +682,18 @@
         var dec = o.decay * p[2];
         g.gain.value = 0; g.gain.setValueAtTime(0, t);
         g.gain.linearRampToValueAtTime(o.vol * v * p[1], t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+        os.connect(g); g.connect(dest); os.start(t); os.stop(t + dec + 0.02);
+      });
+    },
+    mbox: function (P, o, m, t, d, v, dest) {   // music-box tine: pure fundamental, quick bright partials
+      var c = P.c, f = mf(m);
+      [[1, 1, 1], [2, 0.22, 0.35], [4.07, 0.08, 0.08], [6.3, 0.04, 0.04]].forEach(function (p) {
+        var os = c.createOscillator(), g = c.createGain();
+        os.type = 'sine'; os.frequency.value = f * p[0];
+        var dec = o.decay * p[2];
+        g.gain.value = 0; g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(o.vol * v * p[1], t + 0.002);
         g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
         os.connect(g); g.connect(dest); os.start(t); os.stop(t + dec + 0.02);
       });

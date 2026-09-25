@@ -204,7 +204,8 @@ async function giveExp(x){
       if(c.uid===B.active){snd('levelup');const el=bmon('me'),cc=center(el);for(let i=0;i<26;i++)BFX.parts.push({x:cc.x+(Math.random()-.5)*cc.w*.8,y:cc.y+cc.h*.4,vx:0,vy:-60-Math.random()*90,ay:-40,life:1,max:1,size:3+Math.random()*3,color:['#fff1b0','#ffffff','#8fe8ff'][i%3],shape:'star',rot:0,vr:6});
         el.animate([{filter:'brightness(1)'},{filter:'brightness(1.8) drop-shadow(0 0 10px #fff4c8)'},{filter:'brightness(1)'}],{duration:RM?1:700});hud(true)}else snd('levelup');
       await bsay(`${m.name}は レベル${c.lv}に あがった！`,900);
-      if(c.lv===9&&m.r<3)await bsay(`${m.name}は 大技「${MV[m.t][1].n}」を おぼえた！`,1100)}}
+      if(c.lv===9&&m.r<3)await bsay(`${m.name}は 大技「${MV[m.t][1].n}」を おぼえた！`,1100);
+      if(EVO[c.id]&&c.lv===EVO[c.id].lv)await bsay(canEvolve(c)?`${m.name}は 進化できる ように なった！<br>（なかま画面で 札を 調べよう）`:`${m.name}は 進化の レベルに とどいた！<br>あとは 同じ札を ${EVO[c.id].dup}枚 重ねれば 進化できる。`,1400)}}
 }
 
 /* ---------- main flow ---------- */
