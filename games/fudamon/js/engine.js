@@ -85,7 +85,7 @@ function navPanel(root,{onBack,onMove}={}){
   const h=k=>{if(k==='a'){const b=items()[idx];if(b&&!b.disabled){b.click()}else snd('bump')}else if(k==='b'){if(onBack){snd('cancel');onBack()}}else if(DIRS[k])move(k)};
   root.addEventListener('pointerover',e=>{const b=e.target.closest('[data-nav]');if(!b)return;const j=items().indexOf(b);if(j>=0&&j!==idx)mark(j,true)});
   UI.push(h);
-  const api={h,refresh(keep){const L=items();const i=keep?Math.min(idx,L.length-1):0;const first=L.findIndex(b=>!b.disabled&&!b.hasAttribute('data-back'));mark(keep?i:(first<0?0:first),true)},close(){UI.pop(h)},get idx(){return idx},set(i){mark(i,true)}};
+  const api={h,refresh(keep){const L=items();const i=keep?Math.min(idx,L.length-1):0;const first=L.findIndex(b=>!b.disabled&&!b.hasAttribute('data-back')&&!b.hasAttribute('data-danger'));mark(keep?i:(first<0?0:first),true)},close(){UI.pop(h)},get idx(){return idx},set(i){mark(i,true)}};
   api.refresh();return api;
 }
 

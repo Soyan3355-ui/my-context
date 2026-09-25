@@ -20,13 +20,13 @@ function say(text,name,opt={}){
   });
 }
 function hideDlg(){$('#dlg').hidden=true}
-function choose(opts,{cancel=opts.length-1}={}){
+function choose(opts,{cancel=opts.length-1,def=0}={}){
   const box=$('#choice');box.innerHTML=opts.map((o,i)=>`<button data-nav data-i="${i}">${o}</button>`).join('');box.hidden=false;
   return new Promise(res=>{let nav;const end=i=>{nav.close();box.hidden=true;box.innerHTML='';res(i)};
     box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{snd('confirm');end(+b.dataset.i)}));
-    nav=navPanel(box,{onBack:cancel==null?null:()=>end(cancel)})});
+    nav=navPanel(box,{onBack:cancel==null?null:()=>end(cancel)});if(def)nav.set(def)});
 }
-async function ask(text,name,opts=['はい','いいえ']){await say(text,name,{keep:true,noWait:true});const i=await choose(opts);hideDlg();return i}
+async function ask(text,name,opts=['はい','いいえ'],o={}){await say(text,name,{keep:true,noWait:true});const i=await choose(opts,o);hideDlg();return i}
 function toast(t){const el=$('#toast');el.innerHTML=t;el.classList.remove('show');void el.offsetWidth;el.classList.add('show')}
 
 /* ---------------- panels (menu screens) ---------------- */
@@ -76,24 +76,28 @@ function cardDetail(uid,back){
   const nb=(c.lv<9&&m.r<3)?`<div class="muted"><span>Lv9で「${MV[m.t][1].n}」を覚える</span></div>`:'';
   const acts=[];
   if(inP){if(idx>0)acts.push(`<button class="pbtn" data-nav data-a="lead">先頭にする</button>`);const lastOk=c.hp>0&&partyCards().filter(x=>x.hp>0&&x.uid!==uid).length===0;acts.push(`<button class="pbtn" data-nav data-a="out" ${S.party.length<=1||lastOk?'disabled':''}>${lastOk&&S.party.length>1?'元気なカードが いなくなる':'パーティから外す'}</button>`)}
-  else acts.push(`<button class="pbtn shu" data-nav data-a="in" ${S.party.length>=3?'disabled':''}>${S.party.length>=3?'パーティが満員':'パーティに入れる'}</button>`);
+  else acts.push(S.party.length>=3?`<button class="pbtn shu" data-nav data-a="swap">パーティと 入れかえる</button>`:`<button class="pbtn shu" data-nav data-a="in">パーティに 入れる</button>`);
   const E=EVO[c.id];let evoInfo='';
   if(E){const dups=S.cards.filter(x=>x.id===c.id&&x.uid!==uid).length;const ok=c.lv>=E.lv&&dups>=E.dup;
     acts.unshift(`<button class="pbtn ${ok?'shu evo':''}" data-nav data-a="evo" ${ok?'':'disabled'}>${ok?'進化させる！':'進化の 条件を 満たしていない'}</button>`);
     evoInfo=`<div class="evoreq"><b>進化 → ${S.dex[E.to]?MON[E.to].name:'？？？'}</b><span class="${c.lv>=E.lv?'ok':''}">Lv${E.lv} 以上（いま Lv${c.lv}）</span>${E.dup?`<span class="${dups>=E.dup?'ok':''}">重ねる 同じ札 ${Math.min(dups,E.dup)}/${E.dup}枚</span>`:''}</div>`}
-  acts.push(`<button class="pbtn" data-nav data-a="sell" ${inP?'disabled':''}>手放す +${sellPrice(c)}両</button>`);
+  const sellBtn=inP?'':`<button class="pbtn danger" data-nav data-danger data-a="sell">手放す（+${sellPrice(c)}両）</button>`;
   openPanel(`${head(m.name,`No.${pad3(m.id)} ・ ${TYPES[m.t].n}タイプ ・ ${RAR[m.r].n}`)}<div class="pbody detailwrap"><div class="detail">${cardHTML(c)}</div>
   <div class="dinfo">${c.v&&c.v!=='normal'?`<div class="vbonus ${c.v}">${c.v==='gold'?'ゴールドの 力':'キラの 力'}：すべての 能力が <b>+${c.v==='gold'?10:5}%</b></div>`:''}<div class="stats"><div><small>HP</small><b>${c.hp}/${st.hp}</b></div><div><small>こうげき</small><b>${st.atk}</b></div><div><small>ぼうぎょ</small><b>${st.def}</b></div><div><small>すばやさ</small><b>${st.spd}</b></div></div>
   <div class="expl"><span>次のLvまで ${need(c.lv)-c.exp} EXP</span><span class="bar exp"><i style="width:${c.exp/need(c.lv)*100}%"></i></span></div>
-  ${evoInfo}<div class="mvl">${mv}${nb}</div><p class="flav">${m.flavor}</p><div class="acts">${acts.join('')}</div></div></div>`,{onBack:back});
+  ${evoInfo}<div class="mvl">${mv}${nb}</div><p class="flav">${m.flavor}</p><div class="acts">${acts.join('')}</div>${sellBtn?`<div class="sellrow">${sellBtn}</div>`:''}</div></div>`,{onBack:back});
   wireBack(back);tiltCard($('#panel .detail'));
   $('#panel').querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',async()=>{const a=b.dataset.a;
     if(a==='lead'){S.party=[uid,...S.party.filter(x=>x!==uid)];snd('confirm');cardDetail(uid,back)}
     if(a==='out'){S.party=S.party.filter(x=>x!==uid);snd('confirm');cardDetail(uid,back)}
     if(a==='in'){S.party.push(uid);snd('confirm');cardDetail(uid,back)}
+    if(a==='swap'){snd('confirm');pickCard(`${m.name}と 入れかえる カードを えらぼう`,()=>true,x=>{const i=S.party.indexOf(x.uid);S.party[i]=uid;snd('confirm');toast(`${MON[x.id].name}と ${m.name}を 入れかえた`);cardDetail(uid,back)},()=>cardDetail(uid,back));return}
     if(a==='evo'){const E=EVO[c.id];const p=$('#panel');p.hidden=true;const i=await ask(`${m.name}を 進化させる？${E.dup?`<br>同じ札 ${E.dup}枚を 重ねて 封じこむよ。`:''}`,null,['進化させる','やめる']);p.hidden=false;
       if(i===0){closePanel();await evolveCard(uid);cardDetail(uid,back)}else panelNav&&panelNav.refresh(true);return}
-    if(a==='sell'){const p=$('#panel');p.hidden=true;const i=await ask(`${m.name}（Lv${c.lv}）を 手放して<br>${sellPrice(c)}両に する？`,null,['手放す','やめる']);p.hidden=false;
+    if(a==='sell'){const p=$('#panel');p.hidden=true;const rare=c.v!=='normal'||m.r>=3||c.lv>=20;
+      let i=await ask(`${m.name}（Lv${c.lv}）を 手放して<br>${sellPrice(c)}両に する？ <b>手放した 札は もどらないよ。</b>`,null,['やめる','手放す'],{def:0,cancel:0});i=i===1?0:1;
+      if(i===0&&rare){const j=await ask(`${c.v==='gold'?'ゴールドの ':c.v==='holo'?'キラの ':''}${m.name}は とても 貴重な 札だよ。<br>本当に 手放して いい？`,null,['やめる','本当に 手放す'],{def:0,cancel:0});i=j===1?0:1}
+      p.hidden=false;
       if(i===0){S.coins+=sellPrice(c);S.cards=S.cards.filter(x=>x.uid!==uid);snd('coin');toast(`${sellPrice(c)}両 を受け取った`);back()}else panelNav&&panelNav.refresh(true)}
   }));
 }
