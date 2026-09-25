@@ -178,7 +178,24 @@
     { id: 'shoot', key: '4', label: '打て！', sub: 'ミドル解禁', shout: 'どんどん打てぇ！', cost: 30, dur: 12 },
   ];
 
-  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP };
+  // set-piece routines: the first of each kind is known from the start, the rest are learned in set-piece training (in UNLOCK order)
+  const SETPLAYS = {
+    ck: [
+      { id: 'std', name: '放り込み', desc: 'ペナルティスポット付近へ高いボール。競り合い勝負。' },
+      { id: 'near', name: 'ニアで合わせる', desc: 'ニアポストへ速く低いボール。飛び込んだ選手が頭でそらす。' },
+      { id: 'far', name: 'ファーの高い打点', desc: 'ファーポストへ山なりのボール。いちばん空中戦に強い選手が待つ。' },
+      { id: 'short', name: 'ショートコーナー', desc: '近くの味方に短く出し、角度を変えてからクロスか折り返し。' },
+    ],
+    fk: [
+      { id: 'std', name: 'おまかせ', desc: '近ければ直接、遠ければゴール前へ放り込む。' },
+      { id: 'wall', name: '壁越えシュート', desc: 'キック力のある選手が、壁の上を越えて落ちるボールで直接狙う。' },
+      { id: 'trick', name: 'ずらしてズドン', desc: '横へちょんと出し、壁がずれた隙に走り込んだ選手が撃つ。' },
+      { id: 'lob', name: 'ファーへ放り込み', desc: '守備ラインの裏、ファーサイドへ落とす。飛び込む選手が合わせる。' },
+    ],
+  };
+  const SETPLAY_UNLOCK = ['ck_near', 'fk_wall', 'ck_far', 'fk_trick', 'ck_short', 'fk_lob'];
+
+  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
   HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();

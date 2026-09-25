@@ -28,7 +28,10 @@
       for (const a of this.roster) for (const b of this.roster) if (a.id < b.id) this.bonds[a.id + '|' + b.id] = 50;
       this.freeAgents = Data.FREE_AGENTS.map((d) => d.id);
       this.joined = []; this.departed = []; this.applicantWeek = 2; this.staff = [];
+      this.setplay = { unlocked: [], ck: 'std', fk: 'std', lv: 0, prog: 0 };
     },
+    nextSetplay() { return Data.SETPLAY_UNLOCK.find((k) => !this.setplay.unlocked.includes(k)); },
+    setplayName(key) { const [kind, id] = key.split('_'); const r = Data.SETPLAYS[kind].find((q) => q.id === id); return r ? r.name : ''; },
     bond(a, b) { return this.bonds[a < b ? a + '|' + b : b + '|' + a] || 0; },
     addBond(a, b, v) { const k = a < b ? a + '|' + b : b + '|' + a; this.bonds[k] = Math.min(100, (this.bonds[k] || 0) + v); },
     comboReady(c) { return this.bond(c.ids[0], c.ids[1]) >= 30; },
@@ -753,19 +756,24 @@
     { id: 'pass', label: '鳥かごパス回し', sub: 'パス↑ ディフェンス↑少し', desc: '輪になってパスを回す。中盤と守備がよく伸びる。', gains: { pas: 3, def: 1 }, focus: ['kazuha', 'morio', 'ponta'] },
     { id: 'run', label: '砂浜ダッシュ', sub: 'スピード↑ スタミナ↑', desc: '夕暮れの砂浜を走り込む。全員の足腰がきたえられる。', gains: { spd: 2, sta: 2 }, focus: ['tsubame', 'haruki', 'gen'] },
     { id: 'tactics', label: '戦術練習', sub: '採用中の戦術の理解度↑', desc: '作戦ボードで選んだ戦術を、紅白戦で体に覚えさせる。能力は上がらないが、戦術の実現度が上がる。', gains: {}, focus: [] },
+    { id: 'setplay', label: 'セットプレー練習', sub: '', desc: 'コーナーキックとフリーキックのサインプレーを練習する。成功すると新しいサインを覚え、試合で選べるようになる。', gains: {}, focus: [] },
   ];
+  function setplaySub() {
+    const nx = State.nextSetplay();
+    return nx ? '新サイン「' + State.setplayName(nx) + '」を習得' : 'セットプレーの精度↑（Lv' + State.setplay.lv + '）';
+  }
   function Training() {
     const s = { t: 0, phase: 'pick', menu: null, tries: [], meter: null, fx: new Particles(), results: [], rt: 0, pick: null, reveal: 0, statAnim: 0 };
     s.enter = () => {
       Sound.bgm('hub');
-      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label, sub: tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.sub, tr })), 250, 62, 214, 32, 6);
+      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label, sub: tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub, tr })), 250, 54, 214, 30, 3);
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
     s.update = (dt) => {
       s.t += dt; s.fx.update(dt);
       if (s.phase === 'pick') {
         if (Input.hit('back')) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); return; }
-        if (State.auto) { s.menu.sel = 0; Input.pressed.ok = s.t > 1; }
+        if (State.auto) { s.menu.sel = [4, 0, 4, 3, 1][State.season.week % 5]; Input.pressed.ok = s.t > 1; }
         const r = s.menu.update(dt);
         if (r) { s.pick = r.tr; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); }
       } else if (s.phase === 'intro') {
@@ -793,6 +801,7 @@
           s.kick = 0;
           if (s.pick.id === 'shoot') Sound.play(m.res === 'just' ? 'power_shot' : 'shoot');
           if (s.pick.id === 'pass') Sound.play('pass');
+          if (s.pick.id === 'setplay') Sound.play('kick');
           if (s.pick.id === 'run') Sound.play('command', { pitch: 1.2 });
         }
       } else if (s.phase === 'result') {
@@ -813,6 +822,14 @@
       s.rank = score >= 5 ? '大成功！' : score >= 2 ? '成功' : 'いまいち…';
       Sound.play(score >= 5 ? 'levelup' : 'coin');
       s.results = [];
+      if (s.pick.id === 'setplay') {
+        const sp = State.setplay, nx = State.nextSetplay();
+        sp.prog = (sp.prog || 0) + (score >= 2 ? 2 : 1);
+        s.learned = null; s.lvUp = false;
+        if (nx && sp.prog >= 2) { sp.unlocked.push(nx); sp.prog = 0; s.learned = nx; const [kind, id] = nx.split('_'); sp[kind] = id; }
+        if ((score >= 5 || !nx) && sp.lv < 3) { sp.lv++; s.lvUp = true; }
+        return;
+      }
       for (const p of State.roster) {
         const ups = {};
         if (s.pick.id === 'tactics' && p.tacU) {
@@ -845,8 +862,8 @@
         text(g, '結果はタイミング勝負！ 3回チャレンジ', 18, 34, { size: 9, color: '#c9d6e6' });
         s.menu.draw(g);
         const sel = TRAININGS[s.menu.sel];
-        panel(g, 250, 204, 214, 48, 'paper');
-        wrap(g, sel.desc, 200, 9).forEach((l, i) => text(g, l, 258, 210 + i * 13, { size: 9, color: '#2a1a24' }));
+        panel(g, 250, 222, 214, 44, 'paper');
+        wrap(g, sel.desc, 200, 8).slice(0, 3).forEach((l, i) => text(g, l, 258, 227 + i * 12, { size: 8, color: '#2a1a24' }));
         text(g, 'X：もどる', 18, 240, { size: 8, color: '#ffffff', outline: OUT });
         return;
       }
@@ -874,6 +891,30 @@
           bx = lerp(184, tx, k); by = lerp(214, ty, k) - Math.sin(k * Math.PI) * 20;
           if (k >= 1 && res !== 'bad' && !m.netFx) { m.netFx = true; s.fx.burst(tx, ty, 10, { color: '#ffffff', speedMin: 20, speedMax: 60, lifeMax: 0.4, size: 2, kind: 'star' }); Sound.play('net'); if (res === 'just') Sound.play('cheer', { vol: 0.4 }); }
           if (k >= 1 && res === 'bad' && !m.netFx) { m.netFx = true; Sound.play('save'); }
+        }
+        g.drawImage(Art.ballFrames[Math.floor(s.t * 10) & 3], Math.round(bx), Math.round(by), 10, 10);
+      } else if (tr.id === 'setplay') {
+        // corner drill: delivery from the flag, a runner attacks it at the far post
+        const gx = 360, gy = 150;
+        g.fillStyle = OUT; g.fillRect(gx, gy, 3, 56); g.fillRect(gx + 100, gy, 3, 56); g.fillRect(gx, gy - 2, 103, 4);
+        g.fillStyle = '#ffffff'; g.fillRect(gx + 1, gy, 1, 55); g.fillRect(gx + 101, gy, 1, 55); g.fillRect(gx + 1, gy - 1, 101, 2);
+        g.fillStyle = 'rgba(255,255,255,0.35)'; for (let i = 0; i < 10; i++) g.fillRect(gx + 3, gy + 4 + i * 5, 97, 1); for (let i = 0; i < 20; i++) g.fillRect(gx + 4 + i * 5, gy + 2, 1, 52);
+        const res = m && m.res, k = res ? clamp(kickT / 0.5, 0, 1) : 0;
+        const kicker = State.roster.find((q) => q.id === 'kazuha') || State.roster[1];
+        const air = (q) => q.stats.def + (q.look.body === 'big' ? 30 : 0) + (q.id === 'mask' ? 40 : 0);
+        const header = State.roster.slice().sort((a, c) => air(c) - air(a)).find((q) => q.pos !== 'GK');
+        const gen = State.roster[0];
+        g.drawImage(Art.sprite(gen.look, 'down', res && kickT > 0.45 && res === 'bad' ? 'cheer' : 'walk1'), gx + 40, gy + 6, 32, 44);
+        g.drawImage(Art.sprite(kicker.look, 'side', res && kickT < 0.25 ? 'kick' : 'walk1'), 40, 196, 32, 44);
+        const hx = lerp(250, 300, k), jump = res && res !== 'bad' ? Math.sin(clamp((kickT - 0.3) / 0.35, 0, 1) * Math.PI) * 10 : 0;
+        g.drawImage(Art.sprite(header.look, 'side', jump > 1 ? 'cheer' : ['walk0', 'walk1', 'walk2', 'walk3'][Math.floor(s.t * 8) % 4]), Math.round(hx), Math.round(170 - jump), 32, 44);
+        let bx = 72, by = 222;
+        if (res) {
+          const k1 = clamp(kickT / 0.45, 0, 1), k2 = clamp((kickT - 0.45) / 0.25, 0, 1);
+          const px = res === 'bad' ? 330 : hx + 14, py = res === 'bad' ? 140 : 168 - jump;
+          bx = lerp(72, px, k1); by = lerp(222, py, k1) - Math.sin(k1 * Math.PI) * 70;
+          if (k1 >= 1 && res !== 'bad') { const tx = res === 'just' ? gx + 80 : gx + 30, ty = gy + 22; bx = lerp(px, tx, k2); by = lerp(py, ty, k2); if (k2 >= 1 && !m.netFx) { m.netFx = true; s.fx.burst(tx, ty, 10, { color: '#ffffff', speedMin: 20, speedMax: 60, lifeMax: 0.4, size: 2, kind: 'star' }); Sound.play('net'); if (res === 'just') Sound.play('cheer', { vol: 0.4 }); } }
+          if (k1 >= 1 && res === 'bad') { bx = px + (kickT - 0.45) * 120; by = py - (kickT - 0.45) * 20; if (!m.netFx) { m.netFx = true; Sound.play('miss_timing', { vol: 0.5 }); } }
         }
         g.drawImage(Art.ballFrames[Math.floor(s.t * 10) & 3], Math.round(bx), Math.round(by), 10, 10);
       } else if (tr.id === 'pass') {
@@ -940,6 +981,25 @@
         g.globalAlpha = 0.7; g.fillStyle = '#0a0e1c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
         panel(g, 40, 18, 400, 234, 'paper');
         text(g, tr.label + '　' + s.rank, W / 2, 26, { size: 16, align: 'center', color: s.rank === '大成功！' ? '#e0474c' : '#10304f' });
+        if (tr.id === 'setplay') {
+          const vis = s.rt > 0.5;
+          if (vis && s.learned) {
+            const [kind, id] = s.learned.split('_'), r = Data.SETPLAYS[kind].find((q) => q.id === id);
+            const k = Ease.outBack(clamp((s.rt - 0.5) / 0.4, 0, 1));
+            panel(g, W / 2 - 150 * k, 62, 300 * k, 86, 'gold');
+            if (k > 0.9) {
+              text(g, '新しいサインを覚えた！', W / 2, 70, { size: 10, align: 'center', color: '#6d4f3a' });
+              text(g, (kind === 'ck' ? 'コーナーキック：' : 'フリーキック：') + r.name, W / 2, 86, { size: 14, align: 'center', color: '#2a1a24' });
+              wrap(g, r.desc, 270, 9).forEach((l, i) => text(g, l, W / 2, 108 + i * 13, { size: 9, align: 'center', color: '#2a1a24' }));
+            }
+          } else if (vis) {
+            panel(g, W / 2 - 150, 62, 300, 60, 'sky');
+            text(g, State.nextSetplay() ? 'あと少しで「' + State.setplayName(State.nextSetplay()) + '」を覚えそう！' : 'サインプレーは全部覚えた！', W / 2, 78, { size: 10, align: 'center', color: '#10182e' });
+            text(g, '次の練習で習得できる', W / 2, 96, { size: 9, align: 'center', color: '#1f5a94' });
+          }
+          if (vis && s.lvUp) text(g, 'セットプレーの精度が上がった！（Lv' + State.setplay.lv + '）', W / 2, 160, { size: 10, align: 'center', color: '#e0474c' });
+          if (vis) text(g, '試合でコーナー／フリーキックのときにサインを選べます。作戦ボードで最初のサインも決められます。', W / 2, 184, { size: 8, align: 'center', color: '#6d4f3a' });
+        }
         s.results.forEach((r, i) => {
           const col = i < 7 ? 0 : 1, y = 52 + (i % 7) * 25, x0 = 50 + col * 196;
           const vis = s.rt - 0.4 > i * 0.14;
@@ -976,6 +1036,10 @@
     const benchRect = (i) => ({ x: 298, y: 92 + i * 19, w: 174, h: 18 });
     const tacRect = (i) => ({ x: 298 + i * 44, y: 58, w: 42, h: 16 });
     const formRect = (i) => ({ x: 298 + i * 59, y: 34, w: 56, h: 20 });
+    // default set-play signals (cycle through the ones learned in training)
+    const spRect = (i) => ({ x: 162 + i * 117, y: 6, w: 114, h: 22 });
+    const SPK = ['ck', 'fk'];
+    const spOpts = (kind) => Data.SETPLAYS[kind].filter((r) => r.id === 'std' || State.setplay.unlocked.includes(kind + '_' + r.id));
     // selectable targets: 0..10 = lineup slots, 11.. = bench
     const targets = () => State.lineup.map((id, i) => ({ kind: 'slot', i, id })).concat(bench().map((p, i) => ({ kind: 'bench', i, id: p.id })));
     const targetRect = (tg) => {
@@ -1013,6 +1077,13 @@
       // formation tabs
       s.keys.forEach((k, i) => { if (E.clickedIn(formRect(i)) && State.formation !== k) { State.formation = k; Sound.play('select'); } });
       Object.keys(Data.TACTICS).forEach((k, i) => { if (E.clickedIn(tacRect(i)) && State.tactic !== k) { State.tactic = k; Sound.play('stamp', { vol: 0.5 }); } });
+      SPK.forEach((kind, i) => {
+        if (!E.clickedIn(spRect(i))) return;
+        const os = spOpts(kind);
+        if (os.length < 2) { s.msg = { text: 'セットプレー練習で新しいサインを覚えると選べるようになります', t: 0 }; Sound.play('cancel'); return; }
+        const j = os.findIndex((r) => r.id === State.setplay[kind]);
+        State.setplay[kind] = os[(j + 1) % os.length].id; Sound.play('select');
+      });
       // mouse
       s.hover = null;
       tgs.forEach((tg) => { if (E.hoverIn(targetRect(tg))) s.hover = tg; });
@@ -1035,7 +1106,15 @@
       g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
       panel(g, 6, 4, 150, 24, 'dark');
       text(g, '作戦ボード', 16, 9, { size: 14, color: '#ffd24a' });
-      text(g, 'クリックで2人を選ぶと入れ替え', 164, 12, { size: 8, color: '#c9d6e6' });
+      SPK.forEach((kind, i) => {
+        const r = spRect(i), os = spOpts(kind), hv = E.hoverIn(r);
+        const cur = Data.SETPLAYS[kind].find((q) => q.id === State.setplay[kind]) || Data.SETPLAYS[kind][0];
+        panel(g, r.x, r.y, r.w, r.h, hv ? 'sky' : 'paper');
+        text(g, (kind === 'ck' ? 'CK' : 'FK') + ' ' + os.length + '/4', r.x + 5, r.y + 2, { size: 7, color: '#6d4f3a' });
+        text(g, cur.name, r.x + 5, r.y + 11, { size: 8, color: '#2a1a24' });
+        if (os.length > 1) text(g, '▶', r.x + r.w - 9, r.y + 7, { size: 8, color: '#2f86c4' });
+        if (hv) s.spHover = { kind, cur, n: os.length };
+      });
       // board
       panel(g, BX - 4, BY - 4, BW + 8, BH + 8, ['#2a1a24', '#8a5a3a', '#6a4028', '#a86a44']);
       g.fillStyle = '#4fa84a'; g.fillRect(BX, BY, BW, BH);
@@ -1116,8 +1195,13 @@
         text(g, '戦術「' + T.name + '」　チームの実現度 ' + teamRealize(s.tacHover) + '%　' + T.desc, 16, 239, { size: 8, color: '#2a1a24' });
         text(g, '相手（ロングボール）との相性 ' + mu[0] + '：' + mu[1], 16, 252, { size: 8, color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
       }
-      else text(g, '選手にカーソルを合わせると特性と相性が見られます。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
-      s.tacHover = null;
+      else if (s.spHover) {
+        const h = s.spHover;
+        text(g, (h.kind === 'ck' ? 'コーナーキック' : 'フリーキック') + 'の最初のサイン：' + h.cur.name + '　' + h.cur.desc, 16, 239, { size: 8, color: '#2a1a24' });
+        text(g, h.n > 1 ? 'クリックで切り替え。試合中もキックの前にサインを選べます。' : 'セットプレー練習で新しいサインを覚えると選べるようになります。', 16, 252, { size: 8, color: '#6d4f3a' });
+      }
+      else text(g, 'クリックで2人を選ぶと入れ替え。カーソルで特性と相性を確認。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
+      s.tacHover = null; s.spHover = null;
       if (s.newCombo) {
         const k = Ease.outBack(clamp(s.newCombo.t / 0.3, 0, 1)), c = s.newCombo.c;
         const a = 1 - clamp((s.newCombo.t - 2.2) / 0.4, 0, 1);
@@ -1217,7 +1301,7 @@
     const fx = State.fixture();
     const morale = 0.94 + 0.12 * (State.avgMorale() / 100) + (fx.home ? 0.03 * State.localRatio() : 0);
     return new Match({
-      opp: fx.opp, morale, comboOk: (c) => State.comboReady(c),
+      opp: fx.opp, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
       formation: State.formation, tactic: State.tactic, auto: State.auto, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
       bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
       onEnd: (r) => { State.result = r; Game.goto(Result(r), 'iris'); },
