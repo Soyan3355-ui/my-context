@@ -12,6 +12,10 @@ const SHAPES={
 function starPath(cx,cy,R,r,n=5){let d='';for(let i=0;i<n*2;i++){const a=Math.PI/n*i-Math.PI/2,rr=i%2?r:R;d+=(i?'L':'M')+(cx+Math.cos(a)*rr).toFixed(1)+' '+(cy+Math.sin(a)*rr).toFixed(1)}return d+'Z'}
 function flamePath(x,y,s){return `M${x} ${y-14*s} C${x+7*s} ${y-6*s} ${x+8*s} ${y} ${x+4*s} ${y+4*s} L${x-4*s} ${y+4*s} C${x-8*s} ${y} ${x-7*s} ${y-6*s} ${x} ${y-14*s}Z`}
 function art(m){
+  if(window.MONART&&MONART[m.id]){try{return MONART[m.id]()}catch(e){}}
+  return artSimple(m);
+}
+function artSimple(m){
   const a=m.art,T=TYPES[m.t],c1=a.col||T.c,c2=a.col2||T.c2,O='#2b2440';
   const s=SHAPES[a.shape],t=s.top,fy=s.fy,w=s.w,back=[],front=[],tops=a.top||[];
   const dbl=(d,col,wd=5)=>`<path d="${d}" fill="none" stroke="${O}" stroke-width="${wd+4}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${wd}"/>`;

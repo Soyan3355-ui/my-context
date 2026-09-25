@@ -325,8 +325,9 @@ button{font:inherit;color:inherit}
 .c-head{display:flex;justify-content:space-between;align-items:center}
 .c-no{font-family:var(--f-dot);font-size:7.5cqw;letter-spacing:.05em}
 .c-type{width:12cqw;height:12cqw;display:grid;place-items:center;border-radius:50%;background:var(--tc);color:#fff;font-weight:900;font-size:7.5cqw;border:.8cqw solid var(--ink)}
-.c-art{position:relative;flex:1;min-height:0;border-radius:4cqw;border:.9cqw solid var(--ink);background:radial-gradient(circle at 50% 62%,var(--tc2) 0%,var(--tc) 85%);overflow:hidden}
-.c-art::before{content:"";position:absolute;inset:0;background:repeating-radial-gradient(circle at 50% 110%,#ffffff1f 0 3cqw,transparent 3cqw 6cqw)}
+.c-art{position:relative;flex:1;min-height:0;border-radius:2.4cqw;border:.9cqw solid var(--ink);background:radial-gradient(90% 70% at 50% 58%,color-mix(in srgb,var(--tc) 55%,#fff) 0%,var(--tc) 38%,color-mix(in srgb,var(--tc) 45%,#0b0918) 78%,#0b0918 100%);overflow:hidden;box-shadow:inset 0 0 0 .5cqw #0006}
+.c-art::before{content:"";position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 62%,#ffffff12 0 4deg,transparent 4deg 14deg),radial-gradient(60% 18% at 50% 92%,#0008,transparent 70%)}
+.c-art svg{filter:drop-shadow(0 .8cqw 1cqw #0007)}
 .c-art svg{position:absolute;inset:0;width:100%;height:100%}
 .c-name{font-family:var(--f-disp);font-size:10cqw;line-height:1.15;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .c-meta{display:flex;justify-content:space-between;align-items:center;font-size:7.5cqw;font-weight:900;border-top:.6cqw dashed #2b244055;padding-top:1.6cqw}
@@ -389,6 +390,9 @@ button{font:inherit;color:inherit}
 <script src="js/data.js"></script>
 <script src="js/pixel.js"></script>
 <script src="js/audio.js"></script>
+<script src="js/monart_a.js"></script>
+<script src="js/monart_b.js"></script>
+<script src="js/monart_c.js"></script>
 <script src="js/cards.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/ui.js"></script>
