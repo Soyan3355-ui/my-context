@@ -31,25 +31,25 @@
     k.ellipse(C, 29.5, 9.5, 2.8, 'black', { part: 'capT', light: 0.3 });
     k.rect(33, 28, 14, 1, 'black', { clip: 'capT', tone: 5 });
     // tall ribbed paper body, lit from the flame inside
-    k.ellipse(C, 47, 15, 17.5, 'bone', { part: 'paper' });
-    k.tufts([[26, 40], [24.5, 47], [25.5, 54]], 'bone', { part: 'paper', len: 2.5, w: 3, every: 3, seed: 3 });
+    k.ellipse(C, 47, 15, 17.5, 'cream', { part: 'paper' });
+    k.tufts([[26, 40], [24.5, 47], [25.5, 54]], 'cream', { part: 'paper', len: 2.5, w: 3, every: 3, seed: 3 });
     k.rect(22, 30, 36, 3, 'red', { clip: 'paper' });
     k.rect(22, 61, 36, 4, 'red', { clip: 'paper' });
-    for (var y = 34; y <= 61; y += 3) {
+    for (var y = 35; y <= 61; y += 4) {
       var hw = 15.5 * Math.sqrt(Math.max(0, 1 - Math.pow((y - 47) / 17.5, 2)));
       k.tube([[C - hw, y - 0.7, 0.45], [C, y + 0.7, 0.45], [C + hw, y - 0.7, 0.45]], null, { adj: -2, clip: 'paper' });
-      if (y > 36 && y < 60) { k.px(Math.round(C + hw), y - 1, 'bone', 1); }
+      if (y > 36 && y < 60) { k.px(Math.round(C + hw), y - 1, 'cream', 1); }
     }
     k.tube([[31, 33, 0.5], [29, 47, 0.5], [31, 60, 0.5]], null, { adj: 1, clip: 'paper' });
     // stains + a red brush stroke
-    k.path([[52, 52], [54, 56], [53, 59]], 'bone', 2); k.px(51, 55, 'bone', 2);
+    k.path([[52, 52], [54, 56], [53, 59]], 'cream', 2); k.px(51, 55, 'cream', 2);
     // tear on the upper right: ghost flame inside
     k.poly([[45, 32], [48, 34.5], [51, 32], [55, 34], [55.5, 40], [52, 43], [48.5, 42], [46, 39.5], [47, 36]], 'black', { part: 'hole', shade: 'flat', flatTone: 0 });
     k.tube([[50.5, 40, 2.6], [51, 37.5, 1.9], [49.5, 34, 0.5]], 'violet', { part: 'ghost', shade: 'glow', outline: 'none', noseam: true });
     k.px(50, 39, 'violet', 6); k.px(51, 40, 'violet', 6);
     // loose flap hanging off the left
-    k.poly([[25, 57], [21, 61], [22, 68], [25, 65], [28, 60]], 'bone', { part: 'flap', shift: -1 });
-    k.line(24, 61, 23, 66, 'bone', 1);
+    k.poly([[25, 57], [21, 61], [22, 68], [25, 65], [28, 60]], 'cream', { part: 'flap', shift: -1 });
+    k.line(24, 61, 23, 66, 'cream', 1);
     // bottom ring + tassel
     k.ellipse(C, 65.5, 9, 2.6, 'black', { part: 'capB', light: 0.3 });
     k.tube([[37, 67, 1.2], [37, 71, 1.6]], 'red', { part: 'tassel' });
@@ -239,12 +239,12 @@
       k.tube([[m(32), 62, 2.4], [m(24.5), 52, 2.1], [m(20), 42, 1.8], [m(18.5), 36, 1.5]], 'obsidian', { clip: 'neck' + s });
     });
     // centre neck
-    k.tufts([[34, 60], [34, 46], [35, 34]], 'obsidian', { part: 'spC', len: 3, w: 2.4, every: 3.5, seed: 11 });
-    k.tufts([[45, 34], [46, 46], [46, 60]], 'obsidian', { part: 'spC', len: 3, w: 2.4, every: 3.5, seed: 12 });
-    k.tube([[C, 64, 7], [C, 48, 6], [C, 34, 5.2]], 'steel', { part: 'neckC' });
+    k.tufts([[34, 60], [37, 48], [33, 36]], 'obsidian', { part: 'spC', len: 3, w: 2.4, every: 3.5, seed: 11 });
+    k.tufts([[44, 34], [49, 48], [46, 60]], 'obsidian', { part: 'spC', len: 3, w: 2.4, every: 3.5, seed: 12 });
+    k.tube([[C, 64, 7], [43, 52, 6], [38, 40, 5.4], [C, 32, 5]], 'steel', { part: 'neckC' });
     k.texture('neckC', 'scales', { size: 4, seed: 7 });
-    k.tube([[C, 64, 3], [C, 48, 2.8], [C, 36, 2.4]], 'obsidian', { clip: 'neckC' });
-    for (var y = 39; y <= 63; y += 3) k.tube([[37.5, y - 0.5, 0.5], [C, y + 0.5, 0.5], [42.5, y - 0.5, 0.5]], null, { adj: -1, clip: 'neckC', mat: 'obsidian' });
+    k.tube([[C, 64, 3], [43, 52, 2.8], [38, 40, 2.4], [C, 34, 2.2]], 'obsidian', { clip: 'neckC' });
+    for (var y = 37; y <= 63; y += 3) k.tube([[33, y - 0.5, 0.5], [C + 1, y + 0.5, 0.5], [48, y - 0.5, 0.5]], null, { adj: -1, clip: 'neckC', mat: 'obsidian' });
     k.px(39, 45, 'violet', 5); k.px(40, 45, 'violet', 6); k.px(41, 54, 'violet', 5); k.px(40, 54, 'violet', 4);
     // front coil: two humps piled on the ground, tail curling up with an iron blade
     var coil = [[6, 73, 1.6], [12, 70, 4], [20, 65, 5.5], [29, 68, 6], [36, 72.5, 6], [46, 72, 6], [54, 66, 6], [62, 66, 5.2], [68, 70.5, 3.6], [73, 66, 2.4], [72, 59, 1.4]];
@@ -350,9 +350,9 @@
     k.tufts([[57, 63], [59, 60]], 'cream', { part: 'scut', len: 2.5, w: 2.5, every: 1.2, seed: 5 });
     [[26, 62], [29, 60], [24, 66], [52, 60], [55, 63], [51, 64], [30, 64], [56, 67]].forEach(function (p) { k.px(p[0], p[1], 'light', 6); k.px(p[0] + 1, p[1], 'light', 5); });
     k.sym(C, function (m, s) {
-      k.tube([[m(35), 67, 2.6], [m(30), 71, 2.1], [m(25.5), 72.5, 1.7]], 'tan', { part: 'fore' + s });
-      k.ellipse(m(23.5), 72.6, 2, 1.7, 'wood', { part: 'hoof' + s });
-      k.px(m(23.5), 73, 'wood', 0);
+      k.tube([[m(35.5), 67, 2.6], [m(34), 71, 2.3], [m(31), 72.8, 1.8]], 'tan', { part: 'fore' + s });
+      k.poly([[m(30.5), 71.2], [m(27), 72], [m(27), 74.5], [m(30.5), 74.5]], 'wood', { part: 'hoof' + s });
+      k.px(m(28.5), 73, 'wood', 0); k.px(m(28.5), 74, 'wood', 0);
     });
     // chest with cream bib
     k.ellipse(C, 62, 8, 7, 'tan', { part: 'chest' });
@@ -484,8 +484,8 @@
       k.tube([[m(37), 19.5, 0.5], [m(19), 9.5, 0.5]], null, { adj: 1, clip: 'fluke' + s });
     });
     // aurora streamers trailing low behind the fins
-    k.tube([[2, 70, 0.6], [8, 64, 1.8], [14, 58, 2.2], [20, 55, 1.6]], 'violet', { part: 'rib2', shade: 'glow' });
-    k.tube([[78, 72, 0.6], [72, 66, 1.8], [66, 60, 2.2], [60, 56, 1.6]], 'sakura', { part: 'rib3', shade: 'glow' });
+    k.tube([[3, 76, 0.6], [5, 70, 1.8], [8, 62, 2.4], [14, 56, 2], [20, 55, 1.6]], 'violet', { part: 'rib2', shade: 'glow' });
+    k.tube([[77, 76, 0.6], [75, 70, 1.8], [72, 62, 2.4], [66, 56, 2], [60, 55, 1.6]], 'sakura', { part: 'rib3', shade: 'glow' });
     // humpback pectoral fins with knobbly leading edges and pale undersides
     k.sym(C, function (m, s) {
       k.leaf(m(24), 58, m(4), 70, 11, 'crystal', { part: 'fin' + s });
@@ -494,6 +494,11 @@
     });
     // body: broad flat head, pale pleated throat
     k.ellipse(C, 49, 26, 19, 'crystal', { part: 'body' });
+    k.texture('body', 'dots', { seed: 4 });
+    [[24, 36], [30, 32], [50, 32], [56, 36], [60, 42], [20, 42]].forEach(function (p) { k.px(p[0], p[1], 'crystal', 5); k.px(p[0], p[1] + 1, 'crystal', 2); });
+    k.tube([[18, 40, 0.6], [26, 33, 0.6], [34, 31, 0.6]], null, { adj: 1, clip: 'body' });
+    k.tube([[63, 44, 0.5], [65, 50, 0.5]], null, { set: 4, clip: 'body' });
+    k.ellipse(C, 47, 13, 5, null, { adj: 1, clip: 'body', pattern: 'sparse' });
     k.poly([[15, 52], [22, 55.5], [32, 57], [48, 57], [58, 55.5], [65, 52], [66, 70], [14, 70]], 'ice', { clip: 'body' });
     for (var x = 23; x <= 57; x += 3) k.tube([[x, 58.5, 0.5], [x + (x - C) * 0.12, 68, 0.5]], null, { adj: -1, clip: 'body', mat: 'ice' });
     k.path([[15, 52], [22, 55.5], [32, 57], [48, 57], [58, 55.5], [65, 52]], 'crystal', 1);
