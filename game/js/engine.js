@@ -67,7 +67,7 @@
     _map: {
       ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
       KeyZ: 'ok', Enter: 'ok', Space: 'ok', KeyX: 'back', Escape: 'back', Backspace: 'back',
-      Digit1: 'c1', Digit2: 'c2', Digit3: 'c3', Digit4: 'c4', Numpad1: 'c1', Numpad2: 'c2', Numpad3: 'c3', Numpad4: 'c4',
+      Digit1: 'c1', Digit2: 'c2', Digit3: 'c3', Digit4: 'c4', Digit5: 'c5', Numpad1: 'c1', Numpad2: 'c2', Numpad3: 'c3', Numpad4: 'c4', Numpad5: 'c5', Tab: 'c5',
       KeyM: 'mute', KeyP: 'pause',
     },
     isDown(a) { return !!this.down[a]; },

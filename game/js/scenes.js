@@ -15,6 +15,7 @@
     reset() {
       this.roster = Data.HOME.map((p) => Object.assign({}, p, { stats: Object.assign({}, p.stats), base: Object.assign({}, p.stats) }));
       this.lineup = Data.DEFAULT_LINEUP.slice();
+      this.tactic = 'counter';
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
     },
   };
@@ -637,27 +638,27 @@
       const L = list();
       if (Input.hit('up')) setSel((s.sel + L.length - 1) % L.length);
       if (Input.hit('down')) setSel((s.sel + 1) % L.length);
-      L.forEach((p, i) => { const r = { x: 8, y: 34 + i * 27, w: 120, h: 25 }; if (E.hoverIn(r) && Input.mouse.moved) setSel(i); if (E.clickedIn(r)) setSel(i); });
-      const back = { x: 8, y: H - 24, w: 120, h: 18 };
-      if (Input.hit('back') || Input.hit('ok') && false || E.clickedIn(back)) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); }
+      L.forEach((p, i) => { const r = { x: 8, y: 32 + i * 16, w: 120, h: 15 }; if (E.hoverIn(r) && Input.mouse.moved) setSel(i); if (E.clickedIn(r)) setSel(i); });
+      const back = { x: 150, y: 6, w: 56, h: 20 };
+      if (Input.hit('back') || E.clickedIn(back)) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); }
       if (State.auto && s.t > 1.5) Game.goto(Hub(), 'stripe');
     };
     s.draw = (g) => {
       g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);
       g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
-      panel(g, 6, 4, 200, 24, 'dark');
+      panel(g, 6, 4, 140, 24, 'dark');
       text(g, '選手名鑑', 16, 9, { size: 14, color: '#ffd24a' });
       const L = list();
       L.forEach((p, i) => {
-        const y = 34 + i * 27, sel = s.sel === i;
-        panel(g, 8 + (sel ? 4 : 0), y, 120, 25, sel ? 'gold' : 'paper');
-        g.drawImage(Art.sprite(p.look, 'down', 'walk1'), 12 + (sel ? 4 : 0), y + 1);
-        text(g, p.name, 32 + (sel ? 4 : 0), y + 3, { size: 10, color: '#2a1a24' });
-        text(g, p.pos + (p === State.recruit ? '  NEW!' : ''), 32 + (sel ? 4 : 0), y + 14, { size: 8, color: p === State.recruit ? '#e0474c' : '#6d4f3a' });
+        const y = 32 + i * 16, sel = s.sel === i, ox = sel ? 4 : 0;
+        panel(g, 8 + ox, y, 124, 15, sel ? 'gold' : State.lineup.includes(p.id) ? 'paper' : ['#2a1a24', '#d9cfbb', '#b9ad98', '#ece4d4']);
+        text(g, p.pos, 12 + ox, y + 3, { size: 8, color: '#2f86c4' });
+        text(g, p.name + (p === State.recruit ? ' NEW' : ''), 30 + ox, y + 2, { size: 9, color: '#2a1a24' });
+        if (!State.lineup.includes(p.id)) text(g, '控え', 126 + ox, y + 3, { size: 8, align: 'right', color: '#9a8e7a' });
       });
-      const back = { x: 8, y: H - 24, w: 120, h: 18 };
+      const back = { x: 150, y: 6, w: 56, h: 20 };
       panel(g, back.x, back.y, back.w, back.h, E.hoverIn(back) ? 'gold' : 'dark');
-      text(g, 'X / クリック：もどる', back.x + 60, back.y + 4, { size: 8, align: 'center', color: E.hoverIn(back) ? '#2a1a24' : '#c9d6e6' });
+      text(g, 'X：もどる', back.x + 28, back.y + 5, { size: 8, align: 'center', color: E.hoverIn(back) ? '#2a1a24' : '#c9d6e6' });
       // detail
       const p = L[s.sel];
       const k = s.anim;
@@ -669,8 +670,9 @@
       drawPortrait(g, p.id, s.t % 6 < 0.15 ? 'happy' : 'normal', 148 + dx, 16, 2);
       panel(g, 146 + dx, 118, 100, 18, 'sky');
       text(g, p.pos, 196 + dx, 122, { size: 10, align: 'center', color: '#ffffff', outline: '#10304f' });
-      text(g, p.full || p.name, 254 + dx, 18, { size: 16, color: '#2a1a24' });
-      text(g, (p.age ? p.age + '歳　' : '') + (p.job || ''), 256 + dx, 40, { size: 9, color: '#6d4f3a' });
+      if (p.nick) text(g, '「' + p.nick + '」', 254 + dx, 12, { size: 9, color: '#e0474c' });
+      text(g, p.full || p.name, 254 + dx, 22, { size: 16, color: '#2a1a24' });
+      text(g, (p.age ? p.age + '歳　' : '') + (p.job || ''), 256 + dx, 42, { size: 9, color: '#6d4f3a' });
       const bio = wrap(g, p.bio || '', 204, 9);
       bio.forEach((l, i) => text(g, l, 256 + dx, 56 + i * 13, { size: 9, color: '#2a1a24' }));
       // trait
@@ -914,7 +916,8 @@
       const [nx, ny] = s.pos[i - 1];
       return [BX + 4 + nx * (BW - 8), BY + 4 + ny * (BH - 8)];
     };
-    const benchRect = (i) => ({ x: 298, y: 74 + i * 25, w: 174, h: 23 });
+    const benchRect = (i) => ({ x: 298, y: 92 + i * 22, w: 174, h: 21 });
+    const tacRect = (i) => ({ x: 298 + i * 44, y: 58, w: 42, h: 16 });
     const formRect = (i) => ({ x: 298 + i * 59, y: 34, w: 56, h: 20 });
     // selectable targets: 0..10 = lineup slots, 11.. = bench
     const targets = () => State.lineup.map((id, i) => ({ kind: 'slot', i, id })).concat(bench().map((p, i) => ({ kind: 'bench', i, id: p.id })));
@@ -952,6 +955,7 @@
       s.pos.forEach((p, i) => { p[0] = lerp(p[0], tgt[i][0], clamp(dt * 10, 0, 1)); p[1] = lerp(p[1], tgt[i][1], clamp(dt * 10, 0, 1)); });
       // formation tabs
       s.keys.forEach((k, i) => { if (E.clickedIn(formRect(i)) && State.formation !== k) { State.formation = k; Sound.play('select'); } });
+      Object.keys(Data.TACTICS).forEach((k, i) => { if (E.clickedIn(tacRect(i)) && State.tactic !== k) { State.tactic = k; Sound.play('stamp', { vol: 0.5 }); } });
       // mouse
       s.hover = null;
       tgs.forEach((tg) => { if (E.hoverIn(targetRect(tg))) s.hover = tg; });
@@ -962,7 +966,7 @@
       if (Input.mouse.moved) s.kb = false;
       if (Input.hit('ok')) click(tgs[s.cursor]);
       if (Input.hit('c1') || Input.hit('c2') || Input.hit('c3')) { const i = Input.hit('c1') ? 0 : Input.hit('c2') ? 1 : 2; State.formation = s.keys[i]; Sound.play('select'); }
-      const done = { x: 298, y: 214, w: 174, h: 18 };
+      const done = { x: 298, y: 219, w: 174, h: 15 };
       if (Input.hit('back') || E.clickedIn(done)) {
         if (s.pick && Input.hit('back')) { s.pick = null; Sound.play('cancel'); return; }
         Sound.play('select'); Game.goto(Hub(), 'stripe');
@@ -1011,27 +1015,35 @@
         text(g, f.name.split(' ')[1], r.x + r.w / 2, r.y + 1, { size: 8, align: 'center', color: '#2a1a24' });
         text(g, f.short, r.x + r.w / 2, r.y + 10, { size: 8, align: 'center', color: '#6d4f3a' });
       });
+      // team tactic
+      Object.keys(Data.TACTICS).forEach((k, i) => {
+        const r = tacRect(i), T = Data.TACTICS[k], cur = State.tactic === k, hv = E.hoverIn(r);
+        panel(g, r.x, r.y, r.w, r.h, cur ? 'gold' : hv ? 'sky' : 'paper');
+        g.fillStyle = T.color; g.fillRect(r.x + 3, r.y + 4, 3, 8);
+        text(g, T.short, r.x + 24, r.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
+        if (hv) s.tacHover = k;
+      });
       // bench
-      text(g, 'ベンチ', 300, 60, { size: 9, color: '#9fdcff' });
+      text(g, 'ベンチ', 300, 79, { size: 9, color: '#9fdcff' });
       bench().forEach((p, i) => {
         const r = benchRect(i), tg = tgs[11 + i];
         const hl = s.pick && s.pick.kind === 'bench' && s.pick.i === i, hv = s.hover === tg || (s.kb && s.cursor === 11 + i);
         panel(g, r.x + (hl ? 4 : 0), r.y, r.w, r.h, hl ? 'gold' : hv ? 'sky' : 'paper');
         g.drawImage(Art.sprite(p.look, 'down', 'walk1'), r.x + 3 + (hl ? 4 : 0), r.y);
-        text(g, p.name, r.x + 22 + (hl ? 4 : 0), r.y + 2, { size: 9, color: '#2a1a24' });
-        text(g, p.pos + '・' + p.trait, r.x + 22 + (hl ? 4 : 0), r.y + 12, { size: 8, color: '#6d4f3a' });
+        text(g, p.name + '　' + p.pos, r.x + 22 + (hl ? 4 : 0), r.y + 1, { size: 9, color: '#2a1a24' });
+        text(g, '「' + p.nick + '」', r.x + 22 + (hl ? 4 : 0), r.y + 11, { size: 8, color: '#6d4f3a' });
       });
       // combos
-      const cy0 = 74 + bench().length * 25 + 6;
+      const cy0 = 92 + bench().length * 22 + 4;
       text(g, 'コンビ（' + combos.length + '）', 300, cy0, { size: 9, color: '#ffd24a' });
       combos.slice(0, 8).forEach((c, i) => {
         const x = 300 + (i % 2) * 88, y = cy0 + 12 + Math.floor(i / 2) * 11;
         g.fillStyle = c.kind === 'bad' ? '#ff6a6a' : c.kind === 'mixed' ? '#d8a8f0' : '#ffd24a'; g.fillRect(x, y + 3, 4, 4);
         text(g, c.name, x + 7, y, { size: 8, color: '#ffffff' });
       });
-      const done = { x: 298, y: 214, w: 174, h: 18 };
+      const done = { x: 298, y: 219, w: 174, h: 15 };
       panel(g, done.x, done.y, done.w, done.h, E.hoverIn(done) ? 'gold' : 'dark');
-      text(g, 'X / クリック：決定してもどる', done.x + done.w / 2, done.y + 4, { size: 8, align: 'center', color: E.hoverIn(done) ? '#2a1a24' : '#c9d6e6' });
+      text(g, 'X / クリック：決定してもどる', done.x + done.w / 2, done.y + 3, { size: 8, align: 'center', color: E.hoverIn(done) ? '#2a1a24' : '#c9d6e6' });
       // info strip
       const focus = s.hover || (s.kb ? tgs[s.cursor] : null) || s.pick;
       panel(g, 6, 236, 468, 30, 'paper');
@@ -1039,10 +1051,12 @@
       else if (focus) {
         const p = byId(focus.id);
         drawPortrait(g, p.id, 'normal', 8, 237, 0.5);
-        text(g, p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
+        text(g, '「' + p.nick + '」' + p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
         const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
         text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
-      } else text(g, '選手にカーソルを合わせると特性と相性が見られます。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
+      } else if (s.tacHover) { const T = Data.TACTICS[s.tacHover]; text(g, '戦術「' + T.name + '」', 16, 239, { size: 9, color: '#2a1a24' }); text(g, T.desc, 16, 252, { size: 8, color: '#6d4f3a' }); }
+      else text(g, '選手にカーソルを合わせると特性と相性が見られます。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
+      s.tacHover = null;
       if (s.newCombo) {
         const k = Ease.outBack(clamp(s.newCombo.t / 0.3, 0, 1)), c = s.newCombo.c;
         const a = 1 - clamp((s.newCombo.t - 2.2) / 0.4, 0, 1);
@@ -1129,7 +1143,8 @@
 
   function startMatch() {
     return new Match({
-      formation: State.formation, auto: State.auto, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
+      formation: State.formation, tactic: State.tactic, auto: State.auto, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
+      bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
       onEnd: (r) => { State.result = r; Game.goto(Result(r), 'iris'); },
     });
   }
@@ -1138,7 +1153,9 @@
   function computeGrowth(r) {
     const out = [];
     for (const p of State.roster) {
-      const rec = (r.recs.find((x) => x.id === p.id && x.team === 0) || {}).rec || {};
+      const found = r.recs.find((x) => x.id === p.id && x.team === 0);
+      if (!found) continue;
+      const rec = found.rec;
       const exp = {
         sht: (rec.shot || 0) * 5 + (rec.goal || 0) * 16,
         pas: (rec.pass || 0) * 1.0 + (rec.passOk || 0) * 1.6 + (rec.assist || 0) * 10,

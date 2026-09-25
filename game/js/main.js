@@ -15,7 +15,7 @@
     if (auto) Sound.init();
     const scene = q.get('scene');
     if (scene === 'match' || !window.Scenes) {
-      E.Game.start(new Match({ formation: q.get('form') || 'balance', auto, onEnd: (r) => { window.__result = r; if (window.Scenes) E.Game.goto(Scenes.result(r)); } }));
+      E.Game.start(new Match({ formation: q.get('form') || 'balance', tactic: q.get('tac') || undefined, awayTactic: q.get('atac') || undefined, auto, onEnd: (r) => { window.__result = r; if (window.Scenes) E.Game.goto(Scenes.result(r)); } }));
     } else {
       E.Game.start(Scenes.start(scene, { auto }));
     }
