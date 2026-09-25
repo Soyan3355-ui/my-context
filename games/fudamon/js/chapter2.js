@@ -9,17 +9,17 @@ ITEMSPOTS.forest=[{id:'f1',x:28,y:1,give:'gold',n:2},{id:'f2',x:2,y:26,give:'pot
 const TRAINERS={
   yoshio:{map:'field',x:16,y:36,dir:'left',sight:3,sprite:'villager',name:'農家のヨシオ',team:[{id:21,lv:4},{id:26,lv:4}],reward:150,smart:.3,
     pre:'おう、見かけない 札さばきだな！<br>田んぼ仕事の 合間の 一勝負だ！',win:'まいった！ 若いのに やるなぁ！',after:'ふう、田んぼ仕事より くたびれたわい。<br>カッパチは 田んぼの 水路に よく おるぞ。',flag:'yoshio'},
-  v_hiker:{map:'valley',x:9,y:5,dir:'down',sight:2,sprite:'hiker',name:'山男のトオル',team:[{id:16,lv:10},{id:7,lv:11}],reward:300,smart:.4,
+  v_hiker:{map:'valley',x:9,y:5,dir:'down',sight:2,sprite:'hiker',name:'山男のトオル',team:[{id:16,lv:13},{id:7,lv:14}],reward:300,smart:.4,
     pre:'霧の 中から こんにちは！<br>足腰と 札は 鍛えるほど 強くなるんだ！',win:'ぐはっ… 鍛え直しだ！',after:'この 谷は 霧が 深い。<br>水の 魔物が 多いから 雷か 草の 札が 役に立つぞ。'},
-  v_girl:{map:'valley',x:22,y:12,dir:'right',sight:2,sprite:'girl',name:'虫とりのハナ',team:[{id:17,lv:11},{id:12,lv:11},{id:27,lv:12}],reward:320,smart:.4,
+  v_girl:{map:'valley',x:22,y:12,dir:'right',sight:2,sprite:'girl',name:'虫とりのハナ',team:[{id:17,lv:14},{id:12,lv:14},{id:27,lv:15}],reward:320,smart:.4,
     pre:'あっ！ めずらしい 札の 気配！<br>わたしの 虫札と 勝負よ！',win:'わたしの 虫札たちが〜！',after:'同じ 魔物の 札を 何枚か 集めて 育てると 進化するんだって！<br>キノコボウの 進化、見てみたいなぁ。'},
-  m_hiker:{map:'mount',x:8,y:9,dir:'left',sight:2,sprite:'hiker',name:'登山家のケンジ',team:[{id:3,lv:15},{id:16,lv:15}],reward:450,smart:.5,
+  m_hiker:{map:'mount',x:8,y:9,dir:'left',sight:2,sprite:'hiker',name:'登山家のケンジ',team:[{id:3,lv:18},{id:16,lv:18}],reward:450,smart:.5,
     pre:'この 山を 登るなら、まずは おれを 越えていけ！',win:'山頂は まだ 遠いな…。',after:'溶岩の そばでは 炎の 魔物が 元気だ。<br>水の 札を 持っていくと いい。'},
-  m_monk:{map:'mount',x:17,y:11,dir:'down',sight:1,sprite:'monk',name:'修行僧のテツ',team:[{id:2,lv:15},{id:18,lv:16},{id:4,lv:16}],reward:480,smart:.5,
+  m_monk:{map:'mount',x:17,y:11,dir:'down',sight:1,sprite:'monk',name:'修行僧のテツ',team:[{id:2,lv:18},{id:18,lv:19},{id:4,lv:19}],reward:480,smart:.5,
     pre:'喝ッ！ 修行の 成果、見せてもらおう！',win:'…まだまだ 修行が 足りぬ。',after:'温泉に つかると 心も 札も ととのうぞ。<br>西の 湯だまりを 調べてみなされ。'},
-  f_girl:{map:'forest',x:6,y:10,dir:'right',sight:3,sprite:'girl',name:'ほたるがりのミヨ',team:[{id:27,lv:19},{id:26,lv:20},{id:12,lv:19}],reward:600,smart:.5,
+  f_girl:{map:'forest',x:6,y:10,dir:'right',sight:3,sprite:'girl',name:'ほたるがりのミヨ',team:[{id:27,lv:22},{id:26,lv:23},{id:12,lv:22}],reward:600,smart:.5,
     pre:'しーっ… ホタルが 逃げちゃう。<br>…と 思ったら 封札師さん！ 勝負しよ！',win:'あなたの 札、ホタルより まぶしい…！',after:'森の 奥には 光る 石に かこまれた 場所が あるの。<br>近づくと 背すじが ぞくっと するんだ…。'},
-  f_monk:{map:'forest',x:22,y:17,dir:'left',sight:3,sprite:'monk',name:'夜回りのジン',team:[{id:22,lv:20},{id:21,lv:21},{id:24,lv:22}],reward:650,smart:.55,
+  f_monk:{map:'forest',x:22,y:17,dir:'left',sight:3,sprite:'monk',name:'夜回りのジン',team:[{id:22,lv:23},{id:21,lv:24},{id:24,lv:25}],reward:650,smart:.55,
     pre:'夜の 森を うろつく 者よ… 札で 語れ！',win:'見事な 札だ。 ヨイさまも きっと 認めよう。',after:'月の 祠守り ヨイさまは 闇と 光の 札の 使い手だ。'}
 };
 const trDone=id=>!!S.flags['tr_'+id]||(id==='yoshio'&&S.flags.yoshio);
@@ -49,13 +49,13 @@ spotted=async function(n,dist){
 
 /* ---------------- guardians ---------------- */
 const GUARD={
-  minamo:{flag:'b2',badge:'水鏡の印',name:'祠守りミナモ',sprite:'ama',team:[{id:9,lv:13},{id:8,lv:14},{id:10,lv:15}],reward:1000,smart:.5,
+  minamo:{flag:'b2',badge:'水鏡の印',name:'祠守りミナモ',sprite:'ama',team:[{id:9,lv:16},{id:8,lv:17},{id:10,lv:18}],reward:1000,smart:.5,
     hello:['霧の 渓谷へ ようこそ。 わたしは この 谷の 祠守り、ミナモ。','イワオさんの 印を もってるのね。<br>なら 水鏡の 試練、受けてもらうわ！'],
     win:'あなたの 札、澄んだ 水みたいに まっすぐね。',after:'南の 道の 先は ほむら岳。<br>炎の 祠守り ゴウエンが 待っているわ。',next:'南の ほむら岳で、祠守りゴウエンの 試練を 受けよう'},
-  goen:{flag:'b3',badge:'焔の印',name:'祠守りゴウエン',sprite:'yamabushi',team:[{id:4,lv:18},{id:3,lv:19},{id:5,lv:21}],reward:1500,smart:.55,
+  goen:{flag:'b3',badge:'焔の印',name:'祠守りゴウエン',sprite:'yamabushi',team:[{id:4,lv:21},{id:3,lv:22},{id:5,lv:24}],reward:1500,smart:.55,
     hello:['おぬしが ツムギ村の 封札師か！<br>わしは ほむら岳の 祠守り、ゴウエン！','炎の 試練は 甘くないぞ。 燃えつきる 覚悟は あるか！'],
     win:'がっはっは！ 見事に 焼かれたわ！',after:'東の 道を 抜ければ 月影の森。<br>夜の 森は 足もとに 気をつけよ。',next:'東の 月影の森で、祠守りヨイの 試練を 受けよう'},
-  yoi:{flag:'b4',badge:'月の印',name:'祠守りヨイ',sprite:'miko',team:[{id:23,lv:23},{id:28,lv:23},{id:24,lv:24},{id:29,lv:26}],reward:2000,smart:.6,
+  yoi:{flag:'b4',badge:'月の印',name:'祠守りヨイ',sprite:'miko',team:[{id:23,lv:26},{id:28,lv:26},{id:24,lv:27},{id:29,lv:29}],reward:2000,smart:.6,
     hello:['…月が 教えてくれました。 あなたが 来ることを。','わたしは 月影の森の 祠守り、ヨイ。<br>最後の 印、闇と 光の 札で 見極めます。'],
     win:'…あなたなら、あの 空の 鯨にも 届くでしょう。',after:'四つの 印が そろいました。<br>古札の祠の ご神木へ… 空の 鯨が 待っています。',next:'古札の祠の ご神木で、印の 力を 示そう'}
 };
@@ -77,9 +77,9 @@ async function talkGuard(n){
 /* ---------------- rival rematches ---------------- */
 function rivalStarter(){return RIVAL_OF[S.flags.starter]||6}
 const RIVAL={
-  rv2:{map:'valley',at:(x,y)=>y===6&&x>=4&&x<=12,team:()=>[{id:rivalStarter(),lv:13},{id:16,lv:11}],pre:['よう ソーヤ！ やっと 追いついたな！','霧の 谷で 腕試しだ！ いくぜ！'],win:'くっ… 谷の 霧で 前が 見えなかった だけだ！',lose:'へへっ、おれの 勝ち！<br>先に 行ってるぜ！',post:'おれの 相棒も もうすぐ 進化しそうなんだ。<br>同じ 札を 集めて レベルを 上げると 進化するんだぜ！'},
-  rv3:{map:'mount',at:(x,y)=>y===12&&x>=10&&x<=22,team:()=>[{id:EVO[rivalStarter()].to,lv:18},{id:17,lv:16},{id:14,lv:17}],pre:['ソーヤ！ 見ろよ、おれの 相棒！<br>ついに 進化したんだぜ！','熱い 山には 熱い 勝負が お似合いだ！'],win:'進化しても 勝てないなんて… おまえ、どこまで 強くなるんだ。',lose:'進化の 力、思い知ったか！',post:'月影の森の 先に… あのクジラの 手がかりが あるらしいぜ。'},
-  rv4:{map:'forest',at:(x,y)=>y>=17&&y<=23&&x>=9&&x<=19,team:()=>[{id:EVO[rivalStarter()].to,lv:23},{id:19,lv:22},{id:20,lv:24}],pre:['来たな ソーヤ。','ここで 決着 つけようぜ。 どっちが クジラに ふさわしいか！'],win:'…負けだ。 完全に な。<br>クジラは おまえに ゆずるよ。 行ってこい！',lose:'はぁ、はぁ… 勝った…！<br>でも おまえも 強くなったな。',post:'おれは もっと 強くなって、いつか 伝説の 札を ぜんぶ 封印してやる。'}
+  rv2:{map:'valley',at:(x,y)=>y===6&&x>=4&&x<=12,team:()=>[{id:EVO[rivalStarter()].to,lv:16},{id:16,lv:14}],pre:['よう ソーヤ！ やっと 追いついたな！','見ろよ、おれの 相棒！ 進化したんだぜ！<br>霧の 谷で 腕試しだ！'],win:'くっ… 谷の 霧で 前が 見えなかった だけだ！',lose:'へへっ、おれの 勝ち！<br>先に 行ってるぜ！',post:'同じ 札を 集めて レベルを 上げると 進化するんだ。<br>おまえも 相棒を 進化させてみろよ！'},
+  rv3:{map:'mount',at:(x,y)=>y===12&&x>=10&&x<=22,team:()=>[{id:EVO[rivalStarter()].to,lv:21},{id:17,lv:19},{id:14,lv:20}],pre:['ソーヤ！ 山ごもりで 鍛えなおしてきたぜ！','熱い 山には 熱い 勝負が お似合いだ！'],win:'進化しても 勝てないなんて… おまえ、どこまで 強くなるんだ。',lose:'進化の 力、思い知ったか！',post:'月影の森の 先に… あのクジラの 手がかりが あるらしいぜ。'},
+  rv4:{map:'forest',at:(x,y)=>y>=17&&y<=23&&x>=9&&x<=19,team:()=>[{id:EVO[rivalStarter()].to,lv:26},{id:19,lv:25},{id:20,lv:27}],pre:['来たな ソーヤ。','ここで 決着 つけようぜ。 どっちが クジラに ふさわしいか！'],win:'…負けだ。 完全に な。<br>クジラは おまえに ゆずるよ。 行ってこい！',lose:'はぁ、はぁ… 勝った…！<br>でも おまえも 強くなったな。',post:'おれは もっと 強くなって、いつか 伝説の 札を ぜんぶ 封印してやる。'}
 };
 async function rivalEvent(key){
   const R=RIVAL[key];G.lock++;S.flags[key]=true;
@@ -104,7 +104,7 @@ async function whaleEvent(){
   await sky.querySelector('.whale').animate([{transform:'translate(115cqw,-4cqh) scale(.6)',opacity:0},{transform:'translate(40cqw,6cqh) scale(1.3)',opacity:1}],{duration:RM?500:2600,easing:'ease-out',fill:'forwards'}).finished;
   await say('オオオォォ………ン');
   sky.hidden=true;sky.innerHTML='';
-  const r=await runBattle({wild:{id:30,lv:30},bg:ENC.legend,music:'legend'});
+  const r=await runBattle({wild:{id:30,lv:32},bg:ENC.legend,music:'legend'});
   if(r==='sealed'||r==='win'){const first=!S.flags.whaleDone;S.flags.whaleDone=true;saveGame();
     await say(r==='sealed'?'伝説の 魔物… オーロラクジラを 封印した！':'オーロラクジラは 空へ 帰っていった…。<br>ご神木に 祈れば、また 会えるかもしれない。');
     if(first)await finalEnding();}
@@ -115,7 +115,7 @@ async function orochiEvent(){
   G.lock++;
   await say('光る 石の 輪の 中心に 立つと…<br>地の 底から うなり声が 響いてきた！');
   G.shake=6;snd('charge');await sleep(600);G.shake=8;G.flash=.6;G.flashCol='#6b2dbb';await sleep(500);
-  const r=await runBattle({wild:{id:25,lv:35},bg:{bg:['#1a0f2e','#6b4bb8'],floor:'#3a2a5e'},music:'legend'});
+  const r=await runBattle({wild:{id:25,lv:38},bg:{bg:['#1a0f2e','#6b4bb8'],floor:'#3a2a5e'},music:'legend'});
   if(r==='sealed'){S.flags.orochiDone=true;await say('クロガネオロチを 封印した！<br>ツムギ村の 伝説に、新しい 一ページが 刻まれた。')}
   else if(r==='win'){await say('クロガネオロチは 地の 底へ 沈んでいった…。<br>封印しない かぎり、また 目を覚ますだろう。')}
   else await say('オロチの 気配が 地の 底へ 消えた…。<br>また 石の 輪に 立てば 現れるだろう。');
@@ -231,3 +231,35 @@ const _startWorld=startWorld;
 startWorld=function(){_startWorld();const b=badgeCount();
   if(S.flags.badge&&!S.flags.whaleDone){const t=b<2?GUARD.minamo.next.replace('南の ほむら岳で、祠守りゴウエンの','祠の 東の 道から 霧の渓谷へ。祠守りミナモの'):b<3?GUARD.minamo.next:b<4?GUARD.goen.next:GUARD.yoi.next;
     showObjective(b<2?'祠の 東の 道から 霧の渓谷へ。祠守りミナモの 試練を 受けよう':t)}};
+
+/* ---------------- rival cuts in before イワオ's trial ---------------- */
+const _talkGuardian=talkGuardian;
+talkGuardian=async function(n){
+  if(S.flags.badge||S.flags.rvIwao||!S.flags.starter)return _talkGuardian(n);
+  G.lock++;
+  if(!S.flags.guardianMet){S.flags.guardianMet=true;await say('ほう… コハルの ところの 見習いか。<br>わしは この 古札の祠を 守る イワオ。',NM.guardian);
+    await say('封札師の 印が ほしいなら、わしに 札の 力を 示してみよ。',NM.guardian)}
+  bgm('title');
+  await say('ちょっと 待ったーーー！！',NM.rival);
+  const rv={key:'rv_iwao',sprite:'rival',x:G.p.x+1,y:G.p.y+5,dir:'up',frame:0,moving:false,prog:0,vis:()=>true};
+  if(blocked(rv.x,rv.y))rv.x=G.p.x;
+  G.npcs.push(rv);G.p.dir='down';snd('exclaim');rv.alert=true;await sleep(500);rv.alert=false;
+  await moveNPC(rv,'up',4,7);rv.dir=rv.x>G.p.x?'left':'up';G.p.dir=rv.x>G.p.x?'right':'down';
+  await say('はぁ、はぁ… 間に合った！<br>イワオの 試験は おれが 先に 受けるんだ！',NM.rival);
+  await say('ふむ… 若いのが 二人か。<br>ならば まず おぬしら 二人で 勝負せい。 勝った者から 試練を 受けさせてやろう。',NM.guardian);
+  await say('望むところだ！ ソーヤ、手加減なしで いくぜ！',NM.rival);
+  const r=await runBattle({trainer:{name:'レン',sprite:'rival',team:[{id:rivalStarter(),lv:13},{id:16,lv:11},{id:7,lv:11}],reward:400,smart:.45,intro:'ライバルの レンが 勝負を しかけてきた！',winLine:'ぐっ… 先を ゆずってやるよ。 絶対 印を 取れよな！',loseLine:'よっしゃ！ 先に 行かせて もらうぜ！'},canLose:true,bg:ENC.shrine});
+  S.flags.rvIwao=true;
+  if(r==='win'){
+    await say('ちぇっ… 今日は おまえに ゆずる。<br>イワオの 札は めちゃくちゃ 強いから 気をつけろよ！',NM.rival);
+  }else{
+    await say('よーし、イワオさん！ 試験 お願いします！',NM.rival);
+    await fadeTo(1,.4);snd('hit');await sleep(350);snd('hitSuper');G.shake=6;await sleep(450);snd('faint');await sleep(500);await fadeTo(0,.4);
+    await say('………ぜ、全滅… イワオさん、強すぎだろ…。',NM.rival);
+    await say('まだまだ 修行が 足りぬな。 …次は おぬしの 番じゃ。',NM.guardian);
+    await say('ソーヤ… おまえなら いけるかもな。 頼んだぜ！',NM.rival);
+  }
+  healAll();await say('二人とも ご苦労。 札の 傷は 癒しておいた。<br>準備が できたら、わしに 声を かけよ。',NM.guardian);
+  await moveNPC(rv,'down',4,7);G.npcs=G.npcs.filter(x=>x!==rv);G.p.dir='up';
+  updateBGM();saveGame();G.lock--;
+};

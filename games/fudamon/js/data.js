@@ -302,14 +302,14 @@ function areaAt(map,y){
   return 'ツムギ村';
 }
 const ENC={
-  route:{lv:[2,5],pool:[1,2,6,7,11,12,13,16,17,18,21,22,26,27],bg:['#9ed49a','#e8f6cf'],floor:'#6fae5f'},
-  meadow:{lv:[6,9],pool:[3,4,8,9,14,19,23,24,28,2,7,12,17,22,27],bg:['#8f9ad8','#e6e2fb'],floor:'#6f7fb8'},
+  route:{lv:[2,6],pool:[1,2,6,7,11,12,13,16,17,18,21,22,26,27],bg:['#9ed49a','#e8f6cf'],floor:'#6fae5f'},
+  meadow:{lv:[8,12],pool:[3,4,8,9,14,19,23,24,28,2,7,12,17,22,27],bg:['#8f9ad8','#e6e2fb'],floor:'#6f7fb8'},
   village:{bg:['#a5dc9c','#eef7d6'],floor:'#79b566'},
   shrine:{bg:['#c7b6e8','#fff1e2'],floor:'#b0a0cf'},
   indoor:{bg:['#d9b98f','#f6e8cf'],floor:'#b28b5d'},
-  valley:{lv:[9,14],pool:[6,7,8,9,16,17,21,22,10],bg:['#9fc3d8','#eaf3f5'],floor:'#6e9a86'},
-  mount:{lv:[13,18],pool:[1,2,3,4,16,18,19,20,5],bg:['#d9876a','#ffe0c4'],floor:'#8a6a5a'},
-  forest:{lv:[17,23],pool:[21,22,23,24,26,27,28,29,15,14,11,12],bg:['#2e2a5e','#8c86c9'],floor:'#3d4a6e'},
+  valley:{lv:[12,16],pool:[6,7,8,9,16,17,21,22,10],bg:['#9fc3d8','#eaf3f5'],floor:'#6e9a86'},
+  mount:{lv:[16,20],pool:[1,2,3,4,16,18,19,20,5],bg:['#d9876a','#ffe0c4'],floor:'#8a6a5a'},
+  forest:{lv:[20,25],pool:[21,22,23,24,26,27,28,29,15,14,11,12],bg:['#2e2a5e','#8c86c9'],floor:'#3d4a6e'},
   legend:{bg:['#3b2d7a','#f2c8ff'],floor:'#8f7bd8'}
 };
 function encAt(map,y){if(ENC[map]&&ENC[map].pool)return ENC[map];if(map!=='field')return null;if(y<=17)return ENC.meadow;if(y<=44)return ENC.route;return null}
