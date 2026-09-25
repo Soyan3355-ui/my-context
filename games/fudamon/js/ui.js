@@ -53,7 +53,7 @@ function openMainMenu(){
     if(k==='dex')dexScreen(()=>{closePanel();G.lock--;openMainMenu()});
     if(k==='bag')bagScreen(()=>{closePanel();G.lock--;openMainMenu()});
     if(k==='opt')optScreen(()=>{closePanel();G.lock--;openMainMenu()});
-    if(k==='save'){saveGame();snd('save');closePanel();await say(`${S.name}は レポートに しっかり 書きのこした！`);G.lock--}
+    if(k==='save'){closePanel();const n=await pickSlot('save');if(n){SLOT=n;saveGame();snd('save');await say(`${S.name}は スロット${n}に レポートを しっかり 書きのこした！`)}G.lock--}
   }));
 }
 function fmtTime(s){s=Math.floor(s);return `${Math.floor(s/60)}分${String(s%60).padStart(2,'0')}秒`}

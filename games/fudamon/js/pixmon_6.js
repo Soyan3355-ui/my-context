@@ -152,7 +152,7 @@
     k.rect(59, 45, 7, 2, 'wood', { part: 'lcap' });
     k.ellipse(62.5, 51, 3.9, 4.2, 'flame', { part: 'lamp', shade: 'glow', halo: 0.35 });
     k.line(62, 47, 62, 54, 'wood', 2);
-    k.rect(59.5, 55, 6, 1.5, 'wood', { part: 'lbase' });
+    k.rect(60, 55, 6, 2, 'wood', { part: 'lbase' });
     k.px(62, 57, 'red', 4); k.px(62, 58, 'red', 3);
     // soft shade under the brim
     k.ellipse(C, 45.5, 13, 1.3, null, { adj: -1, clip: 'body' });
@@ -212,7 +212,7 @@
     k.path([[40, 23], [42, 28], [41, 33]], 'stone', 5); k.path([[44, 26], [47, 33], [46, 38]], 'stone', 2);
     // forest moss blanket with drips over the shell
     var drip = [[65, 58], [61, 60.5], [57, 57.5], [53, 60.5], [48, 58], [44, 61], [40, 58.5], [36, 61], [32, 58], [27, 60.5], [23, 57.5], [19, 60], [15, 58]];
-    k.poly([[14, 57], [18, 50], [24, 44], [29, 38], [33, 33], [37, 34], [42, 30], [46, 27], [50, 31], [55, 38], [60, 47], [66, 57]].concat(drip), 'grass', { part: 'moss' });
+    k.poly([[14, 57], [18, 50], [24, 44], [29, 38], [33, 33], [37, 34], [42, 30], [46, 27], [50, 31], [55, 38], [60, 47], [66, 57]].concat(drip), 'grass', { part: 'moss', light: -0.12 });
     k.tufts(drip.slice().reverse(), 'grass', { part: 'moss', len: 2.8, w: 2.4, every: 2.3, seed: 12 });
     k.tufts([[18, 50], [24, 44], [29, 38], [33, 33], [37, 34], [42, 30], [46, 27], [50, 31], [55, 38], [60, 47]], 'grass', { part: 'moss', len: 2.2, w: 2, every: 2.2, seed: 4 });
     k.texture('moss', 'fur', { seed: 5 });
@@ -221,6 +221,7 @@
       var x = t[0], y = t[1], h = t[2];
       k.spike(x, y, x, y - h, h * 0.75, 'grass', { part: 'pine' + i, shift: -1 });
       k.spike(x, y - h * 0.45, x, y - h * 1.2, h * 0.55, 'grass', { part: 'pine' + i, shift: -1 });
+      k.line(x - 1, y - h * 0.5, x - 1, y - h * 0.9, 'grass', 5);
       k.px(x, y + 1, 'wood', 2);
     });
     // waterfall from a spring near the summit
@@ -229,10 +230,10 @@
     k.ellipse(33.5, 58.5, 5, 1.7, 'white', { part: 'foam', shade: 'flat', flatTone: 6, outline: 'soft' });
     k.px(28, 57, 'white', 6); k.px(39, 56, 'white', 6);
     // summit shrine + torii
-    k.rect(37.5, 20, 6, 3, 'red', { part: 'hall' });
+    k.rect(37, 20, 7, 3, 'wood', { part: 'hall', shade: 'flat', flatTone: 2 });
     k.poly([[34, 20.5], [47, 20.5], [44, 17], [37, 17]], 'wood', { part: 'roof' });
     k.line(37, 17, 44, 17, 'gold', 5); k.px(34, 20, 'gold', 5); k.px(46, 20, 'gold', 5);
-    k.px(40, 21, 'black', 1); k.px(41, 21, 'black', 1); k.px(40, 22, 'black', 1); k.px(41, 22, 'black', 1);
+    k.line(37, 20, 37, 22, 'red', 4); k.line(43, 20, 43, 22, 'red', 3); k.px(40, 21, 'gold', 5); k.line(38, 20, 42, 20, 'wood', 1);
     k.line(47, 30, 47, 34, 'red', 3); k.line(51, 31, 51, 35, 'red', 3);
     k.line(45, 29, 53, 30, 'black', 1); k.line(46, 30, 52, 31, 'red', 4);
     // flowers on the moss
@@ -541,7 +542,8 @@
     k.ellipse(C, 44.5, 11.5, 3.6, 'cream', { part: 'ruff' });
     k.tufts(arc(C, 44.5, 11.5, 3.6, 160, 200, 10), 'cream', { part: 'ruff', len: 2.5, w: 3, every: 2, seed: 3 });
     k.tufts(arc(C, 44.5, 11.5, 3.6, -20, 20, 10), 'cream', { part: 'ruff', len: 2.5, w: 3, every: 2, seed: 5 });
-    k.tube([[30, 46, 0.6], [C, 47.5, 0.6], [50, 46, 0.6]], null, { adj: -1, clip: 'ruff' });
+    k.tufts([[49, 46.5], [44, 47.8], [36, 47.8], [31, 46.5]], 'cream', { part: 'ruff', len: 2.2, w: 2.6, every: 2.2, seed: 9 });
+    k.tube([[30, 45.5, 0.6], [C, 47, 0.6], [50, 45.5, 0.6]], null, { adj: -1, clip: 'ruff' });
     k.texture('ruff', 'fur', { seed: 4 });
     // antennae
     k.sym(C, function (m, s) { k.tube([[m(33), 29, 0.6], [m(27), 23, 0.6], [m(21), 21, 0.5]], 'obsidian', { part: 'an' + s, noseam: true }); k.px(m(20), 20, 'thunder', 6); k.px(m(21), 20, 'thunder', 5); });
@@ -647,8 +649,9 @@
     // bolt tail
     k.poly([[54, 62], [64, 49], [60, 48], [70, 32], [66, 32], [77, 13], [63, 29], [67, 30], [57, 44], [61, 45], [49, 60]], 'thunder', { part: 'tail', shade: 'glow', halo: 0.25 });
     // storm-cloud mane
-    [[17, 34, 7], [19, 23, 6.5], [27, 14, 6.5], [C, 10, 7.5], [53, 14, 6.5], [61, 23, 6.5], [63, 34, 7], [20, 44, 6], [60, 44, 6]].forEach(function (c) { k.circle(c[0], c[1], c[2], 'stone', { part: 'cloud' }); });
+    [[17, 34, 7], [19, 23, 6.5], [27, 14, 6.5], [C, 10, 7.5], [53, 14, 6.5], [61, 23, 6.5], [63, 34, 7], [20, 44, 6], [60, 44, 6]].forEach(function (c) { k.circle(c[0], c[1], c[2], 'stone', { part: 'cloud', shift: -1 }); });
     k.texture('cloud', 'dots', { seed: 3 });
+    bolt(k, 17, 17, 0.8, 1, 1, 'thunder', { part: 'cb1', shade: 'glow' }); bolt(k, 63, 17, 0.8, 1, -1, 'thunder', { part: 'cb2', shade: 'glow' }); bolt(k, 29, 5, 0.6, 1, -1, 'thunder', { part: 'cb3', shade: 'glow' });
     k.path([[12, 30], [16, 28], [20, 30]], 'stone', 2); k.path([[60, 30], [64, 28], [68, 30]], 'stone', 2);
     k.path([[33, 8], [37, 6], [41, 7]], 'stone', 5); k.path([[21, 17], [24, 15]], 'stone', 5);
     k.path([[10, 40], [8, 44], [11, 45], [8, 50]], 'thunder', 6); k.path([[70, 40], [72, 44], [69, 45], [72, 50]], 'thunder', 6);
@@ -779,7 +782,8 @@
     k.px(38, 30, 'gold', 6); k.px(37, 30, 'gold', 5);
     // eyes of lightning
     k.sym(C, function (m, s) {
-      k.poly([[m(30), 23.5], [m(37.5), 25.5], [m(37), 27.5], [m(31.5), 26.5]], 'crystal', { part: 'eye' + s, shade: 'glow', halo: 0.3, outline: 'none' });
+      k.poly([[m(29.5), 23], [m(37.5), 25], [m(37.5), 28], [m(31), 27]], 'crystal', { part: 'eye' + s, shade: 'glow', halo: 0.35, outline: 'none' });
+      k.line(m(32), 25, m(35), 26, 'white', 6);
       k.path([[m(30), 24], [m(27), 22], [m(28), 21], [m(25), 19]], 'crystal', 6);
       k.tube([[m(29), 22.5, 1.3], [m(38), 24.5, 1.3]], 'thunder', { part: 'brow' + s, light: 0.25 });
     });

@@ -15,9 +15,13 @@ const OPP={up:'down',down:'up',left:'right',right:'left'};
 const SAVE_KEY='fudamon-slice-v1';
 function freshState(){return{v:4,name:'ソーヤ',map:'home',x:6,y:3,dir:'down',coins:300,items:{white:0,silver:0,gold:0,potion:0},cards:[],party:[],dex:{},seen:{},uid:1,flags:{},picked:{},time:0,muted:false}}
 let S=freshState();
-function hasSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return !!(s&&s.v===4)}catch(e){return false}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===4){S=s;return true}}catch(e){}return false}
-function saveGame(){S.map=G.mapId;S.x=G.p.x;S.y=G.p.y;S.dir=G.p.dir;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
+const SLOTS=[1,2,3];let SLOT=1;
+const slotKey=n=>SAVE_KEY+'-s'+n;
+function readSlot(n){try{let s=JSON.parse(localStorage.getItem(slotKey(n)));if(!s&&n===1)s=JSON.parse(localStorage.getItem(SAVE_KEY));return s&&s.v===4?s:null}catch(e){return null}}
+function hasSave(){return SLOTS.some(n=>readSlot(n))}
+function loadGame(n=SLOT){const s=readSlot(n);if(s){S=s;SLOT=n;return true}return false}
+function saveGame(){S.map=G.mapId;S.x=G.p.x;S.y=G.p.y;S.dir=G.p.dir;S.savedAt=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S));if(SLOT===1)localStorage.removeItem(SAVE_KEY)}catch(e){}}
+function clearSlot(n){try{localStorage.removeItem(slotKey(n));if(n===1)localStorage.removeItem(SAVE_KEY)}catch(e){}}
 
 /* ---------------- monster/card helpers ---------------- */
 function mstats(id,lv){const b=MON[id].b;return{hp:Math.floor(b.hp*2*lv/100+lv+10),atk:Math.floor(b.atk*2*lv/100+5),def:Math.floor(b.def*2*lv/100+5),spd:Math.floor(b.spd*2*lv/100+5)}}

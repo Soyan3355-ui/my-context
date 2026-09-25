@@ -392,6 +392,21 @@ button{font:inherit;color:inherit}
 .chapter b{font-family:var(--f-disp);font-weight:400;font-size:min(5cqw,40px)}
 .ico.badge.b1{box-shadow:inset 0 0 0 .6cqw #3a88de}.ico.badge.b2{box-shadow:inset 0 0 0 .6cqw #ea6436}.ico.badge.b3{box-shadow:inset 0 0 0 .6cqw #6e4fcf}
 
+.slotbox{width:100%;max-width:80cqw;display:flex;flex-direction:column;align-items:center;gap:2cqh}
+.slots3{display:flex;flex-direction:column;gap:1.4cqw;width:100%}
+.slotrow{display:grid;grid-template-columns:6cqw 10cqw 1fr;align-items:center;gap:2cqw;background:var(--paper);color:var(--ink);border:.4cqw solid var(--ink);border-radius:1.6cqw;padding:1.2cqw 2cqw;text-align:left;cursor:pointer;box-shadow:0 .6cqw 0 var(--ink);min-height:12cqw}
+.slotrow:disabled{opacity:.45;cursor:not-allowed}
+.slotrow.sel{box-shadow:0 .6cqw 0 var(--ink),0 0 0 .5cqw var(--gold);transform:translateY(-.3cqw)}
+.slotrow.cur .sn{background:var(--shu);color:#fff}
+.slotrow .sn{width:5cqw;height:5cqw;display:grid;place-items:center;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--f-disp);font-size:min(2.8cqw,18px)}
+.slotrow .sart{width:10cqw;height:10cqw;display:block}
+.slotrow .sart .pxm,.slotrow .sart svg{width:100%;height:100%}
+.slotrow .sinfo{display:flex;flex-direction:column;gap:.3cqw;min-width:0}
+.slotrow .sinfo b{font-size:min(2.9cqw,18px)}
+.slotrow .sinfo b.empty{color:#8a8398}
+.slotrow .sinfo small{font-size:min(2.1cqw,13px);font-weight:700;opacity:.75}
+.slotrow .clr{font-style:normal;font-size:.7em;background:linear-gradient(90deg,#ff9ee6,#8fe8ff,#d2ff8f);border-radius:99px;padding:0 .6em;vertical-align:.15em}
+
 </style>
 
 <div id="game">

@@ -50,7 +50,7 @@
       k.tube(f.map(function (p) { return [p[0] - 1.5, p[1], 0.5]; }), null, { adj: 1, clip: 'cloak' });
     });
     // talismans plastered over the robe
-    fuda(k, 21, 58, 6, 9, 1, -1, 'f1'); fuda(k, 53, 57, 6, 9, -1, 1, 'f2'); fuda(k, 33, 64, 5, 8, 0.5, 1, 'f3'); fuda(k, 45, 66, 5, 7, -0.5, -1, 'f4');
+    fuda(k, 21, 58, 6, 9, 1, -1, 'f1'); fuda(k, 53, 57, 6, 9, -1, 1, 'f2'); fuda(k, 31, 67, 5, 7, 0.5, 1, 'f3'); fuda(k, 44, 68, 5, 7, -0.5, -1, 'f4');
     fuda(k, 51, 22, 5, 7, 1, 1, 'f5');
     // hood rim + void
     k.ellipse(C, 42, 14.5, 13, 'violet', { part: 'rim' });
@@ -59,9 +59,9 @@
     k.ellipse(C, 50, 8.5, 3, null, { set: 1, clip: 'void' });
     // the crowd of little eyes lurking in the darkness
     var EY = { r: ['red', 5], R: ['red', 6], v: ['violet', 5] };
-    pm(k, 31, 33, ['rR'], EY); pm(k, 34, 34, ['rr'], EY); pm(k, 45, 34, ['rr'], EY); pm(k, 48, 33, ['Rr'], EY);
-    pm(k, 29, 45, ['vv'], EY); pm(k, 30, 47, ['v'], EY); pm(k, 50, 45, ['vv'], EY); pm(k, 50, 47, ['v'], EY);
-    pm(k, 38, 31, ['r.r'], EY);
+    pm(k, 30, 33, ['rRr'], EY); pm(k, 47, 33, ['rRr'], EY);
+    pm(k, 29, 42, ['vvv', '.v.'], EY); pm(k, 49, 42, ['vvv', '.v.'], EY);
+    pm(k, 36, 32, ['R.R'], EY); pm(k, 42, 32, ['R.R'], EY);
     // main glowing slanted eyes
     k.sym(C, function (m, s) { k.poly([[m(31), 37], [m(37.5), 38.5], [m(37.5), 41.5], [m(32.5), 40.5]], 'thunder', { part: 'eye' + s, shade: 'glow', halo: 0.35, outline: 'none' }); });
     k.px(33, 38, 'white', 6); k.px(46, 38, 'white', 6);
@@ -73,8 +73,8 @@
     k.line(44.8, 52, 44.8, 58, 'sakura', 2);
     // big rosary: wooden beads round the neck, a red tassel bead
     var beads = [[25, 53], [27.5, 56.5], [31, 59], [35, 60.8], [C, 61.5], [45, 60.8], [49, 59], [52.5, 56.5], [55, 53]];
-    beads.forEach(function (b, i) { k.circle(b[0], b[1], 2.1, 'wood', { part: 'bd' + i, light: 0.1 }); k.px(b[0] - 1, b[1] - 1, 'wood', 6); });
-    k.circle(C, 64.5, 2.3, 'red', { part: 'bdR' }); k.px(39, 63, 'red', 6);
+    beads.forEach(function (b, i) { k.circle(b[0], b[1], 2.6, i % 2 ? 'wood' : 'red', { part: 'bd' + i, light: 0.1, spec: false }); k.px(b[0] - 1, b[1] - 1, i % 2 ? 'wood' : 'red', 6); });
+    k.circle(C, 65, 2.8, 'gold', { part: 'bdR' }); k.px(39, 64, 'gold', 6);
     k.tufts([[42, 67], [38, 67]], 'red', { part: 'tassel', len: 3, w: 2, every: 1.4, seed: 3 });
     // forehead talisman
     k.poly([[34.5, 15], [45, 16], [44, 31], [33.5, 30]], 'cream', { part: 'fuda', light: 0.2 });
@@ -117,17 +117,17 @@
     k.tube([[35.5, 13, 0.9], [36, 8.5, 0.9], [38, 6.5, 0.9], [42, 6.5, 0.9], [44, 8.5, 0.9], [44.5, 13, 0.9]], 'black', { part: 'wire', shade: 'flat', flatTone: 4 });
     k.ellipse(C, 13.5, 8, 2.4, 'black', { part: 'capT', light: 0.3 });
     // upper lantern: the eye-riddled hat
-    k.ellipse(C, 23.5, 12, 10.5, 'cream', { part: 'up' });
+    k.ellipse(C, 23.5, 13.5, 10.5, 'cream', { part: 'up' });
     k.rect(26, 14, 28, 2, 'red', { clip: 'up' });
     k.rect(26, 31, 28, 3, 'red', { clip: 'up' });
     [18.5, 22.5, 26.5, 30].forEach(function (y) {
-      var hw = 12 * Math.sqrt(Math.max(0, 1 - Math.pow((y - 23.5) / 10.5, 2)));
+      var hw = 13.5 * Math.sqrt(Math.max(0, 1 - Math.pow((y - 23.5) / 10.5, 2)));
       k.tube([[C - hw, y - 0.6, 0.45], [C, y + 0.6, 0.45], [C + hw, y - 0.6, 0.45]], null, { adj: -2, clip: 'up' });
     });
     k.tube([[32, 16, 0.5], [30, 24, 0.5], [32, 31, 0.5]], null, { adj: 1, clip: 'up' });
-    k.tufts([[52, 20], [53, 26]], 'cream', { part: 'up', len: 2, w: 2.5, every: 2.5, seed: 6 });
+    k.tufts([[53.5, 20], [54.5, 26]], 'cream', { part: 'up', len: 2, w: 2.5, every: 2.5, seed: 6 });
     eyeball(k, 35, 20.5, 3.4, 2.6, 'e1', 0.6); eyeball(k, 46, 19.5, 3, 2.4, 'e2', -0.6); eyeball(k, 41, 27, 3.6, 2.8, 'e3', 0);
-    eyeball(k, 31, 27.5, 2.2, 1.9, 'e4', 0.4); eyeball(k, 49.5, 26.5, 2.2, 1.9, 'e5', -0.4);
+    eyeball(k, 30.5, 26.5, 2.4, 2, 'e4', 0.4); eyeball(k, 50, 25.5, 2.4, 2, 'e5', -0.4);
     // middle ring
     k.ellipse(C, 35, 10.5, 2.6, 'black', { part: 'capM', light: 0.3 });
     k.rect(31, 34, 18, 1, 'black', { clip: 'capM', tone: 5 });
@@ -179,13 +179,13 @@
   // onibi mark, red collar and bell. Gag: the one-fang smirk has become a full, very pleased-with-itself grin.
   P[53] = function (k) {
     k.shadow(C, 77, 20, 2.2);
-    var WC = [C, 33], WR = 26;
+    var WC = [C, 35], WR = 25;
     function wp(a, r) { return [WC[0] + Math.cos(a) * r, WC[1] + Math.sin(a) * r]; }
     // onibi flames rising off the rim (skip the bottom, hidden by the body)
     [-90, -58, -122, -26, -154, 6, 174, 38, 142].forEach(function (d, n) {
       var a = d * Math.PI / 180, b = wp(a, WR), side = Math.cos(a), up = n < 5 ? 1 : 0.6;
       var t = [b[0] + side * 5, b[1] - 7 * up - 3], m2 = [b[0] + side * 3.5, b[1] - 3.5 * up];
-      k.tube([[b[0], b[1], 3.4], [m2[0], m2[1], 2.4], [t[0] - side * 2, t[1], 0.5]], 'crystal', { part: 'onibi', shade: 'glow', halo: 0.3 });
+      k.tube([[b[0], b[1], 4], [m2[0], m2[1], 2.8], [t[0] - side * 2, t[1], 0.5]], 'crystal', { part: 'onibi', shade: 'glow', halo: 0.3, shift: -1 });
       k.spike(m2[0] + side * 1.5, m2[1], t[0] + side * 2.5, t[1] + 2.5, 2.4, 'crystal', { part: 'onibi' });
     });
     // cart wheel: spokes, rim with iron band and studs
@@ -369,6 +369,8 @@
     k.rect(35, 33, 10, 1, 'violet', { tone: 3, part: 'gapglow' });
     k.ellipse(C, 36.3, 7, 2.2, 'bone', { part: 'jaw' });
     for (var jx = 35; jx <= 45; jx += 2) k.px(jx, 35, 'bone', 5);
+    k.sym(C, function (m) { k.tube([[m(29), 27, 0.6], [m(31), 31, 0.6]], null, { adj: -1, clip: 'skull' }); k.tube([[m(31), 19.5, 0.5], [m(37), 20.5, 0.5]], null, { adj: 1, clip: 'skull' }); });
+    k.ellipse(C, 24, 3, 1.4, null, { adj: 1, clip: 'skull', pattern: 'checker' });
     k.path([[47, 17], [46, 20], [48, 22], [47, 24]], 'bone', 1); k.path([[31, 30], [30, 32]], 'bone', 1);
     // helmet bowl + gold brim + horns (one snapped)
     k.ellipse(C, 14.5, 12, 6, 'dark', { part: 'kabuto' });
@@ -621,8 +623,8 @@
   P[58] = function (k) {
     k.shadow(C, 77, 22, 2.2);
     // halo ring behind the antlers
-    var ring = []; for (var q = 0; q <= 28; q++) { var an = q * Math.PI / 14; ring.push([C + Math.cos(an) * 17, 17 + Math.sin(an) * 12, 0.9]); }
-    k.tube(ring, 'light', { part: 'halo', shade: 'flat', flatTone: 5, halo: 0.3, outline: 'soft' });
+    var ring = []; for (var q = 0; q <= 28; q++) { var an = q * Math.PI / 14; ring.push([C + Math.cos(an) * 17, 15 + Math.sin(an) * 11, 1.2]); }
+    k.tube(ring, 'gold', { part: 'halo', shade: 'flat', flatTone: 5, halo: 0.3, outline: 'soft' });
     // crystal antlers: a big branching crown
     k.sym(C, function (m, s) {
       var o = { part: 'ant' + s, shade: 'flat', flatTone: 4, halo: 0.25 };
@@ -641,19 +643,21 @@
     k.ellipse(C, 55, 17, 8, 'tan', { part: 'flank', shift: -1 });
     k.texture('flank', 'fur', { seed: 12 });
     k.sym(C, function (m, s) {
-      k.tube([[m(26), 57, 3.8], [m(24.5), 64, 2.5], [m(25.5), 68, 2], [m(25), 72, 1.6]], 'tan', { part: 'hind' + s, shift: -1 });
-      k.poly([[m(23), 71.5], [m(27), 71.5], [m(27.5), 75.5], [m(22.5), 75.5]], 'wood', { part: 'hh' + s });
-      k.px(m(25), 74, 'wood', 0);
+      k.ellipse(m(26.5), 56, 6.5, 7, 'tan', { part: 'hind' + s, shift: -1 });
+      k.tube([[m(25), 60, 3.6], [m(22), 65, 2.4], [m(23.5), 68.5, 1.9], [m(23), 71.5, 1.6]], 'tan', { part: 'hind' + s, shift: -1 });
+      k.poly([[m(21), 71], [m(25), 71], [m(25.5), 74.5], [m(20.5), 74.5]], 'wood', { part: 'hh' + s, shift: -1 });
+      k.px(m(23), 73, 'wood', 0); k.px(m(22.5), 65, 'tan', 4);
     });
     [[25, 52], [28, 50], [23, 56], [55, 52], [52, 50], [57, 56], [29, 55], [51, 55]].forEach(function (p) { k.px(p[0], p[1], 'light', 6); k.px(p[0] + 1, p[1], 'light', 5); });
     // deep chest
-    k.ellipse(C, 55, 10.5, 10, 'tan', { part: 'body' });
+    k.ellipse(C, 54, 12, 11, 'tan', { part: 'body' });
     k.texture('body', 'fur', { seed: 4 });
     k.ellipse(C, 57, 6, 7, 'cream', { clip: 'body' });
     k.tufts([[46, 63], [34, 63]], 'cream', { part: 'bib', len: 3, w: 2.6, every: 2, seed: 2 });
     // front legs: tapered, knee bumps, split hooves
     k.sym(C, function (m, s) {
-      k.tube([[m(35), 60, 3.2], [m(34.5), 66, 2.3], [m(34.3), 68, 2.4], [m(34), 72.5, 1.7]], 'tan', { part: 'leg' + s });
+      k.tube([[m(35), 59, 3.6], [m(35), 65, 2.4], [m(34.8), 67.5, 2.5], [m(34.5), 72.5, 1.7]], 'tan', { part: 'leg' + s });
+      k.tube([[m(37), 60, 0.5], [m(36.5), 71, 0.5]], null, { adj: -1, clip: 'leg' + s });
       k.poly([[m(32), 72], [m(36), 72], [m(36.5), 76], [m(31.5), 76]], 'wood', { part: 'hoof' + s });
       k.px(m(34), 74, 'wood', 0); k.px(m(34), 75, 'wood', 0); k.px(m(32), 73, 'wood', 5);
       k.px(m(34), 67, 'tan', 5);
@@ -784,5 +788,80 @@
     k.eye(30, 25, { w: 7, h: 5, iris: 'red', side: 'L', angry: 1.3, lid: 0.25, brow: false });
     k.eye(43, 25, { w: 7, h: 5, iris: 'red', side: 'R', angry: 1.3, lid: 0.25, brow: false });
     k.sparkle(6, 70, 1, 'light'); k.sparkle(74, 70, 1, 'light'); k.sparkle(C, 3, 1, 'white');
+  };
+  // 60 アマノオーロラ — light UR 極, mystic/serene (evolves from 30 オーロラクジラ): the sky whale has become the night
+  // itself — a body of deep galaxy blue with violet and green nebulae and stars shining inside it, the pale pleated
+  // belly and crystal back-knobs it always had, a taller three-gem crown, and four aurora ribbons streaming round it.
+  // Serene closed eye. Gag: it is still swimming straight through a little cloud, now with a baby crescent moon riding on it.
+  P[60] = function (k) {
+    k.shadow(38, 77, 18, 1.4);
+    // aurora streamers behind everything
+    k.tube([[22, 40, 0.8], [21, 31, 2.2], [26, 23, 3], [33, 18, 2.6], [41, 15, 3.2], [47, 10, 2.6], [49, 5, 1.8], [46, 1.5, 0.6]], 'aqua', { part: 'rib1', shade: 'glow', halo: 0.3 });
+    k.tube([[58, 62, 1.2], [66, 59, 2.4], [70, 53, 1.6], [74, 46, 2.6], [72, 38, 1.6], [75, 31, 2.2], [73, 24, 0.6]], 'violet', { part: 'rib2', shade: 'glow' });
+    // broad flukes curling up behind
+    k.tube([[63, 23, 4], [68, 16, 2.8], [69, 13, 2.2]], 'water', { part: 'stock', shift: -1 });
+    k.tube([[69, 13, 2.4], [63, 10, 3.6], [57, 8, 3.2], [52, 5, 2.2], [50, 2.5, 0.7]], 'water', { part: 'flukeL', shift: -1 });
+    k.tube([[69, 13, 2.4], [73, 9, 2.8], [76, 5, 2], [77, 2, 0.6]], 'water', { part: 'flukeR', shift: -2 });
+    k.tube([[66, 10.5, 0.5], [58, 6.5, 0.5], [53, 4, 0.5]], 'aqua', { clip: 'flukeL', tone: 4 });
+    k.tufts([[51, 5], [58, 10], [64, 13]], 'water', { part: 'flukeL', len: 1.5, w: 2.4, every: 3, seed: 4, shift: -1 });
+    k.px(60, 8, 'white', 6); k.px(74, 7, 'white', 6);
+    k.leaf(52, 55, 66, 67, 6, 'water', { part: 'finF', shift: -1 });
+    // long receding galaxy body + big blunt head (one volume)
+    k.tube([[36, 50, 14], [50, 40, 11], [59, 31, 8], [65, 22, 5], [69, 15, 3]], 'water', { part: 'body', light: -0.25 });
+    k.ellipse(28, 52, 19.5, 14, 'water', { part: 'body', light: -0.1 });
+    k.ellipse(15, 54, 7, 10, 'water', { part: 'body' });
+    // nebulae swirling inside
+    k.ellipse(47, 42, 9, 4.5, 'violet', { clip: 'body' });
+    k.tube([[22, 50, 1.6], [30, 46, 2.4], [38, 47, 1.8], [44, 50, 1]], 'aqua', { clip: 'body' });
+    k.tube([[55, 33, 1.4], [61, 26, 1.2], [65, 20, 0.8]], 'sakura', { clip: 'body' });
+    k.ellipse(47, 42, 9, 4.5, null, { adj: -1, clip: 'body', mat: 'violet', pattern: 'sparse' });
+    // pale pleated throat + belly
+    k.poly([[7, 56], [16, 59], [26, 61], [36, 60], [44, 56], [52, 50], [60, 40], [66, 29], [70, 20], [76, 22], [72, 34], [64, 48], [52, 60], [40, 68], [24, 69], [7, 64]], 'ice', { clip: 'body' });
+    for (var i = 0; i < 5; i++) k.tube([[9, 58.5 + i * 2], [26, 62 + i * 1.8], [41, 59 + i * 2], [52, 51 + i * 2.2], [61, 40 + i * 2.4], [67, 29 + i * 2.2]].map(function (p) { return [p[0], p[1], 0.5]; }), null, { adj: -1, clip: 'body', mat: 'ice' });
+    // hand-shaded planes
+    k.ellipse(24, 44, 12, 5, null, { adj: 1, clip: 'body', mat: 'water' });
+    k.tube([[11, 48, 0.6], [20, 42, 0.7], [32, 38.5, 0.7]], null, { set: 5, clip: 'body', mat: 'water' });
+    k.tube([[40, 38, 0.6], [50, 31.5, 0.6], [58, 25, 0.5], [64, 18, 0.5]], null, { adj: 1, clip: 'body', mat: 'water' });
+    k.tube([[50, 46, 0.6], [58, 38, 0.6], [64, 29, 0.5]], null, { adj: -1, clip: 'body', mat: 'water' });
+    // stars shining inside the body
+    [[14, 50], [19, 46], [26, 48], [31, 42], [35, 51], [42, 45], [46, 39], [51, 44], [54, 36], [58, 30], [62, 25], [23, 54], [39, 55], [48, 49], [66, 19], [29, 57]].forEach(function (p, n) { k.px(p[0], p[1], n % 4 ? 'white' : 'light', 6); });
+    k.sparkle(33, 47, 1, 'white'); k.sparkle(52, 40, 1, 'white'); k.sparkle(18, 52, 1, 'light');
+    // constellation lines
+    k.path([[38, 44], [44, 41], [49, 37]], 'crystal', 5); k.path([[52, 40], [56, 35]], 'crystal', 5);
+    [[38, 44], [44, 41], [49, 37], [52, 40], [56, 35]].forEach(function (p) { k.px(p[0], p[1], 'white', 6); });
+    // long mouth line into a gentle smile
+    k.path([[7, 55], [12, 57], [17, 59], [26, 61], [36, 60], [42, 57], [45, 54]], 'black', 0);
+    k.path([[9, 54], [16, 57], [26, 59], [36, 58], [42, 55]], 'water', 5);
+    // serene closed eye
+    pm(k, 41, 47, ['.lll.', 'K...K', '.KKK.'], { K: ['black', 0], l: ['ice', 5] });
+    k.px(46, 47, 'black', 0);
+    k.rect(41, 51, 3, 1, 'sakura', { tone: 4, part: 'blush', outline: 'none' });
+    // near flipper, aurora-edged
+    k.leaf(28, 63, 6, 76, 10, 'water', { part: 'finN' });
+    k.tufts([[8, 73], [17, 68], [27, 62]], 'water', { part: 'finN', len: 1.5, w: 2.4, every: 3, seed: 5 });
+    k.tube([[26, 66, 1.3], [9, 75.5, 0.7]], 'aqua', { clip: 'finN', tone: 4 });
+    k.tube([[26, 62.5, 0.5], [12, 70, 0.5]], null, { set: 5, clip: 'finN' });
+    k.px(18, 69, 'white', 6); k.px(13, 72, 'white', 6);
+    // taller crown: gold spikes with three gems
+    k.poly([[18, 41], [18, 33], [21.5, 36.5], [23, 28], [26.5, 35], [29, 25.5], [31.5, 34.5], [35, 28], [36.5, 36], [38, 32], [37, 40], [27, 43]], 'gold', { part: 'crown' });
+    k.path([[19, 40], [27, 42], [36, 39]], 'gold', 2);
+    k.path([[19, 38], [27, 40], [36, 37]], 'gold', 5);
+    k.circle(29.5, 36.5, 1.8, 'crystal', { part: 'cgem', shade: 'flat', flatTone: 5, halo: 0.3 });
+    k.px(29, 36, 'white', 6);
+    k.circle(23.5, 37.5, 1, 'red', { part: 'cg2', shade: 'flat', flatTone: 4 }); k.circle(35, 36, 1, 'red', { part: 'cg3', shade: 'flat', flatTone: 4 });
+    // crystal knobs down the back
+    [[42, 29.5, 4], [50, 23.5, 3.4], [57, 18, 2.8], [62.5, 14, 2.2]].forEach(function (c, n) {
+      k.spike(c[0] + 1, c[1] + 1.2, c[0] - c[2] * 0.6, c[1] - c[2] * 0.8, c[2], 'crystal', { part: 'kn' + n, shade: 'flat', flatTone: 4 });
+      k.px(c[0] - c[2] * 0.3, c[1] - c[2] * 0.4, 'crystal', 6);
+      k.px(c[0] + 1, c[1] + 1, 'gold', 4); k.px(c[0], c[1] + 1, 'gold', 5);
+    });
+    // aurora ribbon streaming under the body like a cape
+    k.tube([[5, 77, 0.6], [14, 74.5, 1.9], [22, 75.5, 2.3], [32, 72.5, 2.5], [42, 73.5, 1.9], [50, 69, 2.3], [56, 66, 1.5], [60, 62, 0.6]], 'sakura', { part: 'rib3', shade: 'glow' });
+    // the little cloud, with a baby crescent moon riding it
+    k.circle(64, 72, 2.6, 'white', { part: 'cloudF' }); k.circle(68.5, 70.5, 3.4, 'white', { part: 'cloudF' }); k.circle(73, 72.5, 2.4, 'white', { part: 'cloudF' });
+    k.rect(62, 74, 13, 1, 'white', { part: 'cloudF' });
+    k.circle(69, 64.5, 3, 'gold', { part: 'moon' }); k.circle(70.5, 63.3, 2.6, null, { erase: true });
+    k.px(66.5, 64, 'gold', 6);
+    k.sparkle(8, 48, 1, 'light'); k.sparkle(77, 30, 1, 'light'); k.sparkle(36, 7, 1, 'white'); k.px(28, 12, 'light', 6); k.px(58, 48, 'white', 6);
   };
 })();

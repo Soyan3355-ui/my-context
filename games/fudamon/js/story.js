@@ -263,9 +263,10 @@ function showTitle(){
   el.hidden=false;
   bgm('title');
   let nav;const go=async t=>{nav.close();unlockAudio();snd('confirm');
-    if(t==='new'&&cont){el.hidden=true;const i=await ask('前の 記録は 消えてしまうけど、はじめから 遊ぶ？',null,['はじめから','やめる']);if(i!==0){el.hidden=false;nav=navPanel(el,{});return}}
+    const slot=await pickSlot(t==='cont'?'load':'new');
+    if(!slot){nav=navPanel(el,{});return}
     el.classList.add('out');await sleep(RM?0:450);el.hidden=true;el.classList.remove('out');G.cam=null;G.p.hidden=false;
-    if(t==='cont'){loadGame();startWorld()}else{S=freshState();try{localStorage.removeItem(SAVE_KEY)}catch(e){}await intro()}};
+    if(t==='cont'){loadGame(slot);startWorld()}else{SLOT=slot;clearSlot(slot);S=freshState();await intro()}};
   el.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.t)));
   nav=navPanel(el,{});
 }
@@ -293,7 +294,29 @@ function waitKey(ms){return new Promise(res=>{let tm;const h=k=>{if(k==='a'||k==
 /* ---------------- boot ---------------- */
 function boot(){
   initCanvas();fxInit();initPad();
-  if(loadGame()){window.AUDIO&&AUDIO.setMuted(!!S.muted)}S=hasSave()?S:freshState();
+  const last=SLOTS.find(n=>readSlot(n));if(last&&loadGame(last)){window.AUDIO&&AUDIO.setMuted(!!S.muted)}else S=freshState();
   showTitle();requestAnimationFrame(frame);
 }
 {let booted=false;const go=()=>{if(booted)return;booted=true;boot()};(document.fonts&&document.fonts.ready||Promise.resolve()).then(go);setTimeout(go,1500)}
+
+/* ---------------- save slots ---------------- */
+function slotSummary(n){const s=readSlot(n);if(!s)return null;
+  const b=(s.flags.badge?1:0)+['b2','b3','b4'].filter(k=>s.flags[k]).length;const lead=s.cards.find(c=>c.uid===s.party[0]);
+  const where=s.map==='field'?(s.y<=11?'古札の祠':s.y<=17?'ささやきの野原':s.y<=44?'そよ風の小道':'ツムギ村'):(MAPS[s.map]?MAPS[s.map].name:'');
+  return{time:fmtTime(s.time||0),badges:b,dex:Object.keys(s.dex).length,where,lead:lead?MON[lead.id].name+' Lv'+lead.lv:'―',done:!!s.flags.whaleDone,lid:lead?lead.id:0}}
+function pickSlot(mode){
+  return new Promise(res=>{const md=$('#modal');
+    const rows=SLOTS.map(n=>{const x=slotSummary(n);const dis=(mode==='load'&&!x)?'disabled':'';
+      return `<button class="slotrow${n===SLOT&&mode==='save'?' cur':''}" data-nav data-n="${n}" ${dis}><span class="sn">${n}</span>${x?`<span class="sart">${x.lid?art(MON[x.lid]):''}</span><span class="sinfo"><b>${x.where}${x.done?' <i class="clr">クリア</i>':''}</b><small>相棒 ${x.lead}　印 ${x.badges}/4　図鑑 ${x.dex}/${TOTAL}</small><small>プレイ時間 ${x.time}</small></span>`:'<span class="sinfo"><b class="empty">空きスロット</b><small>ここから 新しい 冒険を はじめられる</small></span>'}</button>`}).join('');
+    md.innerHTML=`<div class="slotbox"><h2 class="m-title">${mode==='load'?'どの 記録で あそぶ？':mode==='new'?'どこに 記録する？':'どこに レポートを 書く？'}</h2><div class="slots3">${rows}</div><button class="pbtn" data-nav data-back>もどる</button></div>`;
+    md.hidden=false;let nav;
+    const done=v=>{nav.close();md.hidden=true;md.innerHTML='';res(v)};
+    md.querySelector('[data-back]').addEventListener('click',()=>{snd('cancel');done(0)});
+    md.querySelectorAll('[data-n]').forEach(b=>b.addEventListener('click',async()=>{const n=+b.dataset.n;snd('confirm');
+      if((mode==='new'||(mode==='save'&&n!==SLOT))&&readSlot(n)){md.hidden=true;nav.close();const i=await ask(`スロット${n}の 記録に 上書きするよ。 いい？`,null,['上書きする','やめる']);
+        if(i!==0){md.hidden=false;nav=navPanel(md,{onBack:()=>done(0)});return}md.innerHTML='';res(n);return}
+      done(n)}));
+    nav=navPanel(md,{onBack:()=>done(0)});
+    const cur=[...md.querySelectorAll('[data-n]')].findIndex(b=>+b.dataset.n===SLOT&&!b.disabled);if(cur>=0)nav.set(cur);
+  });
+}
