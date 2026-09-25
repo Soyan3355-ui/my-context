@@ -59,12 +59,11 @@
       k.ellipse(m(34), 74.4, 4.4, 2.3, 'black', { part: 'paw' + s });
       k.tooth(m(32), 75.5, m(31.6), 77.4, 1.4); k.tooth(m(35.5), 75.5, m(35.5), 77.4, 1.4);
     });
-    // flame ruff: fur collar with flames licking up and out at the neck sides
-    k.tufts(arc(C, 52, 12, 4.5, 140, 215, 12), 'flame', { part: 'rfl', shade: 'glow', len: 5, w: 4.4, every: 3, seed: 3 });
-    k.tufts(arc(C, 52, 12, 4.5, -35, 40, 12), 'flame', { part: 'rfl', shade: 'glow', len: 5, w: 4.4, every: 3, seed: 4 });
-    k.ellipse(C, 51, 12.5, 4.6, 'fire', { part: 'ruff' });
-    k.tufts(arc(C, 51, 12.5, 4.6, 5, 175, 12), 'fire', { part: 'ruff', len: 3.4, w: 3.4, every: 2.6, seed: 11 });
-    k.tufts(arc(C, 52, 7, 4, 40, 140, 16), 'cream', { part: 'rcr', len: 3, w: 2.6, every: 2.6, seed: 5 });
+    // flame ruff: fire licking out from behind the cheeks and neck
+    k.tufts(arc(C, 46, 13, 8, 110, 215, 10), 'flame', { part: 'rfl', shade: 'glow', len: 6, w: 5, every: 3.2, seed: 3 });
+    k.tufts(arc(C, 46, 13, 8, -35, 70, 10), 'flame', { part: 'rfl', shade: 'glow', len: 6, w: 5, every: 3.2, seed: 4 });
+    k.ellipse(C, 51.5, 11, 4, 'fire', { part: 'ruff' });
+    k.tufts(arc(C, 51.5, 11, 4, 30, 150, 15), 'cream', { part: 'rcr', len: 3.4, w: 3, every: 3, seed: 5 });
     k.texture('ruff', 'fur', { seed: 12 });
     // ears: taller and sharper
     k.sym(C, function (m, s) {

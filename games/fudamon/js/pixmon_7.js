@@ -462,4 +462,84 @@
     // embers drifting up
     [[5, 18], [75, 17], [30, 3], [52, 5], [14, 12], [66, 11]].forEach(function (p, i) { k.px(p[0], p[1], 'violet', i % 2 ? 5 : 6); });
   };
+  // 56 ツキウサギ — light, cute/mystic (evolves from 26 ホシウサ): the star rabbit grown into the moon's own mochi
+  // pounder. The crystal crest now rises out of a gold crescent-moon maedate, it wears a starry night cape clasped with
+  // its red bandana, and it shoulders a huge wooden kine. Gag: the same giant buck teeth, and a blob of fresh mochi is
+  // still stuck to the mallet (and a bit to its cheek).
+  P[56] = function (k) {
+    k.shadow(C, 77, 18, 2.2);
+    // starry cape flaring behind
+    k.poly([[29, 52], [51, 52], [60, 62], [67, 75], [58, 73], [50, 76], [40, 74], [30, 76], [22, 73], [13, 75], [20, 62]], 'water', { part: 'cape', light: -0.25, flat: true });
+    k.texture('cape', 'cloth', { size: 3 });
+    k.tube([[13.5, 74.5, 0.9], [22, 72.5, 0.9], [30, 75.5, 0.9], [40, 73.5, 0.9], [50, 75.5, 0.9], [58, 72.5, 0.9], [66.5, 74.5, 0.9]], 'gold', { clip: 'cape', tone: 4 });
+    [[18, 66], [23, 70], [60, 65], [56, 70], [63, 71], [16, 71], [26, 64], [54, 61]].forEach(function (p, i) { k.px(p[0], p[1], i % 3 ? 'white' : 'gold', 6); });
+    k.sparkle(21, 66, 1, 'light'); k.sparkle(59, 68, 1, 'light');
+    // body, feet
+    k.ellipse(C, 64, 12.5, 11, 'white', { part: 'body' });
+    k.texture('body', 'fur', { seed: 7 });
+    k.sym(C, function (m, s) {
+      k.ellipse(m(32.5), 74.5, 6.5, 2.8, 'white', { part: 'foot' + s });
+      k.px(m(28), 74, 'white', 2); k.px(m(30.5), 75, 'white', 2);
+    });
+    // the kine (mochi mallet) held up on the left
+    k.tube([[31, 63, 1.5], [16, 38, 1.4]], 'wood', { part: 'handle' });
+    k.tube([[31, 63, 0.4], [16, 38, 0.4]], null, { adj: 1, clip: 'handle' });
+    k.tube([[8, 42, 4.6], [21, 33, 4.6]], 'wood', { part: 'kine' });
+    k.texture('kine', 'bark', { size: 3 });
+    [[11, 40], [18, 35]].forEach(function (p) { k.tube([[p[0] - 2.2, p[1] - 3.3, 0.6], [p[0] + 2.2, p[1] + 3.3, 0.6]], null, { adj: -2, clip: 'kine' }); });
+    k.ellipse(6.5, 44, 3, 2.4, 'white', { part: 'mochi', light: 0.2 });
+    k.ellipse(4.5, 46.5, 1.6, 1.4, 'white', { part: 'mochi' });
+    // arms: left grips the handle, right on hip
+    k.ellipse(30.5, 61, 3.4, 4, 'white', { part: 'armL' });
+    k.px(29, 63, 'white', 2); k.px(31, 63, 'white', 2);
+    k.ellipse(51, 63, 3.2, 4, 'white', { part: 'armR' });
+    k.px(50, 66, 'white', 2); k.px(52, 66, 'white', 2);
+    // ears: left tall, right flopped with its star charm
+    k.leaf(35, 40, 29, 5, 10, 'white', { part: 'earL' });
+    k.leaf(34.5, 38, 30, 10, 4, 'sakura', { clip: 'earL', tone: 3 });
+    k.tube([[46, 38, 4.5], [50, 27, 4.5], [55, 21, 4], [62, 22, 3.2], [67, 28, 1.8]], 'white', { part: 'earR' });
+    k.tube([[47, 36, 1.7], [50.5, 27, 1.7], [55, 23, 1.4]], 'sakura', { clip: 'earR', tone: 3 });
+    k.texture('earL', 'fur', { seed: 3 }); k.texture('earR', 'fur', { seed: 4 });
+    k.line(67, 29, 67, 32, 'gold', 3);
+    k.star(67, 36, 4, 'gold', { part: 'dstar', halo: 0.2 });
+    k.px(66, 34, 'gold', 6);
+    // head, puffed cheeks
+    k.ellipse(C, 46, 14.5, 12, 'white', { part: 'head' });
+    k.sym(C, function (m) { k.ellipse(m(29.5), 50.5, 5.5, 4.6, 'white', { part: 'head' }); });
+    k.tufts([[25.5, 50], [23.5, 54], [26.5, 58]], 'white', { part: 'head', len: 3.5, w: 3, every: 2.5, seed: 3 });
+    k.tufts([[53.5, 58], [56.5, 54], [54.5, 50]], 'white', { part: 'head', len: 3.5, w: 3, every: 2.5, seed: 4 });
+    k.texture('head', 'fur', { seed: 8 });
+    // gold crescent maedate with the crystal crest rising from it
+    var cr = [], a;
+    for (a = 0; a <= 180; a += 15) cr.push([C + Math.cos(a * Math.PI / 180) * 14, 23 + Math.sin(a * Math.PI / 180) * 11]);
+    for (a = 180; a >= 0; a -= 15) cr.push([C + Math.cos(a * Math.PI / 180) * 11.5, 19 + Math.sin(a * Math.PI / 180) * 9.5]);
+    k.poly(cr, 'gold', { part: 'moon', halo: 0.25 });
+    k.path([[28, 27], [32, 31], [C, 33], [48, 31], [52, 27]], 'gold', 6);
+    k.poly([[36.5, 36], [36.5, 27], [C, 15], [43.5, 27], [43.5, 36]], 'crystal', { part: 'horn', halo: 0.3, shade: 'flat', flatTone: 5 });
+    k.poly([[C, 15], [43.5, 27], [43.5, 36], [C, 36]], null, { set: 3, clip: 'horn' });
+    k.poly([[36.5, 27], [C, 15], [38.5, 27]], null, { set: 6, clip: 'horn' });
+    k.line(C, 27, C, 35, 'crystal', 2);
+    k.sparkle(C, 12, 2, 'white');
+    // red bandana tied round the neck, clasping the cape with a star pin
+    k.poly([[27, 56], [53, 56], [50, 60.5], [C, 62], [30, 60.5]], 'red', { part: 'scarf' });
+    k.spike(44, 59.5, 48.5, 67, 5, 'red', { part: 'knot' });
+    k.star(C, 59.5, 2.8, 'gold', { part: 'pin' });
+    k.px(C, 59, 'gold', 6);
+    // face: nose, mouth, buck teeth
+    k.poly([[38.5, 48], [41.5, 48], [C, 50]], 'skin', { part: 'nose', tone: 3 });
+    k.px(39, 48, 'skin', 5);
+    k.path([[34, 51], [37, 52], [C, 51], [43, 52], [46, 51]], 'black', 0);
+    k.rect(37, 52, 6, 5, 'white', { part: 'teeth', shade: 'flat', flatTone: 6 });
+    k.line(C, 52, C, 56, 'black', 0); k.line(37, 56, 42, 56, 'white', 3); k.px(42, 53, 'white', 4); k.px(42, 54, 'white', 4);
+    // determined glare
+    k.eye(30, 41, { w: 6, h: 4, iris: 'violet', side: 'L', angry: 1.2 });
+    k.eye(44, 41, { w: 6, h: 4, iris: 'violet', side: 'R', angry: 1.2 });
+    k.sym(C, function (m) { k.rect(m(28), 51, 3, 1, 'sakura', { tone: 4, part: 'blush', outline: 'none' }); });
+    pm(k, 48, 49, ['ww', 'w.'], { w: ['white', 6] });   // mochi smudge on the cheek
+    // fur clusters
+    var F = { h: ['white', 6], l: ['white', 5], s: ['white', 2] };
+    pm(k, 34, 65, ['h.h', '.l.'], F); pm(k, 43, 67, ['h.h', '.l.'], F); pm(k, 38, 70, ['l.l'], F);
+    pm(k, 48, 66, ['s', 's'], F); pm(k, 30, 69, ['.s', 's.'], F);
+    k.sparkle(8, 24, 1, 'light'); k.sparkle(72, 50, 1, 'light'); k.sparkle(62, 10, 1, 'white');
+  };
 })();

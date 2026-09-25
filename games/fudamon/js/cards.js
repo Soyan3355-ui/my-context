@@ -13,6 +13,7 @@ function starPath(cx,cy,R,r,n=5){let d='';for(let i=0;i<n*2;i++){const a=Math.PI
 function flamePath(x,y,s){return `M${x} ${y-14*s} C${x+7*s} ${y-6*s} ${x+8*s} ${y} ${x+4*s} ${y+4*s} L${x-4*s} ${y+4*s} C${x-8*s} ${y} ${x-7*s} ${y-6*s} ${x} ${y-14*s}Z`}
 function art(m){
   if(window.PIXKIT&&window.PIXMON&&PIXMON[m.id]){try{return `<img class="pxm" src="${PIXKIT.render(m.id)}" alt="" draggable="false">`}catch(e){}}
+  if(m.evoFrom&&window.PIXKIT&&window.PIXMON&&PIXMON[m.evoFrom]){try{return `<img class="pxm evofb" src="${PIXKIT.render(m.evoFrom)}" alt="" draggable="false">`}catch(e){}}
   if(window.MONART&&MONART[m.id]){try{return MONART[m.id]()}catch(e){}}
   return artSimple(m);
 }

@@ -1405,67 +1405,86 @@
   // ================================================================== volcano, hot spring, night forest
   var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
   function bay(x, y) { return (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16; }
+  // chunky rim stones along the land-facing sides of a liquid tile (shared by lava and hot spring)
+  function rimStones(m, tx, ty, salt, big) {
+    var N = m & 1, E = m & 2, S = m & 4, W = m & 8, L = [];
+    var j = function (k) { return (h2(tx | 0, ty | 0, salt + k) - 0.5); };
+    var r = big ? 4.2 : 3.9;
+    if (N) L.push([3 + j(1), 1.6, r + j(2) * 0.8], [9.5 + j(3) * 2, 1.2, r + 0.3 + j(4) * 0.8], [15.5, 1.8, r - 0.4]);
+    if (W) L.push([1.6, 3.5 + j(5), r], [1.2, 10 + j(6) * 2, r + 0.3], [1.8, 16, r - 0.4]);
+    if (E) L.push([14.4, 4 + j(7), r], [14.8, 10.5 + j(8) * 2, r + 0.2]);
+    if ((m & 128) && !N && !W) L.push([0.4, 0.4, 3.4]);
+    if ((m & 16) && !N && !E) L.push([15.6, 0.4, 3.4]);
+    if (S) L.push([2.5 + j(9), 14.8, r - 0.3], [8.5 + j(10) * 2, 15.2, r + 0.1], [14, 14.8, r - 0.3]);
+    if ((m & 64) && !S && !W) L.push([0.4, 15.6, 3.4]);
+    if ((m & 32) && !S && !E) L.push([15.6, 15.6, 3.4]);
+    return L;
+  }
+  function inList(L, x, y) {
+    for (var k = 0; k < L.length; k++) { var o = L[k], dx = x + 0.5 - o[0], dy = y + 0.5 - o[1]; if (dx * dx + dy * dy <= o[2] * o[2]) return true; }
+    return false;
+  }
 
   // ---- 'G' ash / volcanic gravel
   var ASH = ['#3a2e31', '#54454a', '#6e5d5b', '#88756b', '#a18b7c', '#bba592'];
-  var ASHR = '#a0604c';
+  var ASHR = '#a45e4a';
   var ASHG = [ASH[2], ASH[3], ASH[4]]; // path-edge stand-ins for grass
-  var ASHT = [0, 0.12, 0.24, 0.36].map(function (k) { return mix(ASH[3], ASHR, k); });
-  // smooth low-frequency reddish tint, sampled at tile corners (seamless across tiles)
+  var ASHT = [mix(ASH[3], '#6c6674', 0.3), ASH[3], mix(ASH[3], ASHR, 0.2), mix(ASH[3], ASHR, 0.38)];
+  // smooth low-frequency tint (cool grey .. reddish), sampled at tile corners so it is seamless
   function ashLevel(tx, ty) {
     var gx = tx / 3.3, gy = ty / 2.7, ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy;
     var a = h2(ix, iy, 71), b = h2(ix + 1, iy, 71), c = h2(ix, iy + 1, 71), d = h2(ix + 1, iy + 1, 71);
     fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
     var v = (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy;
-    return Math.max(0, Math.min(3, Math.round((v - 0.18) / 0.64 * 3)));
+    return Math.max(0, Math.min(3, Math.round((v - 0.22) / 0.56 * 3)));
   }
   function ashPebble(b, x, y, k) {
     if (k === 0) { // dark cinder pebble
-      b.px(x, y, ASH[1]); b.px(x + 1, y, ASH[0]); b.px(x, y + 1, ASH[0]); b.px(x + 1, y + 1, ASH[0]);
-      b.px(x, y - 1, ASH[4]); b.px(x + 2, y + 1, ASH[2]);
-    } else if (k === 1) { // grit speck
-      b.px(x, y, ASH[1]); b.px(x, y - 1, ASH[5]);
-    } else if (k === 2) { // pale pumice stone
-      b.hl(x, x + 2, y, ASH[5]); b.px(x + 2, y, ASH[4]); b.hl(x, x + 2, y + 1, ASH[4]); b.px(x, y + 1, ASH[5]);
-      b.hl(x, x + 2, y + 2, ASH[2]); b.px(x + 3, y + 1, ASH[2]);
-    } else { // small reddish scoria
-      b.px(x, y, '#7a4a40'); b.px(x + 1, y, '#5e3a36'); b.px(x, y - 1, '#b07a64'); b.px(x + 1, y + 1, ASH[1]);
+      b.hl(x, x + 1, y, ASH[1]); b.px(x, y, ASH[2]); b.hl(x, x + 1, y + 1, ASH[0]); b.px(x + 2, y + 1, ASH[2]);
+    } else if (k === 1) { // larger cinder
+      b.hl(x, x + 2, y, ASH[1]); b.px(x, y, ASH[2]); b.px(x + 1, y - 1, ASH[2]); b.hl(x, x + 2, y + 1, ASH[0]); b.px(x + 3, y + 1, ASH[2]); b.px(x + 1, y - 1, ASH[4]);
+    } else if (k === 2) { // pale pumice
+      b.hl(x, x + 1, y, ASH[5]); b.hl(x, x + 1, y + 1, ASH[4]); b.hl(x, x + 1, y + 2, ASH[2]);
+    } else { // reddish scoria
+      b.hl(x, x + 1, y, '#8a5042'); b.px(x, y, '#b07860'); b.hl(x, x + 1, y + 1, '#5a3634');
     }
   }
+  // 8 hand-placed pebble layouts (x, y, kind); several deliberately sparse
+  var ASHSET = [
+    [[4, 10, 0], [5, 4, 2]],
+    [[11, 3, 1], [3, 12, 0], [12, 12, 3]],
+    [[8, 7, 0]],
+    [[2, 5, 0], [4, 6, 0], [10, 11, 2]],
+    [[12, 6, 3], [6, 12, 1]],
+    [[9, 2, 2]],
+    [[3, 3, 1], [11, 9, 0], [12, 10, 0]],
+    [[7, 12, 3], [13, 4, 0]]
+  ];
   function ashBase(b, v, lv) {
-    // lv: tint level at the four tile corners [tl,tr,bl,br] or null
     for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
       var c = ASH[3];
       if (lv) {
         var fx = (x + 0.5) / 16, fy = (y + 0.5) / 16;
         var l = (lv[0] * (1 - fx) + lv[1] * fx) * (1 - fy) + (lv[2] * (1 - fx) + lv[3] * fx) * fy;
-        var li = Math.floor(l), fr = l - li;
-        c = ASHT[Math.min(3, li + (fr > bay(x, y) ? 1 : 0))];
+        var li = Math.floor(l);
+        c = ASHT[Math.min(3, li + (l - li > bay(x, y) ? 1 : 0))];
       }
       b.px(x, y, c);
     }
     v = v & 7;
-    // soft grain: short darker drifts and lighter crusts (kept inside the tile)
-    var n = 0;
-    for (var i = 0; i < 7; i++) {
-      var px = 1 + Math.floor(h2(v, i, 301) * 13), py = 1 + Math.floor(h2(v, i, 302) * 13);
-      if (i < 3) { b.hl(px, px + 1, py, ASH[2]); b.px(px + 2, py, mix(ASH[2], ASH[3], 0.5)); }
-      else b.px(px, py, ASH[4]);
+    // fine grit: a few lighter grains and short darker drifts (low contrast)
+    for (var i = 0; i < 6; i++) {
+      var px = 1 + Math.floor(h2(v, i, 301) * 14), py = 1 + Math.floor(h2(v, i, 302) * 14);
+      if (i < 2) b.hl(px, px + 2, py, ASH[2], 0.45);
+      else b.px(px, py, i & 1 ? ASH[4] : ASH[2], 0.7);
     }
-    if (v === 2 || v === 6) { // cinder patch
-      b.ell(8 + (v - 4) * 0.5, 8, 4.5, 2.6, ASH[2], 0.55); b.ell(7.5 + (v - 4) * 0.5, 7.6, 2.5, 1.2, ASH[1], 0.35);
+    if (v === 2) { b.ell(8, 8, 5, 2.4, ASH[2], 0.35); b.hl(6, 9, 7, ASH[4], 0.5); }
+    if (v === 5) { // hairline crack
+      b.px(5, 6, ASH[1]); b.px(6, 7, ASH[1]); b.px(7, 7, ASH[1]); b.px(8, 8, ASH[1]); b.px(9, 9, ASH[1]);
+      b.px(6, 8, ASH[4]); b.px(8, 9, ASH[4]); b.px(10, 10, ASH[4]);
     }
-    if (v === 3) { // hairline crack
-      b.px(4, 5, ASH[1]); b.px(5, 6, ASH[1]); b.px(6, 6, ASH[1]); b.px(7, 7, ASH[1]); b.px(8, 8, ASH[1]); b.px(8, 9, ASH[1]);
-      b.px(5, 7, ASH[4]); b.px(7, 8, ASH[4]); b.px(9, 9, ASH[4]);
-    }
-    var cnt = 2 + (v % 3);
-    for (i = 0; i < cnt; i++) {
-      var qx = 2 + Math.floor(h2(v, i, 311) * 11), qy = 2 + Math.floor(h2(v, i, 312) * 11);
-      var k = Math.floor(h2(v, i, 313) * 4.4) % 4;
-      if (i === 0) k = 0;
-      ashPebble(b, qx, qy, k);
-    }
+    var set = ASHSET[v];
+    for (i = 0; i < set.length; i++) ashPebble(b, set[i][0], set[i][1], set[i][2]);
   }
   function grassy(c) { return has('.,"', c); }
   TILES.G = function (nb, t, tx, ty) {
@@ -1495,21 +1514,21 @@
           if (!gr(x, y + 1)) c = C.g1;
           else if (!gr(x + 1, y) || !gr(x - 1, y)) c = C.g3;
           b.px(x, y, c);
-        } else if (gr(x, y - 1) && (N || (m & 144))) b.px(x, y, ASH[2]); // shade below grass lip
+        } else if (gr(x, y - 1)) b.px(x, y, ASH[2]); // shade below the grass lip
       }
     });
   };
 
-  // ---- 'L' lava (animated; cooled basalt rim against land)
-  var LV = { c0: '#1e141c', c1: '#2e1d24', c2: '#43282b', c3: '#5e3530', m0: '#8a2224', m1: '#c43a1c', m2: '#ea6a1e', m3: '#ffa032', m4: '#ffe478' };
-  var BAS = ['#17131c', '#262029', '#3a3139', '#524650', '#6e5f66'];
-  var LCELL = 12, LPER = 8; // voronoi cell size (px) and period (cells) -> repeats every 6 tiles
+  // ---- 'L' lava: floating crust plates with glowing cracks, molten channels, bubbling pools
+  var LV = { c0: '#1c1219', c1: '#2c1a22', c2: '#40262a', c3: '#5a332f', m0: '#7c1c22', m1: '#c0381c', m2: '#ea661c', m3: '#ffa030', m4: '#ffe476' };
+  var BAS = ['#16121b', '#262029', '#3a3139', '#524650', '#6e5f66'];
+  var LCELL = 16, LPER = 6; // voronoi cell size (px) and period (cells): the pattern repeats every 6 tiles
   function lseed(i, j) {
     var I = ((i % LPER) + LPER) % LPER, J = ((j % LPER) + LPER) % LPER;
-    return [i * LCELL + 2 + h2(I, J, 91) * (LCELL - 4), j * LCELL + 2 + h2(I, J, 92) * (LCELL - 4), h2(I, J, 93), h2(I, J, 94)];
+    return [i * LCELL + 3 + h2(I, J, 91) * (LCELL - 6), j * LCELL + 3 + h2(I, J, 92) * (LCELL - 6), h2(I, J, 93), h2(I, J, 94), h2(I, J, 95)];
   }
   function lavaish(c) { return c === '' || c == null || c === 'L'; }
-  function lavaTile(b, wx0, wy0, f, m) {
+  function lavaTile(b, wx0, wy0, f, m, tx, ty) {
     var pools = [];
     for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
       var wx = wx0 + x + 0.5, wy = wy0 + y + 0.5;
@@ -1519,63 +1538,64 @@
         var s = lseed(i, j), dx = wx - s[0], dy = wy - s[1], d = Math.sqrt(dx * dx + dy * dy);
         if (d < d1) { d2 = d1; d1 = d; s1 = s; } else if (d < d2) d2 = d;
       }
-      var e = d2 - d1, pool = s1[2] < 0.24, c;
-      var glint = ((Math.floor(wx) + Math.floor(wy) * 2 + 64 - f * 5) % 16 + 16) % 16 < 3;
-      if (pool) {
-        // open molten pool: swirling bands
-        var sw = Math.sin((wx * 0.5 + wy * 0.9) + f * 1.57 + s1[3] * 6);
-        c = d1 < 2.2 ? LV.m3 : sw > 0.55 ? LV.m3 : sw < -0.6 ? LV.m1 : LV.m2;
-        if (e < 1.1) c = LV.m1;
-        if (pools.indexOf(s1) < 0) pools.push(s1);
-      } else if (e < 0.9) c = glint ? LV.m4 : LV.m3;
-      else if (e < 1.9) c = (f & 1) ? LV.m1 : mix(LV.m1, LV.m2, 0.3);
-      else if (e < 2.7) c = LV.c3;
-      else {
-        // crust plate, lit from the top-left and from the glow below
-        var lx = wx - s1[0], ly = wy - s1[1];
+      var e = d2 - d1, pool = s1[2] < 0.2;
+      var R = 5 + s1[3] * 3.2;          // plate radius
+      var inPlate = !pool && d1 < R && e > 2.4;
+      var lx = wx - s1[0], ly = wy - s1[1], c;
+      if (inPlate) {
+        var rim = Math.min(R - d1, e - 2.4);
         c = LV.c1;
-        if (lx + ly < -3) c = LV.c2;
-        else if (lx + ly > 3.5) c = LV.c0;
-        if (((Math.floor(wx) * 7 + Math.floor(wy) * 3) % 23) === 0) c = LV.c0;
+        if (lx + ly < -R * 0.55) c = LV.c2;
+        if (lx + ly < -R * 1.05) c = LV.c3;
+        if (lx + ly > R * 0.7) c = LV.c0;
+        if (rim < 1) c = (lx + ly < 0) ? LV.m0 : '#4a1c20';
+        // a glowing crack across bigger plates
+        var ang = s1[4] * Math.PI, cr = Math.abs(lx * Math.sin(ang) - ly * Math.cos(ang));
+        if (R > 6 && cr < 0.55 && rim >= 1.5) c = ((Math.floor(wx + wy) + f) % 4 === 0) ? LV.m4 : LV.m3;
+        else if (R > 6 && cr < 1.2 && rim >= 1.5) c = LV.m0;
+      } else {
+        // molten channel: slow diagonal flow bands; bright glow hugging the plates
+        var fl = Math.sin((wx * 0.42 + wy * 0.23) + f * 1.5708 + Math.sin(wy * 0.3 + s1[4] * 6) * 1.3);
+        c = fl > 0.62 ? LV.m3 : fl < -0.72 ? LV.m1 : LV.m2;
+        if (!pool && d1 < R + 1.2 && e > 1.4) c = ((Math.floor(wx * 2 + wy) + f * 3) % 7 === 0) ? LV.m4 : LV.m3;
+        if (pool && pools.indexOf(s1) < 0) pools.push(s1);
       }
       b.px(x, y, c);
     }
-    // bubbles in pools (slow 4-phase cycle, offset per pool)
+    // bubbles in open pools: rise, swell, pop, splash (4-phase, offset per pool)
     for (var p = 0; p < pools.length; p++) {
       var q = pools[p], bx = Math.floor(q[0] - wx0), by = Math.floor(q[1] - wy0);
       var ph = (f + Math.floor(q[3] * 4)) % 4;
-      if (ph === 0) { b.px(bx, by, LV.m4); }
-      else if (ph === 1) { b.hl(bx - 1, bx + 1, by, LV.m3); b.hl(bx - 1, bx + 1, by + 1, LV.m1); b.px(bx - 1, by - 1, LV.m4); b.px(bx, by - 1, LV.m3); b.px(bx + 1, by - 1, LV.m3); b.px(bx - 1, by, LV.m4); }
-      else if (ph === 2) {
-        b.hl(bx - 1, bx + 1, by - 2, LV.m4); b.vl(bx - 2, by - 1, by + 1, LV.m4); b.vl(bx + 2, by - 1, by + 1, LV.m3); b.hl(bx - 1, bx + 1, by + 2, LV.m1);
-        b.rect(bx - 1, by - 1, 3, 3, LV.m1); b.px(bx, by, LV.m0);
-      } else { b.px(bx - 2, by - 1, LV.m4); b.px(bx + 2, by - 2, LV.m3); b.px(bx + 1, by + 1, LV.m3); }
+      if (ph === 0) { b.px(bx, by, LV.m4); b.px(bx, by + 1, LV.m1); }
+      else if (ph === 1) {
+        b.hl(bx - 1, bx + 1, by - 1, LV.m3); b.hl(bx - 1, bx + 1, by, LV.m3); b.hl(bx - 1, bx + 1, by + 1, LV.m1);
+        b.px(bx - 1, by - 1, LV.m4); b.px(bx - 2, by, LV.m1); b.px(bx + 2, by, LV.m1);
+      } else if (ph === 2) {
+        b.hl(bx - 1, bx + 1, by - 2, LV.m4); b.vl(bx - 2, by - 1, by + 1, LV.m3); b.vl(bx + 2, by - 1, by + 1, LV.m3); b.hl(bx - 1, bx + 1, by + 2, LV.m1);
+        b.rect(bx - 1, by - 1, 3, 3, LV.m0); b.px(bx - 1, by - 1, LV.m1);
+      } else { b.px(bx - 2, by - 2, LV.m4); b.px(bx + 2, by - 3, LV.m3); b.px(bx + 1, by + 1, LV.m3); b.px(bx - 1, by, LV.m1); }
     }
     if (!m) return;
-    // cooled basalt rim against non-lava ground
-    var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+    // cooled basalt boulders banking the lava where it meets land, with a hot seam
+    var L = rimStones(m, tx, ty, 700, true);
+    var band = function (x, y) {
+      var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+      return (N && y < 2) || (S && y > 13) || (W && x < 2) || (E && x > 13);
+    };
     for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) {
-      var dN = N ? y - WOB[x] * 0.9 : 99;
-      var dS = S ? 15 - y - WOB[(x + 7) & 15] * 0.8 : 99;
-      var dW = W ? x - WOB[(y + 3) & 15] * 0.9 : 99;
-      var dE = E ? 15 - x - WOB[(y + 11) & 15] * 0.9 : 99;
-      if (N && W) dN = dW = Math.min(dN, dW, Math.hypot(x + 0.5, y + 0.5) - 2.2);
-      if (N && E) dN = dE = Math.min(dN, dE, Math.hypot(15.5 - x, y + 0.5) - 2.2);
-      if (S && W) dS = dW = Math.min(dS, dW, Math.hypot(x + 0.5, 15.5 - y) - 2.2);
-      if (S && E) dS = dE = Math.min(dS, dE, Math.hypot(15.5 - x, 15.5 - y) - 2.2);
-      var dC = 99;
-      if ((m & 128) && !N && !W) dC = Math.min(dC, Math.hypot(x + 0.5, y + 0.5) - 1);
-      if ((m & 16) && !N && !E) dC = Math.min(dC, Math.hypot(15.5 - x, y + 0.5) - 1);
-      if ((m & 64) && !S && !W) dC = Math.min(dC, Math.hypot(x + 0.5, 15.5 - y) - 1);
-      if ((m & 32) && !S && !E) dC = Math.min(dC, Math.hypot(15.5 - x, 15.5 - y) - 1);
-      var dd = Math.min(dN, dS, dW, dE, dC), col = null;
-      if (dd < 0.6) col = dd === dS ? BAS[1] : (dd === dN || dd === dW) ? BAS[3] : BAS[2];
-      else if (dd < 1.6) col = dd === dS ? BAS[0] : BAS[2];
-      else if (dd < 2.6) col = dd === dS ? BAS[1] : ((x * 5 + y * 3) % 7 === 0 ? BAS[3] : BAS[1]);
-      else if (dd < 3.4) col = LV.m0;
-      else if (dd < 4.3) col = mix(b.get(x, y).length ? hex.apply(null, b.get(x, y)) : LV.m2, LV.m1, 0.5);
-      if (col) b.px(x, y, col);
-      if (dd >= 0.6 && dd < 2.6 && ((x * 3 + y * 7) % 11) === 0) b.px(x, y, BAS[4]);
+      if (inList(L, x, y) || band(x, y)) continue;
+      var n1 = inList(L, x, y - 1) || inList(L, x, y + 1) || inList(L, x - 1, y) || inList(L, x + 1, y) || band(x, y - 1) || band(x, y + 1) || band(x - 1, y) || band(x + 1, y);
+      var n2 = inList(L, x, y - 2) || inList(L, x, y + 2) || inList(L, x - 2, y) || inList(L, x + 2, y);
+      if (n1) b.px(x, y, LV.m0);
+      else if (n2) b.px(x, y, ((x + y + f) % 5) ? LV.m1 : LV.m3);
+    }
+    for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) if (band(x, y)) b.px(x, y, BAS[1]);
+    blobs(b, 0, 0, 15, 15, L, BAS, {});
+    // glowing heat on the lava-facing underside of the rocks
+    for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) {
+      if (!inList(L, x, y)) continue;
+      if (!inList(L, x, y + 1) && !band(x, y + 1) && y < 15) b.px(x, y, '#5a2226');
+      if (((x * 7 + y * 3) % 13) === 0 && inList(L, x + 1, y + 1)) b.px(x, y, BAS[4]);
     }
   }
   TILES.L = function (nb, t, tx, ty) {
@@ -1584,154 +1604,149 @@
     var ox, oy;
     if (tx != null && ty != null) { ox = ((tx % 6) + 6) % 6; oy = ((ty % 6) + 6) % 6; }
     else { var r = variant(nb, tx, ty, 57); ox = Math.floor(r * 6); oy = Math.floor(r * 36) % 6; }
-    return tileC('L' + ox + oy + '_' + m + '_' + f, function (b) { lavaTile(b, ox * 16, oy * 16, f, m); });
+    var rk = m ? (tx | 0) * 7 + (ty | 0) * 13 : 0;
+    return tileC('L' + ox + oy + '_' + m + '_' + f + (m ? '_' + (tx | 0) + ',' + (ty | 0) : ''), function (b) { lavaTile(b, ox * 16, oy * 16, f, m, tx, ty); });
   };
 
-  // ---- 'Y' hot spring (steam, smooth stone rim)
+  // ---- 'Y' hot spring (rising steam, smooth stone rim)
   var SPA = ['#1b4a5a', '#217684', '#2d9e9e', '#4cc4b8', '#8fe4d6', '#e0fff6'];
   function springish(c) { return c === '' || c == null || c === 'Y'; }
-  function steam(b, x, y, f, a) {
-    // a curling wisp that rises and thins over 4 frames
-    var pts = [[0, 0], [1, -1], [1, -2], [0, -3], [0, -4], [1, -5], [1, -6]];
-    var lift = f * 2, n = 7 - f;
-    for (var i = 0; i < n; i++) {
-      var px = x + pts[i][0] + (f & 1), py = y + pts[i][1] - lift;
-      var al = a * (1 - i / 8) * (1 - f * 0.18);
-      b.px(px, py, SPA[5], al);
-      if (i < 3) b.px(px - 1, py, SPA[5], al * 0.45);
-    }
+  // soft steam puff; phase 0..3 = low & small .. high & faint
+  function puff(b, x, y, ph, a) {
+    var yy = y - ph * 3, r = 1.6 + ph * 0.55, al = a * (1 - ph * 0.22);
+    b.ell(x + (ph & 1), yy, r + 0.8, r * 0.7 + 0.4, '#f4fffc', al * 0.45);
+    b.ell(x + (ph & 1) - 0.5, yy - 0.5, r * 0.7, r * 0.5, '#ffffff', al * 0.55);
   }
   TILES.Y = function (nb, t, tx, ty) {
     var f = Math.floor(t * 2.2) % 4;
     var m = mask(nb, function (c) { return !springish(c); }, 8);
     var v = Math.floor(variant(nb, tx, ty, 61) * 3);
-    return tileC('Y' + m + f + v, function (b) {
-      var N = m & 1, E = m & 2, S = m & 4, W = m & 8;
+    return tileC('Y' + m + f + v + (m ? '_' + (tx | 0) + ',' + (ty | 0) : ''), function (b) {
       b.rect(0, 0, 16, 16, SPA[2]);
-      // soft deep centre
-      b.ell(8, 9, 6, 4, SPA[1], 0.45);
-      for (var i = 0; i < RIPS.length; i++) {
-        var p = RIPS[(i + v) % 4], ph = (f + i) % 4;
-        if (ph === 1) { b.hl(p[0] - 1, p[0] + 1, p[1], SPA[3]); }
-        else if (ph === 2) { b.hl(p[0] - 2, p[0] + 2, p[1], SPA[3]); b.px(p[0], p[1], SPA[4]); }
-        else if (ph === 3) { b.px(p[0] - 2, p[1], SPA[3]); b.px(p[0] + 2, p[1], SPA[3]); }
+      b.ell(8, 9, 6.5, 4.5, SPA[1], 0.4);
+      // surface shimmer: short light dashes that come and go
+      var sh = [[3, 4], [10, 7], [5, 12], [12, 13]];
+      for (var i = 0; i < sh.length; i++) {
+        var p = sh[(i + v) % 4], ph = (f + i) % 4;
+        if (ph === 1) b.hl(p[0], p[0] + 1, p[1], SPA[3]);
+        else if (ph === 2) { b.hl(p[0] - 1, p[0] + 2, p[1], SPA[3]); b.hl(p[0], p[0] + 1, p[1], SPA[4]); }
       }
       // rising bubbles
-      var bx = 5 + v * 3, byy = 12 - ((f * 3) % 10);
-      b.px(bx, byy, SPA[5], 0.8); b.px(bx + 4, (byy + 5) % 12 + 2, SPA[4], 0.8);
-      // stone rim
-      var list = [], k, jit = function (s) { return (h2(tx | 0, ty | 0, s) - 0.5) * 0.7; };
-      if (N) list.push([2.5, 1.3, 3.1 + jit(1)], [8, 0.9, 3.4 + jit(2)], [13.5, 1.3, 3.1 + jit(3)]);
-      if (W) list.push([1.3, 2.5, 3.1], [0.9, 8, 3.4 + jit(4)], [1.3, 13.5, 3.1]);
-      if (E) list.push([14.7, 2.5, 3.1], [15.1, 8, 3.4 + jit(5)], [14.7, 13.5, 3.1]);
-      if ((m & 128) && !N && !W) list.push([0.3, 0.3, 3]);
-      if ((m & 16) && !N && !E) list.push([15.7, 0.3, 3]);
-      if (S) list.push([2.5, 14.7, 3.1 + jit(6)], [8, 15.1, 3.4 + jit(7)], [13.5, 14.7, 3.1 + jit(8)]);
-      if ((m & 64) && !S && !W) list.push([0.3, 15.7, 3]);
-      if ((m & 32) && !S && !E) list.push([15.7, 15.7, 3]);
-      var inS = function (x, y) {
-        for (k = 0; k < list.length; k++) { var o = list[k], dx = x + 0.5 - o[0], dy = y + 0.5 - o[1]; if (dx * dx + dy * dy <= o[2] * o[2]) return true; }
-        return false;
-      };
-      if (list.length) {
-        // water edge: shadow under the stones, pale foam beside them
+      var bx = 4 + v * 4, byy = 13 - ((f * 3) % 11);
+      b.px(bx, byy, SPA[4]); b.px((bx + 6) % 14 + 1, (byy + 6) % 11 + 3, SPA[4]);
+      if (m) {
+        var L = rimStones(m, tx, ty, 600, false);
+        // water edge: shadow below stones, foam line elsewhere
         for (var y = 0; y < 16; y++) for (var x = 0; x < 16; x++) {
-          if (inS(x, y)) continue;
-          if (inS(x, y - 1) || inS(x, y - 2)) b.px(x, y, SPA[1]);
-          else if (inS(x - 1, y) || inS(x + 1, y) || inS(x, y + 1)) b.px(x, y, ((x + y + f) & 3) ? SPA[4] : SPA[5]);
+          if (inList(L, x, y)) continue;
+          if (inList(L, x, y - 1)) b.px(x, y, SPA[0]);
+          else if (inList(L, x, y - 2)) b.px(x, y, SPA[1]);
+          else if (inList(L, x - 1, y) || inList(L, x + 1, y) || inList(L, x, y + 1)) b.px(x, y, ((x + y + f) & 3) ? SPA[4] : SPA[5]);
         }
-        blobs(b, 0, 0, 15, 15, list, STONE, {});
-        // wet sheen on the waterline side of the stones
-        for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) if (inS(x, y) && !inS(x, y + 1) && y < 15 && N && y < 6) b.px(x, y, C.st0);
+        blobs(b, 0, 0, 15, 15, L, STONE, {});
+        // damp dark band where stones meet the water
+        for (y = 0; y < 16; y++) for (x = 0; x < 16; x++) if (inList(L, x, y) && !inList(L, x, y + 1) && y < 15) b.px(x, y, C.st0);
       }
-      // steam wisps (inside the tile)
-      steam(b, 4 + v, 11, f, 0.55);
-      steam(b, 11 - v, 14, (f + 2) % 4, 0.5);
+      // steam
+      puff(b, 5 + v * 2, 11, f, 0.9);
+      puff(b, 11 - v, 14, (f + 2) % 4, 0.75);
     });
   };
   OVER.Y = function (nb, t) {
     if (nb(0, -1) === 'Y') return null;
     var f = Math.floor(t * 2.2) % 4;
-    return cached('Yo' + f, 16, 14, 0, 12, function (b) {
-      steam(b, 6, 1, f, 0.4);
-      steam(b, 12, 0, (f + 1) % 4, 0.3);
+    return cached('Yo' + f, 16, 16, 0, 14, function (b) {
+      puff(b, 7, -1, f, 0.55);
+      puff(b, 12, -4, (f + 2) % 4, 0.4);
     });
   };
 
   // ---- 'D' dark (night) forest floor
   var NIGHT = ['#0a1720', '#10262b', '#163532', '#1d443c', '#28574a', '#3b7058'];
   var NIGHTG = [NIGHT[1], NIGHT[2], NIGHT[3]];
-  var LEAF = [['#4a2426', '#7a3a2c', '#a05834'], ['#3e3020', '#6e5a2c', '#98803a'], ['#3a2032', '#5e3042', '#84485a']];
+  var LEAF = [['#40202a', '#6e3430', '#94502e'], ['#34301e', '#5e5228', '#86763a'], ['#34202e', '#56303e', '#7a4656']];
   var MUSH = ['#2a8a8c', '#56e0d2', '#c4fff4'];
+  function leaf(b, x, y, L, flip) {
+    if (!flip) { b.px(x, y, L[2]); b.px(x + 1, y, L[1]); b.px(x + 1, y + 1, L[1]); b.px(x + 2, y + 1, L[0]); b.px(x + 1, y + 2, NIGHT[1]); b.px(x + 2, y + 2, NIGHT[1]); }
+    else { b.px(x + 2, y, L[2]); b.px(x + 1, y, L[1]); b.px(x + 1, y + 1, L[1]); b.px(x, y + 1, L[0]); b.px(x, y + 2, NIGHT[1]); b.px(x + 1, y + 2, NIGHT[1]); }
+  }
+  // per-variant: moss cushions [x,y], leaves [x,y,colour,flip], mushroom cluster [x,y] or null
+  var NSET = [
+    { moss: [[3, 4], [10, 11]], leaves: [[11, 3, 0, 0]], mush: null },
+    { moss: [[9, 5]], leaves: [[3, 10, 1, 1], [5, 12, 0, 0]], mush: null },
+    { moss: [[2, 9]], leaves: [], mush: [10, 8] },
+    { moss: [[6, 3], [12, 12]], leaves: [[2, 13, 2, 0]], mush: null },
+    { moss: [[4, 12]], leaves: [[10, 5, 0, 1]], mush: null, twig: true },
+    { moss: [[11, 3], [3, 7]], leaves: [], mush: null },
+    { moss: [[11, 11]], leaves: [[8, 3, 1, 0]], mush: [4, 6] },
+    { moss: [[6, 9]], leaves: [[12, 4, 2, 1], [2, 2, 0, 0]], mush: null }
+  ];
   function nightBase(b, v, glow) {
     b.rect(0, 0, 16, 16, NIGHT[2]);
-    v = v & 7;
-    // moss cushions (soft domes: light top, dark underside)
-    for (var i = 0; i < 3; i++) {
-      var x = 1 + Math.floor(h2(v, i, 401) * 12), y = 2 + Math.floor(h2(v, i, 402) * 11);
-      b.hl(x, x + 2, y, NIGHT[3]); b.px(x + 1, y - 1, NIGHT[4]); b.px(x, y - 1, NIGHT[3]);
-      b.hl(x, x + 2, y + 1, NIGHT[1]); if (i === 0) b.px(x + 1, y - 1, NIGHT[5]);
+    var s = NSET[v & 7], i;
+    // faint large-scale mottling kept inside the tile
+    if ((v & 3) === 1) b.ell(8, 8, 5, 2.6, NIGHT[1], 0.45);
+    if ((v & 3) === 3) b.ell(7, 9, 4, 2, NIGHT[3], 0.35);
+    for (i = 0; i < s.moss.length; i++) {
+      var x = s.moss[i][0], y = s.moss[i][1];
+      b.hl(x, x + 3, y, NIGHT[3]); b.hl(x + 1, x + 2, y - 1, NIGHT[4]); b.px(x + 1, y - 1, NIGHT[5]);
+      b.hl(x, x + 3, y + 1, NIGHT[1]); b.px(x + 3, y, NIGHT[2]);
     }
-    if (v === 1 || v === 5) { b.ell(8, 8, 4, 2.2, NIGHT[1], 0.5); }
-    if (v === 3) { b.px(3, 12, NIGHT[1]); b.px(4, 12, NIGHT[1]); b.px(4, 11, NIGHT[3]); }
-    // fallen leaves
-    var nl = 1 + (v % 3);
-    for (i = 0; i < nl; i++) {
-      var lx = 2 + Math.floor(h2(v, i, 411) * 11), ly = 2 + Math.floor(h2(v, i, 412) * 11), L = LEAF[Math.floor(h2(v, i, 413) * 3)];
-      if (h2(v, i, 414) < 0.5) { b.px(lx, ly, L[2]); b.px(lx + 1, ly, L[1]); b.px(lx + 1, ly + 1, L[1]); b.px(lx + 2, ly + 1, L[0]); b.px(lx, ly + 1, NIGHT[1]); }
-      else { b.px(lx + 1, ly, L[2]); b.px(lx, ly + 1, L[1]); b.px(lx + 1, ly + 1, L[1]); b.px(lx, ly + 2, L[0]); b.px(lx + 2, ly + 1, NIGHT[1]); }
-    }
-    // twig
-    if (v === 4) { b.px(9, 5, '#4a3428'); b.px(10, 5, '#4a3428'); b.px(11, 6, '#4a3428'); b.px(12, 6, '#3a2820'); b.px(10, 4, '#6a4a34'); }
-    // glowing mushrooms on some tiles
-    if (v === 2 || v === 6) {
-      var mx = v === 2 ? 10 : 4, my = v === 2 ? 10 : 6;
-      b.ell(mx + 0.5, my + 0.5, 3.6, 2.6, MUSH[1], glow ? 0.2 : 0.12);
-      b.ell(mx + 0.5, my + 0.5, 2, 1.5, MUSH[1], glow ? 0.18 : 0.1);
-      b.px(mx, my + 1, '#a8d4c8'); b.px(mx, my + 2, NIGHT[0]);
-      b.hl(mx - 1, mx + 1, my, MUSH[1]); b.px(mx, my - 1, MUSH[2]); b.px(mx - 1, my, glow ? MUSH[2] : MUSH[1]); b.px(mx + 1, my, MUSH[0]);
-      b.px(mx + 2, my + 2, MUSH[1]); b.px(mx + 2, my + 3, '#a8d4c8'); b.px(mx + 2, my + 1, glow ? MUSH[2] : MUSH[1]);
+    for (i = 0; i < s.leaves.length; i++) { var l = s.leaves[i]; leaf(b, l[0], l[1], LEAF[l[2]], l[3]); }
+    if (s.twig) { b.px(9, 11, '#4a3428'); b.px(10, 11, '#4a3428'); b.px(11, 12, '#3a2820'); b.px(12, 12, '#3a2820'); b.px(10, 10, '#6a4a34'); b.px(12, 13, NIGHT[1]); }
+    if (s.mush) {
+      var mx = s.mush[0], my = s.mush[1];
+      b.ell(mx + 1, my + 1, 4.2, 3, MUSH[1], glow ? 0.16 : 0.09);
+      b.ell(mx + 1, my + 1, 2.4, 1.8, MUSH[1], glow ? 0.16 : 0.08);
+      // tall one
+      b.px(mx, my + 1, '#9cc8bc'); b.px(mx, my + 2, '#9cc8bc'); b.px(mx, my + 3, NIGHT[0]);
+      b.hl(mx - 1, mx + 1, my, MUSH[1]); b.px(mx, my - 1, glow ? MUSH[2] : MUSH[1]); b.px(mx - 1, my, MUSH[2]); b.px(mx + 1, my, MUSH[0]);
+      // small one
+      b.px(mx + 2, my + 3, '#9cc8bc'); b.px(mx + 3, my + 3, NIGHT[0]); b.hl(mx + 2, mx + 3, my + 2, MUSH[1]); b.px(mx + 2, my + 2, glow ? MUSH[2] : MUSH[1]);
     }
   }
   TILES.D = function (nb, t, tx, ty) {
-    var v = Math.floor(variant(nb, tx, ty, 43) * 8), g = (v === 2 || v === 6) ? (Math.floor(t * 1.3 + v * 0.37) % 2) : 0;
+    var v = Math.floor(variant(nb, tx, ty, 43) * 8), mu = !!NSET[v].mush;
+    var g = mu ? (Math.floor(t * 1.3 + v * 0.37) % 2) : 0;
     return tileC('D' + v + g, function (b) { nightBase(b, v, g); });
   };
 
-  // ---- 'M' mossy stone with a glowing moon rune
+  // ---- 'M' big mossy stone with a glowing moon rune (rises 6px above its tile)
   var MOSS = ['#17332a', '#244f34', '#36703e', '#52924a', '#80b85e'];
-  var RUNE = ['#3a78c8', '#86cdf6', '#e6fbff'];
+  var RUNE = ['#2a5aa8', '#86cdf6', '#e6fbff'];
   TILES.M = function (nb, t, tx, ty) {
     var gt = groundType(nb, 'g'), v = grassVar(variant(nb, tx, ty, 11)), f = Math.floor(t * 1.8) % 4;
-    return cached('M' + gt + v + f, 16, 19, 0, 3, function (b) {
+    return cached('M' + gt + v + f, 16, 22, 0, 6, function (b) {
       ground(b, gt, v);
-      shadowEll(b, 8.5, 14.2, 8, 2.2, 0.4);
-      var list = [[8, 4.5, 6.2], [4, 9.5, 4.2], [12, 9.5, 4.2], [8, 10.5, 5.2]];
-      blobs(b, 0, -3, 15, 15, list, STONE, {});
-      // moss cap: recolour the stone's top band into moss, keeping its shading
+      shadowEll(b, 9, 14.6, 8, 1.8, 0.45);
+      var list = [[8, 1.5, 5.8], [3.8, 7, 4.3], [12.2, 6.5, 4.3], [8, 6, 6.6], [4.5, 11.2, 3.8], [11.5, 11.2, 3.8], [8, 10.5, 5.4]];
+      blobs(b, 0, -6, 15, 15, list, STONE, {});
+      // moss cap: recolour the upper band of the stone into moss (keeps the stone's shading)
       var idx = {};
       for (var i = 0; i < 5; i++) idx[STONE[i]] = i;
-      var drip = [0, 0, 1, 3, 2, 0, 0, 0, 0, 1, 0, 2, 4, 1, 0, 0];
-      for (var y = -3; y < 16; y++) for (var x = 0; x < 16; x++) {
+      var drip = [0, 1, 0, 2, 5, 3, 1, 0, 0, 1, 3, 1, 0, 4, 2, 0];
+      for (var y = -6; y < 16; y++) for (var x = 0; x < 16; x++) {
         var px = b.get(x, y); if (px[3] < 250) continue;
-        var hx = hex(px[0], px[1], px[2]), k = idx[hx];
+        var k = idx[hex(px[0], px[1], px[2])];
         if (k == null) continue;
-        var edge = 2 + ((x * 5) % 3 === 0 ? 1 : 0) + drip[x];
-        if (y <= edge - (x < 3 || x > 12 ? 2 : 0)) b.px(x, y, MOSS[k]);
-        else if (y === edge + 1 - (x < 3 || x > 12 ? 2 : 0) && k > 1) b.px(x, y, STONE[1]);
+        var edge = -1 + ((x * 5) % 3 === 0 ? 1 : 0) + drip[x];
+        if (y <= edge) b.px(x, y, MOSS[k]);
+        else if (y === edge + 1 && k > 1) b.px(x, y, C.st1);
       }
-      b.px(6, -2, MOSS[4]); b.px(9, -1, MOSS[4]); b.px(4, 1, MOSS[3]); b.px(11, 1, MOSS[4]);
-      // carved crescent rune (groove shadow + glow)
-      var cres = [[8, 5], [7, 6], [6, 7], [6, 8], [6, 9], [7, 10], [8, 11]];
-      var inner = [[9, 6], [8, 7], [8, 9], [9, 10]];
-      var ga = [0.14, 0.26, 0.38, 0.26][f];
-      b.ell(7.8, 8.5, 4.5, 4.8, RUNE[1], ga * 0.6);
+      b.px(6, -5, MOSS[4]); b.px(9, -4, MOSS[4]); b.px(4, -1, MOSS[4]); b.px(12, -1, MOSS[3]); b.px(7, -3, MOSS[3]);
+      // tiny fern at the foot
+      b.px(1, 13, C.g1); b.px(2, 12, C.g2); b.px(2, 13, C.g1); b.px(14, 13, C.g1); b.px(14, 12, C.g2);
+      // carved crescent rune: groove shadow, pulsing glow
+      var cres = [[8, 2], [7, 2], [6, 3], [5, 4], [5, 5], [5, 6], [5, 7], [6, 8], [7, 9], [8, 9]];
+      var thick = [[6, 4], [6, 5], [6, 6], [6, 7]];
+      var ga = [0.14, 0.24, 0.34, 0.24][f];
+      b.ell(7.2, 5.8, 5.2, 5.4, RUNE[1], ga * 0.55);
+      b.ell(7.2, 5.8, 3.2, 3.6, RUNE[1], ga * 0.5);
       for (i = 0; i < cres.length; i++) b.px(cres[i][0] + 1, cres[i][1] + 1, C.st0);
-      for (i = 0; i < cres.length; i++) b.px(cres[i][0], cres[i][1], (i + f) % 4 === 0 ? RUNE[2] : RUNE[1]);
-      for (i = 0; i < inner.length; i++) b.px(inner[i][0], inner[i][1], RUNE[0]);
-      // three rune ticks beside the moon
-      b.px(10, 8, RUNE[1]); b.px(11, 8, C.st0); b.px(10, 6, RUNE[0]); b.px(10, 10, RUNE[0]);
-      b.px(7, 8, RUNE[2]);
+      for (i = 0; i < cres.length; i++) b.px(cres[i][0], cres[i][1], (i + f) % 5 === 0 ? RUNE[2] : RUNE[1]);
+      for (i = 0; i < thick.length; i++) b.px(thick[i][0], thick[i][1], f === 2 ? RUNE[2] : RUNE[1]);
+      // three star-dots of the rune
+      b.px(10, 4, RUNE[1]); b.px(11, 5, C.st0); b.px(11, 6, RUNE[0]); b.px(10, 8, RUNE[1]); b.px(11, 9, C.st0);
     });
   };
 
