@@ -121,6 +121,31 @@
     long: { name: 'ロングボール', short: 'ロング', desc: '中盤を飛ばしてFWへ放り込む。こぼれ球を拾って押し込む。', color: '#f08a3a' },
     possession: { name: 'ポゼッション', short: 'つなぐ', desc: '短いパスをつないで相手を動かし、崩してから仕留める。', color: '#4fb4e8' },
   };
+  // tactic understanding per player (0-100): counter / press / long / possession
+  const TAC_U = {
+    gen: { counter: 55, press: 30, long: 60, possession: 30 },
+    tsubame: { counter: 60, press: 50, long: 40, possession: 40 },
+    morio: { counter: 50, press: 35, long: 55, possession: 35 },
+    mask: { counter: 45, press: 30, long: 60, possession: 30 },
+    kawataro: { counter: 50, press: 45, long: 40, possession: 35 },
+    shizuku: { counter: 50, press: 55, long: 35, possession: 50 },
+    kazuha: { counter: 45, press: 35, long: 30, possession: 65 },
+    mame: { counter: 40, press: 20, long: 55, possession: 70 },
+    ponta: { counter: 40, press: 30, long: 45, possession: 40 },
+    leo: { counter: 50, press: 25, long: 45, possession: 35 },
+    haruki: { counter: 55, press: 50, long: 40, possession: 35 },
+    daifuku: { counter: 50, press: 25, long: 55, possession: 30 },
+    hikaru: { counter: 40, press: 30, long: 35, possession: 45 },
+    ume: { counter: 55, press: 60, long: 40, possession: 35 },
+  };
+  const AWAY_TAC_U = { counter: 50, press: 58, long: 82, possession: 42 };
+  // research-based matchup notes (row = our tactic, column = theirs). see docs/tactics_research.md
+  const MATCHUP = {
+    counter: { counter: ['△', '両チーム待つので動かない。先制点とセットプレーが鍵'], press: ['○', '前がかりの高いラインの裏を速攻で突ける'], long: ['△', '箱の中の空中戦は守る側が有利。ただしセカンドボールに注意'], possession: ['○', '中央を固めて保持を不毛にし、奪って速攻'] },
+    press: { counter: ['△−', '引いた相手にはプレスが空振りし、裏を走られる'], press: ['△', '奪い合いの消耗戦。パスのうまさとスタミナ勝負'], long: ['△−', '蹴られるとプレスを飛ばされ、高いラインの裏が危ない'], possession: ['○', '後ろからつなぐ相手を高い位置で奪える。ただし技術が高い相手には剥がされる'] },
+    long: { counter: ['△', '陣地は取れるが、密集した箱の空中戦は不利。セットプレーで押し込め'], press: ['○', 'プレスを飛び越えて、高いラインの裏へ'], long: ['△', '空中戦とセカンドボールの消耗戦。体格勝負'], possession: ['△−', 'ロングは半分しか通らずボールを渡しがち'] },
+    possession: { counter: ['△−', '崩しきれず、前がかりを速攻で刺されやすい'], press: ['△−', '自陣でのロストが失点に直結。パスがうまければ逆に裏が空く'], long: ['○', 'ボールを握って相手の放り込みを断つ'], possession: ['△', '保持の奪い合い。パスのうまさの差がそのまま出る'] },
+  };
   const DEFAULT_LINEUP = ['gen', 'tsubame', 'morio', 'mask', 'kawataro', 'shizuku', 'kazuha', 'mame', 'ponta', 'leo', 'haruki'];
 
   const ORDERS = [
@@ -130,5 +155,7 @@
     { id: 'shoot', key: '4', label: '打て！', sub: 'ミドル解禁', shout: 'どんどん打てぇ！', cost: 30, dur: 12 },
   ];
 
-  window.Data = { HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS };
+  window.Data = { HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP };
+  HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); });
+  AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();

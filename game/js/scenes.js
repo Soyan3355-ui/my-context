@@ -278,6 +278,8 @@
       s.t += dt;
       s.fx.update(dt);
       if (Math.random() < 0.3) s.fx.add({ x: rand(0, W), y: rand(120, 200), vx: rand(-4, 4), vy: rand(-8, -2), life: rand(1, 2.5), size: 1, color: 'rgba(255,255,255,0.8)' });
+      if (State.auto && s.t > 1.5 && !s.autoGone) { s.autoGone = true; State.reset(); Game.goto(Intro(), 'iris'); return; }
+      if (s.autoGone) return;
       if (!s.menu && s.t > 1.2 && (Input.anyPressed || Input.mouse.clicked)) {
         Sound.init(); Sound.bgm('title'); Sound.play('stamp');
         s.menu = new Menu([
@@ -679,9 +681,15 @@
       panel(g, 254 + dx, 100, 210, 36, 'gold');
       text(g, '特性：' + (p.trait || '―'), 262 + dx, 104, { size: 10, color: '#4a2a10' });
       text(g, p.traitDesc || '', 262 + dx, 120, { size: 8, color: '#6d4f3a' });
+      // tactic understanding
+      if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
+        const x = 254 + dx + i * 54, T = Data.TACTICS[k];
+        text(g, T.short, x, 139, { size: 8, color: '#6d4f3a' });
+        g.fillStyle = '#3a3050'; g.fillRect(x + 22, 142, 26, 3); g.fillStyle = T.color; g.fillRect(x + 22, 142, Math.round(26 * p.tacU[k] / 100), 3);
+      });
       // stats
       STAT_KEYS.forEach((key, i) => {
-        const y = 146 + i * 22;
+        const y = 152 + i * 21;
         const v = p.stats[key];
         const b = p.base ? p.base[key] : v;
         text(g, STAT_NAMES[key], 150 + dx, y, { size: 10, color: '#2a1a24' });
@@ -701,12 +709,13 @@
     { id: 'shoot', label: 'シュート練習', sub: 'シュート↑ パス↑少し', desc: 'ゲンさんを相手にPK特訓。前線の選手がよく伸びる。', gains: { sht: 3, pas: 1 }, focus: ['leo', 'haruki', 'ponta'] },
     { id: 'pass', label: '鳥かごパス回し', sub: 'パス↑ ディフェンス↑少し', desc: '輪になってパスを回す。中盤と守備がよく伸びる。', gains: { pas: 3, def: 1 }, focus: ['kazuha', 'morio', 'ponta'] },
     { id: 'run', label: '砂浜ダッシュ', sub: 'スピード↑ スタミナ↑', desc: '夕暮れの砂浜を走り込む。全員の足腰がきたえられる。', gains: { spd: 2, sta: 2 }, focus: ['tsubame', 'haruki', 'gen'] },
+    { id: 'tactics', label: '戦術練習', sub: '採用中の戦術の理解度↑', desc: '作戦ボードで選んだ戦術を、紅白戦で体に覚えさせる。能力は上がらないが、戦術の実現度が上がる。', gains: {}, focus: [] },
   ];
   function Training() {
     const s = { t: 0, phase: 'pick', menu: null, tries: [], meter: null, fx: new Particles(), results: [], rt: 0, pick: null, reveal: 0, statAnim: 0 };
     s.enter = () => {
       Sound.bgm('hub');
-      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label, sub: tr.sub, tr })), 250, 70, 214, 38, 8);
+      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label, sub: tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.sub, tr })), 250, 62, 214, 32, 6);
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
     s.update = (dt) => {
@@ -763,6 +772,12 @@
       s.results = [];
       for (const p of State.roster) {
         const ups = {};
+        if (s.pick.id === 'tactics' && p.tacU) {
+          const inXI = State.lineup.includes(p.id);
+          const v = Math.max(1, Math.round((inXI ? 5 : 3) * mult * (p.age && p.age < 25 ? 1.2 : 1)));
+          p.tacU[State.tactic] = Math.min(100, p.tacU[State.tactic] + v);
+          ups.tac = v;
+        }
         for (const k in s.pick.gains) {
           let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 0.5;
           v = Math.max(1, Math.round(v + rand(-0.3, 0.3)));
@@ -806,7 +821,7 @@
         let genX = gx + 34;
         if (res && kickT > 0.2) genX += (res === 'bad' ? 0 : res === 'good' ? -30 : 40) * Ease.outQuad(clamp((kickT - 0.2) / 0.3, 0, 1));
         g.drawImage(Art.sprite(gen.look, 'down', res && kickT > 0.2 && res !== 'bad' ? 'cheer' : 'walk1'), genX, gy + 4, 32, 44);
-        const shooter = State.roster[5 + (s.tries.length % 2)];
+        const shooter = State.roster.find((q) => q.id === (s.tries.length % 2 ? 'haruki' : 'leo'));
         g.drawImage(Art.sprite(shooter.look, 'side', res && kickT < 0.25 ? 'kick' : 'walk1'), 150, 180, 32, 44);
         // ball
         let bx = 184, by = 214;
@@ -883,19 +898,14 @@
         panel(g, 40, 18, 400, 234, 'paper');
         text(g, tr.label + '　' + s.rank, W / 2, 26, { size: 16, align: 'center', color: s.rank === '大成功！' ? '#e0474c' : '#10304f' });
         s.results.forEach((r, i) => {
-          const y = 52 + i * 26;
+          const col = i < 7 ? 0 : 1, y = 52 + (i % 7) * 25, x0 = 50 + col * 196;
           const vis = s.rt - 0.4 > i * 0.14;
           if (!vis) return;
-          g.drawImage(Art.sprite(r.p.look, 'down', 'walk1'), 54, y);
-          text(g, r.p.name, 76, y + 5, { size: 10, color: '#2a1a24' });
-          let x = 150;
+          g.drawImage(Art.sprite(r.p.look, 'down', 'walk1'), x0, y);
+          text(g, r.p.name, x0 + 20, y + 2, { size: 9, color: '#2a1a24' });
           const keys = Object.keys(r.ups);
-          if (!keys.length) text(g, '……（あまり身につかなかった）', x, y + 5, { size: 9, color: '#9a8e7a' });
-          keys.forEach((k) => {
-            panel(g, x, y + 2, 118, 18, 'sky');
-            text(g, STAT_NAMES[k] + ' +' + r.ups[k], x + 59, y + 5, { size: 10, align: 'center', color: '#ffffff', outline: '#10304f' });
-            x += 124;
-          });
+          const line = keys.length ? keys.map((k) => (k === 'tac' ? '理解' : STAT_NAMES[k].slice(0, 3)) + '+' + r.ups[k]).join(' ') : '（身につかず）';
+          text(g, line, x0 + 20, y + 12, { size: 8, color: keys.length ? '#2f86c4' : '#9a8e7a' });
         });
         if (s.rt > 1.2) text(g, 'Z / クリック：クラブハウスへ', W / 2, 236, { size: 9, align: 'center', color: '#6d4f3a', alpha: blink() });
       }
@@ -904,6 +914,10 @@
   }
 
   // ---------------- TACTICS (formation + lineup + combos) ----------------
+  function teamRealize(tac) {
+    const ps = State.lineup.map((id) => State.roster.find((p) => p.id === id));
+    return Math.round(ps.reduce((a, p) => a + ((p.tacU && p.tacU[tac]) || 50), 0) / ps.length);
+  }
   function activeCombos(ids) { return Data.COMBOS.filter((c) => c.ids.every((id) => ids.includes(id))); }
   function Tactics() {
     const s = { t: 0, keys: Object.keys(Data.FORMATIONS), pos: null, pick: null, cursor: 0, hover: null, flash: {} };
@@ -1021,6 +1035,7 @@
         panel(g, r.x, r.y, r.w, r.h, cur ? 'gold' : hv ? 'sky' : 'paper');
         g.fillStyle = T.color; g.fillRect(r.x + 3, r.y + 4, 3, 8);
         text(g, T.short, r.x + 24, r.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
+        g.fillStyle = '#3a3050'; g.fillRect(r.x + 8, r.y + 12, r.w - 12, 2); g.fillStyle = T.color; g.fillRect(r.x + 8, r.y + 12, Math.round((r.w - 12) * teamRealize(k) / 100), 2);
         if (hv) s.tacHover = k;
       });
       // bench
@@ -1054,7 +1069,11 @@
         text(g, '「' + p.nick + '」' + p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
         const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
         text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
-      } else if (s.tacHover) { const T = Data.TACTICS[s.tacHover]; text(g, '戦術「' + T.name + '」', 16, 239, { size: 9, color: '#2a1a24' }); text(g, T.desc, 16, 252, { size: 8, color: '#6d4f3a' }); }
+      } else if (s.tacHover) {
+        const T = Data.TACTICS[s.tacHover], mu = Data.MATCHUP[s.tacHover].long;
+        text(g, '戦術「' + T.name + '」　チームの実現度 ' + teamRealize(s.tacHover) + '%　' + T.desc, 16, 239, { size: 8, color: '#2a1a24' });
+        text(g, '相手（ロングボール）との相性 ' + mu[0] + '：' + mu[1], 16, 252, { size: 8, color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
+      }
       else text(g, '選手にカーソルを合わせると特性と相性が見られます。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
       s.tacHover = null;
       if (s.newCombo) {
@@ -1122,15 +1141,16 @@
         for (let i = 0; i < 12; i++) { g.fillStyle = i % 2 ? '#4fa84a' : '#5bb655'; g.fillRect(i * 40, 162, 40, 110); }
         g.fillStyle = '#ffffff'; g.fillRect(0, 164, W, 2);
         // teams lining up
-        State.roster.forEach((p, i) => g.drawImage(Art.sprite(p.look, 'down', 'walk1'), 40 + i * 24, 160, 32, 44));
-        Data.AWAY.forEach((p, i) => g.drawImage(Art.sprite(p.look, 'down', 'walk1'), 270 + i * 24, 160, 32, 44));
+        State.lineup.forEach((id, i) => { const p = State.roster.find((q) => q.id === id); g.drawImage(Art.sprite(p.look, 'down', 'walk1'), 12 + i * 20, 164 + (i % 2) * 6, 32, 44); });
+        Data.AWAY.forEach((p, i) => g.drawImage(Art.sprite(p.look, 'down', 'walk1'), 244 + i * 20, 164 + (i % 2) * 6, 32, 44));
         g.drawImage(Art.sprite(benchLook('onigawara'), 'down', 'walk1'), 440, 150, 32, 44);
       },
       lines: [
         { who: 'onigawara', expr: 'normal', side: 'right', text: 'ガッハッハ！ 港のお遊びクラブが相手とはな。鉄工団の練習にもならんわ！' },
         { who: 'tetsuyama', expr: 'determined', side: 'right', text: '監督、油断は禁物です。…だが、手加減はしない。' },
         { who: 'leo', expr: 'determined', text: 'へぇ、言ってくれるじゃん。その鼻、へし折ってやるよ。' },
-        { who: 'nagisa', expr: 'normal', text: '監督、試合中は画面下のボタンか 1〜4キーで指示が出せます。気合ゲージを使うので、ここぞという時に！' },
+        { who: 'kazuha', expr: 'normal', text: '鉄工団はロングボール主体です。前線の大きい選手に当てて、こぼれ球を拾ってくる。…うちのラインを高くしすぎると、裏が危ないですね。' },
+        { who: 'nagisa', expr: 'normal', text: '監督、試合中は画面下のボタンか 1〜4キーで指示、5キーでベンチ指示（戦術の変更・交代）ができます！' },
         { who: 'nagisa', expr: 'determined', text: 'シュートチャンスでは「CHANCE!!」、相手のシュートは「PINCH!!」。練習と同じ、JUST を狙ってください！' },
         { who: 'nagisa', expr: 'happy', text: 'それでは…ハマカゼFC、キックオフです！' },
       ],
@@ -1166,16 +1186,26 @@
       const ups = {};
       let total = 0;
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 11) * (p.growth || 1));
-        v = Math.min(v, 6);
+        let v = Math.floor((exp[k] / 26) * (p.growth || 1) + Math.random() * 0.5);
+        v = Math.min(v, 3);
         if (v > 0) { ups[k] = v; total += v; }
       }
       if (r.score[0] > r.score[1]) { const k = pick(STAT_KEYS); ups[k] = (ups[k] || 0) + 1; total++; }
       if (total === 0) { ups.sta = 1; total = 1; }
       const before = Object.assign({}, p.stats);
       for (const k in ups) p.stats[k] = Math.min(99, p.stats[k] + ups[k]);
+      // playing a plan in a real match teaches it: understanding grows for the tactic(s) used
+      const tacUps = {};
+      if (p.tacU && r.tacTime) {
+        const played = (rec.dist || 0) > 0 ? 1 : 0;
+        for (const k in r.tacTime) {
+          const share = r.tacTime[k] / Math.max(1, Object.values(r.tacTime).reduce((a, v) => a + v, 0));
+          const v = Math.round((2 + 4 * share) * played * (p.age && p.age < 25 ? 1.25 : p.age > 50 ? 0.7 : 1));
+          if (v > 0 && share > 0.15) { p.tacU[k] = Math.min(100, p.tacU[k] + v); tacUps[k] = v; }
+        }
+      }
       const rating = clamp(5.5 + (rec.goal || 0) * 1.2 + (rec.assist || 0) * 0.7 + (rec.tackleOk || 0) * 0.25 + (rec.save || 0) * 0.35 + (rec.passOk || 0) * 0.06 + (rec.shot || 0) * 0.1 + (r.score[0] > r.score[1] ? 0.4 : r.score[0] < r.score[1] ? -0.3 : 0), 4.5, 9.8);
-      out.push({ p, rec, ups, before, total, rating: Math.round(rating * 10) / 10 });
+      out.push({ p, rec, ups, before, total, tacUps, rating: Math.round(rating * 10) / 10 });
     }
     return out;
   }
@@ -1211,6 +1241,7 @@
           if (step === n - 1 && cur.total >= 5) { setTimeout(() => Sound.play('levelup'), 200); }
         }
         const doneAnim = s.gt > 0.5 + n * 0.28 + 0.3;
+        if (Input.hit('back')) { Sound.play('select'); Game.goto(Scout(r), 'iris'); return; }
         if (okPressed() || (State.auto && doneAnim)) {
           if (!doneAnim) { s.gt = 0.5 + n * 0.28 + 0.3; s.lastStep = n - 1; }
           else if (s.gi + 1 < s.growth.length) { s.gi++; s.gt = 0; s.lastStep = -1; Sound.play('page'); }
@@ -1312,9 +1343,11 @@
           }
         });
         text(g, '能力アップ！', 150, 60, { size: 16, color: '#e0474c', alpha: s.gt > 0.4 ? 1 : 0 });
+        const tu = Object.keys(cur.tacUps || {});
+        if (tu.length && finished) text(g, '戦術理解度 ' + tu.map((k) => Data.TACTICS[k].name + ' +' + cur.tacUps[k]).join('　'), 150, 226, { size: 9, color: '#2f86c4' });
         if (p.id === 'haruki' && finished) text(g, '伸び盛り！ 経験がぐんぐん身についた！', 150, 80, { size: 9, color: '#2f86c4' });
         else if (cur.total >= 5 && finished) text(g, 'すばらしい成長だ！', 150, 80, { size: 9, color: '#2f86c4' });
-        if (finished) text(g, 'Z / クリック：つぎへ', 456, 244, { size: 8, align: 'right', color: '#6d4f3a', alpha: blink() });
+        if (finished) text(g, 'Z / クリック：つぎへ　X：まとめてスキップ', 456, 244, { size: 8, align: 'right', color: '#6d4f3a', alpha: blink() });
       }
       s.fx.draw(g);
     };
@@ -1431,7 +1464,7 @@
         if (Math.random() < 0.35) steam.add({ x: 215 + rand(0, 40), y: 126, vx: rand(-3, 3), vy: rand(-18, -10), life: rand(0.8, 1.4), size: rand(2, 4), color: 'rgba(255,240,220,0.55)' });
         steam.draw(g);
         g.drawImage(Art.sprite(benchLook('otaki'), 'down', Math.sin(t * 5) > 0.3 ? 'cheer' : 'walk1'), 230, 104, 32, 44);
-        const crew = State.roster.slice(1).concat(rc ? [rc] : []);
+        const crew = ['leo', 'ponta', 'kazuha', 'mask', 'haruki', 'kawataro', 'mame'].map((id) => State.roster.find((q) => q.id === id)).concat(rc ? [rc] : []).slice(0, 8);
         crew.forEach((p, i) => {
           const x = i < 4 ? 40 + i * 34 : 316 + (i - 4) * 34;
           const fr = Math.floor(t * 2 + i) % 7 === 0 ? 'cheer' : 'walk1';

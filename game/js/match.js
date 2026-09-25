@@ -7,6 +7,8 @@
   const GW = Art.GOAL_W;
   const TOP_H = 20, BOT_H = 50, VIEW_H = H - TOP_H - BOT_H;
   const HALF_LEN = 80; // real seconds per half
+  // tactic tuning knobs (calibrated against docs/tactics_research.md by simulation)
+  const TUNE = window.TACTIC_TUNE = Object.assign({ pressErr: 1.2, pressLine: 80, pressMark: 0, presser2: 1, longMF: 70, counterLine: 75, counterGoalSide: 5, possShort: 18 }, window.TACTIC_TUNE || {});
 
   const goalX = (t) => (t === 0 ? P.x + P.w : P.x);
   const ownGoalX = (t) => (t === 0 ? P.x : P.x + P.w);
@@ -32,6 +34,7 @@
       this.tstats = [{ counter: 0, pressWin: 0, long: 0, chainMax: 0 }, { counter: 0, pressWin: 0, long: 0, chainMax: 0 }];
       this.bench = (opts.bench || Data.HOME.filter((d) => d.bench)).slice();
       this.subsLeft = 3; this.subQueue = []; this.subbedOut = []; this.panel = null;
+      this.tacTime = {}; this.noShotT = [0, 0]; this.pressOn = [true, true]; this.pressRollT = 0;
       this.ana = { behind: [0, 0, 0], shotLane: [0, 0, 0] }; this.memos = []; this.memoKeys = {}; this.memoT = 3;
       home.forEach((d, i) => this.players.push(this.mk(d, 0, i)));
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
@@ -96,6 +99,16 @@
       return v;
     }
     tacOf(t) { return this.tac[t]; }
+    // team realization of its current tactic: how well the eleven understand the plan (0.5..1)
+    realize(t, tac) {
+      tac = tac || this.tac[t];
+      const ps = this.team(t);
+      const avg = ps.reduce((a, p) => a + ((p.def.tacU && p.def.tacU[tac]) || 50), 0) / ps.length;
+      return 0.5 + 0.5 * (avg / 100);
+    }
+    understands(p) { return ((p.def.tacU && p.def.tacU[this.tac[p.team]]) || 50) / 100; }
+    bodyScore(p) { return p.def.look.body === 'big' ? 80 : p.def.look.body === 'small' ? 25 : 50; }
+    scoreDiff(t) { return this.score[t] - this.score[1 - t]; }
     toast(textStr, color) { this.tacToast = { text: textStr, color: color || '#ffd24a', t: 0 }; }
     has(id) { return this.players.some((p) => p.team === 0 && p.id === id); }
     combo(id) { return this.combos.some((c) => c.id === id); }
@@ -281,16 +294,20 @@
       if (!frozenClock && !this.meter) {
         this.clock += dt;
         const ct = this.sp ? this.sp.team : this.carrierTeam(); if (ct >= 0) this.poss[ct] += dt;
+        this.tacTime[this.tac[0]] = (this.tacTime[this.tac[0]] || 0) + dt;
+        for (let t = 0; t < 2; t++) if (ct !== t) this.noShotT[t] = (this.noShotT[t] || 0); this.noShotT[ct >= 0 ? ct : 0] += dt;
         for (let t = 0; t < 2; t++) {
           this.kiai[t] = Math.min(100, this.kiai[t] + dt * 5.5);
           if (this.order[t]) { this.order[t].t -= dt; if (this.order[t].t <= 0) this.order[t] = null; }
         }
         this.chanceCD -= dt; this.pinchCD -= dt;
         for (let t = 0; t < 2; t++) if (this.counterT[t] > 0) this.counterT[t] -= dt;
+        // pressing needs everyone to understand the triggers: re-roll who joins every second
+        this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
         this.memoT -= dt; if (this.memoT <= 0) { this.memoT = 2; this.liveMemo(); }
         // a queued substitution goes on at a quiet moment if play has not stopped for a while
         if (this.subQueue.length && this.clock + (this.half - 1) * 1000 - this.subQueue[0].at > 8 && !b.shot && !this.sp && Math.abs(b.x - CX) < 200) this.applySubs();
-        if (this.half === 2 && this.tac[1] === 'long' && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
+        if (!this.opts.fixedTac && this.half === 2 && this.tac[1] === 'long' && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
           this.tac[1] = 'press';
           this.benchBubble[1] = { text: 'ハイプレスじゃあ！ 前から潰せぇ！', t: 2.6 };
           this.tick('ヤマオロシ、戦術を「ハイプレス」に切り替えた！', '#ff9a8a');
@@ -374,7 +391,14 @@
         presser = ds[0]; cover = ds[1];
         if (tac === 'counter' && !ballDeep) { this.screen = ds[0]; presser = null; }
         else this.screen = null;
-        if (tac === 'press') { this.presser2 = ds[1]; cover = ds[2]; this.pressMark = ds[3]; }
+        const avgSta = this.team(dT).reduce((a, q) => a + q.sta, 0) / 11;
+        const intensity = Math.min(1, avgSta / 60);
+        const managingLead = this.scoreDiff(dT) > 0 && this.half === 2 && this.clock > HALF_LEN * 0.6;
+        if (tac === 'press' && this.pressOn[dT] && intensity > 0.55 && !managingLead) {
+          // the second presser only jumps when the ball is in the opponent's half (the pressing trap)
+          const high = !ballDeep;
+          this.presser2 = TUNE.presser2 && high ? ds[1] : null; cover = ds[this.presser2 ? 2 : 1]; this.pressMark = TUNE.pressMark && high ? ds[3] : null;
+        }
         else { this.presser2 = null; this.pressMark = null; }
       } else { this.presser2 = null; this.pressMark = null; this.screen = null; }
       // attacking support (two nearest teammates offer passing angles)
@@ -443,13 +467,13 @@
       hy = lerp(hy, b.y, 0.12);
       const wideMF = this.role(p) === 'MF' && Math.abs(f[1] - 0.5) > 0.3;
       const fwd = this.role(p) === 'FW' || (countering && wideMF) || (p.id === 'tsubame' && ballP > 20 && this.proj(t, b.x) > this.proj(t, p.x) - 40);
-      if (tac === 'long' && this.role(p) === 'MF') { hx = lerp(hx, this.offsideX(t) - dx * 70, 0.5); }
+      if (tac === 'long' && this.role(p) === 'MF') { hx = lerp(hx, this.offsideX(t) - dx * TUNE.longMF, 0.5); }
       if (p.id === 'tsubame' && fwd && Math.random() < 0.002) this.traitPop(p, '朝刊ダッシュ');
       const ballAdv = ballP;
       if (fwd && ballAdv > -60) {
         // forwards alternate between dropping to receive and running in behind
         p.runPh = (p.runPh || Math.random() * 6) + dt;
-        const inBehind = countering || tac === 'long' ? true : Math.sin(p.runPh * 0.9 + p.slot) > (tac === 'possession' ? 0.45 : -0.1);
+        const inBehind = countering || tac === 'long' ? true : Math.sin(p.runPh * 0.9 + p.slot) > (tac === 'possession' ? 0.2 : -0.1);
         const line = this.offsideX(t);
         if (inBehind) { hx = line - dx * 6; hy = lerp(hy, CY + (f[1] - 0.5) * 120, 0.6); p.run = true; }
         else { hx = lerp(hx, b.x + dx * 30, 0.4); p.run = false; }
@@ -498,9 +522,10 @@
       const ballP = this.proj(t, b.x) - this.proj(t, CX);
       // compact block that slides with the ball and drops when the ball is deep
       let hx = gx + dx * (f[0] * P.w * 0.62 + 34) + dx * clamp(ballP * 0.5, -60, 120) - dx * 12;
-      const tac = this.tacOf(t);
-      if (tac === 'counter') hx -= dx * 75;
-      if (tac === 'press') hx += dx * 115;
+      const tac = this.tacOf(t), Rz = 0.6 + 0.4 * this.realize(t), sd = this.scoreDiff(t);
+      if (tac === 'counter') hx -= dx * TUNE.counterLine * Rz * (sd < 0 ? 0.35 : 1);
+      if (tac === 'press') hx += dx * TUNE.pressLine * Rz * (sd > 0 && this.half === 2 ? 0.6 : 1);
+      if (sd > 0 && this.half === 2) hx -= dx * 18;
       if (tac === 'possession') hx += dx * 15;
       if (ord === 'attack') hx += dx * 35;
       if (ord === 'defend') hx -= dx * 45;
@@ -567,19 +592,27 @@
       }
       const tac = this.tacOf(t), countering = this.counterT[t] > 0;
       const oppPress = this.tacOf(1 - t) === 'press' && pressure < 16;
+      // long-ball sides hit it first time when someone closes them down
+      if (tac === 'long' && pressure < 22 && p.decT > 0.12) p.decT = 0.12;
       if (p.decT > 0 && pressure > (oppPress ? 20 : 14)) { this.dribbleDir(p, dx); return; }
-      p.decT = countering ? rand(0.15, 0.3) : tac === 'possession' ? rand(0.4, 0.7) : rand(0.28, 0.55);
+      p.decT = countering ? rand(0.15, 0.3) : tac === 'possession' ? rand(0.3, 0.55) : rand(0.28, 0.55);
       if (oppPress) p.decT *= 0.5;
       const gxT = goalX(t);
       const dGoal = dist(p.x, p.y, gxT, CY);
       const ord = this.order[t] ? this.order[t].id : null;
-      let best = { k: 'drib', s: 30 + this.stat(p, 'spd') * 0.25 - (pressure < 18 ? 22 : 0) + rand(0, 14) + (countering && pressure > 30 ? 20 : 0) - (tac === 'possession' ? 10 : 0) };
+      let best = { k: 'drib', s: 30 + this.stat(p, 'spd') * 0.25 - (pressure < 18 ? 22 : 0) + rand(0, 14) + (countering && pressure > 30 ? 20 : 0) - (tac === 'possession' && this.proj(t, p.x) < this.proj(t, CX) + 130 ? 10 : 0) };
       // shoot
-      const range = 88 + this.stat(p, 'sht') * 0.6 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 16 : 0);
-      if (dGoal < range * (tac === 'possession' ? 0.85 : 1) && Math.abs(p.y - CY) < 110) {
+      const range = 100 + this.stat(p, 'sht') * 0.8 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 16 : 0);
+      const patient = tac === 'possession' && this.noShotT[t] < 20;
+      if (dGoal < range * (patient ? 0.85 : 1) && Math.abs(p.y - CY) < 110) {
         let s = 22 + (range - dGoal) * 0.55 + (pressure < 20 ? 10 : 0) + (dGoal < 110 ? 90 : 0) + rand(0, 20);
         if (ord === 'shoot') s += 25;
         if (s > best.s) best = { k: 'shoot', s };
+      }
+      // breakaway: nobody left between the carrier and the keeper → go for goal
+      if (dGoal < 280 && !this.players.some((o) => o.team !== t && !o.gk && this.proj(t, o.x) > this.proj(t, p.x) - 6 && Math.abs(o.y - p.y) < 70)) {
+        if (dGoal < 150) { const s1 = 150 + rand(0, 20); if (s1 > best.s) best = { k: 'shoot', s: s1 }; }
+        else best = { k: 'drib', s: 999 };
       }
       // cross from wide areas near the byline
       const toLine = Math.abs(gxT - p.x);
@@ -587,7 +620,7 @@
         const inBox = this.team(t).filter((m) => m !== p && !m.gk && Math.abs(m.x - gxT) < Art.BOX_W + 10 && Math.abs(m.y - CY) < 70);
         if (inBox.length) {
           const m = inBox.sort((a, c) => this.proj(t, c.x) - this.proj(t, a.x))[0];
-          const s = 45 + (130 - toLine) * 0.5 + inBox.length * 10 + rand(0, 20);
+          const s = 45 + (130 - toLine) * 0.5 + inBox.length * 10 + rand(0, 20) + (tac === 'possession' && this.noShotT[t] > 20 ? 15 : 0);
           if (s > best.s) best = { k: 'cross', s, m };
         }
       }
@@ -603,7 +636,13 @@
         const prog = (m.x - p.x) * dx;
         let s = 20 + prog * 0.3 + Math.min(open, 60) * 0.55 - (lane < 10 ? 60 : lane < 18 ? 22 : 0) - Math.max(0, d - 170) * 0.2;
         if (pressure < 18) s += 18;
-        if (tac === 'possession') { if (d < 130) s += 18; if (d > 200) s -= 25; if (prog < 0 && pressure < 24) s += 10 - prog * 0.1; }
+        // line-breaking passes: opponents taken out of the game by the pass
+        if (lane >= 14 && prog > 15) {
+          let broken = 0;
+          for (const o of this.players) if (o.team !== t && !o.gk && this.proj(t, o.x) > this.proj(t, p.x) + 4 && this.proj(t, o.x) < this.proj(t, m.x) - 4) broken++;
+          s += Math.min(3, broken) * (tac === 'possession' ? 8 * this.realize(t) : 4);
+        }
+        if (tac === 'possession') { const Rz = this.realize(t); if (d < 130) s += TUNE.possShort * Rz; if (d > 200) s -= 25 * Rz; if (prog < 0 && pressure < 16) s += (10 - prog * 0.1) * Rz; }
         if (tac === 'long') s -= 8;
         if (countering) { if (prog > 20) s += 30; if (prog < 0) s -= 40; }
         if (ord === 'pass') s += 18;
@@ -629,12 +668,22 @@
       if (tac === 'long' && this.proj(t, p.x) < this.proj(t, CX) + 80 && best.k !== 'shoot') {
         const tgt = this.team(t).filter((m) => m !== p && !m.gk && this.role(m) === 'FW').sort((a, c) => this.proj(t, c.x) - this.proj(t, a.x))[0];
         if (tgt && dist(p.x, p.y, tgt.x, tgt.y) > 110) {
-          const s = 58 + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 20 ? 10 : 0);
+          const s = 44 + 18 * this.realize(t) + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 22 ? 30 : 0);
           if (s > best.s) best = { k: 'long', s, m: tgt };
         }
       }
       if (best.k === 'shoot') this.wantShoot(p);
-      else if (best.k === 'long') { this.doPass(best.m ? p : p, best.m, true, best.m.x + dx * 30, best.m.y); this.ball.vz = 150; this.tstats[t].long++; if (Math.random() < 0.35) this.tick((t === 0 ? 'ハマカゼ' : 'ヤマオロシ') + '、前線へロングボール！', t === 0 ? '#9fdcff' : '#ff9a8a'); }
+      else if (best.k === 'long') {
+        const fw = best.m, oppDefs = this.team(1 - t).filter((o) => !o.gk);
+        // space between the opponent's last line and their penalty box decides whether a ball in behind is on
+        const boxEdge = goalX(t) - dx * (Art.BOX_W + 6);
+        const space = (this.proj(t, boxEdge) - this.proj(t, this.offsideX(t)));
+        const slowest = oppDefs.filter((o) => this.role(o) === 'DF').sort((a2, c) => this.stat(a2, 'spd') - this.stat(c, 'spd'))[0];
+        const behind = space > 90 && slowest && this.stat(fw, 'spd') > this.stat(slowest, 'spd') - 4;
+        const ltx = behind ? this.offsideX(t) + dx * Math.min(60, space - 40) : fw.x - dx * 10;
+        if (behind) { fw.burst = 1.6; }
+        this.doPass(p, fw, true, ltx, fw.y);
+        if (this.ball.pass) this.ball.pass.behind = behind; this.ball.vz = 150; this.tstats[t].long++; if (Math.random() < 0.35) this.tick((t === 0 ? 'ハマカゼ' : 'ヤマオロシ') + '、前線へロングボール！', t === 0 ? '#9fdcff' : '#ff9a8a'); }
       else if (best.k === 'pass') this.doPass(p, best.m);
       else if (best.k === 'through') { this.doPass(p, best.m, false, best.tx, best.ty); this.ball.pass.through = true; p.rec.thrAtt++; }
       else if (best.k === 'cross') this.doCross(p, best.m);
@@ -662,8 +711,32 @@
       if (fx !== undefined) { tx = fx; ty = fy; }
       else { tx = m.x + m.vx * 0.3; ty = m.y + m.vy * 0.3; }
       const acc = this.stat(p, 'pas') + (this.order[p.team] && this.order[p.team].id === 'pass' ? 10 : 0);
-      let err = ((100 - acc) / 100) * 0.26 * rand(-1, 1);
-      if (this.tacOf(1 - p.team) === 'press' && this.nearestOpp(p)[1] < 16) err *= 1.4;
+      let err = ((100 - acc) / 100) * 0.26 * rand(-1, 1) * (this.tacOf(p.team) === 'possession' && dist(p.x, p.y, m.x, m.y) < 130 ? 0.75 : 1);
+      // pressure from nearby opponents vs the carrier's press resistance (StatsBomb-style)
+      let pressure = 0, pSk = 0, pn = 0;
+      for (const o of this.players) {
+        if (o.team === p.team || o.gk) continue;
+        const od = dist(o.x, o.y, p.x, p.y);
+        if (od < 24) { pressure += 1 - od / 24; pSk += (this.stat(o, 'def') + this.stat(o, 'spd') + o.sta) / 3; pn++; }
+      }
+      pressure = Math.min(1, pressure);
+      let beatPress = false;
+      if (pn) {
+        pSk /= pn;
+        // possession sides rehearse playing out under pressure
+        const resist = this.stat(p, 'pas') * 0.7 + this.stat(p, 'spd') * 0.1 + p.sta * 0.2 + (this.tacOf(p.team) === 'possession' ? 12 * this.realize(p.team) : 0);
+        // hoofing it long is barely affected by pressure; short combinations are
+        err *= 1 + TUNE.pressErr * pressure * (lofted || dist(p.x, p.y, tx, ty) > 190 ? 0.25 : 1) * (1 / (1 + Math.exp(-(pSk - resist) / 12)));
+        beatPress = pressure > 0.35 && resist - pSk >= 15;
+      }
+      // a packed low block makes passes through the middle risky
+      const oppT = 1 - p.team;
+      const midY = (p.y + ty) / 2;
+      let central = false;
+      if (this.tacOf(oppT) === 'counter' && Math.abs(midY - CY) < 70) {
+        const deep = this.team(oppT).filter((o) => !o.gk && this.proj(oppT, o.x) < this.proj(oppT, P.x + P.w / 3 * (oppT === 0 ? 1 : 2))).length;
+        if (deep >= 7) { err *= 1 + 0.4 * this.realize(oppT); central = true; }
+      }
       const d = dist(p.x, p.y, tx, ty);
       if (p.team === 0) {
         if (p.id === 'mame' && d > 140) { err = 0; this.traitPop(p, '枯れた技'); }
@@ -679,7 +752,12 @@
       b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp;
       b.vz = air ? clamp(d * 0.55, 70, 150) : 0;
       const pressured = this.nearestOpp(p)[1] < 16;
-      b.pass = { from: p, to: m, tx, ty, t: 0, air, long: d > 170 || !!air, pressured };
+      b.pass = { from: p, to: m, tx, ty, t: 0, air, long: d > 170 || !!air, pressured, central, beatPress };
+      // a ball played in behind makes the defenders it bypasses turn around before they can chase
+      for (const o of this.players) {
+        if (o.team === p.team || o.gk || o.state) continue;
+        if (this.proj(p.team, tx) > this.proj(p.team, o.x) + 10 && this.proj(p.team, o.x) > this.proj(p.team, p.x) && dist(o.x, o.y, tx, ty) < 160) o.react = 0.32;
+      }
       if (b.pass.long) p.rec.longAtt++;
       if (pressured) p.rec.prAtt++;
       b.tried = new Set();
@@ -690,6 +768,15 @@
     doCross(p, m) {
       const t = p.team;
       const gxT = goalX(t);
+      if (this.tacOf(t) === 'possession' && Math.random() < 0.3 + 0.5 * this.realize(t)) {
+        // cut-back: a low ball pulled back to the penalty spot for a first-time finish
+        const tx = gxT - dirX(t) * rand(55, 75), ty = CY + rand(-20, 20);
+        m.tx = tx; m.ty = ty;
+        this.doPass(p, m, false, tx, ty);
+        this.ball.pass.cutback = true;
+        if (t === 0) this.tick(p.name + '、マイナスの折り返し！', '#9fdcff');
+        return;
+      }
       const tx = gxT - dirX(t) * rand(28, 60), ty = CY + rand(-22, 22);
       m.tx = tx; m.ty = ty;
       this.doPass(p, m, true, tx, ty);
@@ -724,7 +811,7 @@
       const power = (header ? 170 + sht * 0.8 + (p.id === 'mask' ? 50 : 0) : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0);
       const onTarget = Math.abs(ty - CY) < GW / 2 - 1;
       const gk = this.gk(1 - t);
-      let pSave = 0.45 + this.stat(gk, 'def') / 170 - (power - 300) / 600 + dGoal / 1400 - (Math.abs(ty - CY) / (GW / 2)) * 0.22;
+      let pSave = 0.45 + this.stat(gk, 'def') / 170 - (power - 300) / 600 + dGoal / 700 - (Math.abs(ty - CY) / (GW / 2)) * 0.22;
       if (header) pSave -= 0.08;
       if (gk.id === 'gen' && b.z < 10 && Math.random() < 0.5) { pSave += 0.06; gk.netTrait = true; } // 網さばき
       if (gk.id === 'daifuku') pSave += 0.06;
@@ -741,6 +828,7 @@
       b.pass = null;
       b.shot = { team: t, shooter: p, save, ty, power: attackerQ === 'just', t: 0 };
       if (t === 0 && this.combo('ace') && (p.id === 'leo' || p.id === 'hikaru')) this.comboFx('ace');
+      this.noShotT[t] = 0;
       p.rec.shot++; this.shots[t]++; if (onTarget) { this.onTarget[t]++; p.rec.onT++; gk.rec.faced++; }
       if (t === 1) {
         this.ana.shotLane[this.lane(p.y)]++;
@@ -939,10 +1027,12 @@
           p.stT -= dt; if (p.stT <= 0) p.state = '';
           continue;
         }
+        if (p.react > 0) { p.react -= dt; p.vx *= 0.9; p.vy *= 0.9; p.x += p.vx * dt; p.y += p.vy * dt; p.animT += dt; continue; }
         let tx = p.tx, ty = p.ty;
         if (toHome) { tx = p.homeX; ty = p.homeY; }
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy);
-        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6) * (p.hurry && this.sp && this.sp.taker === p ? 1.5 : 1);
+        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6) * (p.hurry && this.sp && this.sp.taker === p ? 1.5 : 1) * (p.burst > 0 ? 1.15 : 1);
+        if (p.burst > 0) p.burst -= dt;
         if (!this.sp) p.hurry = false;
         if (this.ball.owner === p) sp *= 0.86;
         if (this.state === 'fulltime' || this.state === 'halfend') sp *= 0.5;
@@ -965,8 +1055,9 @@
           if (this.combo('tofu') && p.team === 0 && (p.id === 'ponta' || p.id === 'morio')) drain *= 0.75;
           if (this.combo('okan') && p.id === 'ponta') drain *= 1.25;
           if (p.gk) drain *= 0.3;
-          else if (this.tacOf(p.team) === 'press') drain *= 1.25;
-          p.sta = Math.max(0, p.sta - drain * 2.2);
+          else if (p === this.presser2 || p === this.pressMark || (this.tacOf(p.team) === 'press' && p.run && this.carrierTeam() !== p.team)) drain *= 2.2;
+          else if (this.tacOf(p.team) === 'press') drain *= 1.4;
+          p.sta = Math.max(0, p.sta - drain * 1.15);
         }
         p.animT += dt * (v / 9);
         if (v > 8) {
@@ -1049,12 +1140,41 @@
       }
       if (b.y < P.y || b.y > P.y + P.h) { this.onOut('touch'); return; }
       if (this.state !== 'play' || this.meter) return;
+      // long ball coming down: the target and the nearest defender contest it (~50/50 when evenly matched)
+      if (b.pass && b.pass.long && b.pass.air && !b.pass.duel && b.vz < 0 && b.z < 22) {
+        const at = b.pass.from.team;
+        const near = (t, r) => this.players.filter((q) => q.team === t && !q.state && !q.gk && dist(q.x, q.y, b.x, b.y) < r).sort((a2, c) => dist(a2.x, a2.y, b.x, b.y) - dist(c.x, c.y, b.x, b.y))[0];
+        const att = near(at, 18), df = near(1 - at, 18);
+        if (att || df) {
+          b.pass.duel = true;
+          if (att && df) {
+            const sc = (q) => this.stat(q, 'def') * 0.5 + this.bodyScore(q) * 0.3 + this.stat(q, 'spd') * 0.1 + (q.id === 'mask' ? 25 : 0);
+            // a forward running onto a ball in behind beats a defender who has to turn
+            const pw = 1 / (1 + Math.exp(-(sc(att) - sc(df) + (b.pass.behind ? 12 : 0)) / 8));
+            const winner = Math.random() < pw ? att : df, loser = winner === att ? df : att;
+            winner.rec.airW++; loser.rec.airL++;
+            if (winner.id === 'mask') this.traitPop(winner, '空中戦の鬼');
+            loser.state = 'header'; loser.stT = 0.4;
+            if (winner === att && this.tacOf(1 - at) === 'press') this.bypassPress(at);
+            if (winner === att) this.knockOn(att, at); else this.header(df);
+            return;
+          }
+          if (att && !df) { if (this.tacOf(1 - at) === 'press') this.bypassPress(at); this.gainBall(att); return; }
+        }
+      }
       // headers: a dropping ball at head height
       if (b.z > 7 && b.z < 24 && !b.shot && !(b.headCD > 0)) {
         const cands = this.players.filter((p) => !p.state && !p.gk && !(b.lastKick === p && b.kickImm > 0) && dist(p.x, p.y, b.x, b.y) < (p.id === 'mask' ? 13 : 9));
         if (cands.length) {
           // aerial duel: jump + strength decides, the masked man almost always wins
-          const power = (p) => this.stat(p, 'def') * 0.5 + this.stat(p, 'sht') * 0.2 + (p.def.look.body === 'big' ? 12 : 0) + (p.id === 'mask' ? 40 : 0) + rand(0, 25);
+          // aerial: defence + body size + a little pace + timing; a crowded box favours the defenders
+          const boxT = this.inOwnBox(0, b.x, b.y) ? 0 : this.inOwnBox(1, b.x, b.y) ? 1 : -1;
+          let crowd = false;
+          if (boxT >= 0) {
+            const nd = this.team(boxT).filter((q) => this.inOwnBox(boxT, q.x, q.y)).length, na = this.team(1 - boxT).filter((q) => this.inOwnBox(boxT, q.x, q.y)).length;
+            crowd = nd > na + 2;
+          }
+          const power = (p) => this.stat(p, 'def') * 0.5 + this.bodyScore(p) * 0.3 + this.stat(p, 'spd') * 0.1 + rand(0, 16) + (p.id === 'mask' ? 25 : 0) - (crowd && p.team !== boxT ? 12 : 0);
           cands.sort((a, c) => power(c) - power(a));
           const w = cands[0];
           if (w.id === 'mask' && cands.some((q) => q.team !== w.team)) this.traitPop(w, '空中戦の鬼');
@@ -1088,8 +1208,10 @@
         if (b.pass && b.pass.to !== p && p.team !== b.pass.from.team) {
           if (b.tried.has(p)) continue;
           b.tried.add(p);
-          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0);
-          if (Math.random() > ic) continue;
+          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0) + (b.pass.central ? 0.12 : 0);
+          // a slow ball arriving at a defender's feet is almost always cut out
+          const icf = sp < 140 ? Math.max(ic, 0.85) : ic;
+          if (Math.random() > icf) continue;
           if (p.id === 'shizuku') this.traitPop(p, '神託');
         }
         if (d < bd) { bd = d; best = p; }
@@ -1097,6 +1219,30 @@
       if (best) this.gainBall(best);
     }
 
+    // a long ball that beats the press leaves the pressers stranded upfield
+    bypassPress(t) {
+      this.counterT[t] = Math.max(this.counterT[t], 3.0);
+      this.toast((t === 0 ? 'ハマカゼ' : 'ヤマオロシ') + '、ロングボールでプレスを回避！', t === 0 ? '#9fdcff' : '#ff9a8a');
+    }
+    // target man wins the long ball: flick it on for a runner, or knock it down for an onrushing midfielder
+    knockOn(att, t) {
+      const b = this.ball, dx = dirX(t);
+      const mates = this.team(t).filter((q) => q !== att && !q.gk && !q.state);
+      const runner = mates.filter((q) => this.proj(t, q.x) > this.proj(t, att.x) - 10 && dist(q.x, q.y, att.x, att.y) < 110).sort((a2, c) => this.proj(t, c.x) - this.proj(t, a2.x))[0];
+      const support = mates.filter((q) => dist(q.x, q.y, att.x, att.y) < 80).sort((a2, c) => dist(a2.x, a2.y, att.x, att.y) - dist(c.x, c.y, att.x, att.y))[0];
+      const pick2 = runner && Math.random() < 0.55 ? runner : support;
+      if (!pick2) { this.gainBall(att); att.state = ''; return; }
+      att.state = 'header'; att.stT = 0.4; att.rec.touch++;
+      this.releaseBall(att);
+      const tx = pick2 === runner ? pick2.x + dx * 30 : pick2.x, ty = pick2.y;
+      const a = Math.atan2(ty - b.y, tx - b.x), d = dist(b.x, b.y, tx, ty);
+      b.vx = Math.cos(a) * clamp(d * 1.6 + 40, 80, 190); b.vy = Math.sin(a) * clamp(d * 1.6 + 40, 80, 190); b.vz = 50;
+      b.pass = { from: att, to: pick2, tx, ty, t: 0, air: false, long: false };
+      b.tried = new Set(); b.headCD = 0.4;
+      Sound.play('kick', { vol: 0.4, pitch: 1.3 });
+      if (pick2 === runner && this.counterT[t] <= 0) this.counterT[t] = 2.0;
+      if (Math.random() < 0.3) this.tick(att.name + '、' + (pick2 === runner ? '頭でそらした！ ' : '胸で落とした！ ') + pick2.name + 'へ！', t === 0 ? '#9fdcff' : '#ff9a8a');
+    }
     header(p) {
       const b = this.ball, t = p.team;
       p.state = 'header'; p.stT = 0.45; p.vx = b.vx * 0.1; p.vy = b.vy * 0.1;
@@ -1133,8 +1279,10 @@
       if (prevTeam !== t && prevTeam >= 0 && !p.gk) {
         this.chain[0] = this.chain[1] = 0;
         this.chain[t] = 1;
-        if (tac === 'counter' && this.proj(t, b.x) < this.proj(t, CX) + 60 && this.counterT[t] <= 0) {
-          this.counterT[t] = 4.5; this.tstats[t].counter++;
+        const goalSide = this.team(1 - t).filter((o) => !o.gk && this.proj(t, o.x) > this.proj(t, b.x)).length;
+        if (tac !== 'counter' && goalSide <= 3 && this.counterT[t] <= 0) { this.counterT[t] = 2.0; }
+        if (tac === 'counter' && goalSide <= TUNE.counterGoalSide && this.proj(t, b.x) < this.proj(t, CX) + 60 && this.counterT[t] <= 0) {
+          this.counterT[t] = 1.5 + 3 * this.realize(t); this.tstats[t].counter++;
           this.toast(name + '、カウンター発動！', col);
           this.tick(pick(['奪った！ ' + name + '、一気にカウンターだ！', name + '、縦に速い！ 前線が走る！']), col);
           if (t === 0) Sound.play('command', { pitch: 1.3, vol: 0.5 });
@@ -1161,6 +1309,11 @@
       const prevTeam = b.last ? b.last.team : -1;
       if (pass && pass.from.team === p.team && pass.from !== p) {
         pass.from.rec.passOk++;
+        if (pass.beatPress && this.tacOf(1 - p.team) === 'press') {
+          this.counterT[p.team] = Math.max(this.counterT[p.team], 2.5);
+          this.toast((p.team === 0 ? 'ハマカゼ' : 'ヤマオロシ') + '、プレスを剥がした！', p.team === 0 ? '#9fdcff' : '#ff9a8a');
+          if (p.team === 0) this.traitPop(pass.from, 'プレス回避');
+        }
         if (pass.long) pass.from.rec.longOk++;
         if (pass.pressured) pass.from.rec.prOk++;
         if (pass.through) { pass.from.rec.thrOk++; if (p.team === 1) this.ana.behind[this.lane(p.y)]++; }
@@ -1174,6 +1327,7 @@
       this.onPossession(p, prevTeam, !!(pass && pass.from.team === p.team && pass.from !== p));
       p.decT = p.gk ? 0.8 : rand(0.1, 0.35);
       Sound.play('kick', { vol: 0.3, pan: this.pan(p.x) });
+      if (pass && pass.cutback && pass.from.team === p.team) p.decT = 0;
       // keeper picks up a loose ball in his own box with his hands (not from a teammate's pass)
       if (p.gk && this.inOwnBox(p.team, b.x, b.y) && !(pass && pass.from.team === p.team)) this.gkCatch(p);
     }
@@ -1361,7 +1515,7 @@
     finish() {
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
-      this.result = { analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
+      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
       if (this.opts.onEnd) this.opts.onEnd(this.result);
     }
 
@@ -1834,9 +1988,12 @@
         panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
         g.fillStyle = T.color; g.fillRect(b.x + 5, b.y + 5, 4, b.h - 10);
         text(g, (i + 1) + ' ' + T.name, b.x + 13, b.y + 4, { size: 10, color: '#2a1a24' });
-        text(g, cur ? '採用中' : 'キー' + (i + 1), b.x + 13, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
+        const mu = Data.MATCHUP[b.k][this.tac[1]];
+        text(g, '実現' + Math.round((this.realize(0, b.k) - 0.5) * 200) + '%', b.x + 13, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
+        text(g, mu[0], b.x + b.w - 6, b.y + 9, { size: 10, align: 'right', color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
       });
-      text(g, Data.TACTICS[this.tac[0]].desc, 26, 73, { size: 8, color: '#4a2a10' });
+      const mu0 = Data.MATCHUP[this.tac[0]][this.tac[1]];
+      text(g, Data.TACTICS[this.tac[0]].desc + '　対' + Data.TACTICS[this.tac[1]].name + '：' + mu0[1], 26, 73, { size: 8, color: '#4a2a10' });
       g.fillStyle = '#d9c39a'; g.fillRect(24, 84, W - 48, 1);
       text(g, 'ピッチ上（交代する選手）', 24, 88, { size: 8, color: '#6d4f3a' });
       text(g, 'ベンチ（入る選手）', 244, 88, { size: 8, color: '#6d4f3a' });
@@ -1939,6 +2096,9 @@
         g.fillStyle = '#10182e'; g.fillRect(cx0, 5, cw, 11);
         g.fillStyle = T.color; g.fillRect(cx0 + 1, 6, 3, 9);
         text(g, T.short + (this.counterT[t] > 0 ? '!' : ''), cx0 + 26, 6, { size: 8, align: 'center', color: this.counterT[t] > 0 && Math.floor(Game.time * 6) % 2 ? '#ffd24a' : '#ffffff' });
+        const rz = (this.realize(t) - 0.5) * 2;
+        g.fillStyle = '#3a4466'; g.fillRect(cx0 + 5, 15, cw - 6, 1);
+        g.fillStyle = T.color; g.fillRect(cx0 + 5, 15, Math.round((cw - 6) * rz), 1);
       }
       // score
       panel(g, W / 2 - 50, 1, 100, 18, 'dark');
