@@ -86,7 +86,7 @@ function showCmd(){
       else if(menu==='fight'){const c=card(B.active);const L=movesOf(me.m.id,me.lv);const left=L.map((x,i)=>ppLeft(c,i));
         h=L.map((x,i)=>{const e=eff(x.t,MON[B.foe.id].t);return `<button class="cb" data-nav data-m="${i}" ${left[i]?'':'disabled'}><b>${x.n}<span class="pp${left[i]<=Math.ceil(x.pp/4)?' low':''}">PP ${left[i]}/${x.pp}</span></b><small><span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span> 威力${x.p}${e>1?'<em class="good">ばつぐん</em>':e<1?'<em class="bad">いまひとつ</em>':''}</small></button>`}).join('');
         if(left.every(v=>!v))h+=`<button class="cb shu" data-nav data-m="-1"><b>ふんばる</b><small>技の回数が 切れたときの 奥の手・威力35</small></button>`}
-      else if(menu==='bag'){h=['white','silver','gold'].map(k=>`<button class="cb" data-nav data-s="${k}" ${S.items[k]&&!B.trainer?'':'disabled'}><b><span class="fchip" style="--fc:${ITEMS[k].fc}"></span>${ITEMS[k].n.replace('の封札','')}<span class="rate">${B.trainer?'—':Math.round(sealRate(k)*100)+'%'}</span></b><small>のこり ${S.items[k]}枚</small></button>`).join('')+
+      else if(menu==='bag'){h=['white','silver','gold'].map(k=>`<button class="cb" data-nav data-s="${k}" ${S.items[k]&&!B.trainer?'':'disabled'}><b><span class="fchip" style="--fc:${ITEMS[k].fc}"></span>${ITEMS[k].n.replace('の封札','')}<span class="rate">${B.trainer?'—':Math.round(sealRate(k)*100)+'%'}</span></b><small>のこり ${S.items[k]}枚${B.sealBonus?`・なじみ +${Math.round(B.sealBonus*100)}%`:''}</small></button>`).join('')+
         `<button class="cb" data-nav data-p ${S.items.potion&&me.hp<me.st.hp?'':'disabled'}><b>回復の香</b><small>HP半分回復・${S.items.potion}個</small></button>`}
       else if(menu==='party'){const L=partyCards().filter(c=>c.uid!==B.active);h=L.map(c=>`<button class="cb" data-nav data-u="${c.uid}" ${c.hp>0?'':'disabled'}><b>${MON[c.id].name}</b><small>Lv${c.lv}・HP ${c.hp}/${maxHP(c)}</small></button>`).join('')||'<p class="cb-empty">交代できるカードがいない</p>'}
       const canBack=menu!=='main'&&!(menu==='party'&&B.forced);
@@ -106,7 +106,7 @@ function showCmd(){
     render(B.forced?'party':'main');
   });
 }
-function sealRate(k){const e=B.foe;const r=e.hp/e.st.hp;return clamp((1-.72*r)*ITEMS[k].mul*RAR[MON[e.id].r].seal,.03,.97)}
+function sealRate(k){const e=B.foe;const r=e.hp/e.st.hp;return clamp((1-.72*r)*ITEMS[k].mul*RAR[MON[e.id].r].seal+(B.sealBonus||0),.03,.97)}
 
 /* ---------- actions ---------- */
 function pickFoeMove(){const L=movesOf(B.foe.id,B.foe.lv);
@@ -180,7 +180,9 @@ async function doSeal(k){
     for(let i=0;i<22;i++){const a=Math.random()*Math.PI*2,s=90+Math.random()*180;BFX.parts.push({x:fc.x,y:fc.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-60,ay:340,drag:1.5,life:.9,max:.9,size:3+Math.random()*3,color:i%2?I.fc:'#fffaf0',shape:'rect',rot:a,vr:(Math.random()-.5)*16})}
     fly.remove();suck.cancel();shake(6);
     fe.animate([{transform:'scale(.2)',filter:'brightness(4)'},{transform:'scale(1.15)',filter:'brightness(1.4)'},{transform:'scale(1)',filter:'none'}],{duration:RM?1:380});
-    await bsay(['ああっ！ 札を やぶって 飛び出してきた！','おしい！ あと少しで 封じられたのに！','ぐぬぬ… あとちょっとだった！'][stage],900);return false}
+    await bsay(['ああっ！ 札を やぶって 飛び出してきた！','おしい！ あと少しで 封じられたのに！','ぐぬぬ… あとちょっとだった！'][stage],900);
+    if((B.sealBonus||0)<.4){B.sealBonus=Math.min(.4,(B.sealBonus||0)+.08);await bsay(`${m.name}は 札の 力に なじんできた！<br>封印率が すこし 上がった！（+${Math.round(B.sealBonus*100)}%）`,900)}
+    return false}
   // success: stamp slam
   await sleep(RM?0:380);
   const st=document.createElement('div');st.className='stamp';st.textContent='封';fly.appendChild(st);
