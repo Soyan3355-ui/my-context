@@ -1,0 +1,545 @@
+<title>ひびリール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&family=Noto+Sans+JP:wght@400;600&display=swap">
+<style>
+:root {
+  --ground: #ECEFE8;
+  --surface: #F8FAF5;
+  --ink: #1C2420;
+  --muted: #637068;
+  --line: #D5DBD0;
+  --leaf: #2E7449;
+  --leaf-ink: #FFFFFF;
+  --sun: #D9962B;
+  --warn: #B4442E;
+  --chip: #E1E7DC;
+  --display: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif;
+  --body: "Noto Sans JP", "Hiragino Sans", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #111612; --surface: #1A211C; --ink: #E4EAE4; --muted: #95A298;
+    --line: #2C362F; --leaf: #6CBF8A; --leaf-ink: #0E1A12; --sun: #E8B05A; --warn: #E0785F; --chip: #25302A;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #111612; --surface: #1A211C; --ink: #E4EAE4; --muted: #95A298;
+  --line: #2C362F; --leaf: #6CBF8A; --leaf-ink: #0E1A12; --sun: #E8B05A; --warn: #E0785F; --chip: #25302A;
+}
+[hidden] { display: none !important; }
+body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.7; }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 18px; }
+header { display: grid; gap: 2px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: 30px; line-height: 1.2; margin: 0; letter-spacing: .02em; }
+h1 .dot { color: var(--sun); }
+.lead { margin: 0; color: var(--muted); }
+section.step { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
+h2 { font-family: var(--display); font-weight: 800; font-size: 18px; margin: 0; display: flex; align-items: baseline; gap: 8px; text-wrap: balance; }
+h2 small { font-family: var(--body); font-weight: 400; font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.btn { font: 600 15px var(--body); border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 10px 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn:focus-visible, input:focus-visible, .seg label:focus-within { outline: 3px solid var(--sun); outline-offset: 2px; }
+.btn.primary { background: var(--leaf); color: var(--leaf-ink); border-color: var(--leaf); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.block { width: 100%; padding-block: 14px; font-size: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.picker { border: 2px dashed var(--line); border-radius: 14px; padding: 18px; text-align: center; display: grid; gap: 6px; cursor: pointer; }
+.picker strong { font-family: var(--display); font-size: 16px; }
+.picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.tile { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden; background: var(--chip); max-width: 100%; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile .meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; font-size: 11px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.65)); display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.tile .no { position: absolute; top: 4px; left: 4px; font: 800 11px var(--display); background: rgba(0,0,0,.55); color: #fff; border-radius: 6px; padding: 0 6px; }
+.tile button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.55); color: #fff; font-size: 15px; line-height: 1; cursor: pointer; }
+.counts { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.seg label { padding: 8px 16px; cursor: pointer; font-weight: 600; font-variant-numeric: tabular-nums; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg label:has(input:checked) { background: var(--leaf); color: var(--leaf-ink); }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; }
+input[type="text"] { font: 15px var(--body); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--ground); color: var(--ink); width: 100%; box-sizing: border-box; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+.status.err { color: var(--warn); }
+.board { display: grid; gap: 8px; }
+.shot { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; background: var(--ground); }
+.shot img { width: 56px; height: 74px; object-fit: cover; border-radius: 8px; display: block; }
+.shot .info { display: grid; gap: 4px; min-width: 0; }
+.shot .when { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.shot input { padding: 6px 10px; font-size: 14px; }
+.shot .x { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.total { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stagebox { display: grid; justify-items: center; gap: 10px; }
+canvas#stage, video#result { width: min(260px, 70vw); aspect-ratio: 9 / 16; max-width: 100%; border-radius: 14px; background: #000; display: block; }
+progress { width: 100%; height: 8px; accent-color: var(--leaf); }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>ひびリール<span class="dot">.</span></h1>
+    <p class="lead">その日撮った動画と写真を、AIが選んで並べて、縦長の1本（9:16）に仕上げます。</p>
+  </header>
+
+  <section class="step" id="s-media">
+    <h2>素材を選ぶ <small>動画・写真</small></h2>
+    <label class="picker" for="files">
+      <strong>＋ ギャラリーから選ぶ</strong>
+      <span class="hint">今日撮った分をまとめて選んでください。撮影時刻の順に並びます。</span>
+      <input id="files" type="file" accept="video/*,image/*" multiple>
+    </label>
+    <div class="grid" id="grid"></div>
+    <div class="counts" id="counts">まだ素材がありません</div>
+  </section>
+
+  <section class="step" id="s-opts">
+    <h2>仕上がり</h2>
+    <div class="row">
+      <div class="seg" role="radiogroup" aria-label="長さ">
+        <label><input type="radio" name="len" id="len15" value="15">15秒</label>
+        <label><input type="radio" name="len" id="len30" value="30" checked>30秒</label>
+        <label><input type="radio" name="len" id="len60" value="60">60秒</label>
+      </div>
+    </div>
+    <label class="field" for="mood"><span>雰囲気・テーマ（任意）</span>
+      <input type="text" id="mood" placeholder="例：稲刈り前の、のんびりした畑の一日">
+    </label>
+    <div class="row">
+      <label class="btn" for="bgm">♪ BGMを選ぶ（任意）</label>
+      <input type="file" id="bgm" accept="audio/*" hidden>
+      <span class="counts" id="bgmName">BGMなし</span>
+    </div>
+    <label class="check" for="orig"><input type="checkbox" id="orig"> 動画の元の音も入れる</label>
+    <button class="btn primary block" id="aiBtn" disabled>AIで構成をつくる</button>
+    <button class="btn" id="autoBtn" disabled>AIを使わずに時系列で並べる</button>
+    <p class="status" id="planStatus"></p>
+  </section>
+
+  <section class="step" id="s-plan" hidden>
+    <h2>構成 <small>キャプションは書き換えできます</small></h2>
+    <label class="field" for="title"><span>タイトル（冒頭に表示）</span><input type="text" id="title"></label>
+    <div class="board" id="board"></div>
+    <label class="field" for="ending"><span>ラストのひとこと</span><input type="text" id="ending"></label>
+    <div class="total" id="total"></div>
+    <button class="btn primary block" id="renderBtn">動画を書き出す</button>
+  </section>
+
+  <section class="step" id="s-out" hidden>
+    <h2>書き出し</h2>
+    <div class="stagebox">
+      <canvas id="stage" width="720" height="1280"></canvas>
+      <video id="result" controls playsinline hidden></video>
+    </div>
+    <progress id="prog" value="0" max="1"></progress>
+    <p class="status" id="outStatus"></p>
+    <button class="btn primary block" id="saveBtn" hidden>端末に保存する</button>
+    <p class="note">書き出しは実際の長さと同じだけ時間がかかります。終わるまで画面を開いたままにしてください。</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const W = 720, H = 1280, FADE = 0.3;
+  const FONT = '"M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif';
+  const items = [];       // {id, file, kind, url, time, duration, w, h, thumb, tile, img}
+  let plan = null;        // {title, ending, clips:[{id, start, dur, caption}]}
+  let bgmFile = null;
+  let sample = null, aiImages = 0;
+  let lastBlob = null, lastExt = "webm";
+  let seq = 0;
+
+  const fmtTime = (ms) => { const d = new Date(ms); return d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); };
+  const fmtDate = (ms) => { const d = new Date(ms); return d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0") + " " + ["SUN","MON","TUE","WED","THU","FRI","SAT"][d.getDay()]; };
+  const sec = (n) => (Math.round(n * 10) / 10).toFixed(1) + "秒";
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const byId = (id) => items.find((it) => it.id === id);
+
+  // ---------- claude runtime ----------
+  (async () => {
+    try {
+      sample = window.claude ? await window.claude.use("sample") : null;
+      if (sample) {
+        const lim = await sample.limits().catch(() => null);
+        aiImages = lim?.images?.maxCount || 0;
+      }
+    } catch { sample = null; }
+    refresh();
+  })();
+
+  // ---------- media loading ----------
+  function loadVideo(url) {
+    return new Promise((res, rej) => {
+      const v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
+      v.onloadedmetadata = () => res(v);
+      v.onerror = () => rej(new Error("video"));
+      v.src = url;
+    });
+  }
+  function seek(v, t) {
+    return new Promise((r) => {
+      const done = () => { v.removeEventListener("seeked", done); clearTimeout(to); r(); };
+      const to = setTimeout(done, 4000);
+      v.addEventListener("seeked", done);
+      v.currentTime = Math.max(0, t);
+    });
+  }
+  function loadImage(url) {
+    return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("image")); i.src = url; });
+  }
+  function drawCover(ctx, src, sw, sh, x, y, w, h, scale = 1) {
+    const s = Math.max(w / sw, h / sh) * scale, dw = sw * s, dh = sh * s;
+    ctx.drawImage(src, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+  }
+  function label(ctx, text, x, y, size) {
+    ctx.font = `800 ${size}px ${FONT}`;
+    const w = ctx.measureText(text).width;
+    ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(x, y, w + size * 0.6, size * 1.35);
+    ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.fillText(text, x + size * 0.3, y + size * 0.15);
+  }
+
+  async function addFile(file) {
+    const kind = file.type.startsWith("video") ? "video" : file.type.startsWith("image") ? "image" : null;
+    if (!kind) return;
+    const it = { id: ++seq, file, kind, url: URL.createObjectURL(file), time: file.lastModified || Date.now(), duration: 0 };
+    const tile = document.createElement("canvas"); tile.width = tile.height = 480;
+    const tc = tile.getContext("2d"); tc.fillStyle = "#000"; tc.fillRect(0, 0, 480, 480);
+    const thumb = document.createElement("canvas"); thumb.width = 180; thumb.height = 240;
+    const hc = thumb.getContext("2d");
+    if (kind === "video") {
+      const v = await loadVideo(it.url);
+      it.duration = v.duration && isFinite(v.duration) ? v.duration : 5;
+      it.w = v.videoWidth; it.h = v.videoHeight;
+      const marks = [0.12, 0.37, 0.62, 0.87];
+      for (let i = 0; i < 4; i++) {
+        const t = it.duration * marks[i];
+        await seek(v, t);
+        const x = (i % 2) * 240, y = Math.floor(i / 2) * 240;
+        drawCover(tc, v, it.w, it.h, x, y, 240, 240);
+        label(tc, t.toFixed(1) + "s", x + 6, y + 214, 18);
+        if (i === 1) drawCover(hc, v, it.w, it.h, 0, 0, 180, 240);
+      }
+      v.removeAttribute("src"); v.load();
+    } else {
+      const img = await loadImage(it.url);
+      it.img = img; it.w = img.naturalWidth; it.h = img.naturalHeight;
+      drawCover(tc, img, it.w, it.h, 0, 0, 480, 480);
+      drawCover(hc, img, it.w, it.h, 0, 0, 180, 240);
+    }
+    it.tile = tile;
+    it.thumb = thumb.toDataURL("image/jpeg", 0.8);
+    items.push(it);
+  }
+
+  $("#files").addEventListener("change", async (e) => {
+    const files = [...e.target.files]; e.target.value = "";
+    let bad = 0;
+    for (let i = 0; i < files.length; i++) {
+      status("#planStatus", `読み込み中… ${i + 1} / ${files.length}`);
+      try { await addFile(files[i]); } catch { bad++; }
+    }
+    items.sort((a, b) => a.time - b.time);
+    status("#planStatus", bad ? `${bad}件は読み込めなかったので外しました（形式が未対応の可能性があります）` : "", !!bad);
+    refresh();
+  });
+
+  $("#bgm").addEventListener("change", (e) => {
+    bgmFile = e.target.files[0] || null;
+    $("#bgmName").textContent = bgmFile ? bgmFile.name : "BGMなし";
+  });
+
+  function status(sel, msg, err = false) { const el = $(sel); el.textContent = msg; el.classList.toggle("err", err); }
+
+  function refresh() {
+    const g = $("#grid"); g.replaceChildren();
+    items.forEach((it, i) => {
+      const d = document.createElement("div"); d.className = "tile";
+      d.innerHTML = `<img alt=""><span class="no">#${i + 1}</span><button aria-label="外す">×</button><div class="meta"><span></span><span></span></div>`;
+      d.querySelector("img").src = it.thumb;
+      const m = d.querySelectorAll(".meta span");
+      m[0].textContent = fmtTime(it.time);
+      m[1].textContent = it.kind === "video" ? "▶ " + Math.round(it.duration) + "s" : "写真";
+      d.querySelector("button").onclick = () => { items.splice(items.indexOf(it), 1); refresh(); };
+      g.append(d);
+    });
+    const nv = items.filter((i) => i.kind === "video").length;
+    $("#counts").textContent = items.length ? `動画 ${nv}・写真 ${items.length - nv}` : "まだ素材がありません";
+    $("#aiBtn").disabled = !items.length || !sample;
+    $("#autoBtn").disabled = !items.length;
+    $("#aiBtn").hidden = !sample;
+  }
+
+  const target = () => Number(document.querySelector('input[name="len"]:checked').value);
+
+  // ---------- planning ----------
+  function autoPlan() {
+    const T = target(), per = Math.max(1.5, Math.min(4, T / items.length));
+    const use = items.slice(0, Math.max(1, Math.floor(T / per)));
+    return {
+      title: fmtDate(use[0].time).slice(5, 10).replace(".", "/") + " の記録",
+      ending: "また明日",
+      clips: use.map((it) => {
+        const dur = it.kind === "video" ? Math.min(per, it.duration) : per;
+        return { id: it.id, start: it.kind === "video" ? Math.max(0, (it.duration - dur) / 2) : 0, dur, caption: "" };
+      }),
+    };
+  }
+
+  async function buildSheets(list) {
+    const blobs = [];
+    for (let i = 0; i < list.length; i += 4) {
+      const c = document.createElement("canvas"); c.width = c.height = 960;
+      const x = c.getContext("2d"); x.fillStyle = "#222"; x.fillRect(0, 0, 960, 960);
+      list.slice(i, i + 4).forEach((it, k) => {
+        const ox = (k % 2) * 480, oy = Math.floor(k / 2) * 480;
+        x.drawImage(it.tile, ox, oy);
+        label(x, "#" + (items.indexOf(it) + 1), ox + 8, oy + 8, 34);
+        x.strokeStyle = "#fff"; x.lineWidth = 4; x.strokeRect(ox, oy, 480, 480);
+      });
+      blobs.push(await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85)));
+    }
+    return blobs;
+  }
+
+  async function aiPlan() {
+    const T = target();
+    const maxItems = aiImages ? aiImages * 4 : 0;
+    const shown = items.slice(0, maxItems);
+    const images = shown.length ? await buildSheets(shown) : undefined;
+    const lines = items.map((it, i) => `#${i + 1} ${it.kind === "video" ? `動画 ${it.duration.toFixed(1)}秒` : "写真"} 撮影${fmtTime(it.time)}`).join("\n");
+    const prompt = `あなたはInstagramリールの動画編集者です。ある一日に撮った素材から、縦長Vlog（合計およそ${T}秒）の構成を決めてください。
+撮影者：鹿児島で農園を営み、農的な暮らしを発信している人。
+${$("#mood").value.trim() ? "希望の雰囲気：" + $("#mood").value.trim() : ""}
+
+素材一覧（#番号で指定）:
+${lines}
+
+${images ? `添付画像は素材のコンタクトシートです。各マスの左上に#番号。動画のマスは4分割で、各コマ左下の数字はその動画内の秒数です。` : "画像は見られないので、撮影時刻と種類から判断してください。"}
+
+ルール:
+- 見どころのある素材を選び、ブレ・似たカットの重複・暗すぎる素材は外す
+- 基本は時系列。一日の流れ（朝→昼→夕）が伝わる並びに
+- 1カットは1.5〜4秒。写真は2〜3秒。動画は動きのある区間を start（秒）で指定し、start+dur が動画の長さを超えないこと
+- 合計はおよそ${T}秒
+- caption は画面に出す短い日本語テロップ（16文字以内）。2〜3カットに1回くらいでよく、不要なカットは空文字
+- title は冒頭に出す14文字以内のタイトル、ending はラストのひとこと（16文字以内）
+
+JSONだけで答えてください。例:
+{"title":"朝の畑しごと","ending":"今日もいい日だった","clips":[{"item":1,"start":2.0,"dur":3.0,"caption":"朝5時、畑へ"}]}`;
+    const res = await sample.json(prompt, { images, modelTier: "default", onText: () => status("#planStatus", "AIが構成を書いています…") });
+    const clips = (res?.clips || []).map((c) => {
+      const it = items[Number(c.item) - 1];
+      if (!it) return null;
+      let dur = Math.max(1, Math.min(6, Number(c.dur) || 2.5));
+      let start = Math.max(0, Number(c.start) || 0);
+      if (it.kind === "video") { dur = Math.min(dur, it.duration); start = Math.min(start, Math.max(0, it.duration - dur)); } else start = 0;
+      return { id: it.id, start, dur, caption: String(c.caption || "").slice(0, 24) };
+    }).filter(Boolean);
+    if (!clips.length) throw { code: "empty" };
+    return { title: String(res.title || "").slice(0, 20), ending: String(res.ending || "").slice(0, 24), clips };
+  }
+
+  $("#aiBtn").onclick = async () => {
+    $("#aiBtn").disabled = $("#autoBtn").disabled = true;
+    status("#planStatus", "AIが素材を見ています…（30秒〜1分ほど）");
+    try {
+      plan = await aiPlan();
+      status("#planStatus", "構成ができました。下で確認してください。");
+      showPlan();
+    } catch (e) {
+      const msg = {
+        not_granted: "AIの利用が許可されませんでした。時系列で並べることもできます。",
+        rate_limited: "少し混み合っています。1分ほどおいてもう一度試してください。",
+        invalid_json: "AIの返事をうまく読み取れませんでした。もう一度試してください。",
+        empty: "使えるカットが選ばれませんでした。素材を見直してもう一度試してください。",
+      }[e?.code] || "構成づくりに失敗しました。もう一度試すか、時系列で並べてください。";
+      status("#planStatus", msg, true);
+    } finally { refresh(); }
+  };
+  $("#autoBtn").onclick = () => { plan = autoPlan(); status("#planStatus", ""); showPlan(); };
+
+  function showPlan() {
+    $("#s-plan").hidden = false;
+    $("#title").value = plan.title; $("#ending").value = plan.ending;
+    const b = $("#board"); b.replaceChildren();
+    plan.clips.forEach((c, i) => {
+      const it = byId(c.id);
+      const r = document.createElement("div"); r.className = "shot";
+      r.innerHTML = `<img alt=""><div class="info"><span class="when"></span><input type="text" id="cap${i}" placeholder="テロップなし"></div><button class="x" aria-label="このカットを外す">×</button>`;
+      r.querySelector("img").src = it.thumb;
+      r.querySelector(".when").textContent = `#${items.indexOf(it) + 1} ・ ${it.kind === "video" ? "動画 " + c.start.toFixed(1) + "s〜" : "写真"} ・ ${sec(c.dur)}`;
+      const inp = r.querySelector("input"); inp.value = c.caption; inp.oninput = () => (c.caption = inp.value);
+      r.querySelector(".x").onclick = () => { plan.clips.splice(plan.clips.indexOf(c), 1); showPlan(); };
+      b.append(r);
+    });
+    $("#total").textContent = `${plan.clips.length}カット ・ 合計 ${sec(plan.clips.reduce((s, c) => s + c.dur, 0))}`;
+    $("#renderBtn").disabled = !plan.clips.length;
+    $("#s-plan").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("#title").oninput = () => plan && (plan.title = $("#title").value);
+  $("#ending").oninput = () => plan && (plan.ending = $("#ending").value);
+
+  // ---------- rendering ----------
+  function wrapLines(ctx, text, maxW) {
+    const out = []; let cur = "";
+    for (const ch of text) {
+      if (ctx.measureText(cur + ch).width > maxW && cur) { out.push(cur); cur = ch; } else cur += ch;
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+  function textBlock(ctx, text, cy, size, alpha) {
+    if (!text || alpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.font = `800 ${size}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const lines = wrapLines(ctx, text, W - 120), lh = size * 1.35;
+    lines.forEach((l, i) => {
+      const y = cy + (i - (lines.length - 1) / 2) * lh;
+      ctx.lineJoin = "round"; ctx.lineWidth = size * 0.22; ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.strokeText(l, W / 2, y);
+      ctx.fillStyle = "#fff"; ctx.fillText(l, W / 2, y);
+    });
+    ctx.restore();
+  }
+
+  const small = document.createElement("canvas"); small.width = 72; small.height = 128;
+  const sctx = small.getContext("2d");
+  function drawMedia(ctx, src, sw, sh, zoom) {
+    if (sw / sh > 0.8) {
+      // 横長や正方形はぼかし背景＋全体表示
+      drawCover(sctx, src, sw, sh, 0, 0, 72, 128);
+      ctx.save(); ctx.imageSmoothingQuality = "high"; ctx.globalAlpha = 0.7; ctx.drawImage(small, 0, 0, W, H); ctx.restore();
+      const s = (W / sw) * zoom, dw = sw * s, dh = sh * s;
+      ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    } else drawCover(ctx, src, sw, sh, 0, 0, W, H, zoom);
+  }
+
+  function pickMime() {
+    const list = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+    return list.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
+  }
+
+  $("#renderBtn").onclick = async () => {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    $("#renderBtn").disabled = true;
+    $("#s-out").hidden = false; $("#result").hidden = true; $("#saveBtn").hidden = true; $("#stage").hidden = false;
+    $("#s-out").scrollIntoView({ behavior: "smooth", block: "start" });
+    let lock = null;
+    try { lock = await navigator.wakeLock?.request("screen"); } catch {}
+    try {
+      await document.fonts.load(`800 60px ${FONT}`, "あ漢A").catch(() => {});
+      await render(ac);
+    } catch (e) {
+      status("#outStatus", "書き出しに失敗しました。素材を減らすか、もう一度試してください。", true);
+      console.error(e);
+    } finally {
+      try { lock?.release(); } catch {}
+      ac.close().catch(() => {});
+      $("#renderBtn").disabled = false;
+    }
+  };
+
+  async function render(ac) {
+    const out = $("#stage"), ctx = out.getContext("2d");
+    const clips = plan.clips.slice(), total = clips.reduce((s, c) => s + c.dur, 0);
+    const useOrig = $("#orig").checked;
+    const dest = ac.createMediaStreamDestination();
+    const origGain = ac.createGain(); origGain.gain.value = bgmFile ? 0.6 : 1; origGain.connect(dest);
+    let bgmEl = null;
+    if (bgmFile) {
+      bgmEl = new Audio(URL.createObjectURL(bgmFile)); bgmEl.loop = true;
+      const g = ac.createGain(); ac.createMediaElementSource(bgmEl).connect(g); g.connect(dest);
+      const t = ac.currentTime;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.8, t + 1);
+      g.gain.setValueAtTime(0.8, t + Math.max(1, total - 1.5)); g.gain.linearRampToValueAtTime(0, t + total);
+    }
+    await ac.resume().catch(() => {});
+
+    const mime = pickMime();
+    if (!mime) throw new Error("MediaRecorder unsupported");
+    lastExt = mime.startsWith("video/mp4") ? "mp4" : "webm";
+    const tracks = [...out.captureStream(30).getVideoTracks()];
+    if (bgmFile || useOrig) tracks.push(...dest.stream.getAudioTracks());
+    const rec = new MediaRecorder(new MediaStream(tracks), { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+    const chunks = []; rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    const stopped = new Promise((r) => (rec.onstop = r));
+
+    const prev = document.createElement("canvas"); prev.width = W; prev.height = H;
+    const pctx = prev.getContext("2d");
+    let cur = null, hasPrev = false, running = true, done = 0;
+    const title = plan.title, ending = plan.ending, dateText = fmtDate(byId(clips[0].id).time);
+
+    const frame = () => {
+      if (!running) return;
+      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+      if (cur) {
+        const e = (performance.now() - cur.t0) / 1000;
+        const it = cur.it, z = it.kind === "image" ? 1 + 0.08 * Math.min(1, e / cur.clip.dur) : 1;
+        drawMedia(ctx, it.kind === "video" ? cur.el : it.img, it.w, it.h, z);
+        if (hasPrev && e < FADE) { ctx.globalAlpha = 1 - e / FADE; ctx.drawImage(prev, 0, 0); ctx.globalAlpha = 1; }
+        const fin = Math.min(1, e / 0.25), fout = Math.min(1, (cur.clip.dur - e) / 0.25);
+        if (cur.i === 0 && title && e < 2.8) {
+          const a = Math.min(Math.min(1, e / 0.4), (2.8 - e) / 0.4);
+          textBlock(ctx, dateText, H * 0.40, 26, a);
+          textBlock(ctx, title, H * 0.46, 64, a);
+        } else if (cur.clip.caption) textBlock(ctx, cur.clip.caption, H * 0.76, 46, Math.min(fin, fout));
+        if (cur.i === clips.length - 1 && ending && e > 0.4) textBlock(ctx, ending, H * 0.5, 54, Math.min((e - 0.4) / 0.4, fout + 0.3));
+        $("#prog").value = Math.min(1, (done + Math.min(e, cur.clip.dur)) / total);
+      }
+      requestAnimationFrame(frame);
+    };
+
+    async function prepare(clip) {
+      const it = byId(clip.id);
+      if (it.kind === "image") return { it, clip };
+      const el = await loadVideo(it.url);
+      if (useOrig) { el.muted = false; ac.createMediaElementSource(el).connect(origGain); }
+      await seek(el, clip.start);
+      return { it, clip, el };
+    }
+
+    status("#outStatus", "書き出し中…");
+    rec.start(500);
+    bgmEl?.play().catch(() => {});
+    requestAnimationFrame(frame);
+    let next = prepare(clips[0]);
+    for (let i = 0; i < clips.length; i++) {
+      const src = await next;
+      next = i + 1 < clips.length ? prepare(clips[i + 1]) : null;
+      if (src.el) await src.el.play().catch(() => {});
+      cur = { ...src, i, t0: performance.now() };
+      await wait(src.clip.dur * 1000);
+      pctx.drawImage(out, 0, 0); hasPrev = true;
+      if (src.el) { src.el.pause(); src.el.removeAttribute("src"); src.el.load(); }
+      done += src.clip.dur;
+    }
+    running = false;
+    rec.stop(); await stopped;
+    bgmEl?.pause();
+    $("#prog").value = 1;
+
+    lastBlob = new Blob(chunks, { type: mime.split(";")[0] });
+    const v = $("#result"); v.src = URL.createObjectURL(lastBlob);
+    $("#stage").hidden = true; v.hidden = false;
+    $("#saveBtn").hidden = false;
+    status("#outStatus", `できました（${(lastBlob.size / 1048576).toFixed(1)}MB・${lastExt.toUpperCase()}）` + (lastExt === "webm" ? "。WebM形式のため、Instagramに上げる前にCapCutなどで開いて書き出し直すと確実です。" : ""));
+  }
+
+  $("#saveBtn").onclick = async () => {
+    const dl = window.claude ? await window.claude.use("downloads").catch(() => null) : null;
+    if (!dl) { status("#outStatus", "この画面からは保存できません。上の動画を長押しして保存してください。", true); return; }
+    const d = new Date(), name = `hibi-reel-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}.${lastExt}`;
+    try { await dl.save({ filename: name, data: lastBlob }); status("#outStatus", "保存しました。"); }
+    catch (e) { if (e?.code !== "declined") status("#outStatus", "保存できませんでした。もう一度試してください。", true); }
+  };
+
+  refresh();
+})();
+</script>
