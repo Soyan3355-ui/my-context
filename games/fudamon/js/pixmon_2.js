@@ -49,22 +49,21 @@
     k.ellipse(C, 51.5, 9, 8.2, 'cream', { part: 'face', spec: false, dither: false, flat: true, light: 0.3 });
     k.path([[34, 58], [37, 59], [43, 59], [46, 58]], 'cream', 3);
     // gentle painted brows
-    k.path([[33, 45], [34, 44], [37, 44]], 'black', 1); k.path([[47, 45], [46, 44], [43, 44]], 'black', 1);
-    k.px(34, 45, 'black', 2); k.px(46, 45, 'black', 2);
+    k.path([[32, 45], [33, 44], [36, 44]], 'black', 1); k.path([[47, 45], [46, 44], [43, 44]], 'black', 1);
     // painted eye (L) and blank eye (R)
     var E = { K: ['black', 0], P: ['black', 0], g: ['white', 6], W: ['white', 6], w: ['white', 4] };
-    pm(k, 33, 46, ['.KKKK.', 'KWPPgK', 'KWPPPK', 'KwPPwK', '.KKKK.'], E);
-    pm(k, 42, 46, ['.KKKK.', 'KWWWWK', 'KWWWWK', 'KwwwwK', '.KKKK.'], E);
+    pm(k, 33, 46, ['.KKK.', 'KWPgK', 'KwPPK', '.KKK.'], E);
+    pm(k, 42, 46, ['.KKK.', 'KWWWK', 'KwwwK', '.KKK.'], E);
     // nose, big calm smile, blush
-    pm(k, 39, 51, ['.n.', 'nNn'], { n: ['skin', 4], N: ['skin', 3] });
-    pm(k, 36, 54, ['K.......K', '.KK...KK.', '...KKK...'], INK);
-    k.px(40, 56, 'mouth', 4);
-    k.rect(32, 53, 2, 1, 'sakura', { tone: 4, part: 'bl1', outline: 'none' });
-    k.rect(47, 53, 2, 1, 'sakura', { tone: 4, part: 'bl2', outline: 'none' });
+    pm(k, 39, 50, ['.n.', 'nNn'], { n: ['skin', 4], N: ['skin', 3] });
+    pm(k, 35, 53, ['K.........K', '.K.......K.', '..KK...KK..', '....KKK....'], INK);
+    pm(k, 37, 54, ['.MMMMM.', '..MSSM.', '....'], { M: ['mouth', 1], S: ['mouth', 4] });
+    k.rect(32, 51, 3, 1, 'sakura', { tone: 4, part: 'bl1', outline: 'none' });
+    k.rect(46, 51, 3, 1, 'sakura', { tone: 4, part: 'bl2', outline: 'none' });
     // zabuton cushion
-    k.poly([[23, 70.5], [57, 70.5], [61, 76], [19, 76]], 'violet', { part: 'zab', flat: true });
+    k.poly([[23, 70.5], [57, 70.5], [61, 76], [19, 76]], 'violet', { part: 'zab', flat: true, shift: -1 });
     k.texture('zab', 'cloth', { size: 2 });
-    k.line(23, 73, 57, 73, 'violet', 4); k.line(22, 74, 58, 74, 'violet', 2);
+    k.line(23, 72, 57, 72, 'violet', 4); k.line(22, 74, 58, 74, 'violet', 1);
     k.px(C, 72, 'gold', 5); k.px(C, 73, 'gold', 4);
     k.sym(C, function (m) { k.spike(m(20), 75, m(16.5), 77.5, 2.4, 'gold', { part: 'tas' + m(20) }); });
     // warm embers
@@ -89,7 +88,7 @@
     k.ellipse(C, 60, 12.5, 10.5, 'fur', { part: 'body' });
     k.texture('body', 'fur', { seed: 2 });
     // mane drape on the chest
-    k.tufts([[50, 55], [45, 57], [35, 57], [30, 55]], 'fire', { part: 'drape', len: 5, w: 4, every: 2.8, seed: 5 });
+    k.tufts([[50, 55], [45, 57], [35, 57], [30, 55]], 'fire', { part: 'drape', len: 5, w: 4, every: 2.8, seed: 5, shift: -1 });
     k.ellipse(C, 54, 10, 4, 'fire', { part: 'drape' });
     // muscular forelegs with flame elbow curls
     k.sym(C, function (m, s) {
@@ -178,13 +177,15 @@
       k.tube([[m(34.5), 44, 1.4], [m(31), 36, 1.2]], 'magma', { part: 'st' + s });
       k.ellipse(m(30.5), 32.5, 4, 3.8, 'magma', { part: 'eb' + s });
     });
-    k.eye(28, 31, { w: 5, h: 4, iris: 'thunder', side: 'L', angry: 0, lid: 0.25, look: [0.5, 0], brow: false });
-    k.eye(48, 31, { w: 5, h: 4, iris: 'thunder', side: 'R', angry: 0, lid: 0.25, look: [-0.5, 0], brow: false });
+    var BE = { K: ['black', 0], k: ['black', 4], W: ['white', 6] };
+    pm(k, 29, 31, ['.KK.', 'KWKK', 'KKKk', '.KK.'], BE); pm(k, 48, 31, ['.KK.', 'KWKK', 'KKKk', '.KK.'], BE);
+    k.px(29, 30, 'magma', 1); k.px(50, 30, 'magma', 1);
     // steam puffs
     k.sym(C, function (m, s) {
-      var so = { part: 'steam' + s, outline: 'soft', shade: 'flat', flatTone: 5 };
-      k.circle(m(22), 40, 2.2, 'white', so); k.circle(m(20.5), 35.5, 2, 'white', so); k.circle(m(22), 31, 1.6, 'white', so); k.circle(m(20.5), 27.5, 1.1, 'white', so);
-      k.px(m(21), 39, 'white', 6); k.px(m(20), 35, 'white', 6); k.px(m(23), 41, 'white', 4);
+      var so = { part: 'steam' + s, outline: 'none', shade: 'flat', flatTone: 4 };
+      k.tube([[m(23), 41, 1.6], [m(21), 37, 1.8], [m(22.5), 33, 1.3], [m(21), 29.5, 0.6]], 'ice', so);
+      k.path([[m(22), 40], [m(20), 37], [m(21), 34]], 'white', 6);
+      k.px(m(24), 35, 'ice', 4); k.px(m(19), 31, 'ice', 5);
     });
     // GIANT claw (left)
     k.tube([[26, 56, 3.2], [19, 55, 3], [15, 50, 3]], 'magma', { part: 'armL' });
@@ -219,61 +220,58 @@
     k.px(48, 71, 'white', 6); k.px(49, 70, 'white', 5);
     // legs dangling over the front
     k.sym(C, function (m, s) {
-      k.tube([[m(37.5), 56, 1.9], [m(36.5), 61.5, 1.5]], 'water', { part: 'leg' + s, light: 0.25 });
-      k.ellipse(m(36), 63, 2, 1.6, 'water', { part: 'leg' + s });
+      k.tube([[m(37.5), 56, 1.8], [m(36.5), 61.5, 1.4]], 'water', { part: 'leg' + s, light: 0.3 });
+      k.ellipse(m(36), 63, 2, 1.5, 'water', { part: 'leg' + s, light: 0.3 });
     });
-    // body + lotus-petal skirt
-    k.ellipse(C, 51, 4.2, 4.2, 'water', { part: 'body', light: 0.25 });
+    // body + arms (hands folded in the lap)
+    k.ellipse(C, 51.5, 3.8, 3.6, 'ice', { part: 'body', light: 0.2 });
+    k.sym(C, function (m, s) { k.tube([[m(36.3), 49.5, 1.3], [m(35.5), 53, 1.2], [m(38.5), 54.5, 1.2]], 'ice', { part: 'body' }); });
+    // lotus-petal skirt
     k.sym(C, function (m, s) {
-      k.leaf(m(38), 54, m(31), 57, 4, 'sakura', { part: 'pa' + s });
-      k.leaf(m(39), 54, m(36), 59.5, 4, 'sakura', { part: 'pb' + s });
+      k.leaf(m(38), 54.5, m(31), 57, 4, 'sakura', { part: 'pa' + s });
+      k.leaf(m(39), 54.5, m(36), 59.5, 4, 'sakura', { part: 'pb' + s });
     });
-    k.leaf(C, 53.5, C, 60, 4, 'sakura', { part: 'pc' });
+    k.leaf(C, 54, C, 60, 4, 'sakura', { part: 'pc' });
     k.px(C, 55, 'sakura', 6);
-    // arms, hands folded in the lap
-    k.sym(C, function (m, s) {
-      k.tube([[m(36), 49, 1.4], [m(35), 53, 1.2], [m(38.5), 54.5, 1.2]], 'water', { part: 'arm' + s, light: 0.25 });
-    });
-    // droplet hair locks
-    k.sym(C, function (m, s) {
-      k.tube([[m(33), 37, 2.4], [m(31.5), 43, 1.9], [m(32.5), 47, 1.2], [m(34.5), 48, 0.5]], 'water', { part: 'lock' + s });
-      k.px(m(32), 40, 'water', 5);
-    });
+    // droplet hair
+    k.ellipse(C, 40.5, 10, 8.5, 'water', { part: 'hair' });
+    k.sym(C, function (m, s) { k.tube([[m(31.5), 41, 2], [m(31), 46, 1.5], [m(32.5), 50, 0.5]], 'water', { part: 'hair' }); });
+    k.px(30, 44, 'water', 6);
     // head
-    k.ellipse(C, 42, 8, 7.5, 'water', { part: 'head', light: 0.35 });
-    k.ellipse(C, 44.5, 5.5, 3.5, 'ice', { clip: 'head', light: 0.2 });
-    k.path([[34, 39], [35, 37]], 'white', 6);
+    k.ellipse(C, 43, 8.5, 7.5, 'ice', { part: 'head', light: 0.3, spec: false, flat: true });
+    k.poly([[31, 34], [49, 34], [49.5, 39], [47, 41], [45, 39], [43, 41.5], [C, 39], [37, 41.5], [35, 39], [33, 41], [30.5, 39]], 'water', { clip: 'head' });
+    k.px(34, 38, 'water', 6); k.px(35, 38, 'water', 5);
     // sleepy face
     var F = { K: ['black', 0] };
-    pm(k, 34, 43, ['K...K', '.KKK.'], F); pm(k, 41, 43, ['K...K', '.KKK.'], F);
-    pm(k, 38, 47, ['K..K', '.KK.'], F);
-    k.rect(33, 46, 2, 1, 'sakura', { tone: 4, part: 'cs1', outline: 'none' });
-    k.rect(45, 46, 2, 1, 'sakura', { tone: 4, part: 'cs2', outline: 'none' });
+    pm(k, 33, 44, ['K...K', '.KKK.'], F); pm(k, 42, 44, ['K...K', '.KKK.'], F);
+    pm(k, 39, 48, ['K..K', '.KK.'], F);
+    k.rect(32, 47, 2, 1, 'sakura', { tone: 4, part: 'cs1', outline: 'none' });
+    k.rect(46, 47, 2, 1, 'sakura', { tone: 4, part: 'cs2', outline: 'none' });
     // lotus-leaf hat
-    k.ellipse(C, 35.5, 14, 3.6, 'grass', { part: 'hat' });
-    k.ellipse(C, 33.5, 7, 3.2, 'grass', { part: 'hat' });
-    k.poly([[C, 35], [37.5, 39.5], [42.5, 39.5]], null, { erase: true });
-    [[27, 36], [32, 38], [48, 38], [53, 36], [34, 32], [46, 32]].forEach(function (p) { k.line(C, 34, p[0], p[1], 'grass', 2); });
-    k.path([[27, 34], [32, 32.5]], 'grass', 5); k.px(35, 31, 'grass', 6);
-    k.tube([[C, 31, 0.8], [41.5, 28.5, 0.7], [43.5, 27, 0.5]], 'grass', { part: 'stem', shade: 'flat', flatTone: 4 });
+    k.ellipse(C, 34.5, 14, 3.4, 'grass', { part: 'hat' });
+    k.ellipse(C, 32.5, 7, 3, 'grass', { part: 'hat' });
+    k.poly([[C, 34], [37.5, 38.5], [42.5, 38.5]], null, { erase: true });
+    [[27, 35], [32, 37], [48, 37], [53, 35], [34, 31], [46, 31]].forEach(function (p) { k.line(C, 33, p[0], p[1], 'grass', 2); });
+    k.path([[27, 33], [32, 31.5]], 'grass', 5); k.px(35, 30, 'grass', 6);
+    k.tube([[C, 30, 0.8], [41.5, 27.5, 0.7], [43.5, 26, 0.5]], 'grass', { part: 'stem', shade: 'flat', flatTone: 4 });
     // lotus bud on the brim
-    k.leaf(51.5, 35, 52.5, 26, 4.4, 'sakura', { part: 'bud' });
-    k.px(51, 29, 'sakura', 6); k.px(51, 30, 'sakura', 5);
-    k.spike(50, 35, 48.5, 30.5, 2.4, 'leaf', { part: 'sep1' }); k.spike(53, 35, 55, 30.5, 2.4, 'leaf', { part: 'sep2' });
+    k.leaf(51.5, 34, 52.5, 25, 4.4, 'sakura', { part: 'bud' });
+    k.px(51, 28, 'sakura', 6); k.px(51, 29, 'sakura', 5);
+    k.spike(50, 34, 48.5, 29.5, 2.4, 'leaf', { part: 'sep1' }); k.spike(53, 34, 55, 29.5, 2.4, 'leaf', { part: 'sep2' });
     // floating bubbles
     k.circle(20, 50, 1.8, 'ice', { part: 'b1', outline: 'soft' }); k.px(19, 49, 'white', 6);
     k.circle(60, 46, 1.4, 'ice', { part: 'b2', outline: 'soft' }); k.px(59, 45, 'white', 6);
     k.sparkle(62, 58, 1, 'ice');
     // z
-    pm(k, 56, 24, ['zzzz', '..z.', '.z..', 'yyyy'], ZZ);
+    pm(k, 57, 22, ['zzzz', '...z', '..z.', '.z..', 'yyyy'], ZZ);
   };
 
   // 7 カッパチ — water C (かわいい): kappa kid with a turtle-shell backpack. Gag: cheeky wink, brandishing a half-eaten cucumber.
   P[7] = function (k) {
     k.shadow(C, 76.5, 15, 2);
     // shell backpack peeking out
-    k.ellipse(C, 57, 14.5, 12, 'cream', { part: 'shell', shift: -1 });
-    k.ellipse(C, 56, 12.5, 10.5, 'leaf', { clip: 'shell' });
+    k.ellipse(C, 55, 16.5, 12.5, 'cream', { part: 'shell', shift: -1 });
+    k.ellipse(C, 54.5, 14.5, 11, 'leaf', { clip: 'shell' });
     k.texture('shell', 'scales', { size: 5, seed: 2 });
     // legs + webbed feet
     k.sym(C, function (m, s) {
@@ -283,8 +281,8 @@
     });
     // body + belly plate
     k.ellipse(C, 63, 10, 9, 'aqua', { part: 'body' });
-    k.ellipse(C, 65, 6.5, 6.8, 'cream', { clip: 'body', light: 0.25 });
-    for (var y = 61; y <= 70; y += 3) k.rect(34, y, 12, 1, 'cream', { adj: -1, clip: 'body' });
+    k.ellipse(C, 65, 6.5, 6.8, 'light', { clip: 'body' });
+    for (var y = 61; y <= 70; y += 3) k.rect(34, y, 12, 1, 'light', { adj: -1, clip: 'body' });
     // backpack straps
     k.sym(C, function (m, s) { k.tube([[m(32), 55, 1.2], [m(33.5), 63, 1.1]], 'red', { part: 'strap' + s }); });
     // left arm: hand on hip
@@ -301,15 +299,15 @@
     k.ellipse(56, 48.5, 3, 2.8, 'aqua', { part: 'hR' });
     k.px(54, 49, 'aqua', 1); k.px(54, 47, 'aqua', 1); k.px(55, 47, 'aqua', 5);
     // hair ring with side locks
-    k.ellipse(C, 38, 10.5, 4, 'grass', { part: 'hair', shift: -2 });
-    k.tufts(arc(C, 37.5, 9.5, 3.4, 190, 350, 12), 'grass', { part: 'hair', shift: -2, len: 3, w: 2.6, every: 2.2, seed: 6 });
+    k.ellipse(C, 38, 10, 3.6, 'grass', { part: 'hair', shift: -1 });
+    k.tufts(arc(C, 37.5, 9.5, 3.4, 190, 350, 12), 'grass', { part: 'hair', shift: -1, len: 3, w: 2.6, every: 2.2, seed: 6 });
     // head
     k.ellipse(C, 46, 12, 9.5, 'aqua', { part: 'head' });
     k.texture('head', 'dots', { seed: 4 });
     k.sym(C, function (m, s) {
-      k.tube([[m(30), 38, 2.2], [m(28), 43, 1.6], [m(28.5), 46, 0.6]], 'grass', { part: 'lock' + s, shift: -2 });
+      k.tube([[m(30), 38, 2.2], [m(28), 43, 1.6], [m(28.5), 46, 0.6]], 'grass', { part: 'lock' + s, shift: -1 });
     });
-    k.tufts([[31, 38.5], [36, 39.2], [44, 39.2], [49, 38.5]].reverse(), 'grass', { part: 'fringe', shift: -2, len: 2, w: 2.4, every: 2.2, seed: 8 });
+    k.tufts([[31, 38.5], [36, 39.2], [44, 39.2], [49, 38.5]].reverse(), 'grass', { part: 'fringe', shift: -1, len: 1.6, w: 2.4, every: 2.2, seed: 8 });
     // head plate with water
     k.ellipse(C, 35.5, 7.5, 2.8, 'bone', { part: 'plate' });
     k.ellipse(C, 35.3, 5.6, 1.7, 'water', { part: 'pw', shade: 'flat', flatTone: 4, outline: 'none' });
@@ -320,7 +318,7 @@
     k.px(38, 49, 'black', 1); k.px(42, 49, 'black', 1);
     pm(k, 42, 52, ['pp', 'p.'], { p: ['skin', 4] });
     // eyes: glare + wink
-    k.eye(31, 42, { w: 5, h: 4, iris: 'red', side: 'L', angry: 0.4, lid: 0.3, look: [0.4, 0] });
+    k.eye(31, 41, { w: 5, h: 5, iris: 'thunder', side: 'L', angry: 0, lid: 0.15, look: [0.4, 0], brow: false });
     pm(k, 44, 43, ['.KKK.', 'K...K'], INK);
     k.line(44, 40, 48, 39, 'black', 0);
     k.rect(30, 47, 2, 1, 'sakura', { tone: 4, part: 'ck1', outline: 'none' });
@@ -332,8 +330,9 @@
   P[8] = function (k) {
     k.shadow(C, 76.5, 22, 2.3);
     // breaking-wave tail
-    k.tube([[52, 64, 3.6], [60, 60, 3.8], [65, 52, 3.6], [66, 44, 2.8], [62, 39, 1.4], [59, 41, 0.8]], 'water', { part: 'tail', shift: -1 });
-    k.tufts([[59, 39], [63, 37.5], [67, 41], [69, 48], [67, 56]], 'white', { part: 'tfoam', len: 3, w: 2.6, every: 2.2, seed: 3 });
+    k.tube([[52, 64, 4], [60, 60, 4.4], [65, 52, 4.2], [66, 44, 3.4], [62, 39, 2], [58.5, 41, 1]], 'water', { part: 'tail', shift: -1 });
+    k.tufts([[58, 38.5], [63, 36], [68, 40], [70, 48], [68, 56]], 'white', { part: 'tfoam', len: 3.5, w: 3.2, every: 2.2, seed: 3, light: 0.3 });
+    k.tube([[64, 55, 0.6], [67, 47, 0.6], [65, 41, 0.5]], 'ice', { clip: 'tail', tone: 4 });
     // hind legs
     k.sym(C, function (m, s) {
       k.ellipse(m(26), 63, 7, 7, 'water', { part: 'hip' + s, shift: -1 });
@@ -344,9 +343,12 @@
     k.ellipse(C, 59, 12, 10, 'water', { part: 'body' });
     k.texture('body', 'fur', { seed: 5 });
     // foam ruff
-    k.ellipse(C, 51, 16.5, 8, 'white', { part: 'ruff' });
-    k.tufts(arc(C, 51, 16, 7.5, 160, 20, -10), 'white', { part: 'ruff', len: 4, w: 3.4, every: 2.6, seed: 7 });
+    k.sym(C, function (m) { k.ellipse(m(30), 50.5, 8.5, 7.5, 'white', { part: 'ruff', light: 0.3 }); });
+    k.tufts(arc(C, 50, 16, 7.5, 110, 250, 10), 'white', { part: 'ruff', len: 4.5, w: 3.4, every: 2.6, seed: 7 });
+    k.tufts(arc(C, 50, 16, 7.5, -70, 70, 10), 'white', { part: 'ruff', len: 4.5, w: 3.4, every: 2.6, seed: 8 });
     k.texture('ruff', 'fur', { seed: 9 });
+    k.tufts([[46, 53], [C, 55], [34, 53]], 'water', { part: 'chest', len: 4, w: 3, every: 2.4, seed: 2 });
+    k.ellipse(C, 53, 6, 3, 'water', { part: 'chest' });
     k.sym(C, function (m, s) {
       k.tube([[m(30), 57, 0.7], [m(26), 53, 0.7], [m(26), 49, 0.6], [m(29), 47.5, 0.5]], 'water', { clip: 'ruff', tone: 3 });
       k.tube([[m(29), 58, 0.5], [m(25), 54, 0.5]], null, { adj: -1, clip: 'ruff' });
@@ -362,10 +364,10 @@
     });
     // fin ears (dorsal-fin shape with rays)
     k.sym(C, function (m, s) {
-      k.poly([[m(35), 32], [m(32), 25], [m(27), 19], [m(21), 15], [m(23), 21], [m(24), 27], [m(28), 34]], 'aqua', { part: 'ear' + s });
-      k.tufts(s > 0 ? [[m(21.5), 16], [m(23), 22], [m(24), 28]] : [[m(24), 28], [m(23), 22], [m(21.5), 16]], 'aqua', { part: 'ear' + s, len: 2, w: 2, every: 2.4, seed: 4 });
-      [[m(33), 31, m(25), 20], [m(30), 32, m(24), 24]].forEach(function (l) { k.line(l[0], l[1], l[2], l[3], 'aqua', 2); });
-      k.path([[m(34), 30], [m(31), 25], [m(27), 21]], 'aqua', 5);
+      k.poly([[m(35), 32], [m(31), 27.5], [m(25), 25], [m(15), 24], [m(20), 28.5], [m(23), 33], [m(29), 35.5]], 'aqua', { part: 'ear' + s });
+      k.tufts(s > 0 ? [[m(16), 25], [m(20.5), 29], [m(23.5), 33.5]] : [[m(23.5), 33.5], [m(20.5), 29], [m(16), 25]], 'aqua', { part: 'ear' + s, len: 2.2, w: 2, every: 2.4, seed: 4 });
+      [[m(33), 31, m(20), 26], [m(30), 33, m(22), 29]].forEach(function (l) { k.line(l[0], l[1], l[2], l[3], 'aqua', 2); });
+      k.path([[m(34), 30], [m(30), 27], [m(23), 25.5]], 'aqua', 5);
     });
     // head
     k.ellipse(C, 39, 11, 9.5, 'water', { part: 'head' });
@@ -410,19 +412,18 @@
       k.tube([[m(22), 48, 0.6], [m(21), 55, 0.6], [m(25), 60, 0.5]], null, { adj: 1, clip: 'arm' + s });
       k.tube([[m(27), 64, 0.8], [m(33), 65.5, 0.8]], null, { adj: -1, clip: 'body' });
     });
-    // little red bird
-    k.tube([[42, 60, 1.2], [46.5, 58, 0.6]], 'red', { part: 'btail', shift: -1 });
-    k.ellipse(C, 58.5, 4.8, 3.6, 'red', { part: 'bird' });
-    k.circle(38.5, 54.5, 3.2, 'red', { part: 'bird' });
-    k.ellipse(38.5, 59.5, 2.6, 1.8, 'cream', { clip: 'bird', tone: 5 });
-    k.tube([[41, 57, 0.7], [43.5, 59, 0.7]], null, { adj: -2, clip: 'bird' });
-    k.px(37, 54, 'black', 0); k.px(36, 53, 'white', 6);
-    pm(k, 34, 55, ['gg', '.d'], { g: ['gold', 5], d: ['gold', 3] });
-    k.spike(39, 52, 40.5, 49.5, 1.8, 'red', { part: 'crest' });
-    k.rect(38, 56, 1, 1, 'sakura', { tone: 4, part: 'bb', outline: 'none' });
+    // little red bird (a round fluffed-up sparrow)
+    k.sym(C, function (m, s) { k.spike(m(36.5), 57, m(33), 55.5, 3, 'red', { part: 'wing' + s, shift: -1 }); });
+    k.circle(C, 56.5, 4.6, 'red', { part: 'bird' });
+    k.ellipse(C, 58.5, 3, 2.4, 'cream', { clip: 'bird', tone: 5 });
+    k.px(C, 60, 'cream', 4);
+    k.spike(39.5, 52.5, 40.5, 49.5, 2, 'red', { part: 'crest' });
+    var BD = { K: ['black', 0], W: ['white', 6], g: ['gold', 5], d: ['gold', 3] };
+    pm(k, 38, 55, ['K..K', '.gg.', '.dd.'], BD);
+    k.px(37, 56, 'sakura', 5); k.px(42, 56, 'sakura', 5);
     // mitten hands
     k.sym(C, function (m, s) {
-      k.ellipse(m(34.5), 61.5, 3.6, 3.2, 'white', { part: 'hand' + s });
+      k.ellipse(m(34), 61.5, 3.6, 3.2, 'white', { part: 'hand' + s });
       k.px(m(33), 62, 'white', 2); k.px(m(35), 63, 'white', 2);
     });
     // head
@@ -461,6 +462,7 @@
     // boulder shell with scutes
     k.ellipse(C, 54, 20, 16, 'stone', { part: 'shell' });
     k.texture('shell', 'dots', { seed: 4 });
+    [[27, 57], [52, 53], [33, 62], [49, 61], [23, 52]].forEach(function (p, i) { k.px(p[0], p[1], 'leaf', 3 + (i & 1)); k.px(p[0] + 1, p[1], 'leaf', 2); });
     k.sym(C, function (m, s) {
       k.tube([[m(31), 47, 0.6], [m(29), 54, 0.6], [m(31), 61, 0.6]], null, { adj: -2, clip: 'shell' });
       k.tube([[m(30), 47, 0.5], [m(28), 54, 0.5]], null, { adj: 1, clip: 'shell' });
@@ -485,15 +487,15 @@
     k.tube([[43, 38, 0.5], [44, 34, 0.5]], 'leaf', { part: 'sprout', shade: 'flat', flatTone: 4 });
     k.leaf(44, 34, 47, 32, 2.6, 'leaf', { part: 'sp1' }); k.leaf(44, 34, 41.5, 32, 2.4, 'leaf', { part: 'sp2' });
     // head poking out
-    k.ellipse(C, 64, 8.5, 6.5, 'leaf', { part: 'head' });
-    k.texture('head', 'scales', { size: 4, seed: 2 });
-    k.ellipse(C, 67, 5.5, 3, 'cream', { clip: 'head', light: 0.1 });
+    k.ellipse(C, 64.5, 9.5, 6.8, 'tan', { part: 'head', spec: false });
+    k.path([[33, 60], [35, 59], [37, 59]], 'tan', 5); k.px(48, 66, 'tan', 1); k.px(47, 67, 'tan', 1);
+    k.ellipse(C, 68.5, 5.5, 2.4, 'cream', { clip: 'head' });
     // sleepy content face
     pm(k, 33, 62, ['K...K', '.KKK.'], INK); pm(k, 42, 62, ['K...K', '.KKK.'], INK);
     k.path([[37, 67], [38, 68], [39, 68], [C, 67], [41, 68], [42, 68], [43, 67]], 'black', 0);
     k.rect(32, 65, 2, 1, 'sakura', { tone: 4, part: 'ck1', outline: 'none' });
     k.rect(46, 65, 2, 1, 'sakura', { tone: 4, part: 'ck2', outline: 'none' });
-    k.px(39, 65, 'leaf', 1); k.px(41, 65, 'leaf', 1);
+    k.px(39, 65, 'tan', 1); k.px(41, 65, 'tan', 1);
     // nose bubble
     k.circle(46.5, 69, 3, 'ice', { part: 'nb', halo: 0.2, outline: 'soft' });
     k.px(45, 68, 'white', 6);
