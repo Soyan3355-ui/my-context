@@ -289,6 +289,8 @@
       if (d[i] > 200 && d[i + 1] > 200 && d[i + 2] > 190) { d[i] = 250; d[i + 1] = 250; d[i + 2] = 242; }
     }
     g.putImageData(id, 0, 0);
+    // leave the area above the apron transparent so the stands show through
+    g.clearRect(0, 0, WORLD.w, PITCH.y - 14);
     return c;
   }
 
