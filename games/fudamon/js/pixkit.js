@@ -16,39 +16,42 @@
 
   // ------------------------------------------------------------------ ramps
   // Tone index: 0 = outline/darkest, 1 = shadow, 2 = base, 3 = light, 4 = highlight.
+  // SFC-style hue-shifted ramps: shadows lean purple/blue, highlights lean warm.
+  // Tone index: 0 = deepest (pupils, deep crevices), 1 = shadow, 2 = base, 3 = light, 4 = highlight.
   var RAMPS = {
     // --- type ramps
-    fire: ['#4a1420', '#a02a2a', '#e0522c', '#f88c3a', '#ffcf7a'],
-    flame: ['#8a2418', '#e25a1c', '#ff9a26', '#ffd650', '#fff8cc'],   // glowing fire / flame bodies
-    magma: ['#2e0c12', '#8a1c18', '#e2401c', '#ff8a2a', '#ffe27a'],
-    water: ['#16244e', '#2a52a0', '#3e82d2', '#6ab8ee', '#c6eeff'],
-    aqua: ['#0e3a46', '#1c7480', '#32aab0', '#6cd6ca', '#d2fff2'],
-    ice: ['#263866', '#5078b4', '#8cbce6', '#cdeeff', '#ffffff'],
-    grass: ['#133426', '#246036', '#3f903c', '#76c04e', '#c6ee88'],
-    leaf: ['#26361a', '#4a6822', '#76982c', '#a8c848', '#e2f28c'],
-    thunder: ['#46300e', '#a8701a', '#e8b228', '#ffe058', '#fffac8'],
-    dark: ['#140e26', '#2a2048', '#46366f', '#6c58a4', '#aa98dc'],
-    shadow: ['#0a0612', '#181024', '#261c38', '#3a2c52', '#62528a'],  // void cloth / hoods
-    light: ['#6a4a3a', '#c89a5e', '#f2d28a', '#fff0c0', '#ffffff'],
-    crystal: ['#282a6a', '#4a5eb8', '#7aa0e8', '#b6deff', '#f4ffff'],
-    sakura: ['#541f3e', '#a4467a', '#e27aaa', '#f9accc', '#ffe2ef'],
-    violet: ['#2a1244', '#5a2a8a', '#8a4ec4', '#b884e8', '#e6ccff'],
+    fire: ['#2a0a1e', '#9a1e3e', '#e84a22', '#ff9a30', '#ffe680'],
+    flame: ['#7a1a2a', '#e8481e', '#ff9a1e', '#ffd83a', '#fffac0'],   // glowing fire / flame bodies
+    magma: ['#240a1a', '#7a1432', '#e03a1a', '#ff8a1e', '#ffe46a'],
+    water: ['#0c0e3a', '#3a2e9a', '#2a78dc', '#5ac4f4', '#d8fcff'],
+    aqua: ['#0a2a3a', '#1e5a8a', '#1ea8b0', '#5ae0c8', '#d4fff0'],
+    ice: ['#1a1e5a', '#6070c8', '#9cc8f0', '#d8f4ff', '#ffffff'],
+    grass: ['#0e1e24', '#1e5a62', '#3a9a38', '#88cc3a', '#e4f27a'],
+    leaf: ['#1a2a1a', '#3e6a3a', '#8aaa2a', '#c8d840', '#fff29a'],
+    thunder: ['#3a1a0a', '#b0601a', '#f0b020', '#ffe84a', '#fffcd0'],
+    dark: ['#0e0620', '#34185a', '#5a34a0', '#9468e0', '#e0b8ff'],
+    shadow: ['#06040e', '#1a1030', '#2c1e4e', '#46307a', '#7a5ab0'],  // void cloth / hoods
+    light: ['#5a3a3a', '#c8886a', '#f8cc7a', '#fff0b4', '#ffffff'],
+    crystal: ['#1e1a5a', '#5a4ac8', '#6aa8f0', '#b4ecff', '#ffffff'],
+    sakura: ['#4a1238', '#a8306e', '#f06aa4', '#ffb0d0', '#fff0f6'],
+    violet: ['#1e0a3a', '#5a1e9a', '#9a44d8', '#d08aff', '#fbe0ff'],
     // --- neutrals
-    fur: ['#2c1812', '#5c3422', '#8c5834', '#b8824c', '#e2b47a'],
-    tan: ['#54382a', '#9c744e', '#d0aa7c', '#eed4a4', '#fff4dc'],
-    cream: ['#5c4636', '#b09474', '#e4d0b0', '#f8ecd4', '#ffffff'],
-    bone: ['#463a34', '#8a7c6c', '#c6b9a2', '#e8dfca', '#fffaf0'],
-    steel: ['#1c2030', '#444e68', '#72809e', '#a8b8d2', '#eaf2ff'],
-    stone: ['#28242e', '#504a58', '#787280', '#a49eaa', '#d4d0d6'],
-    obsidian: ['#0c0812', '#1c1626', '#30283c', '#4a3e5e', '#7a6a94'],
-    skin: ['#56283a', '#ae5468', '#e08892', '#f6b8b2', '#ffe4da'],
-    gold: ['#46280a', '#98661a', '#d6a232', '#f6d45e', '#fff6c2'],
-    white: ['#34345a', '#8888ac', '#c8cce2', '#eef0f8', '#ffffff'],
-    black: ['#08060e', '#16121e', '#262032', '#3a3248', '#5c5272'],
-    red: ['#3a0a16', '#8a1a26', '#d0343c', '#f2685a', '#ffb6a2'],
-    wood: ['#28180e', '#583820', '#885c34', '#b68850', '#e0b87a'],
-    mouth: ['#2a0a18', '#5a1426', '#8e2a3a', '#d0546a', '#f090a0']
+    fur: ['#241018', '#6a2e3a', '#a4602e', '#d8984a', '#f8d48a'],
+    tan: ['#4a2a2a', '#a06a5a', '#dcaa70', '#f4d8a0', '#fff6dc'],
+    cream: ['#4a3040', '#b88a98', '#f0d0a8', '#fff0cc', '#ffffff'],
+    bone: ['#3a2a38', '#8a7a98', '#d0c4a8', '#f4ecd0', '#ffffff'],
+    steel: ['#141a30', '#46508a', '#7c8cc0', '#b8cce8', '#f0f8ff'],
+    stone: ['#1e1a2e', '#4e4a6e', '#7e7a90', '#aeaab4', '#e0dcd8'],
+    obsidian: ['#08040e', '#1e1432', '#342652', '#56427a', '#8a74b0'],
+    skin: ['#4a1a3a', '#b0486a', '#f08a9a', '#ffc0b8', '#fff0e6'],
+    gold: ['#3a1a0a', '#a8601a', '#e8a820', '#ffe050', '#fffcc8'],
+    white: ['#2a2450', '#8078c0', '#c8c8f0', '#f0f2ff', '#ffffff'],
+    black: ['#06040a', '#16101e', '#282034', '#3e344e', '#62567a'],
+    red: ['#300818', '#901a4a', '#e02a3a', '#ff6a5a', '#ffc0a8'],
+    wood: ['#20100e', '#5a2a3a', '#8a5530', '#c08a48', '#f0c070'],
+    mouth: ['#1a0610', '#5a0e2a', '#9a1e3e', '#e0506a', '#ff9ab0']
   };
+  var OUTLINE = [18, 10, 24];   // crisp near-black outline used everywhere
   var RL = [null], RI = {};
   function hexRGB(h) { h = h.replace('#', ''); return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)]; }
   function mixRGB(a, b, t) { return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)]; }
@@ -111,6 +114,8 @@
       for (j = 0; j < cover.length; j++) {
         e = cover[j];
         if (!this.mat[e] || (cl && this.part[e] !== cl.i) || (onlyMat && this.mat[e] !== onlyMat)) continue;
+        if (o.pattern === 'checker' && ((e % W + ((e / W) | 0)) & 1)) continue;
+        if (o.pattern === 'sparse' && ((e % W) % 3 !== 0 || (((e / W) | 0) % 3) !== ((e % W) % 6 === 0 ? 0 : 2))) continue;
         if (o.set != null) this.setT[e] = o.set; else this.adj[e] = Math.max(-3, Math.min(3, this.adj[e] + o.adj));
       }
       return this;
@@ -247,6 +252,7 @@
     o = o || {};
     var w = o.w || 8, h = o.h || 9, ir = o.iris || 'gold', mood = o.mood || 'cool', ink = o.ink || 'black';
     var i, j;
+    if (o.style === 'bulge' || o.style === 'slit') return this._eyeSFC(x, y, w, h, o);
     if (mood === 'happy' || mood === 'closed') {
       for (i = 0; i < w; i++) {
         var u = (i + 0.5) / w * 2 - 1, yy = Math.round((mood === 'happy' ? u * u : 1 - u * u) * (h * 0.25));
@@ -319,6 +325,49 @@
       var bx0 = x + (o.far ? 0 : 1), bx1 = x + w - (o.far ? 2 : 0);
       var bl0 = l0 + (bx0 - x) * (l1 - l0) / Math.max(1, w);
       this.line(bx0, Math.round(bl0), bx1, l1, bm, bt); this.line(bx0 + 1, Math.round(bl0) - 1, bx1 - 1, l1 - 1, bm, bt);
+    }
+    return this;
+  };
+  // SFC-style eyes (front-facing monsters).
+  //  style:'bulge' — round white eyeball, crisp black ring, tiny pupil. o.pupil (px size), o.look [dx,dy],
+  //                  o.lid 0..0.7 (top fraction covered by a lid in o.lidMat, default 'black'), o.lidTilt (+ = lid lower at the inner side)
+  //  style:'slit'  — coloured iris (o.iris) with a black vertical slit pupil: menacing.
+  //  o.brow [dyLeft, dyRight] — thick brow above (o.browMat, default black), e.g. [2,-1] = angry on a left eye.
+  K._eyeSFC = function (x, y, w, h, o) {
+    var i, j, rx = w / 2, ry = h / 2, lid = o.lid || 0, tilt = o.lidTilt || 0, look = o.look || [0, 0];
+    var ink = 'black';
+    function inE(i, j) {
+      if (i < 0 || j < 0 || i >= w || j >= h) return false;
+      var dx = (i + 0.5 - rx) / rx, dy = (j + 0.5 - ry) / ry;
+      return dx * dx + dy * dy <= 1.08;
+    }
+    var slit = o.style === 'slit', ir = o.iris || (slit ? 'thunder' : 'white');
+    var pr = o.pupil != null ? o.pupil : Math.max(1, Math.round(Math.min(w, h) * 0.22));
+    var pcx = rx + look[0], pcy = ry + look[1] + (lid ? lid * h * 0.3 : 0);
+    for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
+      if (!inE(i, j)) continue;
+      var X = x + i, Y = y + j;
+      var edge = !inE(i - 1, j) || !inE(i + 1, j) || !inE(i, j - 1) || !inE(i, j + 1);
+      if (edge) { this.px(X, Y, ink, 0); continue; }
+      var f = (i + 0.5) / w, lidY = h * lid + (f - 0.5) * tilt * 2;
+      if (lid && j + 0.5 < lidY + 1) { this.px(X, Y, o.lidMat || ink, (j + 0.5 >= lidY) ? 0 : (o.lidMat ? 2 : 0)); continue; }
+      var dx = i + 0.5 - pcx, dy = j + 0.5 - pcy;
+      if (slit) {
+        if (Math.abs(dx) < Math.max(0.6, w * 0.09) && Math.abs(dy) < h * 0.36) { this.px(X, Y, ink, 0); continue; }
+        var rel = (j + 0.5) / h;
+        this.px(X, Y, ir, rel < 0.35 ? 2 : rel < 0.75 ? 3 : 4);
+      } else {
+        if (Math.abs(dx) <= pr * 0.5 + 0.01 && Math.abs(dy) <= pr * 0.6 + 0.35) { this.px(X, Y, ink, 0); continue; }
+        // eyeball shading: lit upper-left, shaded lower-right rim
+        var sh = !inE(i + 1, j + 1) || !inE(i + 2, j + 2);
+        this.px(X, Y, ir === 'white' ? 'white' : ir, sh ? 2 : 4);
+      }
+    }
+    if (slit) this.px(Math.round(x + rx - w * 0.28), Math.round(y + ry - h * 0.22), 'white', 4);
+    if (o.brow) {
+      var bm = o.browMat || ink, bt = o.browTone != null ? o.browTone : 0, b0 = o.brow[0], b1 = o.brow[1];
+      var by = y - 2 + Math.round(h * lid * 0.5);
+      for (var t = 0; t < (o.browThick || 2); t++) this.line(x - 1, by + b0 - t, x + w, by + b1 - t, bm, bt);
     }
     return this;
   };
@@ -406,8 +455,8 @@
   // DQM-style cel shading: clean light and shadow crescents from an upper-left light (no pillow shading)
   function celPrep(p) {
     var md = p.maxd;
-    p.cs = Math.max(1, Math.min(8, Math.round(md * (p.o.shadow || 0.55))));   // shadow crescent depth
-    p.cl = Math.max(1, Math.min(6, Math.round(md * (p.o.lit || 0.4))));      // light band depth
+    p.cs = Math.max(1, Math.min(10, Math.round(md * (p.o.shadow || 0.8))));   // shadow crescent depth
+    p.cl = Math.max(1, Math.min(6, Math.round(md * (p.o.lit || 0.35))));      // light band depth
     // highlight spot centre (upper-left of the part's mass)
     var sx = 0, sy = 0, n = 0, m = p.mask;
     for (var y = p.y0; y <= p.y1; y++) for (var x = p.x0; x <= p.x1; x++) if (m[y * W + x]) { sx += x; sy += y; n++; }
@@ -503,13 +552,13 @@
         if (!mat[j] || part[j] === part[i] || seq[j] <= seq[i]) continue;
         var q = parts[part[j]];
         if (q.o.noseam || q === this.inkPart) continue;
-        seamT[i] = (mat[j] !== mat[i] || n === 3) ? 0 : Math.max(1, out[i] - 1);
+        seamT[i] = (mat[j] !== mat[i] || n === 3) ? -2 : Math.max(1, out[i] - 1);
         // pixels just below a front part read as a soft cast shadow instead of a hard line
         if (n === 2 && mat[j] === mat[i]) seamT[i] = Math.max(1, out[i] - 1);
         break;
       }
     }
-    for (i = 0; i < N; i++) if (seamT[i] >= 0) out[i] = Math.min(out[i], seamT[i]);
+    for (i = 0; i < N; i++) { if (seamT[i] === -2) out[i] = -2; else if (seamT[i] >= 0) out[i] = Math.min(out[i], seamT[i]); }
 
     // compose
     var img = new Uint8ClampedArray(N * 4);
@@ -562,13 +611,13 @@
       }
       if (pick < 0) continue;
       var r = RL[mat[pick]], pm = parts[part[pick]].o.outline;
-      var col = pm === 'soft' ? r.c[1] : (lit2 ? r.sel : r.c[0]);
+      var col = pm === 'soft' ? r.c[1] : OUTLINE;
       var q4b = i * 4;
       img[q4b] = col[0]; img[q4b + 1] = col[1]; img[q4b + 2] = col[2]; img[q4b + 3] = 255;
     }
     for (i = 0; i < N; i++) {
       if (!mat[i]) continue;
-      var cc = RL[mat[i]].c[out[i] < 0 ? 2 : out[i]], q4c = i * 4;
+      var cc = out[i] === -2 ? OUTLINE : RL[mat[i]].c[out[i] < 0 ? 2 : out[i]], q4c = i * 4;
       img[q4c] = cc[0]; img[q4c + 1] = cc[1]; img[q4c + 2] = cc[2]; img[q4c + 3] = 255;
     }
     return img;
