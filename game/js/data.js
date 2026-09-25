@@ -146,6 +146,29 @@
     long: { counter: ['△', '陣地は取れるが、密集した箱の空中戦は不利。セットプレーで押し込め'], press: ['○', 'プレスを飛び越えて、高いラインの裏へ'], long: ['△', '空中戦とセカンドボールの消耗戦。体格勝負'], possession: ['△−', 'ロングは半分しか通らずボールを渡しがち'] },
     possession: { counter: ['△−', '崩しきれず、前がかりを速攻で刺されやすい'], press: ['△−', '自陣でのロストが失点に直結。パスがうまければ逆に裏が空く'], long: ['○', 'ボールを握って相手の放り込みを断つ'], possession: ['△', '保持の奪い合い。パスのうまさの差がそのまま出る'] },
   };
+  // people who knock on the clubhouse door, and players who come up in the transfer window
+  const CIVIL = (shirt, shirtD, shirtL) => ({ shirt, shirtD, shirtL, collar: '#ffffff', shorts: '#3a3a48', shortsD: '#26262e', socks: '#ffffff' });
+  const FREE_AGENTS = [
+    { id: 'minato', nick: '流れ着いた元プロ', name: 'ミナト', full: '汐見 ミナト', pos: 'FW', age: 33, job: '無職（元プロ）', local: false, sal: 40, fee: 0,
+      stats: { spd: 50, sht: 70, pas: 58, def: 30, sta: 42 }, trait: '元プロの嗅覚', traitDesc: 'ゴール前での決定力が高い。ただしスタミナがない。', growth: 0.6,
+      bio: '昔プロだったらしい。港に流れ着いて、漁港の手伝いをしている。', look: look(CIVIL('#27305a', '#171c3a', '#4a5488'), 'tan', '#4a3020', '#2a1a14', 'ponytail'),
+      pitch: 'あんたのとこの試合、見てたよ。……もう一度だけ、ボールを蹴ってみたくなった。' },
+    { id: 'sora', nick: '空港のスピードスター', name: 'ソラ', full: '高橋 ソラ', pos: 'MF', age: 20, job: '空港の地上係員', local: false, sal: 15, fee: 0,
+      stats: { spd: 70, sht: 40, pas: 46, def: 42, sta: 60 }, trait: '滑走路ダッシュ', traitDesc: 'サイドを一気に駆け上がる。', growth: 1.3,
+      bio: '隣町の空港で働く。飛行機に負けないくらい足が速い。', look: look(CIVIL('#f08a3a', '#b8601e', '#ffd080'), 'light', '#a86a3a', '#7a4a20', 'bob'),
+      pitch: 'シフトの休みが週末なんです！ 走るのだけは、誰にも負けません！' },
+    { id: 'kenji', nick: '定年後の再挑戦', name: 'ケンジ', full: '佐藤 ケンジ', pos: 'DF', age: 60, job: '元会社員', local: true, sal: 5, fee: 0,
+      stats: { spd: 28, sht: 26, pas: 54, def: 58, sta: 34 }, trait: '会議で鍛えた統率', traitDesc: '同じ試合に出ているDFの守備が少し上がる。', growth: 0.5,
+      bio: '先月定年退職した。学生時代はセンターバックだったらしい。', look: look(CIVIL('#ffffff', '#c9cbd6', '#ffffff'), 'light', '#8a8a92', '#5a5a62', 'short', 'glasses'),
+      pitch: '定年して、やっと時間ができまして。……この町のクラブで、もう一度、青春をやり直したいんです。' },
+    { id: 'pochi', nick: '商店街のマスコット志願', name: 'ポチ田', full: '犬飼 ポチ田', pos: 'MF', age: 25, job: '商店街の手伝い', local: true, sal: 5, fee: 0,
+      stats: { spd: 48, sht: 36, pas: 44, def: 40, sta: 66 }, trait: '盛り上げ役', traitDesc: 'ホームで観客が沸くと、チーム全体の調子が上がる。', growth: 1.1,
+      bio: '犬耳フードを絶対に脱がない。本人はマスコット兼選手を目指している。', look: look(CIVIL('#f2e3c2', '#d9c39a', '#fff6e0'), 'light', '#c8a070', '#a07a48', 'bob'),
+      pitch: 'ワン！ …いや、失礼しました。ぼく、このクラブを盛り上げたいんです！' },
+  ];
+  FREE_AGENTS.forEach((p) => { p.look.key = 'fa_' + p.id; p.tacU = { counter: 45, press: 45, long: 45, possession: 45 }; });
+  // salaries (万円 / season) and hometown for the squad
+  const SAL = { gen: 8, tsubame: 8, morio: 10, mask: 12, kawataro: 8, shizuku: 8, kazuha: 12, mame: 5, ponta: 8, leo: 18, haruki: 5, daifuku: 8, hikaru: 10, ume: 5 };
   const DEFAULT_LINEUP = ['gen', 'tsubame', 'morio', 'mask', 'kawataro', 'shizuku', 'kazuha', 'mame', 'ponta', 'leo', 'haruki'];
 
   const ORDERS = [
@@ -155,7 +178,7 @@
     { id: 'shoot', key: '4', label: '打て！', sub: 'ミドル解禁', shout: 'どんどん打てぇ！', cost: 30, dur: 12 },
   ];
 
-  window.Data = { HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP };
-  HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); });
+  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP };
+  HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();

@@ -26,7 +26,10 @@
   var scale = parseInt(q.get('scale') || '4', 10);
   // ?set=new shows only the 11v11 expansion squad; ?ids=a,b picks specific ids
   var NEW = ['kawataro', 'mask', 'mame', 'shizuku', 'daifuku', 'hikaru', 'ume', 'kotaro'];
-  var ids = q.get('ids') ? q.get('ids').split(',') : (q.get('set') === 'new' ? NEW : Portraits.ids);
+  // ?set=league shows the district-league captains + transfer-market / walk-in faces
+  var LEAGUE = ['kaoru', 'tatsumi', 'oyuki', 'gonzo', 'minato', 'sora', 'kenji', 'pochi'];
+  var SETS = { 'new': NEW, league: LEAGUE };
+  var ids = q.get('ids') ? q.get('ids').split(',') : (SETS[q.get('set')] || Portraits.ids);
   var bg = q.get('bg') || 'both';
   var exprs = q.get('exprs') ? q.get('exprs').split(',') : ['normal', 'happy', 'surprised', 'determined', 'sad'];
   function sheet(host) {

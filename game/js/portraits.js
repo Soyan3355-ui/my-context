@@ -322,6 +322,99 @@
         else if (dx < o + 3 && y >= 37 && y <= 42) b.set(x, y, dx === o + 2 ? '#1e4214' : '#2e5a1e', 'collar');
       }
     },
+    // league club shirt: ch.club = { ramp: {L,B,S,D}, trim, trim2 }, optional ch.vest = {B,S,L}
+    club: function (b, ch) {
+      var cl = ch.club, nk = ch.neckSkin || ch.skin, dw = ch.dw || 0;
+      torso(b, cl.ramp, dw);
+      var open = { 37: 6, 38: 5, 39: 5, 40: 4, 41: 2 };
+      for (var y = 36; y <= 43; y++) for (var x = 0; x < S; x++) {
+        var dx = dxOf(x), o = open[y] || 0;
+        if (dx < o) b.set(x, y, nk.S, 'neck');
+        else if (dx < o + 3 && y >= 37 && y <= 42) b.set(x, y, dx === o + 2 ? cl.trim2 : cl.trim, 'collar');
+      }
+      for (var yy = 40; yy < S; yy++) {
+        var hw = bodyHW(yy, dw);
+        var d = 9 + Math.round((yy - 40) * 1.3);
+        if (d < hw - 1) { b.set(23 - d, yy, cl.trim, 'body', 1); b.set(24 + d, yy, cl.trim, 'body', 1); }
+      }
+      if (ch.vest) {
+        var V = ch.vest;
+        for (y = 40; y < S; y++) {
+          var hw2 = bodyHW(y, dw), vd = Math.max(3, 9 - (y - 40));
+          for (x = 0; x < S; x++) {
+            dx = dxOf(x);
+            if (dx >= vd && dx < hw2 - 4) b.set(x, y, x >= 24 ? V.S : (dx === vd ? V.L : V.B), 'collar');
+          }
+        }
+      }
+    },
+    stripes: function (b, ch) {
+      var Wr = { L: '#ffffff', B: '#f4f4f0', S: '#c8ccd8', D: '#9aa0b0' };
+      var N = '#27305a', Ns = '#171d3c';
+      var nk = ch.neckSkin || ch.skin, dw = ch.dw || 0;
+      torso(b, Wr, dw);
+      for (var y = 40; y < S; y++) for (var x = 0; x < S; x++) {
+        if (b.part(x, y) !== Z.body || b.k[y * S + x]) continue;
+        if (y % 3 === 1) b.recolor(x, y, (x >= 24 && dxOf(x) >= bodyHW(y, dw) - 4) ? Ns : N);
+      }
+      var open = { 37: 7, 38: 7, 39: 6, 40: 4 };
+      for (y = 36; y <= 42; y++) for (x = 0; x < S; x++) {
+        var dx = dxOf(x), o = open[y] || 0;
+        if (dx < o) b.set(x, y, nk.S, 'neck');
+        else if (dx < o + 2 && y >= 37 && y <= 41) b.set(x, y, N, 'collar');
+      }
+    },
+    hivis: function (b, ch) {
+      var T = { L: '#5a6a8a', B: '#3a4666', S: '#27304a', D: '#1a2034' };
+      var nk = ch.neckSkin || ch.skin, dw = ch.dw || 0;
+      torso(b, T, dw);
+      var open = { 37: 6, 38: 5, 39: 5, 40: 4, 41: 2 };
+      for (var y = 36; y <= 43; y++) for (var x = 0; x < S; x++) {
+        var dx = dxOf(x), o = open[y] || 0;
+        if (dx < o) b.set(x, y, nk.S, 'neck');
+        else if (dx < o + 2 && y >= 37 && y <= 42) b.set(x, y, T.S, 'collar');
+      }
+      for (y = 39; y < S; y++) {
+        var hw = bodyHW(y, dw), vd = Math.max(2, 8 - (y - 39));
+        for (x = 0; x < S; x++) {
+          dx = dxOf(x);
+          if (dx >= vd && dx < hw - 3) {
+            var c = x >= 24 ? '#d45a10' : '#ff8a1a';
+            if (y === 43 || y === 46) c = x >= 24 ? '#aab4be' : '#eef4f8';
+            if (y <= 40 && x < 24) c = '#ffb060';
+            b.set(x, y, c, 'collar');
+          }
+        }
+      }
+    },
+    shirt: function (b, ch) {
+      var Wr = { L: '#ffffff', B: '#eef0f4', S: '#c4ccd8', D: '#9aa4b4' };
+      var nk = ch.neckSkin || ch.skin, dw = ch.dw || 0;
+      torso(b, Wr, dw);
+      for (var y = 36; y <= 44; y++) for (var x = 0; x < S; x++) {
+        var dx = dxOf(x), v = Math.max(0, 4 - Math.max(0, y - 39));
+        if (y <= 43 && dx < v) b.set(x, y, nk.S, 'neck');
+        else if (y >= 37 && y <= 41 && dx >= v && dx < v + 4 - (y >= 40 ? 1 : 0)) b.set(x, y, x >= 24 ? '#d4dae4' : '#ffffff', 'collar');
+      }
+      // loosened, slightly askew tie
+      spans(b, [[41, 21, 25], [42, 21, 25], [43, 22, 25], [44, 22, 26], [45, 23, 26], [46, 23, 27], [47, 23, 27]], function (x, y) {
+        if (y <= 42) return x >= 24 ? '#34467a' : '#4a5c98';
+        return (x + y) % 3 === 0 ? '#8a9ac8' : (x >= 25 ? '#22305a' : '#34467a');
+      }, 'acc');
+      for (y = 44; y < S; y++) b.set(20, y, '#c4ccd8', 'body', 1);
+    },
+    hoodie: function (b, ch) {
+      var H = { L: '#fff6e2', B: '#f0dcb4', S: '#c8a878', D: '#9a7a50' };
+      torso(b, H, ch.dw || 0);
+      // hood gathered around the neck
+      spans(b, [[35, 15, 32], [36, 14, 33], [37, 13, 34], [38, 13, 34], [39, 14, 33], [40, 16, 31]], function (x, y) {
+        if (dxOf(x) < 4 && y <= 38) return '#8a5a34';
+        return x >= 28 ? H.S : H.B;
+      }, 'collar');
+      // drawstrings
+      spans(b, [[41, 20, 20, 27, 27], [42, 20, 20, 27, 27], [43, 20, 20, 27, 27], [44, 19, 20, 27, 28]], '#8a5a34', 'collar', 1);
+      spans(b, [[45, 13, 34]], H.S, 'body', 1);
+    },
     gk2: function (b, ch) {
       var G = { L: '#ffe88a', B: '#ffd24a', S: '#d48a1e', D: '#9a5a14' };
       torso(b, G, ch.dw || 0);
@@ -1258,8 +1351,273 @@
     }
   };
 
+  // ================================================================== district league captains + market / walk-ins
+
+  // カオル — 潮見商店街FC captain, dapper shopkeeper
+  C.kaoru = {
+    skin: SKIN.std, head: 'std', body: 'club', dw: 0,
+    club: { ramp: { L: '#f6d670', B: '#e8b83a', S: '#b08420', D: '#7a5a14' }, trim: '#27305a', trim2: '#171d3c' },
+    vest: { L: '#8a5a38', B: '#6a4028', S: '#4a2a18' },
+    eye: 'calm', eyeX: 14, eyeY: 20, iris: { I: '#5a3a24', i: '#8a6040', P: '#2a1a10' },
+    brow: { col: '#2a1e1a', dy: 0 }, blush: false, mouthY: 32,
+    mouths: { normal: ['m....m', '.mmmm.'], determined: ['.....m', 'mmmmm.'] },
+    hairPal: { h: '#7a6a80', H: '#3a2e34', d: '#261c22', D: '#181014' },
+    hair: {
+      shape: [[3, 16, 31], [4, 13, 34], [5, 11, 36], [6, 10, 37], [7, 9, 38], [8, 9, 38], [9, 9, 38], [10, 9, 38], [11, 9, 15, 32, 38], [12, 9, 12, 35, 38],
+        [13, 9, 11, 36, 38], [14, 9, 11, 36, 38], [15, 9, 11, 36, 38], [16, 9, 10, 37, 38], [17, 9, 10, 37, 38], [18, 9, 10, 37, 38], [19, 9, 9, 38, 38]],
+      hi: [[5, 15, 20], [6, 13, 14, 21, 27], [7, 28, 31], [8, 12, 13, 17, 22], [9, 23, 28], [10, 29, 32], [11, 11, 13]],
+      sh: [[6, 16, 20], [7, 21, 27], [8, 28, 32], [9, 14, 20], [10, 13, 18, 21, 27]]
+    },
+    face: function (b) {
+      var m = '#2a1e1a';
+      var px = [[20, 29], [21, 29], [22, 29], [25, 29], [26, 29], [27, 29], [19, 28], [28, 28]];
+      for (var i = 0; i < px.length; i++) b.set(px[i][0], px[i][1], m, 'head', 1);
+    },
+    post: function (b) {
+      // pen in the vest pocket
+      spans(b, [[42, 32, 33], [43, 32, 33]], '#4a2a18', 'fx', 1);
+      b.set(33, 40, '#e0303e', 'fx', 1); b.set(33, 41, '#fbfdff', 'fx', 1);
+    }
+  };
+
+  // タツミ — 竹林大学OB captain, bamboo-spear raider
+  C.tatsumi = {
+    skin: SKIN.mid, head: 'std', body: 'club', dw: -1,
+    club: { ramp: { L: '#8ad070', B: '#5aa84a', S: '#3a7a30', D: '#265a20' }, trim: '#fbfdff', trim2: '#c4d6c0' },
+    eye: 'sharp', eyeX: 14, eyeY: 21, iris: { I: '#3a2a1a', i: '#6a4a2a', P: '#1a0e08' },
+    brow: { col: '#1e1a1a', thick: 2 }, browAs: { normal: 'determined', happy: 'determined' }, blush: false,
+    mouths: {
+      normal: ['mmmmmm', 'mTTTfm', '.mmmm.'],
+      happy: ['mmmmmmmm', 'mTTTTTfm', '.mMttMm.', '..mmmm..'],
+      determined: ['mmmmmmmm', 'mTmTTmTm', 'mmmmmmmm'],
+      sad: ['.mmmm.', 'm....m']
+    },
+    hairPal: { h: '#5a5060', H: '#2e2830', d: '#201a22', D: '#161016' },
+    hair: {
+      curl: true,
+      shape: [[5, 15, 32], [6, 12, 35], [7, 10, 37], [8, 9, 38], [9, 9, 38], [10, 9, 38], [11, 9, 38], [12, 9, 38], [13, 9, 11, 36, 38],
+        [14, 9, 10, 37, 38], [15, 9, 10, 37, 38], [16, 9, 10, 37, 38], [17, 9, 9, 38, 38]]
+    },
+    acc: function (b) {
+      spans(b, [[9, 8, 39], [10, 8, 39], [11, 8, 39], [12, 8, 39]], function (x) { return x >= 33 ? '#d0d6e2' : '#fdfdf8'; }, 'acc');
+      spans(b, [[8, 3, 7], [9, 2, 7], [10, 3, 7], [11, 4, 7]], '#d0d6e2', 'acc');
+      // the single long bamboo-green dyed lock
+      maskLayer(b, {
+        shape: [[4, 22, 24], [5, 21, 25], [6, 21, 25], [7, 22, 25], [8, 22, 25], [13, 21, 25], [14, 22, 25], [15, 22, 25], [16, 23, 26], [17, 23, 26], [18, 23, 26],
+          [19, 24, 27], [20, 24, 27], [21, 24, 27], [22, 25, 27], [23, 25, 27], [24, 26, 27]],
+        hi: [[5, 22, 22], [6, 22, 22], [14, 23, 23], [15, 23, 23], [16, 24, 24], [17, 24, 24], [18, 24, 24], [19, 25, 25], [20, 25, 25]]
+      }, { h: '#c8f89a', H: '#6cc35a', d: '#3a8a30', D: '#246020' }, 'hair');
+    },
+    post: function (b) {
+      // bamboo-leaf emblem on the headband
+      pmap(b, 27, 9, ['...oo', '.oGGo', 'oGgo.', 'oo...'], { o: '#1e4a1a', G: '#5aa84a', g: '#9ad870' }, 'fx', 1);
+      pmap(b, 15, 9, ['oo...', 'oGGo.', '.ogGo', '...oo'], { o: '#1e4a1a', G: '#5aa84a', g: '#9ad870' }, 'fx', 1);
+    }
+  };
+
+  // オユキ — 湯けむり旅館組合 captain, young ryokan proprietress
+  C.oyuki = {
+    skin: SKIN.fair, head: 'slender', body: 'club', dw: -2,
+    club: { ramp: { L: '#b0608a', B: '#8a3a6a', S: '#5e2448', D: '#3e1630' }, trim: '#f2e3c2', trim2: '#c8b48e' },
+    eye: 'calm', eyeX: 14, eyeY: 20, iris: { I: '#6a2a3e', i: '#b0607a', P: '#2a0e18' },
+    eyeOverride: { normal: ['K.....', '.KKKKK', 'KKHPPW', '.WPIiW', '..SSS.', '......'] },
+    brow: { col: '#3a1e28', dy: 0 }, blush: true,
+    mouths: { normal: ['m..m', '.mm.'], determined: ['mmmm'] },
+    hairPal: { h: '#9a6a7a', H: '#4a2a36', d: '#321a24', D: '#221018' },
+    back: {
+      shape: [[0, 19, 28], [1, 17, 30], [2, 16, 31], [3, 16, 31], [4, 16, 31], [5, 17, 30]],
+      hi: [[1, 19, 22], [2, 18, 19]], sh: [[3, 22, 22], [4, 25, 25]]
+    },
+    hair: {
+      shape: [[5, 14, 33], [6, 12, 35], [7, 10, 37], [8, 9, 38], [9, 8, 39], [10, 8, 39], [11, 8, 39], [12, 8, 39], [13, 8, 22, 25, 39], [14, 8, 19, 28, 39],
+        [15, 8, 16, 31, 39], [16, 8, 13, 34, 39], [17, 8, 11, 36, 39], [18, 8, 10, 37, 39], [19, 8, 10, 37, 39], [20, 9, 10, 37, 38], [21, 9, 10, 37, 38],
+        [22, 9, 10, 37, 38], [23, 10, 10, 37, 37], [24, 10, 10, 37, 37]],
+      hi: [[7, 14, 18, 29, 32], [8, 12, 13, 33, 34], [11, 12, 14]],
+      sh: [[6, 23, 24], [7, 23, 24], [8, 23, 24], [9, 23, 24], [10, 23, 24], [11, 23, 24], [12, 23, 24]]
+    },
+    face: function (b) {
+      b.set(33, 27, '#5a2a2a', 'head', 1); // beauty mark
+    },
+    post: function (b) {
+      // kanzashi: gold pin through the bun, red blossom, dangling beads
+      var G = '#ffd84a', g = '#b88a20';
+      var pin = [[31, 6], [32, 5], [33, 4], [34, 3], [35, 2], [36, 1]];
+      for (var i = 0; i < pin.length; i++) { b.set(pin[i][0], pin[i][1], G, 'fx', 1); b.set(pin[i][0], pin[i][1] + 1, g, 'fx', 1); }
+      pmap(b, 28, 3, ['.o.', 'oRo', '.o.'], { o: '#e0303e', R: '#ffe08a' }, 'fx', 1);
+      spans(b, [[3, 37, 37], [4, 37, 37], [6, 37, 37]], '#c8a040', 'fx', 1);
+      b.set(37, 5, '#e0303e', 'fx', 1); b.set(37, 7, '#fbfdff', 'fx', 1);
+    }
+  };
+
+  // ゴンゾウ — 実り農協 captain, the walking rice bale
+  var SUN = { L: '#f4bc94', B: '#e0986a', S: '#b86a44', D: '#8a4a30' };
+  C.gonzo = {
+    skin: SUN, head: 'wide', body: 'club', dw: 5, neckW: 7,
+    club: { ramp: { L: '#e8964a', B: '#c8702a', S: '#8a4a18', D: '#6a3410' }, trim: '#6cc35a', trim2: '#3f8a3e' },
+    eye: 'small', eyeX: 12, eyeY: 21, iris: { I: '#3a2418', i: '#5a3a24', P: '#1e1008' },
+    brow: { col: '#2a1e1a', thick: 2 }, blush: false, mouthY: 31,
+    mouths: {
+      normal: ['mmmmmmmm', 'mTTTTTTm', '.mMttMm.', '..mmmm..'],
+      happy: ['mmmmmmmmmm', 'mTTTTTTTTm', 'mMMMttMMMm', '.mmmmmmmm.'],
+      determined: ['mmmmmmmm', 'mTmTTmTm', 'mmmmmmmm'],
+      sad: ['..mmmm..', '.m....m.', 'm......m']
+    },
+    hairPal: { h: '#5a5058', H: '#2a2228', d: '#1c161a', D: '#120e10' },
+    hair: { shape: [[8, 7, 10, 37, 40], [9, 6, 9, 38, 41], [10, 6, 9, 38, 41], [11, 6, 8, 39, 41], [12, 6, 8, 39, 41], [13, 6, 8, 39, 41], [14, 6, 7, 40, 41], [15, 6, 7, 40, 41]] },
+    preBack: function (b) {
+      // straw hat brim, pushed back behind the head
+      spans(b, [[1, 14, 33], [2, 9, 38], [3, 5, 42], [4, 3, 44], [5, 2, 45], [6, 1, 46], [7, 1, 46], [8, 2, 45], [9, 3, 44], [10, 5, 42], [11, 8, 39]], function (x, y) {
+        if (y >= 9 || x >= 40) return '#a87a28';
+        if ((x + y) % 3 === 0) return '#d8a840';
+        return '#f0d070';
+      }, 'hairB');
+    },
+    acc: function (b) {
+      spans(b, [[0, 16, 31], [1, 14, 33], [2, 13, 34], [3, 13, 34], [4, 13, 34], [5, 12, 35], [6, 12, 35]], function (x, y) {
+        if (y === 5 || y === 6) return x >= 30 ? '#8a2418' : '#c83a2a';
+        if (x >= 30) return '#b88a30';
+        return (x + y) % 3 === 0 ? '#d8a840' : '#f0d070';
+      }, 'acc');
+      // towel around the neck
+      spans(b, [[37, 11, 36], [38, 10, 37], [39, 10, 37], [40, 11, 18, 29, 36], [41, 12, 18, 29, 35], [42, 12, 18, 29, 35], [43, 12, 18, 29, 35], [44, 12, 18, 29, 35],
+        [45, 12, 18, 29, 35], [46, 12, 18, 29, 35], [47, 12, 18, 29, 35]], function (x, y) {
+        if (y === 44) return x >= 24 ? '#3a64a8' : '#5a8ad0';
+        if (y === 38 && (x + 1) % 3 === 0) return '#d4dae4';
+        return x >= 30 || (x >= 24 && y <= 39) ? '#d4dae4' : '#f8f8f4';
+      }, 'acc');
+    },
+    face: function (b) {
+      pmapSym(b, 9, 27, ['.RRRR.', 'RrRrRR', '.RRRR.'], { R: '#e8705a', r: '#f4a080' }, 'head', 1);
+      b.set(10, 23, SUN.D, 'head', 1); b.set(37, 23, SUN.D, 'head', 1);
+    }
+  };
+
+  // ミナト — washed-up ex-pro (transfer market)
+  C.minato = {
+    skin: SKIN.mid, head: 'std', body: 'stripes', dw: 0,
+    eye: 'calm', eyeX: 14, eyeY: 21, iris: { I: '#4a3a2a', i: '#7a6040', P: '#1e140c' },
+    eyeOverride: { normal: ['......', '.SSSS.', 'KKKKKK', '.KHPPW', '.WPIiW', '..SSS.'] },
+    brow: { col: '#2e221e', dy: 0 }, blush: false,
+    mouths: { normal: ['m....m', '.mmmm.'], determined: ['mmmmmm'] },
+    hairPal: { h: '#8a6a50', H: '#4a3628', d: '#32241a', D: '#221810' },
+    back: {
+      base: 'd',
+      shape: [[25, 37, 39], [26, 37, 40], [27, 38, 40], [28, 38, 41], [29, 38, 41], [30, 39, 41], [31, 39, 41], [32, 39, 40], [33, 39, 40]]
+    },
+    hair: {
+      shape: [[4, 16, 31], [5, 13, 34], [6, 11, 36], [7, 10, 37], [8, 9, 38], [9, 8, 39], [10, 8, 39], [11, 8, 39], [12, 8, 39], [13, 8, 39],
+        [14, 8, 18, 21, 26, 29, 39], [15, 8, 16, 22, 24, 31, 39], [16, 8, 14, 23, 23, 33, 39], [17, 8, 12, 35, 39], [18, 8, 11, 36, 39], [19, 8, 11, 36, 39],
+        [20, 8, 10, 37, 39], [21, 8, 10, 37, 39], [22, 8, 10, 37, 39], [23, 8, 10, 37, 38], [24, 9, 10, 37, 38], [25, 9, 10], [26, 9, 9], [3, 29, 31], [4, 32, 33]],
+      hi: [[6, 13, 16, 22, 25], [7, 12, 13, 26, 28], [8, 30, 32], [11, 11, 13]],
+      sh: [[9, 19, 19, 28, 28], [10, 18, 18, 29, 29], [11, 18, 18, 30, 30], [12, 17, 17, 31, 31]]
+    },
+    face: function (b) {
+      // tired eyes + stubble
+      var sk = SKIN.mid;
+      spans(b, [[27, 15, 18, 29, 32]], sk.S, 'head', 1);
+      for (var y = 29; y <= 37; y++) for (var x = 12; x <= 35; x++) {
+        if (b.part(x, y) !== Z.head || b.k[y * S + x]) continue;
+        var jaw = y >= 33 || x <= 15 || x >= 32 || (y >= 30 && x >= 19 && x <= 28 && y !== 31 && y !== 32);
+        if (jaw && ((x * 3 + y * 5) % 4 === 0)) b.set(x, y, '#8a6a58', 'head', 1);
+      }
+    }
+  };
+
+  // ソラ — airport ground-crew speedster (walk-in)
+  C.sora = {
+    skin: SKIN.std, head: 'std', body: 'hivis', dw: -2,
+    eye: 'big', eyeX: 14, eyeY: 20, iris: { I: '#c07a2a', i: '#f4b860', P: '#4a2a0e' },
+    brow: { col: '#5a3a20', dy: 0 }, blush: true,
+    mouths: { normal: ['mmmmmm', 'mTTTTm', '.mmmm.'] },
+    hairPal: { h: '#f4d09a', H: '#c08a50', d: '#8a5a30', D: '#5a3a20' }, hairLine: '#3a2414',
+    hair: {
+      shape: [[4, 16, 31], [5, 13, 34], [6, 11, 36], [7, 10, 37], [8, 9, 38], [9, 9, 38], [10, 8, 39], [11, 8, 39], [12, 8, 39], [13, 8, 39],
+        [14, 8, 30, 33, 39], [15, 8, 26, 34, 39], [16, 8, 11, 14, 22, 35, 38], [17, 8, 10, 16, 19, 36, 38], [18, 8, 10, 37, 38], [19, 9, 10, 37, 38], [20, 9, 9, 38, 38],
+],
+      hi: [[6, 14, 18], [7, 13, 14, 19, 24], [8, 25, 28], [12, 12, 16], [13, 17, 21]],
+      sh: [[14, 13, 13], [15, 14, 14, 27, 27]]
+    },
+    acc: function (b) {
+      // ear-defenders resting around the neck
+      var cup = ['..ooooo.', '.oYYYyyo', 'oYYKKKyo', 'oYKkkKyo', 'oYKkkKyo', 'oYYKKKyo', '.oYYYyyo', '..ooooo.'];
+      pmapSym(b, 10, 33, cup, { o: OUT, Y: '#ffd23a', y: '#d49a10', K: '#3a3a44', k: '#5a5a66' }, 'fx', 1);
+      spans(b, [[39, 18, 29]], OUT, 'fx', 1);
+      spans(b, [[40, 18, 29]], '#4a4a56', 'fx', 1);
+      spans(b, [[41, 18, 29]], OUT, 'fx', 1);
+    }
+  };
+
+  // ケンジ — retired salaryman, second try at football (walk-in)
+  C.kenji = {
+    skin: SKIN.std, head: 'square', body: 'shirt', dw: 0,
+    eye: 'calm', eyeX: 14, eyeY: 21, iris: { I: '#3a2a20', i: '#6a5040', P: '#1a100a' },
+    brow: { col: '#5a5a64', thick: 2 }, browAs: { normal: 'determined', happy: 'normal' }, blush: false,
+    mouths: { normal: ['mmmmmm'], determined: ['mmmmmm', 'mTTTTm', 'mmmmmm'] },
+    hairPal: { h: '#eeeef2', H: '#a8a8b0', d: '#7a7a84', D: '#5a5a64' }, hairLine: '#3a3440',
+    hair: {
+      shape: [[4, 16, 31], [5, 13, 34], [6, 11, 36], [7, 10, 37], [8, 9, 38], [9, 9, 38], [10, 9, 38], [11, 9, 38], [12, 9, 38], [13, 9, 15, 17, 38],
+        [14, 9, 13, 19, 38], [15, 9, 12, 23, 38], [16, 9, 11, 27, 37], [17, 9, 11, 31, 37], [18, 9, 10, 36, 38], [19, 9, 10, 37, 38], [20, 9, 10, 37, 38], [21, 9, 9, 38, 38]],
+      hi: [[6, 18, 24], [7, 25, 29], [8, 30, 33], [9, 13, 14]],
+      sh: [[5, 16, 16], [6, 16, 16], [7, 15, 15], [8, 15, 15], [9, 15, 15], [10, 15, 15], [11, 16, 16], [12, 16, 16]]
+    },
+    face: function (b) {
+      var sk = SKIN.std;
+      spans(b, [[13, 27, 30]], sk.S, 'head', 1);
+      b.set(12, 22, sk.D, 'head', 1); b.set(35, 22, sk.D, 'head', 1);
+      b.set(17, 30, sk.S, 'head', 1); b.set(30, 30, sk.S, 'head', 1);
+    },
+    acc: function (b) {
+      // half-rim glasses: heavy top bar, no lower rim
+      var F = '#2e2a36';
+      spans(b, [[19, 12, 21, 26, 35], [20, 12, 13, 20, 21, 26, 27, 34, 35], [21, 12, 12, 21, 21, 26, 26, 35, 35], [20, 22, 25], [20, 10, 11, 36, 37]], F, 'acc', 1);
+      spans(b, [[22, 12, 12, 35, 35]], '#8a8a98', 'acc', 1);
+      b.set(20, 20, '#e8f6ff', 'acc', 1); b.set(34, 20, '#e8f6ff', 'acc', 1);
+    }
+  };
+
+  // ポチ田 — would-be shopping-street mascot (walk-in)
+  C.pochi = {
+    skin: SKIN.std, head: 'std', body: 'hoodie', dw: -1,
+    eye: 'big', eyeX: 14, eyeY: 20, iris: { I: '#8a5a2a', i: '#c89050', P: '#3a200a' },
+    brow: { col: '#6a4020', dy: 0 }, blush: 'always', mouthY: 31,
+    mouths: {
+      normal: ['mmmmmm', 'mTTTTm', '.mttm.', '..mm..'],
+      happy: ['mmmmmmmm', 'mTTTTTTm', 'mMMttMMm', '.mmmmmm.'],
+      sad: ['.mmmm.', 'm....m']
+    },
+    hairPal: { h: '#c89060', H: '#8a5a34', d: '#6a4020', D: '#4a2a14' },
+    hair: { shape: [[12, 13, 34], [13, 13, 18, 21, 27, 30, 34], [14, 13, 16, 22, 25, 32, 34], [15, 13, 14, 33, 34]] },
+    acc: function (b) {
+      var C1 = { L: '#fffaf0', B: '#f0dcb4', S: '#c8a878' };
+      // fluffy dog hood framing the face
+      var hood = [[2, 16, 31], [3, 13, 34], [4, 11, 36], [5, 9, 38], [6, 8, 39], [7, 7, 40], [8, 7, 40], [9, 6, 41], [10, 6, 41], [11, 6, 41],
+        [12, 6, 12, 35, 41], [13, 6, 12, 35, 41], [14, 6, 12, 35, 41], [15, 6, 12, 35, 41], [16, 6, 11, 36, 41], [17, 6, 11, 36, 41], [18, 6, 11, 36, 41],
+        [19, 6, 11, 36, 41], [20, 6, 11, 36, 41], [21, 6, 11, 36, 41], [22, 6, 11, 36, 41], [23, 6, 11, 36, 41], [24, 6, 11, 36, 41], [25, 6, 11, 36, 41],
+        [26, 6, 11, 36, 41], [27, 6, 12, 35, 41], [28, 6, 12, 35, 41], [29, 6, 12, 35, 41], [30, 7, 13, 34, 40], [31, 7, 14, 33, 40], [32, 8, 15, 32, 39],
+        [33, 9, 16, 31, 38], [34, 10, 17, 30, 37], [35, 11, 19, 28, 36], [36, 13, 34]];
+      spans(b, hood, function (x, y) {
+        if (x >= 36 || (y >= 30 && x >= 30)) return C1.S;
+        if (y <= 5 && x <= 22) return C1.L;
+        return C1.B;
+      }, 'acc');
+      // floppy brown ears
+      var E = { B: '#8a5a34', S: '#6a4020', L: '#b07a4a' };
+      spans(b, [[5, 5, 9], [6, 3, 9], [7, 2, 8], [8, 1, 7], [9, 1, 6], [10, 1, 6], [11, 1, 6], [12, 1, 6], [13, 1, 6], [14, 1, 6], [15, 1, 6], [16, 1, 6],
+        [17, 1, 5], [18, 2, 5], [19, 2, 4]], function (x, y) { return x <= 2 ? E.S : (y <= 7 ? E.L : E.B); }, 'fx');
+      spans(b, [[5, 38, 42], [6, 38, 44], [7, 39, 45], [8, 40, 46], [9, 41, 46], [10, 41, 46], [11, 41, 46], [12, 41, 46], [13, 41, 46], [14, 41, 46],
+        [15, 41, 46], [16, 41, 46], [17, 42, 46], [18, 42, 45], [19, 43, 45]], function (x) { return x >= 45 ? E.D || E.S : E.B; }, 'fx');
+    },
+    post: function (b) {
+      // the hood's own sleepy dog face
+      spans(b, [[5, 19, 20, 27, 28]], OUT, 'fx', 1);
+      pmap(b, 22, 7, ['oooo', '.oo.'], { o: OUT }, 'fx', 1);
+      b.set(22, 7, '#5a4a5a', 'fx', 1);
+    }
+  };
+
   var IDS = ['otaki', 'nagisa', 'gen', 'morio', 'tsubame', 'kazuha', 'ponta', 'leo', 'haruki', 'tetsuyama', 'yukimaru', 'onigawara',
-    'kawataro', 'mask', 'mame', 'shizuku', 'daifuku', 'hikaru', 'ume', 'kotaro'];
+    'kawataro', 'mask', 'mame', 'shizuku', 'daifuku', 'hikaru', 'ume', 'kotaro',
+    'kaoru', 'tatsumi', 'oyuki', 'gonzo', 'minato', 'sora', 'kenji', 'pochi'];
 
   // ------------------------------------------------------------------ render
   function build(id, e) {
