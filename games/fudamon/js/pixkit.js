@@ -12,7 +12,7 @@
  */
 (function () {
   'use strict';
-  var W = 64, H = 64, N = W * H;
+  var W = 96, H = 96, N = W * H;
 
   // ------------------------------------------------------------------ ramps
   // Tone index: 0 = outline/darkest, 1 = shadow, 2 = base, 3 = light, 4 = highlight.
@@ -77,6 +77,8 @@
     this.part = new Int16Array(N).fill(-1);
     this.tone = new Int8Array(N).fill(-1);
     this.seq = new Uint16Array(N);
+    this.adj = new Int8Array(N);
+    this.setT = new Int8Array(N).fill(-1);
     this.parts = [];
     this.named = {};
     this.shadows = [];
@@ -88,7 +90,7 @@
   K._part = function (o, m) {
     var name = o.part || o.clip;
     if (name && this.named[name]) return this.named[name];
-    var p = { i: this.parts.length, mask: new Uint8Array(N), x0: 64, y0: 64, x1: -1, y1: -1, o: o, mat: m, name: name };
+    var p = { i: this.parts.length, mask: new Uint8Array(N), x0: W, y0: H, x1: -1, y1: -1, o: o, mat: m, name: name };
     this.parts.push(p);
     if (name) this.named[name] = p;
     return p;
@@ -97,8 +99,20 @@
   K._paint = function (cover, mat, o) {
     o = o || {};
     this.n++;
+    var j, e, cl;
     if (o.erase) {
-      for (var j = 0; j < cover.length; j++) { var e = cover[j]; this.mat[e] = 0; this.part[e] = -1; this.tone[e] = -1; }
+      for (j = 0; j < cover.length; j++) { e = cover[j]; this.mat[e] = 0; this.part[e] = -1; this.tone[e] = -1; }
+      return this;
+    }
+    // manual shading pass: adjust (adj) or set (set) the tone of pixels already painted
+    if (o.adj != null || o.set != null) {
+      cl = o.clip ? this.named[o.clip] : null;
+      var onlyMat = mat ? mid(mat) : 0;
+      for (j = 0; j < cover.length; j++) {
+        e = cover[j];
+        if (!this.mat[e] || (cl && this.part[e] !== cl.i) || (onlyMat && this.mat[e] !== onlyMat)) continue;
+        if (o.set != null) this.setT[e] = o.set; else this.adj[e] = Math.max(-3, Math.min(3, this.adj[e] + o.adj));
+      }
       return this;
     }
     var m = mid(mat), P = this._part(o, m);
@@ -107,7 +121,7 @@
     for (var i = 0; i < cover.length; i++) {
       var idx = cover[i];
       if (clip && this.part[idx] !== clip.i) continue;
-      var x = idx & 63, y = idx >> 6;
+      var x = idx % W, y = (idx / W) | 0;
       if (!clip || P === clip) {
         P.mask[idx] = 1;
         if (x < P.x0) P.x0 = x; if (x > P.x1) P.x1 = x; if (y < P.y0) P.y0 = y; if (y > P.y1) P.y1 = y;
@@ -137,9 +151,9 @@
     return this._paint(c, mat, o);
   };
   K.poly = function (pts, mat, o) {
-    var c = [], y0 = 64, y1 = 0, i;
+    var c = [], y0 = H, y1 = 0, i;
     for (i = 0; i < pts.length; i++) { y0 = Math.min(y0, pts[i][1]); y1 = Math.max(y1, pts[i][1]); }
-    for (var y = Math.max(0, Math.floor(y0)); y <= Math.min(63, Math.ceil(y1)); y++) {
+    for (var y = Math.max(0, Math.floor(y0)); y <= Math.min(H - 1, Math.ceil(y1)); y++) {
       var sy = y + 0.5, xs = [];
       for (i = 0; i < pts.length; i++) {
         var a = pts[i], b = pts[(i + 1) % pts.length];
@@ -147,7 +161,7 @@
       }
       xs.sort(function (p, q) { return p - q; });
       for (i = 0; i + 1 < xs.length; i += 2)
-        for (var x = Math.max(0, Math.ceil(xs[i] - 0.5)); x <= Math.min(63, Math.floor(xs[i + 1] - 0.5)); x++) c.push(y * W + x);
+        for (var x = Math.max(0, Math.ceil(xs[i] - 0.5)); x <= Math.min(W - 1, Math.floor(xs[i + 1] - 0.5)); x++) c.push(y * W + x);
     }
     return this._paint(c, mat, o);
   };
@@ -225,63 +239,118 @@
   };
 
   // ---------------- faces
-  // Eye: (x,y) = top-left of the eye box. Creature faces LEFT, so the pupil sits on the left.
-  // o: { w:4, h:5, iris:'gold', mood:'cool'|'cute'|'fierce'|'happy'|'closed'|'glow', far:false }
+  // Eye (ink, not shaded). (x,y) = top-left of the eye box, w x h (near eye ~9x10 on C monsters).
+  // Creature faces LEFT, so the iris sits toward the front (left) of the white.
+  // o: { w, h, iris:'gold', mood:'cool'|'fierce'|'open'|'sad'|'happy'|'closed'|'glow',
+  //      look: iris x-offset (px, -=left), far:false, brow:true|false, browMat:'black', browTone:0, lash:true }
   K.eye = function (x, y, o) {
     o = o || {};
-    var w = o.w || 4, h = o.h || 5, ir = o.iris || 'gold', mood = o.mood || 'cool', ink = 'black';
+    var w = o.w || 8, h = o.h || 9, ir = o.iris || 'gold', mood = o.mood || 'cool', ink = o.ink || 'black';
     var i, j;
     if (mood === 'happy' || mood === 'closed') {
-      // ^ shaped closed eye
       for (i = 0; i < w; i++) {
-        var yy = mood === 'happy' ? (i === 0 || i === w - 1 ? 1 : 0) : (i === 0 || i === w - 1 ? 0 : 1);
-        this.px(x + i, y + yy + Math.floor(h / 2) - 1, ink, 0);
+        var u = (i + 0.5) / w * 2 - 1, yy = Math.round((mood === 'happy' ? u * u : 1 - u * u) * (h * 0.25));
+        var by = y + Math.round(h * 0.4) + yy;
+        this.px(x + i, by, ink, 0); this.px(x + i, by + 1, ink, 0);
       }
       return this;
+    }
+    var rx = w / 2, ry = h / 2;
+    function lidY(i) {
+      var f = (i + 0.5) / w; // 0 = front (left), 1 = back
+      if (mood === 'fierce') return h * (0.46 - 0.36 * f);
+      if (mood === 'cool') return h * (0.1 + 0.06 * f);
+      if (mood === 'sad') return h * (0.1 + 0.3 * f);
+      return 0;
+    }
+    function inE(i, j) {
+      if (i < 0 || j < 0 || i >= w || j >= h) return false;
+      var dx = Math.abs(i + 0.5 - rx) / rx, dy = Math.abs(j + 0.5 - ry) / ry;
+      if (Math.pow(dx, 2.4) + Math.pow(dy, 2.4) > 1.02) return false;
+      return j >= lidY(i) - 0.001;
     }
     if (mood === 'glow') {
       for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
-        var edge = (j === 0 || j === h - 1) && (i === 0 || i === w - 1);
-        if (edge) continue;
-        this.px(x + i, y + j, ir, (j === 0 || i === w - 1) ? 3 : 4);
+        if (!inE(i, j)) continue;
+        var edge = !inE(i - 1, j) || !inE(i + 1, j) || !inE(i, j - 1) || !inE(i, j + 1);
+        this.px(x + i, y + j, ir, edge ? 3 : 4);
       }
       return this;
     }
-    // iris body
-    for (j = 1; j < h; j++) for (i = 0; i < w; i++) {
-      if (j === h - 1 && (i === 0 || i === w - 1)) continue;
-      var t = j <= 1 ? 1 : j < h - 2 ? 2 : 3;
-      if (i === 0 && j < h - 1) t = 0;          // pupil side (looking left)
-      if (o.white && i === w - 1 && j < h - 1) { this.px(x + i, y + j, 'white', j === 1 ? 2 : 3); continue; }
-      this.px(x + i, y + j, ir, t);
+    var icx = (o.look != null ? rx + o.look : rx - w * 0.12), icy = ry + (o.icy != null ? o.icy : h * 0.02);
+    var irx = Math.max(1.2, w * 0.34), iry = Math.max(1.5, h * 0.44);
+    var thick = w >= 7 && h >= 7;
+    for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
+      if (!inE(i, j)) continue;
+      var X = x + i, Y = y + j;
+      var top = !inE(i, j - 1), topEdge2 = thick && !inE(i, j - 2);
+      var side = !inE(i - 1, j) || !inE(i + 1, j), bottom = !inE(i, j + 1);
+      if (top || topEdge2) { this.px(X, Y, ink, 0); continue; }
+      if (side && (i > w / 2 || j < h * 0.6)) { this.px(X, Y, ink, 0); continue; }
+      if (bottom && i > w * 0.6) { this.px(X, Y, ink, 1); continue; }
+      var dx = (i + 0.5 - icx) / irx, dy = (j + 0.5 - icy) / iry, d = dx * dx + dy * dy;
+      if (d <= 1) {
+        var pd = (dx * dx) / 0.2 + (dy * dy) / 0.3;
+        var rel = (j + 0.5 - (icy - iry)) / (2 * iry);
+        var t = pd <= 1 ? 0 : rel < 0.38 ? 1 : rel < 0.7 ? 2 : 3;
+        this.px(X, Y, ir, t);
+      } else {
+        this.px(X, Y, 'white', (inE(i, j - 2) && inE(i, j - 3)) ? 3 : 2);
+      }
     }
-    // lids
-    for (i = 0; i < w; i++) this.px(x + i, y, ink, 0);
-    if (mood === 'cute') { this.px(x - 1, y + 1, ink, 0); this.px(x + w, y + 1, ink, 0); }
-    if (mood === 'cool' || mood === 'fierce') { this.px(x + w, y, ink, 0); this.px(x + w, y + 1, ink, 0); if (!o.far) this.px(x + w + 1, y - 1, ink, 0); }
-    if (mood === 'fierce') { for (i = 0; i < Math.ceil(w / 2); i++) this.px(x + i, y + 1, ink, 0); this.px(x - 1, y + 1, ink, 0); }
-    if (o.lower !== false && !o.far) this.px(x + w - 1, y + h - 1, ink, 1);
-    // highlights: tall sharp glint + small secondary
-    var hy = mood === 'fierce' ? y + 2 : y + 1;
-    this.px(x + 1, hy, 'white', 4);
-    if (h >= 5 && w >= 3) this.px(x + 1, hy + 1, 'white', 4);
-    if (h >= 6 && w >= 5) this.px(x + 2, hy, 'white', 4);
-    if (w >= 4 && h >= 4) this.px(x + w - 2, y + h - 2, ir, 4);
+    // highlights: crisp 2x2 glint upper-left of the pupil + a small one lower-right
+    var gx = Math.round(x + icx - irx * 0.35 - 1), gy = Math.round(y + icy - iry * 0.55);
+    if (!inE(gx - x, gy - y)) gy++;
+    this.px(gx, gy, 'white', 4);
+    if (thick) { this.px(gx + 1, gy, 'white', 4); this.px(gx, gy + 1, 'white', 4); this.px(gx + 1, gy + 1, 'white', 4); }
+    else this.px(gx, gy + 1, 'white', 4);
+    if (w >= 6) this.px(Math.round(x + icx + irx * 0.45), Math.round(y + icy + iry * 0.45), 'white', 4);
+    // lash wing at the back corner
+    if (o.lash !== false && !o.far && mood !== 'sad') {
+      var ly = Math.round(y + lidY(w - 1));
+      this.px(x + w, ly, ink, 0); this.px(x + w + 1, ly - 1, ink, 0);
+      if (thick) this.px(x + w, ly + 1, ink, 0);
+    }
+    // brow
+    if (o.brow) {
+      var bm = o.browMat || ink, bt = o.browTone != null ? o.browTone : 0;
+      var fr = mood === 'fierce', l0 = Math.round(y + lidY(0)) - (fr ? 2 : 3), l1 = y - (fr ? 3 : 2) - (mood === 'sad' ? -1 : 0);
+      if (mood === 'sad') { var tt = l0; l0 = l1 + 1; l1 = tt; }
+      var bx0 = x + (o.far ? 0 : 1), bx1 = x + w - (o.far ? 2 : 0);
+      var bl0 = l0 + (bx0 - x) * (l1 - l0) / Math.max(1, w);
+      this.line(bx0, Math.round(bl0), bx1, l1, bm, bt); this.line(bx0 + 1, Math.round(bl0) - 1, bx1 - 1, l1 - 1, bm, bt);
+    }
     return this;
   };
-  // Mouth: (x,y) top-left, w x h. o: {teeth:'top'|'fangs'|'row'|'none', tongue:true}
+  // Mouth. Either k.mouth(x, y, w, h, o) (box) or k.mouth([[x,y],...], o) (polygon).
+  // Fills with the dark mouth ramp, top edge darkest, optional tongue. Teeth: add with k.tooth().
   K.mouth = function (x, y, w, h, o) {
-    o = o || {};
-    var i, j, teeth = o.teeth || 'fangs';
-    for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
-      var corner = (j === h - 1) && (i === 0 || i === w - 1);
-      if (corner) continue;
-      this.px(x + i, y + j, 'mouth', j === 0 ? 0 : 1);
+    var pts;
+    if (Array.isArray(x)) { pts = x; o = y || {}; }
+    else { o = o || {}; pts = [[x, y], [x + w, y], [x + w - 1, y + h], [x + 1, y + h]]; }
+    this.poly(pts, 'mouth', { tone: 1, part: '_mouth' + this.n, outline: 'none', noseam: true });
+    var P = this.parts[this.parts.length - 1];
+    // darker top rows, tongue at the bottom
+    for (var yy = P.y0; yy <= P.y1; yy++) for (var xx = P.x0; xx <= P.x1; xx++) {
+      var id = yy * W + xx;
+      if (this.part[id] !== P.i) continue;
+      if (yy <= P.y0 + 1) this.tone[id] = 0;
+      else if (o.tongue !== false && yy >= P.y1 - 1 && xx > P.x0 + 1 && xx < P.x1 - 1) this.tone[id] = yy === P.y1 - 1 ? 3 : 2;
     }
-    if (o.tongue !== false && h >= 3) for (i = 1; i < w - 1; i++) this.px(x + i, y + h - 1, 'mouth', 3);
-    if (teeth === 'row') for (i = 0; i < w; i++) this.px(x + i, y, 'white', i % 2 ? 3 : 4);
-    if (teeth === 'top') for (i = 1; i < w - 1; i++) this.px(x + i, y, 'white', 4);
-    if (teeth === 'fangs') { this.px(x + (o.flip ? w - 2 : 1), y, 'white', 4); this.px(x + (o.flip ? w - 2 : 1), y + 1, 'white', 3); if (w >= 5) { this.px(x + (o.flip ? 1 : w - 2), y, 'white', 4); } }
+    var teeth = o.teeth;
+    if (teeth === 'fangs') { this.tooth(P.x0 + 2, P.y0, P.x0 + 2.5, P.y0 + 3, 2.5); if (P.x1 - P.x0 > 6) this.tooth(P.x1 - 2, P.y0, P.x1 - 2.5, P.y0 + 3, 2.5); }
+    else if (teeth === 'row') for (var tx = P.x0 + 1; tx <= P.x1 - 2; tx += 3) this.tooth(tx + 1, P.y0, tx + 1, P.y0 + 2, 2.4);
+    else if (teeth === 'top') this.rect(P.x0 + 1, P.y0, P.x1 - P.x0 - 1, 2, 'white', { tone: 4, outline: 'none', noseam: true });
+    return this;
+  };
+  // Tooth / fang: a crisp white triangle (base centre x0,y0 -> tip x1,y1, base width w). Lit left, shaded right.
+  K.tooth = function (x0, y0, x1, y1, w, mat) {
+    this.spike(x0, y0, x1, y1, w, mat || 'white', { tone: 4, part: '_tooth' + this.n, outline: 'none', noseam: true, noline: true });
+    var P = this.parts[this.parts.length - 1];
+    for (var yy = P.y0; yy <= P.y1; yy++) for (var xx = P.x1; xx >= P.x0; xx--) {
+      var id = yy * W + xx;
+      if (this.part[id] === P.i) { if (xx > P.x0) this.tone[id] = 3; break; }
+    }
     return this;
   };
   // soft ground shadow
@@ -295,7 +364,7 @@
   var DT = new Float32Array(N);
   function distField(p) {
     // chamfer distance inside the part's full mask (distance to nearest outside pixel), restricted to bbox+1
-    var x0 = Math.max(0, p.x0 - 1), y0 = Math.max(0, p.y0 - 1), x1 = Math.min(63, p.x1 + 1), y1 = Math.min(63, p.y1 + 1);
+    var x0 = Math.max(0, p.x0 - 1), y0 = Math.max(0, p.y0 - 1), x1 = Math.min(W - 1, p.x1 + 1), y1 = Math.min(H - 1, p.y1 + 1);
     var m = p.mask, x, y, i, v, BIG = 1e4, D = 1.4142;
     for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) { i = y * W + x; DT[i] = m[i] ? BIG : 0; }
     // pixels on the canvas border count as edge
@@ -303,14 +372,14 @@
       i = y * W + x; if (!DT[i]) continue;
       v = DT[i];
       v = Math.min(v, (x > 0 ? DT[i - 1] : 0) + 1, (y > 0 ? DT[i - W] : 0) + 1,
-        (x > 0 && y > 0 ? DT[i - W - 1] : 0) + D, (x < 63 && y > 0 ? DT[i - W + 1] : 0) + D);
+        (x > 0 && y > 0 ? DT[i - W - 1] : 0) + D, (x < W - 1 && y > 0 ? DT[i - W + 1] : 0) + D);
       DT[i] = v;
     }
     for (y = y1; y >= y0; y--) for (x = x1; x >= x0; x--) {
       i = y * W + x; if (!DT[i]) continue;
       v = DT[i];
-      v = Math.min(v, (x < 63 ? DT[i + 1] : 0) + 1, (y < 63 ? DT[i + W] : 0) + 1,
-        (x < 63 && y < 63 ? DT[i + W + 1] : 0) + D, (x > 0 && y < 63 ? DT[i + W - 1] : 0) + D);
+      v = Math.min(v, (x < W - 1 ? DT[i + 1] : 0) + 1, (y < H - 1 ? DT[i + W] : 0) + 1,
+        (x < W - 1 && y < H - 1 ? DT[i + W + 1] : 0) + D, (x > 0 && y < H - 1 ? DT[i + W - 1] : 0) + D);
       DT[i] = v;
     }
     var mx = 0, hmap = new Float32Array((x1 - x0 + 1) * (y1 - y0 + 1));
@@ -334,6 +403,35 @@
     return p.h[y * p.bw + x];
   }
 
+  // DQM-style cel shading: clean light and shadow crescents from an upper-left light (no pillow shading)
+  function celPrep(p) {
+    var md = p.maxd;
+    p.cs = Math.max(1, Math.min(8, Math.round(md * (p.o.shadow || 0.55))));   // shadow crescent depth
+    p.cl = Math.max(1, Math.min(6, Math.round(md * (p.o.lit || 0.4))));      // light band depth
+    // highlight spot centre (upper-left of the part's mass)
+    var sx = 0, sy = 0, n = 0, m = p.mask;
+    for (var y = p.y0; y <= p.y1; y++) for (var x = p.x0; x <= p.x1; x++) if (m[y * W + x]) { sx += x; sy += y; n++; }
+    sx /= n || 1; sy /= n || 1;
+    p.hx = sx - (sx - p.x0) * 0.42; p.hy = sy - (sy - p.y0) * 0.5;
+    p.hr = md * 0.3;
+  }
+  function inM(p, x, y) {
+    x = Math.round(x); y = Math.round(y);
+    if (x < 0 || y < 0 || x >= W || y >= H) return false;
+    return !!p.mask[y * W + x];
+  }
+  function celTone(p, x, y) {
+    var s = p.cs, l = p.cl, t = 2;
+    if (!inM(p, x + s * 0.55, y + s) || !inM(p, x + s * 0.8, y + s * 0.45)) t = 1;
+    else if (!inM(p, x - l * 0.6, y - l) || !inM(p, x - l, y - l * 0.35)) t = 3;
+    if (p.o.hi !== false && p.maxd >= 5 && t === 3) {
+      var dx = (x + 0.5 - p.hx) / (p.hr * 1.3), dy = (y + 0.5 - p.hy) / p.hr;
+      if (dx * dx + dy * dy <= 1) t = 4;
+    }
+    if (p.o.light) t = Math.max(1, Math.min(4, t + (p.o.light > 0 ? 1 : -1) * (Math.abs(p.o.light) >= 0.2 ? 1 : 0)));
+    return t;
+  }
+
   Kit.prototype.finish = function () {
     var mat = this.mat, part = this.part, tone = this.tone, parts = this.parts, seq = this.seq;
     var i, x, y, p, t;
@@ -342,17 +440,19 @@
     for (var k = 0; k < parts.length; k++) {
       p = parts[k];
       if (!used[k] || p.x1 < 0) continue;
-      var sh = p.o.shade || 'auto';
-      if (sh === 'auto' || sh === 'glow') distField(p);
+      var sh = p.o.shade || 'cel';
+      if (sh === 'auto' || sh === 'dome' || sh === 'glow' || sh === 'cel') distField(p);
+      if (sh === 'cel') celPrep(p);
     }
     var out = new Int8Array(N).fill(-1); // final tone per pixel
     for (i = 0; i < N; i++) {
       if (!mat[i]) continue;
       if (tone[i] >= 0) { out[i] = tone[i]; continue; }
       p = parts[part[i]];
-      var o = p.o, mode = o.shade || 'auto';
-      x = i & 63; y = i >> 6;
+      var o = p.o, mode = o.shade || 'cel';
+      x = i % W; y = (i / W) | 0;
       if (mode === 'flat' || mode === 'none' || !p.h) { t = o.flatTone != null ? o.flatTone : 2; }
+      else if (mode === 'cel') { t = celTone(p, x, y); }
       else if (mode === 'glow') {
         var dn = p.dist[(y - p.by) * p.bw + (x - p.bx)] / Math.max(1.5, p.maxd);
         t = dn > 0.62 ? 4 : dn > 0.34 ? 3 : dn > 0.12 ? 2 : 1;
@@ -371,6 +471,24 @@
       if (o.shift) t = Math.max(1, Math.min(4, t + o.shift));
       out[i] = t;
     }
+    // orphan cleanup: a lone auto-shaded pixel surrounded by one other tone joins it
+    var fix = [];
+    for (i = 0; i < N; i++) {
+      if (!mat[i] || tone[i] >= 0) continue;
+      x = i % W; y = (i / W) | 0;
+      if (x < 1 || y < 1 || x > W - 2 || y > H - 2) continue;
+      var a1 = i - 1, a2 = i + 1, a3 = i - W, a4 = i + W, pi = part[i];
+      if (part[a1] !== pi || part[a2] !== pi || part[a3] !== pi || part[a4] !== pi) continue;
+      var t1 = out[a1];
+      if (t1 !== out[i] && out[a2] === t1 && out[a3] === t1 && out[a4] === t1 && tone[a1] < 0) fix.push(i, t1);
+    }
+    for (i = 0; i < fix.length; i += 2) out[fix[i]] = fix[i + 1];
+    // manual shading passes
+    for (i = 0; i < N; i++) {
+      if (!mat[i] || tone[i] >= 0) continue;
+      if (this.setT[i] >= 0) out[i] = this.setT[i];
+      else if (this.adj[i]) out[i] = Math.max(1, Math.min(4, out[i] + this.adj[i]));
+    }
     // seams: a pixel whose neighbour belongs to a part drawn later (in front) gets darkened
     var seamT = new Int8Array(N).fill(-1);
     var NB = [-1, 1, -W, W];
@@ -378,9 +496,9 @@
       if (!mat[i] || tone[i] >= 0) continue;
       p = parts[part[i]];
       if (p.o.noline) continue;
-      x = i & 63; y = i >> 6;
+      x = i % W; y = (i / W) | 0;
       for (var n = 0; n < 4; n++) {
-        if ((n === 0 && x === 0) || (n === 1 && x === 63) || (n === 2 && y === 0) || (n === 3 && y === 63)) continue;
+        if ((n === 0 && x === 0) || (n === 1 && x === W - 1) || (n === 2 && y === 0) || (n === 3 && y === H - 1)) continue;
         var j = i + NB[n];
         if (!mat[j] || part[j] === part[i] || seq[j] <= seq[i]) continue;
         var q = parts[part[j]];
@@ -411,7 +529,7 @@
       p = parts[k];
       if (!p.o.halo || !used[k]) continue;
       var hr = p.o.haloR || 2, hc = RL[p.mat].c[3], ha = typeof p.o.halo === 'number' ? p.o.halo : 0.35;
-      for (y = Math.max(0, p.y0 - hr - 1); y <= Math.min(63, p.y1 + hr + 1); y++) for (x = Math.max(0, p.x0 - hr - 1); x <= Math.min(63, p.x1 + hr + 1); x++) {
+      for (y = Math.max(0, p.y0 - hr - 1); y <= Math.min(H - 1, p.y1 + hr + 1); y++) for (x = Math.max(0, p.x0 - hr - 1); x <= Math.min(W - 1, p.x1 + hr + 1); x++) {
         i = y * W + x;
         if (mat[i]) continue;
         var best = 99;

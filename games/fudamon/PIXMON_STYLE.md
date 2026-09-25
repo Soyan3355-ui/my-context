@@ -1,6 +1,6 @@
 # 封札モンスターズ: monster pixel-art style guide
 
-Read this first. Each sprite is 64×64. It is drawn in code with `PIXKIT` (`js/pixkit.js`), and the kit's post-process makes all 54 species look like one set.
+Read this first. Each sprite is **96×96**. It is drawn in code with `PIXKIT` (`js/pixkit.js`), and the kit's post-process makes all 54 species look like one set.
 The reference sprites are in `js/pixmon_1.js` (IDs 1, 4, 8, 12, 17 and 22). Open that file next to this one.
 
 ---
@@ -33,20 +33,20 @@ Client image: `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d
 
 | Rule | Value |
 |---|---|
-| Canvas | 64×64, transparent background |
-| Facing | **LEFT** (the head is on the left side of the canvas) |
-| Feet | Resting on y ≈ 57–60 |
-| Ground shadow | `k.shadow(cx, 59.5–60.5, rx, 1.6–2.2)`. Every monster needs one; floaters get a smaller one. |
+| Canvas | 96×96, transparent background (`PIXKIT.W`/`PIXKIT.H`) |
+| Facing | **LEFT**, in 3/4 view (the head is on the left side of the canvas) |
+| Feet | Resting on y ≈ 86–90 |
+| Ground shadow | `k.shadow(cx, 89.5–90.5, rx, 2–3)`. Every monster needs one; floaters get a smaller one. |
 | Margins | Keep 1px free at the canvas edges so the outline fits |
 
 **Height by rarity** (top of the silhouette to the feet; ignore glow and sparkles):
 
 | Rarity | Height | Feel |
 |---|---|---|
-| C | 36–44px | A compact buddy: head ≈ 45–50% of its height |
-| R | 44–52px | Sturdier, with one extra ornament |
-| SR | 52–60px | Majestic: a big silhouette, 2–3 accessories, some glow |
-| UR | ~62px (fills the canvas) | Legendary: crown, aura or halo, the richest detail |
+| C | 54–64px | A compact buddy: head ≈ 45–50% of its height |
+| R | 64–76px | Sturdier, with one extra ornament |
+| SR | 76–88px | Majestic: a big silhouette, 2–3 accessories, some glow |
+| UR | up to ~94px | Legendary: crown, aura or halo, the richest detail |
 
 **3/4 view facing left.** Show both eyes:
 - The **near eye** is bigger and sits nearer the centre of the head.
@@ -60,6 +60,29 @@ Client image: `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d
 
 ---
 
+## 3b. Face rules (the top priority, because DQM characters read through the face)
+
+Client feedback on the first pass was that the faces looked squashed. These rules fix that.
+
+- **The head is big**, roughly 35–50% of the silhouette's height on C and R monsters. It is drawn in **3/4 view**, not strict profile, so **both eyes show**:
+  - The near eye is big, about 9–10 × 10–11 px on a C monster, and sits toward the centre of the head.
+  - The far eye is narrow (`w 5–6`, `far:true`) and sits near the front edge of the face.
+- **Eyes** use `k.eye`, which draws a heavy 2px top lid, white sclera, a coloured iris tucked under the lid (never floating in white), a dark pupil, a crisp 2×2 glint and a small secondary glint.
+  - Add `brow:true` (in a dark tone of the head's ramp) for expression.
+  - Don't put ink all the way round the eye, or it reads as glasses.
+  - Keep brows short and separate; never join them across the nose.
+- **Snouts and muzzles need structure:**
+  - A separate `part` for the snout (a tube or poly) so a seam defines where it meets the head.
+  - A distinct **nose tip**: a small black or dark ellipse with a 1px glint, or a nose bulb on dragons.
+  - A clear **mouth line** or open mouth made with `k.mouth(polygon)`.
+  - Upper and lower jaws are separate parts on big-jawed beasts, with the mouth drawn between them.
+- **Teeth are individual shapes.** Draw each one with `k.tooth()` (a white triangle, lit left, shaded right) and leave gaps between them. No white bars.
+- **Whiskers, tendrils and the like grow from an anatomical anchor** (the lip, the nose, the brow), never from mid-air.
+- **Expression.** Give most monsters a grin, fang or smirk. Use a lopsided mouth for cheekiness and `mood:'fierce'` with a brow ridge for dragons and oni.
+- **Check at 6×** that the face reads as eye, brow, nose and mouth, not as blobs.
+
+---
+
 ## 4. The kit API (`k`)
 
 Register a monster like this. The key is the monster's numeric `id` from `data.js`.
@@ -67,12 +90,16 @@ Register a monster like this. The key is the monster's numeric `id` from `data.j
 ```js
 (function () {
   var P = window.PIXMON = window.PIXMON || {};
-  P[23] = function (k) {           // draw back-to-front
-    k.shadow(32, 60, 14, 2);
-    k.ellipse(34, 48, 11, 9, 'thunder', { part: 'body' });
-    k.ellipse(24, 36, 11, 10, 'thunder', { part: 'head' });
-    k.eye(20, 32, { w: 5, h: 6, iris: 'water', mood: 'cool', white: true });
-    k.mouth(12, 41, 6, 3, { teeth: 'fangs' });
+  P[23] = function (k) {           // draw back to front
+    k.shadow(50, 89.5, 22, 2.6);
+    k.ellipse(56, 74, 16, 12, 'thunder', { part: 'body' });
+    k.ellipse(38, 58, 17, 15, 'thunder', { part: 'head' });
+    k.tube([[32, 62, 5], [21, 64, 3]], 'thunder', { part: 'snout' });
+    k.ellipse(18.5, 63, 2.6, 2.2, 'black', { part: 'nose', hi: false });
+    k.mouth([[21, 67], [35, 65], [33, 71], [25, 71]], {});
+    k.tooth(25, 67, 25.3, 69.5, 2.6);
+    k.eye(35, 46, { w: 10, h: 11, iris: 'water', mood: 'cool', brow: true, browMat: 'thunder' });
+    k.eye(23, 48, { w: 6, h: 10, iris: 'water', far: true });
   };
 })();
 ```
@@ -124,23 +151,37 @@ Every shape takes a material name and an optional options object `o`.
 
 ### Faces
 
-**`k.eye(x, y, {w, h, iris, mood, far, white, lower})`** takes (x, y) as the top-left of the eye box.
+**`k.eye(x, y, {w, h, iris, mood, far, brow, browMat, browTone, look, icy, lash})`** takes (x, y) as the top-left of the eye box.
 
-Size: C monsters use `w 5, h 6` for the near eye and `w 3, h 5, far: true` for the far eye. Big beasts use `5×5` or `6×5`.
+Size: C near eye `w 9–10, h 10–11`; far eye `w 5–6, h 9–10, far:true`. Big dragons use `10×8–9`.
 
 | Mood | Look | When to use |
 |---|---|---|
-| `cool` (default) | Flat heavy upper lid plus a small outer wing, with a sharp 2px vertical glint | Confident, kakko-kawaii |
-| `fierce` | Lid lowered at the front: angry brow | Dragons, oni, bosses |
-| `cute` | Rounded lids | Only for the gentlest species |
-| `happy` / `closed` | `^` or `-` line | Sleepy or smug monsters |
-| `glow` | Solid light eye (ghosts, void faces). Put it on a `black` flat part and add a white px glint. | Ghosts and void faces |
+| `cool` (default) | Slightly lowered, heavy lid | Confident, kakko-kawaii |
+| `fierce` | Lid slanted down at the front | Dragons, oni, bosses |
+| `open` | Round and wide | Surprised or friendly |
+| `sad` | Lid slanted down at the back | Worried or pitiful |
+| `happy` / `closed` | `^` / `-` arc | Smug or sleepy |
+| `glow` | Solid light eye | Ghosts and voids. Better still, draw glowing eyes as shapes with `shade:'glow', halo`, as カゲボウ does. |
 
-- `white: true` adds a sclera column at the back of the eye. Use it when the iris colour is close to the skin colour (for example a gold iris on orange fur).
-- Pick an iris colour that **contrasts** with the face: gold on blue or black, violet on white, green on brown, and so on.
+- `look` shifts the iris horizontally (negative = further left).
+- `icy` shifts it vertically.
+- Pick an iris colour that **contrasts** with the face.
 
-**`k.mouth(x, y, w, h, {teeth, tongue})`** draws a dark mouth with a tongue. `teeth` is `'fangs'` (default), `'row'` (a full toothy grin), `'top'` or `'none'`.
-DQM-style personality lives here: give most monsters an open grin or a fang. For a tiny mouth, use `k.line` plus one or two white `px` for buck teeth or a fang (see ホシウサ, 22).
+**`k.mouth([[x,y],…], {tongue})`** draws a polygon mouth (or `k.mouth(x, y, w, h, o)` for a box). It has a darker top edge and a tongue at the bottom, with teeth `'fangs'`, `'row'` or `'top'` as quick presets. For quality, place teeth yourself with **`k.tooth(x0, y0, x1, y1, w)`**: base centre, then tip, then width. Examples: upper teeth point down, lower fangs point up.
+
+### Manual shading passes (DQM-style hand-placed clusters)
+
+Any shape with `adj` or `set` doesn't paint colour. It adjusts the tone of pixels that are already painted, optionally only inside `clip` or only for a given material:
+
+```js
+k.tube([[58,64,1],[60,76,1],[58,86,1]], null, { adj: -1, clip: 'cloak' });   // fold groove
+k.tube([[56,64,.6],[58,76,.6]],        null, { adj: +1, clip: 'cloak' });   // lit edge of the fold
+k.rect(30, y, 30, 1, 'fire', { adj: -2, clip: 'body' });                    // belly plate lines (fire pixels only)
+k.poly([...], null, { set: 4, clip: 'horn' });                               // a crisp crystal facet
+```
+
+Use these on key forms (face, chest, limbs, cloth folds, facets) so the shapes read as clear planes.
 
 ### Helpers
 
@@ -184,7 +225,8 @@ These match the overworld palette: warm, indigo-tinted darks and no pure black. 
 
 ## 6. What the kit does automatically (don't fight it)
 
-- **Cel shading.** Each part is treated as a dome and lit from the **upper-left**, giving 3–4 tones. Big parts get soft round forms; thin tubes get crisp 2-tone rods.
+- **Cel shading (default `shade:'cel'`).** Each part gets a clean **shadow crescent** on its lower right, a **light band** on its upper left and a base tone in between. Parts thick enough (`maxd ≥ 5`) also get one highlight cluster near the upper left, which `hi:false` turns off. There is no pillow shading. Tune the depths with `shadow: 0.3–0.8` and `lit: 0.2–0.6`. `shade:'dome'` keeps the older smooth dome shading.
+- **Orphan cleanup.** A lone shaded pixel surrounded by a single other tone is merged into it, so there are no stray pixels.
 - **Seams.** When a part is drawn over an earlier part, the earlier part gets a dark line (different material) or a one-tone-darker line (same material) along the join. This is what makes near legs, heads and wings separate cleanly.
   - To avoid a seam, use the same `part` name, or `clip`.
 - **Selective outline.**
@@ -206,7 +248,7 @@ Draw flat shapes and let the kit shade them. Add ink only for **facial features 
 - Keep near limbs as separate parts so a seam defines them.
 - Give every monster a face with attitude: grin, fang, a smug or determined look.
 - Use 1–3 accessories that tell a story: talisman, shimenawa and shide, bell, scarf, armour trim, leaves, flowers.
-- Check the 1× view. The silhouette and the eyes must still read at 64px.
+- Check the 1× view. The silhouette and the eyes must still read at 96px.
 
 **Don't**
 - No pure black and no pure-white outlines. The kit handles outlines.
@@ -218,7 +260,10 @@ Draw flat shapes and let the kit shade them. Add ink only for **facial features 
 - Don't use `Math.random` or anything time-based.
 
 **Lessons from the reference set**
-- A gold iris on orange fur disappears; add `white:true` or change the iris colour.
+- Eyes with white between the lid and the iris read as bored. The kit tucks the iris under the lid; don't push it down with `icy` unless you want that look.
+- Ink all the way round the eyes, plus joined brows, reads as glasses. Keep brows short and separate.
+- A cream "bib" or fluff spike on a coloured chest turns into a muddy tan blob or a claw shape after shading. Leave it out, or make it a large, clearly shaped area.
+- A plain cone horn reads as a party hat. Draw a faceted shard cluster (`shade:'flat'` plus `set` facets, see ホシウサ, 22).
 - A cone on a head reads as a party hat. Make horns slimmer and add a facet line (`k.line` tone 4) and a sparkle at the tip.
 - Heavy magma "bars" look like stickers. Draw cracks as branching 1px `k.path` lines in `magma` tone 3, with one tone-4 hot pixel.
 - Black paws that are too big read as wheels. Make socks small ellipses at the bottom of the leg.
@@ -227,12 +272,12 @@ Draw flat shapes and let the kit shade them. Add ink only for **facial features 
 
 ## 8. Performance
 
-Everything is cached after the first render. The six reference sprites render in about 2ms each, including PNG encoding. Keep yours at a similar cost:
+Everything is cached after the first render. At 96×96 the six reference sprites render in about 3.5–4ms each, including PNG encoding (54 renders ≈ 200ms). Keep yours at a similar cost:
 - No per-pixel loops over the whole canvas.
-- Use fewer than about 60 shape calls.
+- Use fewer than about 80 shape calls.
 - Keep tubes under about 12 points.
 
-The total budget for all 54 species is 300ms.
+The total budget for all 54 species is about 300ms.
 
 ---
 
@@ -241,7 +286,7 @@ The total budget for all 54 species is 300ms.
 Use Playwright with the preinstalled Chromium. Do **not** run `playwright install`.
 
 1. Make a scratch HTML page that loads `js/pixkit.js` and your `js/pixmon_N.js`.
-2. For each id, draw `PIXKIT.canvas(id)` into canvases scaled 1×, 3× and 6× with `imageSmoothingEnabled = false` and `image-rendering: pixelated`.
+2. For each id, draw `PIXKIT.canvas(id)` (96×96) into canvases scaled 1×, 3× and 6× with `imageSmoothingEnabled = false` and `image-rendering: pixelated`.
 3. Put them on a **dark** backdrop (`#1d1a2c`), a **light** one (`#e9efe0`) and overworld grass (`#7fba56`).
 4. Screenshot the page:
    ```js
