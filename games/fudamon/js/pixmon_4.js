@@ -470,57 +470,70 @@
     k.sparkle(8, 52, 1, 'light'); k.sparkle(72, 50, 1, 'light');
   };
 
-  // 30 オーロラクジラ — light UR, soothing/mystic: colossal sky whale wrapped in aurora ribbons, crystal crown ridge,
-  // constellation freckles, serene closed-eye smile. Gag: a tiny cloud puff naps on top of its head.
+  // 30 オーロラクジラ — light UR, soothing/mystic: colossal sky whale swimming toward the viewer in 3/4, long body
+  // receding to curled-up flukes, gold crown ridge and crystal knobs along the back, aurora ribbons streaming like a
+  // cape, constellation freckles, serene closed eye. Gag: it swims straight through a little cloud.
   P[30] = function (k) {
-    k.shadow(C, 76.5, 22, 2);
-    // aurora ribbon arcing behind
-    k.tube([[2, 44, 0.8], [8, 34, 2.2], [16, 27, 3], [26, 24, 2.2], [34, 25, 3], [46, 23, 2.4], [56, 25, 3], [66, 29, 2.2], [73, 36, 2.6], [78, 44, 0.8]], 'aqua', { part: 'rib1', shade: 'glow', halo: 0.3 });
-    // flukes rising behind the head
-    k.tube([[C, 34, 4], [C, 22, 3]], 'crystal', { part: 'stock', shift: -1 });
-    k.sym(C, function (m, s) {
-      k.leaf(m(C), 21, m(15), 8, 11, 'crystal', { part: 'fluke' + s, shift: -1 });
-      k.tufts(s > 0 ? [[m(17), 11.5], [m(36), 22]] : [[m(36), 22], [m(17), 11.5]], 'crystal', { part: 'fluke' + s, len: 1.5, w: 3, every: 3.5, seed: 3 });
-      k.tube([[m(37), 19.5, 0.5], [m(19), 9.5, 0.5]], null, { adj: 1, clip: 'fluke' + s });
+    k.shadow(38, 77, 16, 1.4);
+    // far cloud + aurora streamers behind everything
+    k.circle(8, 22, 3, 'white', { part: 'cloudB', shift: -1 }); k.circle(13, 20, 3.6, 'white', { part: 'cloudB', shift: -1 }); k.circle(18, 22.5, 2.6, 'white', { part: 'cloudB', shift: -1 });
+    k.tube([[24, 38, 0.8], [23, 31, 2], [27, 24, 2.8], [34, 20, 2.4], [42, 17, 3], [48, 12, 2.4], [50, 7, 1.6], [48, 3, 0.6]], 'aqua', { part: 'rib1', shade: 'glow', halo: 0.3 });
+    k.tube([[58, 62, 1.2], [66, 59, 2.2], [70, 53, 1.5], [74, 46, 2.4], [72, 38, 1.4], [75, 31, 2], [73, 25, 0.6]], 'violet', { part: 'rib2', shade: 'glow' });
+    // broad flukes curling up behind
+    k.tube([[63, 23, 4], [68, 16, 2.8], [69, 13, 2.2]], 'crystal', { part: 'stock', shift: -1 });
+    k.tube([[69, 13, 2.4], [63, 10, 3.4], [57, 8, 3], [52, 5, 2], [50, 2.5, 0.7]], 'crystal', { part: 'flukeL', shift: -1 });
+    k.tube([[69, 13, 2.4], [73, 9, 2.6], [76, 5, 1.8], [77, 2, 0.6]], 'crystal', { part: 'flukeR', shift: -2 });
+    k.tube([[66, 10.5, 0.5], [58, 6.5, 0.5], [53, 4, 0.5]], null, { adj: 1, clip: 'flukeL' });
+    k.tufts([[51, 5], [58, 10], [64, 13]], 'crystal', { part: 'flukeL', len: 1.5, w: 2.4, every: 3, seed: 4, shift: -1 });
+    // far flipper
+    k.leaf(52, 55, 66, 67, 6, 'crystal', { part: 'finF', shift: -1 });
+    // long receding body + big blunt head (one volume)
+    k.tube([[36, 50, 14], [50, 40, 11], [59, 31, 8], [65, 22, 5], [69, 15, 3]], 'crystal', { part: 'body', light: -0.22 });
+    k.ellipse(28, 52, 19.5, 14, 'crystal', { part: 'body' });
+    k.ellipse(15, 54, 7, 10, 'crystal', { part: 'body' });
+    // pale pleated throat + belly running back along the underside
+    k.poly([[7, 56], [16, 59], [26, 61], [36, 60], [44, 56], [52, 50], [60, 40], [66, 29], [70, 20], [76, 22], [72, 34], [64, 48], [52, 60], [40, 68], [24, 69], [7, 64]], 'ice', { clip: 'body' });
+    for (var i = 0; i < 5; i++) k.tube([[9, 58.5 + i * 2], [26, 62 + i * 1.8], [41, 59 + i * 2], [52, 51 + i * 2.2], [61, 40 + i * 2.4], [67, 29 + i * 2.2]].map(function (p) { return [p[0], p[1], 0.5]; }), null, { adj: -1, clip: 'body', mat: 'ice' });
+    // hand-shaded planes: lit crown of the head, rostrum ridge, dorsal highlight, shadowed cheek + flank
+    k.ellipse(24, 44, 12, 5, null, { adj: 1, clip: 'body', mat: 'crystal' });
+    k.tube([[11, 48, 0.6], [20, 42, 0.7], [32, 38.5, 0.7]], null, { set: 5, clip: 'body' });
+    k.tube([[40, 38, 0.6], [50, 31.5, 0.6], [58, 25, 0.5], [64, 18, 0.5]], null, { adj: 1, clip: 'body', mat: 'crystal' });
+    k.poly([[38, 53], [48, 50], [50, 53], [44, 56], [38, 57]], null, { adj: -1, clip: 'body', mat: 'crystal' });
+    k.tube([[50, 46, 0.6], [58, 38, 0.6], [64, 29, 0.5]], null, { adj: -1, clip: 'body', mat: 'crystal' });
+    k.tube([[9, 50, 0.5], [8, 56, 0.5]], null, { adj: 1, clip: 'body' });
+    // barnacle knots on the snout
+    [[13, 48], [16, 46], [11, 52]].forEach(function (p) { k.px(p[0], p[1], 'bone', 5); k.px(p[0] + 1, p[1], 'bone', 3); k.px(p[0], p[1] + 1, 'bone', 2); });
+    // long mouth line sweeping back into a gentle smile
+    k.path([[7, 55], [12, 57], [17, 59], [26, 61], [36, 60], [42, 57], [45, 54]], 'black', 0);
+    k.path([[9, 54], [16, 57], [26, 59], [36, 58], [42, 55]], 'crystal', 5);
+    // small serene closed eye on the side of the head
+    pm(k, 42, 46, ['.lll.', 'K...K', '.KKK.'], { K: ['black', 0], l: ['crystal', 5] });
+    k.px(47, 46, 'black', 0);
+    k.rect(42, 50, 3, 1, 'sakura', { tone: 4, part: 'blush', outline: 'none' });
+    // far pale flipper edge + near long flipper, knobbly leading edge
+    k.leaf(28, 63, 7, 75, 9, 'crystal', { part: 'finN' });
+    k.tufts([[9, 72], [18, 67], [27, 62]], 'crystal', { part: 'finN', len: 1.5, w: 2.4, every: 3, seed: 5 });
+    k.tube([[26, 66, 1.3], [10, 75, 0.7]], 'ice', { clip: 'finN', tone: 5 });
+    k.tube([[26, 62.5, 0.5], [12, 70, 0.5]], null, { set: 5, clip: 'finN' });
+    // crown ridge on the head + crystal knobs down the back
+    k.poly([[20, 40], [20.5, 34], [23, 37], [25, 31], [27.5, 36], [30.5, 30.5], [32, 36.5], [35, 33.5], [34.5, 39], [27, 41.5]], 'gold', { part: 'crown' });
+    k.path([[21, 39], [27, 40.5], [34, 38]], 'gold', 2);
+    k.circle(27.5, 37.5, 1.6, 'crystal', { part: 'cgem', shade: 'flat', flatTone: 5, halo: 0.3 });
+    k.px(27, 37, 'white', 6);
+    [[42, 29.5, 3.8], [50, 23.5, 3.2], [57, 18, 2.6], [62.5, 14, 2]].forEach(function (c, n) {
+      k.spike(c[0] + 1, c[1] + 1.2, c[0] - c[2] * 0.6, c[1] - c[2] * 0.8, c[2], 'crystal', { part: 'kn' + n, shade: 'flat', flatTone: 4 });
+      k.px(c[0] - c[2] * 0.3, c[1] - c[2] * 0.4, 'crystal', 6);
+      k.px(c[0] + 1, c[1] + 1, 'gold', 4); k.px(c[0], c[1] + 1, 'gold', 5);
     });
-    // aurora streamers trailing low behind the fins
-    k.tube([[3, 76, 0.6], [5, 70, 1.8], [8, 62, 2.4], [14, 56, 2], [20, 55, 1.6]], 'violet', { part: 'rib2', shade: 'glow' });
-    k.tube([[77, 76, 0.6], [75, 70, 1.8], [72, 62, 2.4], [66, 56, 2], [60, 55, 1.6]], 'sakura', { part: 'rib3', shade: 'glow' });
-    // humpback pectoral fins with knobbly leading edges and pale undersides
-    k.sym(C, function (m, s) {
-      k.leaf(m(24), 58, m(4), 70, 11, 'crystal', { part: 'fin' + s });
-      k.tufts(s > 0 ? [[m(6), 65], [m(21), 54]] : [[m(21), 54], [m(6), 65]], 'crystal', { part: 'fin' + s, len: 1.5, w: 2.4, every: 3, seed: 5 });
-      k.tube([[m(21), 62, 1.3], [m(7), 70, 0.7]], 'ice', { clip: 'fin' + s, tone: 5 });
-    });
-    // body: broad flat head, pale pleated throat
-    k.ellipse(C, 49, 26, 19, 'crystal', { part: 'body' });
-    k.texture('body', 'dots', { seed: 4 });
-    [[24, 36], [30, 32], [50, 32], [56, 36], [60, 42], [20, 42]].forEach(function (p) { k.px(p[0], p[1], 'crystal', 5); k.px(p[0], p[1] + 1, 'crystal', 2); });
-    k.tube([[18, 40, 0.6], [26, 33, 0.6], [34, 31, 0.6]], null, { adj: 1, clip: 'body' });
-    k.tube([[63, 44, 0.5], [65, 50, 0.5]], null, { set: 4, clip: 'body' });
-    k.ellipse(C, 47, 13, 5, null, { adj: 1, clip: 'body', pattern: 'sparse' });
-    k.poly([[15, 52], [22, 55.5], [32, 57], [48, 57], [58, 55.5], [65, 52], [66, 70], [14, 70]], 'ice', { clip: 'body' });
-    for (var x = 23; x <= 57; x += 3) k.tube([[x, 58.5, 0.5], [x + (x - C) * 0.12, 68, 0.5]], null, { adj: -1, clip: 'body', mat: 'ice' });
-    k.path([[15, 52], [22, 55.5], [32, 57], [48, 57], [58, 55.5], [65, 52]], 'crystal', 1);
-    // crown ridge: crystal tubercles down the rostrum + a raised crown of points
-    [[C, 42, 1.3], [C, 38.5, 1.5]].forEach(function (c, i) { k.circle(c[0], c[1], c[2], 'crystal', { part: 'tb' + i, light: 0.35 }); });
-    k.sym(C, function (m, s) { k.circle(m(33), 39, 1.2, 'crystal', { part: 'tbs' + s, light: 0.35 }); k.circle(m(27), 42, 1.1, 'crystal', { part: 'tbt' + s, light: 0.35 }); });
-    k.poly([[32, 35], [33, 29], [35.5, 32], [37.5, 26.5], [C, 30.5], [42.5, 26.5], [44.5, 32], [47, 29], [48, 35], [C, 36.5]], 'gold', { part: 'crown' });
-    k.circle(C, 33, 1.7, 'crystal', { part: 'cgem', shade: 'flat', flatTone: 5, halo: 0.3 });
-    k.px(39, 32, 'white', 6);
-    // napping cloud puff
-    k.circle(51, 30.5, 2.4, 'white', { part: 'cloud' }); k.circle(54.5, 29.5, 3, 'white', { part: 'cloud' }); k.circle(57.5, 31, 2.2, 'white', { part: 'cloud' });
-    pm(k, 53, 30, ['K.K'], { K: ['white', 1] });
-    // constellation freckles
-    [[22, 44], [25, 40], [29, 45], [56, 41], [53, 45], [59, 47], [48, 40]].forEach(function (p) { k.px(p[0], p[1], 'white', 6); });
-    k.px(25, 41, 'crystal', 5); k.px(24, 40, 'crystal', 5); k.px(26, 40, 'crystal', 5); k.px(25, 39, 'crystal', 5);
-    k.px(56, 40, 'crystal', 5); k.px(55, 41, 'crystal', 5); k.px(57, 41, 'crystal', 5); k.px(56, 42, 'crystal', 5);
-    // serene closed eyes at the corners of the long smile
-    var F = { K: ['black', 0], k: ['crystal', 1] };
-    pm(k, 18, 48, ['K...K', '.KKK.'], F); pm(k, 57, 48, ['K...K', '.KKK.'], F);
-    k.px(17, 47, 'black', 0); k.px(63, 47, 'black', 0);
-    k.sym(C, function (m) { k.rect(m(19), 51, 3, 1, 'sakura', { tone: 4, part: 'blush', outline: 'none' }); });
-    k.sparkle(8, 18, 1, 'light'); k.sparkle(73, 14, 1, 'light'); k.sparkle(4, 52, 1, 'white'); k.px(76, 48, 'light', 6);
+    // aurora ribbon streaming from the near flipper back under the body, like a cape
+    k.tube([[6, 76, 0.6], [14, 74, 1.8], [22, 75, 2.2], [32, 72, 2.4], [42, 73, 1.8], [50, 69, 2.2], [56, 66, 1.4], [60, 62, 0.6]], 'sakura', { part: 'rib3', shade: 'glow' });
+    // constellation freckles: a few bright stars linked by faint lines
+    k.path([[38, 44], [44, 41], [49, 37]], 'crystal', 4); k.path([[52, 40], [56, 35]], 'crystal', 4);
+    [[38, 44], [44, 41], [49, 37], [52, 40], [56, 35], [20, 49]].forEach(function (p) { k.px(p[0], p[1], 'white', 6); });
+    // the little cloud it swims through
+    k.circle(64, 72, 2.6, 'white', { part: 'cloudF' }); k.circle(68.5, 70.5, 3.4, 'white', { part: 'cloudF' }); k.circle(73, 72.5, 2.4, 'white', { part: 'cloudF' });
+    k.rect(62, 74, 13, 1, 'white', { part: 'cloudF' });
+    k.sparkle(6, 34, 1, 'light'); k.sparkle(76, 28, 1, 'light'); k.sparkle(40, 7, 1, 'white'); k.px(30, 20, 'light', 6);
   };
 
 })();
