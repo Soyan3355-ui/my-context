@@ -250,7 +250,7 @@
         Sound.play('command');
         Game.addShake(1.5, 0.15);
         const replies = ['おう！', 'はい！', '了解！', 'まかせろ！', 'うっす！'];
-        this.team(0).forEach((p, i) => setTimeout(() => this.say(p, pick(replies), 1.0), 120 + i * 70));
+        this.team(0).filter((p) => !p.gk).sort(() => Math.random() - 0.5).slice(0, 3).forEach((p, i) => setTimeout(() => this.say(p, pick(replies), 1.0), 120 + i * 90));
         this.tick('監督の指示！「' + o.shout + '」', '#ffd24a');
       } else {
         Sound.play('command', { pitch: 0.8, vol: 0.6 });
