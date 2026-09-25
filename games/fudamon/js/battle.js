@@ -23,7 +23,7 @@ function bsay(text,ms){const el=$('#bmsg');const toks=tokenize(text);let acc='',
 
 /* ---------- HUD ---------- */
 function plateHTML(side){const u=U(side),r=u.hp/u.st.hp,sealed=side==='foe'&&S.dex[u.m.id];
-  return `<div class="nm"><span>${u.m.name}${sealed?'<i class="sealmark" title="封印済み">封</i>':''}</span><span class="lv">Lv${u.lv}</span></div>
+  return `<div class="nm"><span>${u.m.name}<i class="rar r${u.m.r}">${RAR[u.m.r].n}</i>${sealed?'<i class="sealmark" title="封印済み">封</i>':''}</span><span class="lv">Lv${u.lv}</span></div>
   <div class="hpl"><b>HP</b><span class="bar"><i style="width:${r*100}%;background:${hpColor(r)}"></i></span></div>
   ${side==='me'?`<div class="hpn"><span class="tchip" style="--c:${TYPES[u.m.t].c}">${TYPES[u.m.t].n}</span><span>${u.hp}/${u.st.hp}</span></div><span class="bar exp"><i style="width:${card(B.active).exp/need(u.lv)*100}%"></i></span>`:`<div class="hpn"><span class="tchip" style="--c:${TYPES[u.m.t].c}">${TYPES[u.m.t].n}</span>${B.trainer?`<span class="balls">${B.team.map((t,i)=>`<i class="${i<B.teamIdx?'down':''}"></i>`).join('')}</span>`:''}</div>`}`}
 function hud(full){if(!B)return;for(const side of['foe','me']){const el=$(side==='foe'?'#pF':'#pM');const u=U(side);
@@ -44,6 +44,7 @@ const TFX={
   light:{cols:['#ffffff','#ffc6e0','#fff3b0'],shape:'star',grav:-30},
   normal:{cols:['#ffffff','#e8e6f2'],shape:'ring',grav:0}
 };
+function sparkBurstB(x,y,r){const cols=r>=4?['#ff9ee6','#8fe8ff','#d2ff8f','#fff1b0']:r>=3?['#fff1b0','#e6b34f','#ffffff']:['#dfe8ff','#9aa6be','#ffffff'];for(let i=0;i<(r>=3?34:20);i++){const a=Math.random()*Math.PI*2,s=80+Math.random()*180;BFX.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,ay:60,drag:2.5,life:.9,max:.9,size:3+Math.random()*4,color:cols[i%cols.length],shape:'star',rot:a,vr:8})}}
 function burst(x,y,t,n,power=1){const T=TFX[t]||TFX.normal;for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=(60+Math.random()*200)*power;
   BFX.parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,ay:T.grav,drag:3,life:.35+Math.random()*.45,max:.8,size:(T.shape==='ring'?6:3)+Math.random()*5*power,grow:T.grow||(T.shape==='ring'?22:0),lw:3,color:T.cols[i%T.cols.length],shape:T.shape,rot:a,vr:(Math.random()-.5)*14})}}
 async function projectile(from,to,t){const T=TFX[t]||TFX.normal;const dur=RM?1:300;const t0=performance.now();
@@ -82,7 +83,9 @@ function showCmd(){
         <button class="cb shu" data-nav data-c="bag"><b>封札・どうぐ</b><small>${B.trainer?'回復の香':`封札 ${fc}枚`}</small></button>
         <button class="cb" data-nav data-c="party"><b>なかま</b><small>カードを交代</small></button>
         <button class="cb" data-nav data-c="run" ${B.trainer?'disabled':''}><b>にげる</b><small>${B.trainer?'逃げられない':'戦いをやめる'}</small></button>`}
-      else if(menu==='fight'){h=movesOf(me.m.id,me.lv).map((x,i)=>{const e=eff(x.t,MON[B.foe.id].t);return `<button class="cb" data-nav data-m="${i}"><b>${x.n}</b><small><span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span> 威力${x.p}${e>1?'<em class="good">ばつぐん</em>':e<1?'<em class="bad">いまひとつ</em>':''}</small></button>`}).join('')}
+      else if(menu==='fight'){const c=card(B.active);const L=movesOf(me.m.id,me.lv);const left=L.map((x,i)=>ppLeft(c,i));
+        h=L.map((x,i)=>{const e=eff(x.t,MON[B.foe.id].t);return `<button class="cb" data-nav data-m="${i}" ${left[i]?'':'disabled'}><b>${x.n}<span class="pp${left[i]<=Math.ceil(x.pp/4)?' low':''}">PP ${left[i]}/${x.pp}</span></b><small><span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span> 威力${x.p}${e>1?'<em class="good">ばつぐん</em>':e<1?'<em class="bad">いまひとつ</em>':''}</small></button>`}).join('');
+        if(left.every(v=>!v))h+=`<button class="cb shu" data-nav data-m="-1"><b>ふんばる</b><small>技の回数が 切れたときの 奥の手・威力35</small></button>`}
       else if(menu==='bag'){h=['white','silver','gold'].map(k=>`<button class="cb" data-nav data-s="${k}" ${S.items[k]&&!B.trainer?'':'disabled'}><b><span class="fchip" style="--fc:${ITEMS[k].fc}"></span>${ITEMS[k].n.replace('の封札','')}<span class="rate">${B.trainer?'—':Math.round(sealRate(k)*100)+'%'}</span></b><small>のこり ${S.items[k]}枚</small></button>`).join('')+
         `<button class="cb" data-nav data-p ${S.items.potion&&me.hp<me.st.hp?'':'disabled'}><b>回復の香</b><small>HP半分回復・${S.items.potion}個</small></button>`}
       else if(menu==='party'){const L=partyCards().filter(c=>c.uid!==B.active);h=L.map(c=>`<button class="cb" data-nav data-u="${c.uid}" ${c.hp>0?'':'disabled'}><b>${MON[c.id].name}</b><small>Lv${c.lv}・HP ${c.hp}/${maxHP(c)}</small></button>`).join('')||'<p class="cb-empty">交代できるカードがいない</p>'}
@@ -218,7 +221,8 @@ async function checkFaint(){
   return null;
 }
 async function turn(a){
-  if(a.k==='move'){const me=U('me'),foe=U('foe'),mv=movesOf(me.m.id,me.lv)[a.i],fm=pickFoeMove();
+  if(a.k==='move'){const me=U('me'),foe=U('foe'),fm=pickFoeMove();let mv;
+    if(a.i<0)mv=STRUGGLE;else{const c=card(B.active);mv=movesOf(me.m.id,me.lv)[a.i];ppLeft(c,a.i);c.pp[a.i]--}
     const first=me.st.spd>foe.st.spd||(me.st.spd===foe.st.spd&&Math.random()<.5);
     const order=first?[['me',mv],['foe',fm]]:[['foe',fm],['me',mv]];
     for(const [s,m] of order){await attack(s,m);const r=await checkFaint();if(r)return r}
@@ -259,7 +263,9 @@ async function runBattle(opts){
   }else{setMon('foe',f0.id);const fe=bmon('foe');fe.style.filter='brightness(0)';
     await fe.animate([{transform:'translateX(-140%)'},{transform:'none'}],{duration:RM?1:520,easing:'cubic-bezier(.2,.8,.3,1)'}).finished;
     fe.animate([{filter:'brightness(0)'},{filter:'brightness(2)'},{filter:'none'}],{duration:RM?1:420,fill:'forwards'}).onfinish=()=>{fe.style.filter=''};snd('exclaim');
-    await bsay(`あっ！ 野生の ${MON[f0.id].name}が 飛び出してきた！`,600)}
+    await bsay(`あっ！ 野生の ${MON[f0.id].name}が 飛び出してきた！`,600);
+    const rr=MON[f0.id].r;if(rr>=2){snd('rare');flashScreen(rr>=4?'#ffd6f5':rr>=3?'#fff1b0':'#dfe8ff',.7,420);const c=center(fe);sparkBurstB(c.x,c.y,rr);
+      await bsay(rr>=4?'伝説の <b class="ur">UR</b> 魔物だ！ 空気が ふるえている…！':rr>=3?'とても めずらしい <b class="sr">SR</b> の 魔物だ！':'めずらしい <b class="r">R</b> の 魔物だ！',900)}}
   $('#pF').animate([{transform:'translateX(-30px)',opacity:0},{transform:'none',opacity:1}],{duration:RM?1:300,fill:'forwards'});
   await bsay(`いけっ！ ${MON[card(B.active).id].name}！`,150);
   await sendOut('me',card(B.active).id);

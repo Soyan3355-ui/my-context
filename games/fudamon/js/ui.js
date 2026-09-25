@@ -72,7 +72,7 @@ function partyScreen(back,{inBattle}={}){
 }
 function cardDetail(uid,back){
   const c=card(uid);if(!c){back();return}const m=MON[c.id],st=mstats(c.id,c.lv),inP=S.party.includes(uid),idx=S.party.indexOf(uid);
-  const mv=movesOf(c.id,c.lv).map(x=>`<div><span>${x.n}<span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span></span><span>威力${x.p}</span></div>`).join('');
+  const mv=movesOf(c.id,c.lv).map((x,i)=>`<div><span>${x.n}<span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span></span><span>威力${x.p}・PP ${ppLeft(c,i)}/${x.pp}</span></div>`).join('');
   const nb=(c.lv<9&&m.r<3)?`<div class="muted"><span>Lv9で「${MV[m.t][1].n}」を覚える</span></div>`:'';
   const acts=[];
   if(inP){if(idx>0)acts.push(`<button class="pbtn" data-nav data-a="lead">先頭にする</button>`);const lastOk=c.hp>0&&partyCards().filter(x=>x.hp>0&&x.uid!==uid).length===0;acts.push(`<button class="pbtn" data-nav data-a="out" ${S.party.length<=1||lastOk?'disabled':''}>${lastOk&&S.party.length>1?'元気なカードが いなくなる':'パーティから外す'}</button>`)}
@@ -149,17 +149,17 @@ function optScreen(back){
 }
 
 /* ---------------- shop (traveling merchant) ---------------- */
-function shopScreen(back){
+function shopScreen(back,title='行商人マツの店'){
   const row=k=>{const I=ITEMS[k];return `<button class="shoprow" data-nav data-k="${k}" ${S.coins<I.price?'disabled':''}><span class="ico${k==='potion'?' pot':''}" style="--fc:${I.fc||'#fff'}"></span><span><b>${I.n}</b><small>${I.d}</small></span><span class="pr">${I.price}両<small>所持${S.items[k]}</small></span></button>`};
-  openPanel(`${head('行商人マツの店',`所持金 ${fmt(S.coins)} 両`)}<div class="pbody"><div class="bag">${row('white')}${row('silver')}${row('potion')}
+  openPanel(`${head(title,`所持金 ${fmt(S.coins)} 両`)}<div class="pbody"><div class="bag">${row('white')}${row('silver')}${row('potion')}
   <button class="shoprow" data-nav data-k="pack" ${S.coins<PACK_PRICE?'disabled':''}><span class="ico pack"></span><span><b>封札パック</b><small>ランダムなカードが3枚。R以上1枚確定。その場で開封！</small></span><span class="pr">${PACK_PRICE}両</span></button></div></div>`,{onBack:back});
   wireBack(back);
   $('#panel').querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',async()=>{const k=b.dataset.k;
     if(k==='pack'){if(S.coins<PACK_PRICE)return;S.coins-=PACK_PRICE;G.bought=true;snd('coin');closePanel();
       const pool=[];for(let i=1;i<=TOTAL;i++)if(MON[i].r<4)pool.push(i);const ids=[pickWeighted(pool),pickWeighted(pool),pickWeighted(pool)];
       if(ids.every(i=>MON[i].r<2))ids[2]=pickWeighted(pool.filter(i=>MON[i].r>=2));
-      const got=ids.map(id=>addCard(id,rnd(4,9),rollVariant(.15,.03)));await reveal(got,'封札パック開封！');shopScreen(back);return}
-    const I=ITEMS[k];if(S.coins<I.price)return;S.coins-=I.price;S.items[k]++;G.bought=true;snd('coin');toast(`${I.n}を 買った`);shopScreen(back);panelNav.set([...$('#panel').querySelectorAll('[data-nav]')].indexOf($(`#panel [data-k="${k}"]`)))}));
+      const got=ids.map(id=>addCard(id,rnd(4,9),rollVariant(.15,.03)));await reveal(got,'封札パック開封！');shopScreen(back,title);return}
+    const I=ITEMS[k];if(S.coins<I.price)return;S.coins-=I.price;S.items[k]++;G.bought=true;snd('coin');toast(`${I.n}を 買った`);shopScreen(back,title);panelNav.set([...$('#panel').querySelectorAll('[data-nav]')].indexOf($(`#panel [data-k="${k}"]`)))}));
 }
 
 /* ---------------- card reveal ---------------- */

@@ -50,6 +50,9 @@ async function talkMom(){
 async function restFade(){snd('heal');await fadeTo(1,.35);healAll();await sleep(500);await fadeTo(0,.35);toast('カードたちが 元気に なった！')}
 async function talkSensei(){
   if(!S.flags.starter){await say('ケースの中の 3枚から 好きな札を えらびなさい。<br>ケースの前で 調べてごらん。',NM.sensei);return}
+  const ci=await ask('いらっしゃい。 封札堂へ ようこそ。',NM.sensei,['お札を買う','話を聞く','やめる']);
+  if(ci===0){G.bought=false;await new Promise(res=>shopScreen(()=>{closePanel();res()},'コハル封札堂'));await say(G.bought?'まいど。 良い 札と 出会えますように。':'また いつでも おいで。',NM.sensei);return}
+  if(ci!==1)return;
   if(!S.flags.badge){
     const tips=['北の 祠には 祠守りの イワオが いる。<br>あの人に 認められたら 一人前の 封札師だよ。','魔物は 弱らせてから 札を 投げると 封じやすい。<br>HPが 赤くなったら 投げどきさ。','炎は草に、草は水と雷に、水は炎に、雷は水に 強い。<br>光と闇は おたがいに 強いんだ。','同じ魔物でも キラや ゴールドの札が あるんだよ。<br>わたしも 集めるのに 夢中になった ものさ。'];
     await say(tips[(S.flags.tipI=(S.flags.tipI??-1)+1)%tips.length],NM.sensei);return}
@@ -193,6 +196,7 @@ async function starterChosen(id){
   S.items.potion+=2;snd('item');await say('<b>回復の香</b>を 2個 もらった！');
   await say('野生の 魔物は 弱らせてから 封札を 投げると 封じやすい。<br>村の 北、草むらの 先の 古札の祠へ 行きなさい。',NM.sensei);
   await say('祠守りの イワオに 認められたら、<br>おまえも 一人前の 封札師だ。',NM.sensei);
+  await say('封札が 足りなくなったら、うちの 店で 買っていきなさい。<br>わたしに 話しかければ いつでも 売ってあげるよ。',NM.sensei);
   await say('道の わきの 草むらで 魔物と 戦えば 札は 強くなる。<br>Lv9になれば 大技も 覚えるよ。 急がず 仲間を 増やしなさい。',NM.sensei);
   await say('へへっ、祠には おれが 先に 着いてやる！<br>じゃあな！',NM.rival);
   await moveNPC(rv,'down',3,6);await moveNPC(rv,'left',2,6);await moveNPC(rv,'down',1,6);

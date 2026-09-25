@@ -22,7 +22,9 @@ function saveGame(){S.map=G.mapId;S.x=G.p.x;S.y=G.p.y;S.dir=G.p.dir;try{localSto
 /* ---------------- monster/card helpers ---------------- */
 function mstats(id,lv){const b=MON[id].b;return{hp:Math.floor(b.hp*2*lv/100+lv+10),atk:Math.floor(b.atk*2*lv/100+5),def:Math.floor(b.def*2*lv/100+5),spd:Math.floor(b.spd*2*lv/100+5)}}
 const need=lv=>10+lv*6;
-function movesOf(id,lv){const m=MON[id];const L=[{...MV.normal,t:'normal'},{...MV[m.t][0],t:m.t}];if(lv>=9||m.r>=3)L.push({...MV[m.t][1],t:m.t,p:m.r===4?100:85});return L}
+function movesOf(id,lv){const m=MON[id];const L=[{...MV.normal,t:'normal',pp:25},{...MV[m.t][0],t:m.t,pp:20}];if(lv>=9||m.r>=3)L.push({...MV[m.t][1],t:m.t,p:m.r===4?100:85,pp:m.r===4?8:10});return L}
+const STRUGGLE={n:'ふんばる',p:35,acc:1,t:'normal'};
+function ppLeft(c,i){c.pp=c.pp||{};const mx=movesOf(c.id,c.lv)[i].pp;if(c.pp[i]==null||c.pp[i]>mx)c.pp[i]=mx;return c.pp[i]}
 const card=uid=>S.cards.find(c=>c.uid===uid);
 const partyCards=()=>S.party.map(card).filter(Boolean);
 const maxHP=c=>mstats(c.id,c.lv).hp;
@@ -34,7 +36,7 @@ function addCard(id,lv,v){const c={uid:S.uid++,id,lv,exp:0,v,hp:0};c.hp=maxHP(c)
   if(S.party.length<3)S.party.push(c.uid);return{c,isNew}}
 function pickWeighted(ids){const tot=ids.reduce((s,i)=>s+RAR[MON[i].r].w,0);let x=Math.random()*tot;for(const i of ids){x-=RAR[MON[i].r].w;if(x<=0)return i}return ids[ids.length-1]}
 function rollVariant(h,g){const x=Math.random();return x<g?'gold':x<g+h?'holo':'normal'}
-function healAll(){S.cards.forEach(c=>c.hp=maxHP(c))}
+function healAll(){S.cards.forEach(c=>{c.hp=maxHP(c);c.pp={}})}
 
 /* ---------------- audio shim ---------------- */
 const snd=n=>{try{window.AUDIO&&AUDIO.sfx(n)}catch(e){}};
