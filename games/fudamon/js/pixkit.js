@@ -1,0 +1,498 @@
+/* 封札モンスターズ — PIXKIT: shared toolkit for 64x64 monster pixel sprites.
+ *
+ * Monster modules register:   PIXMON[id] = function (k) { ...draw with k... };
+ * The game calls:             PIXKIT.render(id)  -> cached PNG dataURL (64x64, transparent)
+ *
+ * Drawing model: every shape paints a MATERIAL (a 5-tone colour ramp) into an indexed buffer and
+ * belongs to a PART (a volume). After drawing, the kit shades each part automatically from an
+ * upper-left light (dome normals estimated from distance-to-edge), separates overlapping parts
+ * with a dark seam, adds a selective 1px outline in the ramp's darkest tone, optional glow halos,
+ * and a soft ground shadow. Authors draw flat shapes; cohesion comes for free.
+ * See PIXMON_STYLE.md for the full guide.
+ */
+(function () {
+  'use strict';
+  var W = 64, H = 64, N = W * H;
+
+  // ------------------------------------------------------------------ ramps
+  // Tone index: 0 = outline/darkest, 1 = shadow, 2 = base, 3 = light, 4 = highlight.
+  var RAMPS = {
+    // --- type ramps
+    fire: ['#4a1420', '#a02a2a', '#e0522c', '#f88c3a', '#ffcf7a'],
+    flame: ['#8a2418', '#e25a1c', '#ff9a26', '#ffd650', '#fff8cc'],   // glowing fire / flame bodies
+    magma: ['#2e0c12', '#8a1c18', '#e2401c', '#ff8a2a', '#ffe27a'],
+    water: ['#16244e', '#2a52a0', '#3e82d2', '#6ab8ee', '#c6eeff'],
+    aqua: ['#0e3a46', '#1c7480', '#32aab0', '#6cd6ca', '#d2fff2'],
+    ice: ['#263866', '#5078b4', '#8cbce6', '#cdeeff', '#ffffff'],
+    grass: ['#133426', '#246036', '#3f903c', '#76c04e', '#c6ee88'],
+    leaf: ['#26361a', '#4a6822', '#76982c', '#a8c848', '#e2f28c'],
+    thunder: ['#46300e', '#a8701a', '#e8b228', '#ffe058', '#fffac8'],
+    dark: ['#140e26', '#2a2048', '#46366f', '#6c58a4', '#aa98dc'],
+    shadow: ['#0a0612', '#181024', '#261c38', '#3a2c52', '#62528a'],  // void cloth / hoods
+    light: ['#6a4a3a', '#c89a5e', '#f2d28a', '#fff0c0', '#ffffff'],
+    crystal: ['#282a6a', '#4a5eb8', '#7aa0e8', '#b6deff', '#f4ffff'],
+    sakura: ['#541f3e', '#a4467a', '#e27aaa', '#f9accc', '#ffe2ef'],
+    violet: ['#2a1244', '#5a2a8a', '#8a4ec4', '#b884e8', '#e6ccff'],
+    // --- neutrals
+    fur: ['#2c1812', '#5c3422', '#8c5834', '#b8824c', '#e2b47a'],
+    tan: ['#54382a', '#9c744e', '#d0aa7c', '#eed4a4', '#fff4dc'],
+    cream: ['#5c4636', '#b09474', '#e4d0b0', '#f8ecd4', '#ffffff'],
+    bone: ['#463a34', '#8a7c6c', '#c6b9a2', '#e8dfca', '#fffaf0'],
+    steel: ['#1c2030', '#444e68', '#72809e', '#a8b8d2', '#eaf2ff'],
+    stone: ['#28242e', '#504a58', '#787280', '#a49eaa', '#d4d0d6'],
+    obsidian: ['#0c0812', '#1c1626', '#30283c', '#4a3e5e', '#7a6a94'],
+    skin: ['#56283a', '#ae5468', '#e08892', '#f6b8b2', '#ffe4da'],
+    gold: ['#46280a', '#98661a', '#d6a232', '#f6d45e', '#fff6c2'],
+    white: ['#34345a', '#8888ac', '#c8cce2', '#eef0f8', '#ffffff'],
+    black: ['#08060e', '#16121e', '#262032', '#3a3248', '#5c5272'],
+    red: ['#3a0a16', '#8a1a26', '#d0343c', '#f2685a', '#ffb6a2'],
+    wood: ['#28180e', '#583820', '#885c34', '#b68850', '#e0b87a'],
+    mouth: ['#2a0a18', '#5a1426', '#8e2a3a', '#d0546a', '#f090a0']
+  };
+  var RL = [null], RI = {};
+  function hexRGB(h) { h = h.replace('#', ''); return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)]; }
+  function mixRGB(a, b, t) { return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)]; }
+  function addRamp(name, hexes) {
+    var c = hexes.map(hexRGB);
+    var r = { name: name, hex: hexes.slice(), c: c, sel: mixRGB(c[0], c[1], 0.45) };
+    if (RI[name]) RL[RI[name]] = r; else { RI[name] = RL.length; RL.push(r); }
+    return RI[name];
+  }
+  for (var nm in RAMPS) addRamp(nm, RAMPS[nm]);
+  function mid(m) {
+    if (typeof m === 'number') return m;
+    var i = RI[m];
+    if (!i) throw new Error('PIXKIT: unknown ramp "' + m + '"');
+    return i;
+  }
+
+  // light direction (upper-left, towards viewer)
+  var LX = -0.52, LY = -0.66, LZ = 0.54;
+  (function () { var l = Math.hypot(LX, LY, LZ); LX /= l; LY /= l; LZ /= l; })();
+
+  // ------------------------------------------------------------------ kit (one per render)
+  function Kit() {
+    this.W = W; this.H = H;
+    this.mat = new Uint8Array(N);
+    this.part = new Int16Array(N).fill(-1);
+    this.tone = new Int8Array(N).fill(-1);
+    this.seq = new Uint16Array(N);
+    this.parts = [];
+    this.named = {};
+    this.shadows = [];
+    this.n = 0;
+    this.inkPart = null;
+  }
+  var K = Kit.prototype;
+
+  K._part = function (o, m) {
+    var name = o.part || o.clip;
+    if (name && this.named[name]) return this.named[name];
+    var p = { i: this.parts.length, mask: new Uint8Array(N), x0: 64, y0: 64, x1: -1, y1: -1, o: o, mat: m, name: name };
+    this.parts.push(p);
+    if (name) this.named[name] = p;
+    return p;
+  };
+  // core: paint a coverage list
+  K._paint = function (cover, mat, o) {
+    o = o || {};
+    this.n++;
+    if (o.erase) {
+      for (var j = 0; j < cover.length; j++) { var e = cover[j]; this.mat[e] = 0; this.part[e] = -1; this.tone[e] = -1; }
+      return this;
+    }
+    var m = mid(mat), P = this._part(o, m);
+    var clip = o.clip ? this.named[o.clip] : null;
+    var ft = o.tone != null ? o.tone : -1;
+    for (var i = 0; i < cover.length; i++) {
+      var idx = cover[i];
+      if (clip && this.part[idx] !== clip.i) continue;
+      var x = idx & 63, y = idx >> 6;
+      if (!clip || P === clip) {
+        P.mask[idx] = 1;
+        if (x < P.x0) P.x0 = x; if (x > P.x1) P.x1 = x; if (y < P.y0) P.y0 = y; if (y > P.y1) P.y1 = y;
+      }
+      if (o.behind && this.mat[idx]) continue;
+      this.mat[idx] = m; this.part[idx] = P.i; this.tone[idx] = ft; this.seq[idx] = this.n;
+    }
+    return this;
+  };
+  function inb(x, y) { return x >= 0 && y >= 0 && x < W && y < H; }
+
+  // ---------------- shapes (all take material + options)
+  K.ellipse = function (cx, cy, rx, ry, mat, o) {
+    var c = [];
+    for (var y = Math.floor(cy - ry - 1); y <= Math.ceil(cy + ry + 1); y++)
+      for (var x = Math.floor(cx - rx - 1); x <= Math.ceil(cx + rx + 1); x++) {
+        if (!inb(x, y)) continue;
+        var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) c.push(y * W + x);
+      }
+    return this._paint(c, mat, o);
+  };
+  K.circle = function (cx, cy, r, mat, o) { return this.ellipse(cx, cy, r, r, mat, o); };
+  K.rect = function (x, y, w, h, mat, o) {
+    var c = [];
+    for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) if (inb(x + i, y + j)) c.push((y + j) * W + x + i);
+    return this._paint(c, mat, o);
+  };
+  K.poly = function (pts, mat, o) {
+    var c = [], y0 = 64, y1 = 0, i;
+    for (i = 0; i < pts.length; i++) { y0 = Math.min(y0, pts[i][1]); y1 = Math.max(y1, pts[i][1]); }
+    for (var y = Math.max(0, Math.floor(y0)); y <= Math.min(63, Math.ceil(y1)); y++) {
+      var sy = y + 0.5, xs = [];
+      for (i = 0; i < pts.length; i++) {
+        var a = pts[i], b = pts[(i + 1) % pts.length];
+        if ((a[1] <= sy && b[1] > sy) || (b[1] <= sy && a[1] > sy)) xs.push(a[0] + (sy - a[1]) / (b[1] - a[1]) * (b[0] - a[0]));
+      }
+      xs.sort(function (p, q) { return p - q; });
+      for (i = 0; i + 1 < xs.length; i += 2)
+        for (var x = Math.max(0, Math.ceil(xs[i] - 0.5)); x <= Math.min(63, Math.floor(xs[i + 1] - 0.5)); x++) c.push(y * W + x);
+    }
+    return this._paint(c, mat, o);
+  };
+  // tube: chain of capsules with per-point radius [[x,y,r],...] — tails, necks, limbs, horns, coils
+  K.tube = function (pts, mat, o) {
+    var seen = new Uint8Array(N), c = [];
+    for (var s = 0; s < pts.length - 1; s++) {
+      var a = pts[s], b = pts[s + 1];
+      var rmax = Math.max(a[2], b[2]) + 1;
+      var bx0 = Math.floor(Math.min(a[0], b[0]) - rmax), bx1 = Math.ceil(Math.max(a[0], b[0]) + rmax);
+      var by0 = Math.floor(Math.min(a[1], b[1]) - rmax), by1 = Math.ceil(Math.max(a[1], b[1]) + rmax);
+      var dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy || 1e-6;
+      for (var y = by0; y <= by1; y++) for (var x = bx0; x <= bx1; x++) {
+        if (!inb(x, y)) continue;
+        var px = x + 0.5, py = y + 0.5;
+        var t = ((px - a[0]) * dx + (py - a[1]) * dy) / L2;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        var qx = a[0] + dx * t - px, qy = a[1] + dy * t - py;
+        var r = a[2] + (b[2] - a[2]) * t;
+        if (qx * qx + qy * qy <= r * r + 0.2) { var id = y * W + x; if (!seen[id]) { seen[id] = 1; c.push(id); } }
+      }
+    }
+    return this._paint(c, mat, o);
+  };
+  // spike: triangle from base centre (x0,y0) with base width w to tip (x1,y1) — horns, ears, claws, flame tongues
+  K.spike = function (x0, y0, x1, y1, w, mat, o) {
+    var dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, nx = -dy / l * w / 2, ny = dx / l * w / 2;
+    return this.poly([[x0 + nx, y0 + ny], [x1, y1], [x0 - nx, y0 - ny]], mat, o);
+  };
+  // leaf: lens shape between two points, max width w — leaves, fins, feathers, petals
+  K.leaf = function (x0, y0, x1, y1, w, mat, o) {
+    var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    return this.tube([[x0, y0, 0.4], [x0 + (mx - x0) * 0.5, y0 + (my - y0) * 0.5, w * 0.4], [mx, my, w / 2], [mx + (x1 - mx) * 0.5, my + (y1 - my) * 0.5, w * 0.4], [x1, y1, 0.4]], mat, o);
+  };
+  K.star = function (cx, cy, r, mat, o, rot) {
+    var p = [], a0 = (rot || 0) - Math.PI / 2;
+    for (var i = 0; i < 10; i++) { var rr = i % 2 ? r * 0.45 : r, a = a0 + i * Math.PI / 5; p.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+    return this.poly(p, mat, o);
+  };
+
+  // ---------------- ink (fixed tone, no shading)
+  K.px = function (x, y, mat, tone, o) {
+    x = Math.round(x); y = Math.round(y);
+    if (!inb(x, y)) return this;
+    var idx = y * W + x;
+    this.n++;
+    if (this.part[idx] < 0) {
+      if (!this.inkPart) this.inkPart = this._part({ shade: 'flat', outline: 'none', noline: true }, mid(mat));
+      this.part[idx] = this.inkPart.i;
+    }
+    this.mat[idx] = mid(mat); this.tone[idx] = tone == null ? 0 : tone; this.seq[idx] = this.n;
+    if (o && o.part && this.named[o.part]) this.part[idx] = this.named[o.part].i;
+    return this;
+  };
+  K.line = function (x0, y0, x1, y1, mat, tone, o) {
+    x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+    var dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy;
+    for (var g = 0; g < 200; g++) {
+      this.px(x0, y0, mat, tone, o);
+      if (x0 === x1 && y0 === y1) break;
+      var e2 = 2 * err;
+      if (e2 >= dy) { err += dy; x0 += sx; }
+      if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+    return this;
+  };
+  // polyline of ink
+  K.path = function (pts, mat, tone, o) { for (var i = 0; i + 1 < pts.length; i++) this.line(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], mat, tone, o); return this; };
+  // 4-point twinkle
+  K.sparkle = function (x, y, s, mat) {
+    mat = mat || 'white'; s = s || 1;
+    this.px(x, y, mat, 4);
+    for (var i = 1; i <= s; i++) { var t = i === s ? 3 : 4; this.px(x - i, y, mat, t); this.px(x + i, y, mat, t); this.px(x, y - i, mat, t); this.px(x, y + i, mat, t); }
+    return this;
+  };
+
+  // ---------------- faces
+  // Eye: (x,y) = top-left of the eye box. Creature faces LEFT, so the pupil sits on the left.
+  // o: { w:4, h:5, iris:'gold', mood:'cool'|'cute'|'fierce'|'happy'|'closed'|'glow', far:false }
+  K.eye = function (x, y, o) {
+    o = o || {};
+    var w = o.w || 4, h = o.h || 5, ir = o.iris || 'gold', mood = o.mood || 'cool', ink = 'black';
+    var i, j;
+    if (mood === 'happy' || mood === 'closed') {
+      // ^ shaped closed eye
+      for (i = 0; i < w; i++) {
+        var yy = mood === 'happy' ? (i === 0 || i === w - 1 ? 1 : 0) : (i === 0 || i === w - 1 ? 0 : 1);
+        this.px(x + i, y + yy + Math.floor(h / 2) - 1, ink, 0);
+      }
+      return this;
+    }
+    if (mood === 'glow') {
+      for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
+        var edge = (j === 0 || j === h - 1) && (i === 0 || i === w - 1);
+        if (edge) continue;
+        this.px(x + i, y + j, ir, (j === 0 || i === w - 1) ? 3 : 4);
+      }
+      return this;
+    }
+    // iris body
+    for (j = 1; j < h; j++) for (i = 0; i < w; i++) {
+      if (j === h - 1 && (i === 0 || i === w - 1)) continue;
+      var t = j <= 1 ? 1 : j < h - 2 ? 2 : 3;
+      if (i === 0 && j < h - 1) t = 0;          // pupil side (looking left)
+      if (o.white && i === w - 1 && j < h - 1) { this.px(x + i, y + j, 'white', j === 1 ? 2 : 3); continue; }
+      this.px(x + i, y + j, ir, t);
+    }
+    // lids
+    for (i = 0; i < w; i++) this.px(x + i, y, ink, 0);
+    if (mood === 'cute') { this.px(x - 1, y + 1, ink, 0); this.px(x + w, y + 1, ink, 0); }
+    if (mood === 'cool' || mood === 'fierce') { this.px(x + w, y, ink, 0); this.px(x + w, y + 1, ink, 0); if (!o.far) this.px(x + w + 1, y - 1, ink, 0); }
+    if (mood === 'fierce') { for (i = 0; i < Math.ceil(w / 2); i++) this.px(x + i, y + 1, ink, 0); this.px(x - 1, y + 1, ink, 0); }
+    if (o.lower !== false && !o.far) this.px(x + w - 1, y + h - 1, ink, 1);
+    // highlights: tall sharp glint + small secondary
+    var hy = mood === 'fierce' ? y + 2 : y + 1;
+    this.px(x + 1, hy, 'white', 4);
+    if (h >= 5 && w >= 3) this.px(x + 1, hy + 1, 'white', 4);
+    if (h >= 6 && w >= 5) this.px(x + 2, hy, 'white', 4);
+    if (w >= 4 && h >= 4) this.px(x + w - 2, y + h - 2, ir, 4);
+    return this;
+  };
+  // Mouth: (x,y) top-left, w x h. o: {teeth:'top'|'fangs'|'row'|'none', tongue:true}
+  K.mouth = function (x, y, w, h, o) {
+    o = o || {};
+    var i, j, teeth = o.teeth || 'fangs';
+    for (j = 0; j < h; j++) for (i = 0; i < w; i++) {
+      var corner = (j === h - 1) && (i === 0 || i === w - 1);
+      if (corner) continue;
+      this.px(x + i, y + j, 'mouth', j === 0 ? 0 : 1);
+    }
+    if (o.tongue !== false && h >= 3) for (i = 1; i < w - 1; i++) this.px(x + i, y + h - 1, 'mouth', 3);
+    if (teeth === 'row') for (i = 0; i < w; i++) this.px(x + i, y, 'white', i % 2 ? 3 : 4);
+    if (teeth === 'top') for (i = 1; i < w - 1; i++) this.px(x + i, y, 'white', 4);
+    if (teeth === 'fangs') { this.px(x + (o.flip ? w - 2 : 1), y, 'white', 4); this.px(x + (o.flip ? w - 2 : 1), y + 1, 'white', 3); if (w >= 5) { this.px(x + (o.flip ? 1 : w - 2), y, 'white', 4); } }
+    return this;
+  };
+  // soft ground shadow
+  K.shadow = function (cx, cy, rx, ry) { this.shadows.push([cx, cy, rx, ry || 1.6]); return this; };
+  // symmetric helper: fn(mx) is called twice; mx(x) maps x (identity, then mirrored about cx)
+  K.sym = function (cx, fn) { fn(function (x) { return x; }, 1); fn(function (x) { return 2 * cx - x; }, -1); return this; };
+  // deterministic RNG
+  K.rand = function (seed) { var s = (seed | 0) || 1; return function () { s = Math.imul(s ^ (s >>> 15), 2246822507); s = Math.imul(s ^ (s >>> 13), 3266489909); s ^= s >>> 16; return (s >>> 0) / 4294967296; }; };
+
+  // ------------------------------------------------------------------ post-process
+  var DT = new Float32Array(N);
+  function distField(p) {
+    // chamfer distance inside the part's full mask (distance to nearest outside pixel), restricted to bbox+1
+    var x0 = Math.max(0, p.x0 - 1), y0 = Math.max(0, p.y0 - 1), x1 = Math.min(63, p.x1 + 1), y1 = Math.min(63, p.y1 + 1);
+    var m = p.mask, x, y, i, v, BIG = 1e4, D = 1.4142;
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) { i = y * W + x; DT[i] = m[i] ? BIG : 0; }
+    // pixels on the canvas border count as edge
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+      i = y * W + x; if (!DT[i]) continue;
+      v = DT[i];
+      v = Math.min(v, (x > 0 ? DT[i - 1] : 0) + 1, (y > 0 ? DT[i - W] : 0) + 1,
+        (x > 0 && y > 0 ? DT[i - W - 1] : 0) + D, (x < 63 && y > 0 ? DT[i - W + 1] : 0) + D);
+      DT[i] = v;
+    }
+    for (y = y1; y >= y0; y--) for (x = x1; x >= x0; x--) {
+      i = y * W + x; if (!DT[i]) continue;
+      v = DT[i];
+      v = Math.min(v, (x < 63 ? DT[i + 1] : 0) + 1, (y < 63 ? DT[i + W] : 0) + 1,
+        (x < 63 && y < 63 ? DT[i + W + 1] : 0) + D, (x > 0 && y < 63 ? DT[i + W - 1] : 0) + D);
+      DT[i] = v;
+    }
+    var mx = 0, hmap = new Float32Array((x1 - x0 + 1) * (y1 - y0 + 1));
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) { v = DT[y * W + x]; if (v > mx) mx = v; }
+    var R = p.o.round || Math.max(2, Math.min(mx * 0.95, 12));
+    var bw = x1 - x0 + 1;
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+      v = DT[y * W + x];
+      var q = 1 - Math.min(v, R) / R;
+      hmap[(y - y0) * bw + (x - x0)] = v ? R * Math.sqrt(1 - q * q) : 0;
+    }
+    p.h = hmap; p.bx = x0; p.by = y0; p.bw = bw; p.bh = y1 - y0 + 1; p.maxd = mx; p.dist = null;
+    if (p.o.shade === 'glow') {
+      p.dist = new Float32Array(hmap.length);
+      for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) p.dist[(y - y0) * bw + (x - x0)] = DT[y * W + x];
+    }
+  }
+  function hAt(p, x, y) {
+    x -= p.bx; y -= p.by;
+    if (x < 0 || y < 0 || x >= p.bw || y >= p.bh) return 0;
+    return p.h[y * p.bw + x];
+  }
+
+  Kit.prototype.finish = function () {
+    var mat = this.mat, part = this.part, tone = this.tone, parts = this.parts, seq = this.seq;
+    var i, x, y, p, t;
+    var used = new Uint8Array(parts.length);
+    for (i = 0; i < N; i++) if (mat[i]) used[part[i]] = 1;
+    for (var k = 0; k < parts.length; k++) {
+      p = parts[k];
+      if (!used[k] || p.x1 < 0) continue;
+      var sh = p.o.shade || 'auto';
+      if (sh === 'auto' || sh === 'glow') distField(p);
+    }
+    var out = new Int8Array(N).fill(-1); // final tone per pixel
+    for (i = 0; i < N; i++) {
+      if (!mat[i]) continue;
+      if (tone[i] >= 0) { out[i] = tone[i]; continue; }
+      p = parts[part[i]];
+      var o = p.o, mode = o.shade || 'auto';
+      x = i & 63; y = i >> 6;
+      if (mode === 'flat' || mode === 'none' || !p.h) { t = o.flatTone != null ? o.flatTone : 2; }
+      else if (mode === 'glow') {
+        var dn = p.dist[(y - p.by) * p.bw + (x - p.bx)] / Math.max(1.5, p.maxd);
+        t = dn > 0.62 ? 4 : dn > 0.34 ? 3 : dn > 0.12 ? 2 : 1;
+        if (t < 4 && hAt(p, x - 1, y - 1) < hAt(p, x + 1, y + 1) - 0.8 && t > 1) t = Math.min(4, t + (dn > 0.2 ? 1 : 0));
+      } else {
+        var gx = (hAt(p, x + 1, y) - hAt(p, x - 1, y)) * 0.5, gy = (hAt(p, x, y + 1) - hAt(p, x, y - 1)) * 0.5;
+        var s = o.flat ? 0.45 : 1;
+        var nx = -gx * s, ny = -gy * s, nz = 1, nl = Math.sqrt(nx * nx + ny * ny + 1);
+        var lit = (nx * LX + ny * LY + nz * LZ) / nl + (o.light || 0);
+        t = lit > 0.86 ? 4 : lit > 0.6 ? 3 : lit > 0.22 ? 2 : 1;
+        if (t === 4 && (o.hi === false || hAt(p, x, y) < 1.2)) t = 3;
+        if (o.dither && ((x + y) & 1)) {
+          if (t === 2 && lit > 0.54) t = 3; else if (t === 1 && lit > 0.17) t = 2;
+        }
+      }
+      if (o.shift) t = Math.max(1, Math.min(4, t + o.shift));
+      out[i] = t;
+    }
+    // seams: a pixel whose neighbour belongs to a part drawn later (in front) gets darkened
+    var seamT = new Int8Array(N).fill(-1);
+    var NB = [-1, 1, -W, W];
+    for (i = 0; i < N; i++) {
+      if (!mat[i] || tone[i] >= 0) continue;
+      p = parts[part[i]];
+      if (p.o.noline) continue;
+      x = i & 63; y = i >> 6;
+      for (var n = 0; n < 4; n++) {
+        if ((n === 0 && x === 0) || (n === 1 && x === 63) || (n === 2 && y === 0) || (n === 3 && y === 63)) continue;
+        var j = i + NB[n];
+        if (!mat[j] || part[j] === part[i] || seq[j] <= seq[i]) continue;
+        var q = parts[part[j]];
+        if (q.o.noseam || q === this.inkPart) continue;
+        seamT[i] = (mat[j] !== mat[i] || n === 3) ? 0 : Math.max(1, out[i] - 1);
+        // pixels just below a front part read as a soft cast shadow instead of a hard line
+        if (n === 2 && mat[j] === mat[i]) seamT[i] = Math.max(1, out[i] - 1);
+        break;
+      }
+    }
+    for (i = 0; i < N; i++) if (seamT[i] >= 0) out[i] = Math.min(out[i], seamT[i]);
+
+    // compose
+    var img = new Uint8ClampedArray(N * 4);
+    // ground shadow
+    for (var s2 = 0; s2 < this.shadows.length; s2++) {
+      var S = this.shadows[s2];
+      for (y = Math.floor(S[1] - S[3] - 1); y <= Math.ceil(S[1] + S[3] + 1); y++) for (x = Math.floor(S[0] - S[2] - 1); x <= Math.ceil(S[0] + S[2] + 1); x++) {
+        if (!inb(x, y)) continue;
+        var ex = (x + 0.5 - S[0]) / S[2], ey = (y + 0.5 - S[1]) / S[3], e = ex * ex + ey * ey;
+        if (e > 1) continue;
+        i = (y * W + x) * 4;
+        img[i] = 26; img[i + 1] = 20; img[i + 2] = 48; img[i + 3] = Math.max(img[i + 3], e < 0.45 ? 110 : 70);
+      }
+    }
+    // halos (glow) — drawn under the outline, outside the silhouette
+    for (k = 0; k < parts.length; k++) {
+      p = parts[k];
+      if (!p.o.halo || !used[k]) continue;
+      var hr = p.o.haloR || 2, hc = RL[p.mat].c[3], ha = typeof p.o.halo === 'number' ? p.o.halo : 0.35;
+      for (y = Math.max(0, p.y0 - hr - 1); y <= Math.min(63, p.y1 + hr + 1); y++) for (x = Math.max(0, p.x0 - hr - 1); x <= Math.min(63, p.x1 + hr + 1); x++) {
+        i = y * W + x;
+        if (mat[i]) continue;
+        var best = 99;
+        for (var dy = -hr; dy <= hr; dy++) for (var dx = -hr; dx <= hr; dx++) {
+          var xx = x + dx, yy = y + dy;
+          if (!inb(xx, yy)) continue;
+          var jj = yy * W + xx;
+          if (mat[jj] && part[jj] === k) { var dd = Math.max(Math.abs(dx), Math.abs(dy)); if (dd < best) best = dd; }
+        }
+        if (best > hr) continue;
+        var a = Math.round(255 * ha * (best <= 1 ? 1 : 0.5)), q4 = i * 4;
+        if (a > img[q4 + 3]) { img[q4] = hc[0]; img[q4 + 1] = hc[1]; img[q4 + 2] = hc[2]; img[q4 + 3] = a; }
+      }
+    }
+    // outline: empty pixels 4-adjacent to the sprite
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      i = y * W + x;
+      if (mat[i]) continue;
+      var pick = -1, lit2 = false;
+      // prefer neighbours below/right (outline sits on the lit top-left side -> softer colour)
+      var cand = [[x, y + 1, true], [x + 1, y, true], [x, y - 1, false], [x - 1, y, false]];
+      for (var c = 0; c < 4; c++) {
+        var cx = cand[c][0], cy = cand[c][1];
+        if (!inb(cx, cy)) continue;
+        var ci = cy * W + cx;
+        if (!mat[ci]) continue;
+        var pp = parts[part[ci]];
+        if (pp.o.outline === 'none') continue;
+        if (pick < 0 || (!cand[c][2] && lit2)) { pick = ci; lit2 = cand[c][2]; }
+      }
+      if (pick < 0) continue;
+      var r = RL[mat[pick]], pm = parts[part[pick]].o.outline;
+      var col = pm === 'soft' ? r.c[1] : (lit2 ? r.sel : r.c[0]);
+      var q4b = i * 4;
+      img[q4b] = col[0]; img[q4b + 1] = col[1]; img[q4b + 2] = col[2]; img[q4b + 3] = 255;
+    }
+    for (i = 0; i < N; i++) {
+      if (!mat[i]) continue;
+      var cc = RL[mat[i]].c[out[i] < 0 ? 2 : out[i]], q4c = i * 4;
+      img[q4c] = cc[0]; img[q4c + 1] = cc[1]; img[q4c + 2] = cc[2]; img[q4c + 3] = 255;
+    }
+    return img;
+  };
+
+  // ------------------------------------------------------------------ public
+  window.PIXMON = window.PIXMON || {};
+  var CACHE = {}, CANV = {};
+  function drawToCanvas(fn) {
+    var k = new Kit();
+    fn(k);
+    var img = k.finish();
+    var cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    cv.getContext('2d').putImageData(new ImageData(img, W, H), 0, 0);
+    return cv;
+  }
+  window.PIXKIT = {
+    W: W, H: H,
+    RAMPS: RAMPS,
+    ramp: function (name) { var r = RL[RI[name]]; return r ? r.hex.slice() : null; },
+    addRamp: function (name, hexes) { addRamp(name, hexes); RAMPS[name] = hexes.slice(); CACHE = {}; CANV = {}; },
+    has: function (id) { return !!window.PIXMON[id]; },
+    ids: function () { return Object.keys(window.PIXMON).map(Number).sort(function (a, b) { return a - b; }); },
+    // cached 64x64 canvas
+    canvas: function (id) {
+      if (CANV[id]) return CANV[id];
+      var fn = window.PIXMON[id];
+      if (!fn) return null;
+      CANV[id] = drawToCanvas(fn);
+      return CANV[id];
+    },
+    // cached PNG dataURL (64x64, transparent)
+    render: function (id) {
+      if (CACHE[id]) return CACHE[id];
+      var cv = this.canvas(id);
+      if (!cv) return null;
+      CACHE[id] = cv.toDataURL('image/png');
+      return CACHE[id];
+    },
+    // draw an ad-hoc function (for previews / experiments); not cached
+    draw: function (fn) { return drawToCanvas(fn); },
+    clear: function (id) { if (id == null) { CACHE = {}; CANV = {}; } else { delete CACHE[id]; delete CANV[id]; } }
+  };
+})();
