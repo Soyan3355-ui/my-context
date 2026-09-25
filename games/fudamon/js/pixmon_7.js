@@ -542,4 +542,247 @@
     pm(k, 48, 66, ['s', 's'], F); pm(k, 30, 69, ['.s', 's.'], F);
     k.sparkle(8, 24, 1, 'light'); k.sparkle(72, 50, 1, 'light'); k.sparkle(62, 10, 1, 'white');
   };
+  // 57 ホタルヒメ — light, soothing (evolves from 27 ヒカリホタル): the firefly fairy grown into a princess. Its glowing
+  // lantern belly has become a softly lit bell gown, it holds up a paper-lantern parasol, wears a small gold tiara on
+  // the red bonnet and has four leaf wings. Gag: still blissfully hugging its own glow, one-armed now.
+  P[57] = function (k) {
+    k.shadow(C, 77, 17, 1.8);
+    // four leaf wings
+    k.sym(C, function (m, s) {
+      k.leaf(m(33), 42, m(11), 26, 13, 'leaf', { part: 'wa' + s, flat: true, light: 0.15 });
+      k.leaf(m(33), 50, m(13), 58, 10, 'leaf', { part: 'wb' + s, shift: -1, flat: true });
+      k.tube([[m(32), 41.5, 0.5], [m(14), 28, 0.5]], null, { adj: -1, clip: 'wa' + s });
+      k.tube([[m(25), 35.5, 0.5], [m(22), 30, 0.5]], null, { adj: -1, clip: 'wa' + s });
+      k.tube([[m(20), 33, 0.5], [m(15), 34, 0.5]], null, { adj: -1, clip: 'wa' + s });
+      k.tube([[m(32), 50, 0.5], [m(16), 57, 0.5]], null, { adj: -1, clip: 'wb' + s });
+      k.tube([[m(24), 53, 0.5], [m(21), 58, 0.5]], null, { adj: -1, clip: 'wb' + s });
+    });
+    // parasol (behind the head, held in the right hand)
+    k.tube([[55, 47, 0.7], [55, 14, 0.7]], 'wood', { part: 'shaft', shade: 'flat', flatTone: 2 });
+    k.poly([[36, 18], [40, 11], [47, 6.5], [55, 5], [63, 6.5], [70, 11], [74, 18], [69, 16.5], [64, 18.5], [59.5, 16.5], [55, 18.5], [50.5, 16.5], [46, 18.5], [41, 16.5]], 'light', { part: 'para', shade: 'glow', halo: 0.3 });
+    [[40, 16], [46.5, 17.5], [55, 17.5], [63.5, 17.5], [70, 16]].forEach(function (p) { k.tube([[55, 5.5, 0.5], [p[0], p[1], 0.5]], null, { adj: -2, clip: 'para' }); });
+    k.tube([[37, 17.5, 0.6], [45, 18, 0.6], [55, 18.2, 0.6], [65, 18, 0.6], [73, 17.5, 0.6]], 'red', { clip: 'para', tone: 3 });
+    k.circle(55, 4, 1.4, 'gold', { part: 'finial' });
+    k.tube([[74, 18.5, 0.5], [74, 21.5, 0.5]], 'red', { part: 'tas1', shade: 'flat', flatTone: 3 }); k.tube([[36, 18.5, 0.5], [36, 21.5, 0.5]], 'red', { part: 'tas2', shade: 'flat', flatTone: 3 });
+    // little feet peeking under the gown
+    k.sym(C, function (m, s) { k.ellipse(m(35.5), 75, 2.4, 1.4, 'obsidian', { part: 'ft' + s }); });
+    // glowing bell gown, ribbed like the old lantern belly
+    k.poly([[34, 50], [46, 50], [51, 58], [56, 67], [59, 74], [21, 74], [24, 67], [29, 58]], 'light', { part: 'gown', shade: 'glow', halo: 0.3 });
+    k.tufts([[59, 74], [21, 74]], 'light', { part: 'gown', len: 2, w: 3, every: 3.5, seed: 4 });
+    [57, 62, 67, 72].forEach(function (yy) {
+      var hw = 6 + (yy - 50) * 0.8;
+      k.tube([[C - hw, yy - 0.8, 0.5], [C, yy + 0.8, 0.5], [C + hw, yy - 0.8, 0.5]], null, { adj: -1, clip: 'gown' });
+    });
+    k.tube([[22, 73.5, 0.6], [C, 74.5, 0.6], [58, 73.5, 0.6]], 'gold', { clip: 'gown', tone: 4 });
+    // red bodice with a gold sash
+    k.ellipse(C, 48, 7.5, 5, 'red', { part: 'bodice' });
+    k.texture('bodice', 'cloth', { size: 3 });
+    k.rect(32, 51, 16, 1, 'gold', { clip: 'bodice', tone: 4 });
+    k.sparkle(35, 62, 1, 'white');
+    // arms: left hugs the glowing gown, right holds the parasol
+    k.tube([[33.5, 47, 1.8], [31.5, 52, 1.7], [34, 56, 1.6]], 'red', { part: 'armL' });
+    k.circle(35.5, 57, 2.2, 'cream', { part: 'handL' });
+    k.tube([[46.5, 47, 1.8], [51, 46, 1.7], [53.5, 45, 1.6]], 'red', { part: 'armR' });
+    k.circle(55, 45.5, 2.2, 'cream', { part: 'handR' });
+    // antennae with glowing tips, curling
+    k.sym(C, function (m, s) {
+      k.tube([[m(36), 26, 0.6], [m(33), 20, 0.6], [m(29), 16.5, 0.6], [m(26.5), 17, 0.6]], 'wood', { part: 'ant' + s, shade: 'flat', flatTone: 2 });
+      k.circle(m(25), 16, 2.2, 'light', { part: 'antG' + s, shade: 'glow' });
+    });
+    // bonnet + tiara + face
+    k.ellipse(C, 35, 13.5, 11, 'red', { part: 'hood' });
+    k.tufts([[29.5, 36], [27, 43]], 'red', { part: 'hood', len: 2.5, w: 2.5, every: 2.5, seed: 3 });
+    k.tufts([[53, 43], [50.5, 36]], 'red', { part: 'hood', len: 2.5, w: 2.5, every: 2.5, seed: 4 });
+    k.texture('hood', 'cloth', { size: 3 });
+    k.rect(39, 24, 2, 7, 'black', { clip: 'hood', tone: 2 });
+    k.sym(C, function (m) { k.circle(m(33), 29, 1.3, 'black', { clip: 'hood', tone: 2 }); });
+    k.poly([[33, 26], [34, 21.5], [36.5, 24], [C, 19], [43.5, 24], [46, 21.5], [47, 26]], 'gold', { part: 'tiara' });
+    k.circle(C, 23.5, 1.3, 'crystal', { part: 'tgem', shade: 'flat', flatTone: 5 }); k.px(39, 23, 'white', 6);
+    k.ellipse(C, 39.5, 11, 8, 'cream', { part: 'face', spec: false });
+    k.ellipse(C, 33.5, 8.5, 2.5, null, { adj: -1, clip: 'face' });
+    // blissful face: closed smiling eyes with lashes, rosy cheeks, gentle smile
+    var F = { K: ['black', 0], s: ['sakura', 4], S: ['sakura', 5], m: ['mouth', 3], t: ['skin', 4] };
+    pm(k, 30, 37, ['.KKKK.', 'K....K'], F); pm(k, 44, 37, ['.KKKK.', 'K....K'], F);
+    k.px(29, 37, 'black', 0); k.px(51, 37, 'black', 0);
+    pm(k, 30, 41, ['sSs'], F); pm(k, 47, 41, ['sSs'], F);
+    pm(k, 38, 42, ['K..K', '.KK.'], F);
+    k.px(35, 34, 'cream', 6); k.px(36, 34, 'cream', 5);
+    // fireflies drifting around
+    [[12, 18], [9, 46], [17, 66], [66, 30], [70, 52], [63, 66], [27, 9]].forEach(function (p, i) {
+      k.px(p[0], p[1], 'light', 6); k.px(p[0] + 1, p[1], 'light', 5); k.px(p[0], p[1] - 1, 'light', 4); k.px(p[0] - 1, p[1] - 1, 'black', 2);
+    });
+    k.sparkle(6, 34, 1, 'light'); k.sparkle(74, 40, 1, 'light');
+  };
+
+  // 58 セイリンジカ — light, soothing/mystic (evolves from 28 ルミナシカ): the fawn has risen to its feet as a sacred
+  // crystal stag. Its antlers have grown into a great branching crystal crown ringed by a halo, glowing dapples run down
+  // its flanks, the flower garland is fuller, and flowers bloom around its hooves. Gag: the butterfly is still on its
+  // antler — and it brought a friend.
+  P[58] = function (k) {
+    k.shadow(C, 77, 22, 2.2);
+    // halo ring behind the antlers
+    var ring = []; for (var q = 0; q <= 28; q++) { var an = q * Math.PI / 14; ring.push([C + Math.cos(an) * 17, 17 + Math.sin(an) * 12, 0.9]); }
+    k.tube(ring, 'light', { part: 'halo', shade: 'flat', flatTone: 5, halo: 0.3, outline: 'soft' });
+    // crystal antlers: a big branching crown
+    k.sym(C, function (m, s) {
+      var o = { part: 'ant' + s, shade: 'flat', flatTone: 4, halo: 0.25 };
+      k.tube([[m(36), 27, 1.8], [m(33), 20, 1.6], [m(28), 13, 1.3], [m(21), 8, 1], [m(15), 6, 0.6]], 'crystal', o);
+      k.tube([[m(33), 20, 1.2], [m(26), 20, 1], [m(19), 17, 0.6]], 'crystal', o);
+      k.tube([[m(28), 13, 1.1], [m(29), 6, 0.8], [m(27), 2.5, 0.5]], 'crystal', o);
+      k.tube([[m(21), 8, 0.9], [m(19), 3, 0.5]], 'crystal', o);
+      k.tube([[m(34.5), 23, 1], [m(38), 17, 0.6]], 'crystal', o);
+      k.tube([[m(35), 25.5, 0.5], [m(31.5), 18, 0.5], [m(26), 11.5, 0.5], [m(20), 7.3, 0.4]], null, { set: 6, clip: 'ant' + s });
+      k.tube([[m(37), 26, 0.5], [m(34), 19.5, 0.5], [m(29), 14, 0.5]], null, { set: 2, clip: 'ant' + s });
+    });
+    // butterflies on the antlers
+    pm(k, 13, 3, ['S.S', 's.s', '.K.'], { S: ['sakura', 5], s: ['sakura', 3], K: ['black', 1] }); k.px(14, 4, 'black', 1);
+    pm(k, 58, 13, ['S.S', 's.s', '.K.'], { S: ['gold', 5], s: ['gold', 3], K: ['black', 1] }); k.px(59, 14, 'black', 1);
+    // flank + hind legs set wide and back
+    k.ellipse(C, 55, 17, 8, 'tan', { part: 'flank', shift: -1 });
+    k.texture('flank', 'fur', { seed: 12 });
+    k.sym(C, function (m, s) {
+      k.tube([[m(26), 57, 3.8], [m(24.5), 64, 2.5], [m(25.5), 68, 2], [m(25), 72, 1.6]], 'tan', { part: 'hind' + s, shift: -1 });
+      k.poly([[m(23), 71.5], [m(27), 71.5], [m(27.5), 75.5], [m(22.5), 75.5]], 'wood', { part: 'hh' + s });
+      k.px(m(25), 74, 'wood', 0);
+    });
+    [[25, 52], [28, 50], [23, 56], [55, 52], [52, 50], [57, 56], [29, 55], [51, 55]].forEach(function (p) { k.px(p[0], p[1], 'light', 6); k.px(p[0] + 1, p[1], 'light', 5); });
+    // deep chest
+    k.ellipse(C, 55, 10.5, 10, 'tan', { part: 'body' });
+    k.texture('body', 'fur', { seed: 4 });
+    k.ellipse(C, 57, 6, 7, 'cream', { clip: 'body' });
+    k.tufts([[46, 63], [34, 63]], 'cream', { part: 'bib', len: 3, w: 2.6, every: 2, seed: 2 });
+    // front legs: tapered, knee bumps, split hooves
+    k.sym(C, function (m, s) {
+      k.tube([[m(35), 60, 3.2], [m(34.5), 66, 2.3], [m(34.3), 68, 2.4], [m(34), 72.5, 1.7]], 'tan', { part: 'leg' + s });
+      k.poly([[m(32), 72], [m(36), 72], [m(36.5), 76], [m(31.5), 76]], 'wood', { part: 'hoof' + s });
+      k.px(m(34), 74, 'wood', 0); k.px(m(34), 75, 'wood', 0); k.px(m(32), 73, 'wood', 5);
+      k.px(m(34), 67, 'tan', 5);
+    });
+    // flowers blooming round the hooves
+    [[18, 75, 'sakura'], [29, 76, 'gold'], [C, 75.5, 'sakura'], [51, 76, 'gold'], [62, 75, 'sakura'], [13, 73, 'white'], [67, 73, 'white']].forEach(function (f, i) {
+      k.leaf(f[0] - 3, f[1] + 0.5, f[0] + 3, f[1] - 0.5, 2.2, 'grass', { part: 'lf' + i });
+      k.circle(f[0], f[1] - 1.5, 1.8, f[2], { part: 'fw' + i });
+      k.px(f[0], f[1] - 1.5, 'gold', 6);
+    });
+    // neck
+    k.tube([[C, 52, 5.4], [C, 38, 4.6]], 'tan', { part: 'neck' });
+    k.texture('neck', 'fur', { seed: 6 });
+    k.tube([[C, 51, 2.5], [C, 40, 2.1]], 'cream', { clip: 'neck' });
+    // fuller garland
+    k.tube([[32, 42, 1.2], [C, 46, 1.3], [48, 42, 1.2]], 'leaf', { part: 'vine' });
+    [[32.5, 42.5], [35.5, 44.8], [44.5, 44.8], [47.5, 42.5]].forEach(function (p, i) { k.circle(p[0], p[1], 1.9, i % 2 ? 'gold' : 'sakura', { part: 'fl' + i }); k.px(p[0], p[1], 'gold', 6); });
+    k.circle(C, 47, 2.4, 'sakura', { part: 'flC' }); k.px(C, 47, 'gold', 6); k.px(39, 46, 'sakura', 6);
+    // ears
+    k.sym(C, function (m, s) {
+      k.leaf(m(33), 27, m(19), 24, 7.5, 'tan', { part: 'ear' + s });
+      k.leaf(m(32), 26.5, m(21.5), 24.5, 3.2, 'sakura', { clip: 'ear' + s, tone: 3 });
+    });
+    // head, muzzle, nose
+    k.ellipse(C, 31, 9, 8.5, 'tan', { part: 'head' });
+    k.texture('head', 'fur', { seed: 9 });
+    k.ellipse(C, 25.5, 3, 2, null, { adj: 1, clip: 'head', pattern: 'checker' });
+    k.poly([[C, 23], [41.3, 25], [C, 27], [38.7, 25]], 'crystal', { part: 'mark', shade: 'glow', outline: 'none' });
+    k.ellipse(C, 36.5, 4.8, 3.6, 'cream', { part: 'muzzle' });
+    pm(k, 39, 35, ['bK', 'KK'], { K: ['black', 1], b: ['black', 5] });
+    pm(k, 38, 38, ['K..K', '.KK.'], { K: ['tan', 1] });
+    // gentle eyes with lashes
+    var E = { K: ['black', 0], b: ['crystal', 2], c: ['crystal', 4], W: ['white', 6] };
+    var eye = ['K.KKK.', '.KWbbK', '.KbccK', '..KKK.'];
+    pm(k, 30, 29, eye, E); pmx(k, 44, 29, eye, E);
+    k.path([[32, 26], [34, 25], [36, 26]], 'tan', 1); k.path([[44, 26], [46, 25], [48, 26]], 'tan', 1);
+    k.sym(C, function (m) { k.rect(m(32), 33, 3, 1, 'sakura', { tone: 4, part: 'blush', outline: 'none' }); });
+    // drifting motes
+    k.sparkle(8, 30, 1, 'light'); k.sparkle(72, 34, 1, 'white'); k.sparkle(70, 62, 1, 'light'); k.px(10, 58, 'light', 6); k.px(66, 46, 'light', 6);
+  };
+  // 59 テンクウグリフ — light, cool (evolves from 29 シロガネグリフ): the silver griffin ascended. Four wings now (a great
+  // upper pair and a lower pair), gilded plate over chest, brow and shoulders, a sunburst blazing behind its head.
+  // Gag: the eagle half still screams bloody murder while the lion half sits like a contented housecat — tail curled.
+  P[59] = function (k) {
+    k.shadow(C, 77, 24, 2.4);
+    // radiant sunburst behind the head
+    for (var r = 0; r < 12; r++) {
+      var a = -Math.PI / 2 + (r - 5.5) * 0.24, L = r % 2 ? 19 : 25;
+      k.spike(C + Math.cos(a) * 6, 27 + Math.sin(a) * 6, C + Math.cos(a) * L * 1.2, 27 + Math.sin(a) * L, r % 2 ? 2.6 : 3.6, 'gold', { part: 'rays' + (r % 2), shade: 'flat', flatTone: r % 2 ? 4 : 5, halo: r % 2 ? 0 : 0.3 });
+    }
+    // lower wing pair
+    k.sym(C, function (m, s) {
+      var w = 'lw' + s;
+      k.poly([[m(31), 52], [m(10), 44], [m(2), 52], [m(5), 55], [m(4), 60], [m(9), 60], [m(10), 65], [m(15), 63], [m(18), 67], [m(22), 62], [m(28), 62]], 'white', { part: w, flat: true, shift: -1 });
+      k.texture(w, 'feather', { size: 3, seed: s + 7 });
+      [[m(5), 56], [m(10), 62], [m(17), 64]].forEach(function (p) { k.tube([[m(12), 47, 0.5], [p[0], p[1], 0.5]], null, { adj: -2, clip: w }); });
+      k.tube([[m(29), 52, 0.6], [m(10), 45, 0.5]], null, { adj: 1, clip: w });
+    });
+    // great upper wings: wrist at the top outer corner, feathers fanning down to a scalloped edge
+    k.sym(C, function (m, s) {
+      var w = 'wing' + s;
+      k.poly([[m(30), 44], [m(14), 6], [m(2), 16], [m(2), 26], [m(6), 25], [m(5), 33], [m(10), 32], [m(10), 40], [m(15), 37], [m(17), 45], [m(21), 41], [m(24), 48], [m(29), 47]], 'white', { part: w, flat: true });
+      k.poly([[m(1), 22], [m(12), 24], [m(21), 35], [m(31), 46], [m(20), 50], [m(1), 38]], 'steel', { clip: w });
+      k.texture(w, 'feather', { size: 4, seed: s + 3 });
+      [[m(4), 26], [m(8), 33], [m(13), 39], [m(19), 44], [m(25), 47]].forEach(function (p) { k.tube([[m(13), 15, 0.5], [p[0], p[1], 0.5]], null, { adj: -2, clip: w }); });
+      k.tube([[m(12), 14, 0.5], [m(26), 39, 0.5]], null, { adj: 1, clip: w, pattern: 'checker' });
+      k.tube([[m(29), 42, 2.6], [m(21), 23, 2.2], [m(14), 7, 1.6]], 'steel', { part: 'wa' + s, light: 0.15 });
+      k.tube([[m(28.5), 41, 0.6], [m(20.5), 22, 0.6]], 'gold', { clip: 'wa' + s, tone: 5 });
+      k.spike(m(14), 8, m(11), 1.5, 3.4, 'gold', { part: 'wc' + s });
+      k.circle(m(21.5), 24, 1.3, 'red', { part: 'wg' + s, shade: 'flat', flatTone: 4 });
+    });
+    // lion tail, curled round the feet like a housecat
+    k.tube([[50, 70, 2.2], [60, 72, 2], [66, 70, 1.7], [67, 65, 1.4]], 'tan', { part: 'tail' });
+    k.tufts([[65, 67], [68, 62]], 'fur', { part: 'tuft', len: 3, w: 3, every: 1.3, seed: 3 });
+    // hind haunches
+    k.sym(C, function (m, s) {
+      k.ellipse(m(28.5), 66, 7.5, 8, 'tan', { part: 'haunch' + s, shift: -1 });
+      k.ellipse(m(27), 74, 6, 2.2, 'tan', { part: 'hf' + s, shift: -1 });
+      k.texture('haunch' + s, 'fur', { seed: 6 + s });
+    });
+    // feathered chest + golden breastplate
+    k.ellipse(C, 54, 13, 13, 'white', { part: 'body' });
+    k.texture('body', 'feather', { size: 3, seed: 5 });
+    k.poly([[31.5, 45], [48.5, 45], [47, 54], [C, 59], [33, 54]], 'gold', { part: 'plate' });
+    k.path([[31.5, 45], [33, 54], [C, 59], [47, 54], [48.5, 45]], 'gold', 2);
+    k.tube([[34, 47, 0.5], [35, 53, 0.5]], null, { adj: 1, clip: 'plate' });
+    k.path([[36, 55], [C, 57], [44, 55]], 'gold', 2);
+    k.poly([[C, 46.5], [42.8, 50], [C, 53.5], [37.2, 50]], 'red', { part: 'gem', shade: 'flat', flatTone: 4, halo: 0.25 });
+    k.px(39, 48, 'red', 6); k.px(41, 52, 'red', 2);
+    // gold pauldrons
+    k.sym(C, function (m, s) {
+      k.ellipse(m(28), 45, 5, 3.6, 'gold', { part: 'pd' + s });
+      k.line(m(24), 46, m(32), 47, 'gold', 2);
+    });
+    // lion forelegs with gold greaves
+    k.sym(C, function (m, s) {
+      k.tube([[m(33.5), 57, 4.4], [m(32.5), 64, 3.4], [m(32), 70, 3.1]], 'tan', { part: 'leg' + s });
+      k.ellipse(m(31.5), 73, 5, 3, 'tan', { part: 'leg' + s });
+      k.texture('leg' + s, 'fur', { seed: 4 + s });
+      k.poly([[m(29), 63], [m(36), 63], [m(35.5), 68], [m(29.5), 68]], 'gold', { part: 'gv' + s });
+      k.line(m(29.5), 65, m(35.5), 65, 'gold', 2);
+      k.px(m(30), 73, 'tan', 1); k.px(m(33), 73, 'tan', 1);
+      k.tooth(m(28.5), 74, m(28), 76.5, 1.8); k.tooth(m(31.5), 74.5, m(31.5), 77, 1.8); k.tooth(m(34.5), 74, m(35), 76.5, 1.8);
+    });
+    // swept-up crest plumes
+    k.sym(C, function (m, s) {
+      k.spike(m(35), 21, m(27), 4, 6, 'white', { part: 'cr' + s });
+      k.spike(m(33), 23, m(20), 10, 5.5, 'white', { part: 'cr' + s });
+      k.spike(m(32), 28, m(20), 22, 5, 'white', { part: 'cr' + s });
+      k.tube([[m(34), 19, 0.5], [m(28.5), 7, 0.5]], 'steel', { clip: 'cr' + s, tone: 3 });
+    });
+    // head + neck ruff
+    k.ellipse(C, 28, 10.5, 9.5, 'white', { part: 'head' });
+    k.tufts([[50, 36], [C, 40], [30, 36]], 'white', { part: 'ruff', len: 4, w: 3, every: 2.2, seed: 7 });
+    k.texture('head', 'feather', { size: 3, seed: 8 });
+    // golden brow plate with a tall crest spike
+    k.poly([[29.5, 19], [50.5, 19], [48, 23.5], [C, 25], [32, 23.5]], 'gold', { part: 'helm' });
+    k.path([[31.5, 22], [C, 23.5], [48.5, 22]], 'gold', 2);
+    k.spike(C, 20, C, 9, 4, 'gold', { part: 'helmsp' });
+    k.circle(C, 18.5, 1.3, 'red', { part: 'hgem', shade: 'flat', flatTone: 4 }); k.px(39, 18, 'red', 6);
+    k.sym(C, function (m) { k.spike(m(31), 20, m(26), 15, 2.6, 'gold', { part: 'hw' + m(0) }); });
+    // screeching beak
+    k.mouth([[33.5, 32.5], [46.5, 32.5], [44, 39.5], [C, 41.5], [36, 39.5]], {});
+    k.poly([[33, 29], [47, 29], [45, 33], [42.5, 38.5], [C, 43], [37.5, 38.5], [35, 33]], 'gold', { part: 'beak' });
+    k.px(38, 31, 'gold', 1); k.px(42, 31, 'gold', 1);
+    k.line(C, 33, C, 41, 'gold', 2);
+    // fierce eyes under the plate
+    k.eye(30, 25, { w: 7, h: 5, iris: 'red', side: 'L', angry: 1.3, lid: 0.25, brow: false });
+    k.eye(43, 25, { w: 7, h: 5, iris: 'red', side: 'R', angry: 1.3, lid: 0.25, brow: false });
+    k.sparkle(6, 70, 1, 'light'); k.sparkle(74, 70, 1, 'light'); k.sparkle(C, 3, 1, 'white');
+  };
 })();

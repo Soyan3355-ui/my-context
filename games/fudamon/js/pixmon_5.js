@@ -137,32 +137,32 @@
     // face panel
     k.ellipse(C, 43, 11, 10, 'cream', { part: 'face', spec: false, dither: false, flat: true, light: 0.3 });
     k.path([[33, 51], [36, 52.5], [44, 52.5], [47, 51]], 'cream', 3);
-    // bold painted brows
-    pm(k, 30, 34, ['..KKKK', '.KKKKK', 'KK....'], INK);
-    pm(k, 44, 34, mirror(['..KKKK', 'KKKKK.', 'K.....']).map(function (r) { return r; }), INK);
-    // BOTH eyes painted now
-    var E = { K: ['black', 0], P: ['black', 0], W: ['white', 6], w: ['white', 4] };
-    pm(k, 32, 38, ['.KKKK.', 'KWPPWK', 'KwPPwK', '.KKKK.'], E);
-    pm(k, 42, 38, ['.KKKK.', 'KWPPWK', 'KwPPwK', '.KKKK.'], E);
-    // nose, painted moustache + beard curls, calm smile
-    pm(k, 39, 42, ['.n.', 'nNn'], { n: ['skin', 4], N: ['skin', 3] });
-    pm(k, 31, 44, ['.KK.......KK.', 'K..KK...KK..K', 'K....KKK....K', '.K.........K.'].map(function (r) { return r; }), INK);
-    pm(k, 36, 48, ['K.......K', '.KK...KK.', '...KKK...'], INK);
-    pm(k, 38, 49, ['.MMMM', '..MS'], { M: ['mouth', 1], S: ['mouth', 4] });
-    k.rect(31, 42, 3, 1, 'sakura', { tone: 4, part: 'bl1', outline: 'none' });
-    k.rect(47, 42, 3, 1, 'sakura', { tone: 4, part: 'bl2', outline: 'none' });
-    // two little daruma kids on the cushion corners (each still has only one eye painted)
+    // bold painted brows (daruma-style swoops)
+    pm(k, 30, 35, ['...KKK', '.KKKK.', 'KK....'], INK);
+    pm(k, 44, 35, mirror(['...KKK', '.KKKK.', 'KK....']), INK);
+    // BOTH eyes painted now: big round daruma eyes
+    var E = { K: ['black', 0], P: ['black', 0], W: ['white', 6], w: ['white', 4], g: ['black', 3] };
+    pm(k, 31, 38, ['.KKKKK.', 'KWWPPWK', 'KWPPPgK', 'KwPPPwK', '.KKKKK.'], E);
+    pm(k, 42, 38, ['.KKKKK.', 'KWPPWWK', 'KgPPPWK', 'KwPPPwK', '.KKKKK.'], E);
+    // nose, gold painted beard curls on the cheeks, calm smile
+    pm(k, 39, 43, ['.n.', 'nNn'], { n: ['skin', 4], N: ['skin', 3] });
+    pm(k, 29, 45, ['g..', '.g.', 'gg.'], { g: ['gold', 3] }); pm(k, 49, 45, ['..g', '.g.', '.gg'], { g: ['gold', 3] });
+    pm(k, 35, 46, ['K.........K', '.KK.....KK.', '...KKKKK...'], INK);
+    pm(k, 38, 47, ['.MMMMM', '..MSS'], { M: ['mouth', 1], S: ['mouth', 4] });
+    k.rect(31, 44, 3, 1, 'sakura', { tone: 4, part: 'bl1', outline: 'none' });
+    k.rect(46, 44, 3, 1, 'sakura', { tone: 4, part: 'bl2', outline: 'none' });
+    // two little daruma kids on the cushion corners (each still has only one eye painted, like the base)
     k.sym(C, function (m, s) {
-      k.ellipse(m(15.5), 68.5, 5.4, 4.8, 'red', { part: 'kb' + s });
-      k.ellipse(m(15.5), 63.5, 4.4, 4, 'red', { part: 'kb' + s });
-      k.ellipse(m(15.5), 64, 3, 2.6, 'cream', { part: 'kf' + s, spec: false, flat: true, light: 0.3 });
-      k.px(m(14), 70, 'gold', 5); k.px(m(15), 70, 'gold', 4); k.px(m(16), 70, 'gold', 5); k.px(m(17), 70, 'gold', 4);
-      k.px(m(13), 61, 'red', 5); k.px(m(15.5), 66, 'black', 1);
+      k.ellipse(m(15.5), 67.5, 6, 5.2, 'red', { part: 'kb' + s });
+      k.ellipse(m(15.5), 62.5, 5, 4.6, 'red', { part: 'kb' + s });
+      k.ellipse(m(15.5), 63, 3.6, 3.2, 'cream', { part: 'kf' + s, spec: false, flat: true, light: 0.3 });
+      k.px(m(13), 69, 'gold', 5); k.px(m(15.5), 70, 'gold', 5); k.px(m(18), 69, 'gold', 5); k.px(m(14), 70, 'gold', 4); k.px(m(17), 70, 'gold', 4);
+      k.px(m(12), 59, 'red', 6); k.px(m(12), 60, 'red', 5);
+      k.px(m(15), 65, 'black', 1); k.px(m(16), 65, 'black', 1);
+      k.tube([[m(15.5), 58.5, 1.4], [m(16.5), 55.5, 0.4]], 'flame', { part: 'kfl' + s, shade: 'glow' });
     });
-    pm(k, 13, 63, ['K.o'], { K: ['black', 0], o: ['black', 2] });
-    pm(k, 65, 63, ['o.K'], { K: ['black', 0], o: ['black', 2] });
-    k.tube([[15.5, 59.5, 1.2], [16.5, 57, 0.4]], 'flame', { part: 'kfl1', shade: 'glow' });
-    k.tube([[64.5, 59.5, 1.2], [63.5, 57, 0.4]], 'flame', { part: 'kfl2', shade: 'glow' });
+    pm(k, 13, 62, ['KK.oo'], { K: ['black', 0], o: ['white', 3] });
+    pm(k, 63, 62, ['oo.KK'], { K: ['black', 0], o: ['white', 3] });
     // warm embers
     k.sparkle(13, 40, 1, 'light'); k.sparkle(67, 46, 1, 'light'); k.px(62, 30, 'flame', 5); k.px(19, 30, 'flame', 5); k.sparkle(26, 22, 1, 'light');
   };
@@ -193,19 +193,19 @@
     // mane drape on the chest
     k.tufts([[52, 49], [46, 51], [34, 51], [28, 49]], 'fire', { part: 'drape', len: 5, w: 4, every: 2.8, seed: 5, shift: -1 });
     // fireball under the right forepaw
-    k.circle(51, 70, 5.8, 'flame', { part: 'fball', shade: 'glow', halo: 0.3 });
-    k.spike(55, 67, 61, 63, 3, 'flame', { part: 'fball' }); k.spike(46, 67, 43, 61.5, 2.6, 'flame', { part: 'fball' });
-    k.path([[48, 71], [50, 73], [53, 72]], 'flame', 2);
+    k.circle(51.5, 70, 6.8, 'flame', { part: 'fball', shade: 'glow', halo: 0.3 });
+    k.spike(57, 66, 63, 61, 3.4, 'flame', { part: 'fball' }); k.spike(58, 71, 64.5, 70, 3, 'flame', { part: 'fball' }); k.spike(46, 66, 43, 60.5, 2.8, 'flame', { part: 'fball' });
+    k.path([[47, 70], [48, 73], [51, 74.5], [55, 73], [56, 70]], 'flame', 2); k.path([[49, 70], [51, 72], [53, 71]], 'magma', 3);
     // forelegs: left planted, right on the ball; gold greaves
     k.sym(C, function (m, s) {
-      var yb = s > 0 ? 0 : -8;
+      var yb = s > 0 ? 0 : -8.5;
       var o = s > 0 ? [[m(27.5), 66 + yb], [m(26), 59 + yb]] : [[m(26), 59 + yb], [m(27.5), 66 + yb]];
       k.tufts(o, 'fire', { part: 'curl' + s, len: 4, w: 3, every: 2.5, seed: 3 + s });
       k.tube([[m(32.5), 56, 5], [m(31.5), 62 + yb * 0.5, 3.8], [m(31), 66 + yb, 3.9], [m(31), 71.5 + yb, 3.4]], 'fur', { part: 'leg' + s });
       k.ellipse(m(31), 73.5 + yb, 5.4, 2.7, 'fur', { part: 'leg' + s });
       k.texture('leg' + s, 'fur', { seed: 6 + s });
       k.tube([[m(35.5), 57, 0.7], [m(34.5), 63 + yb * 0.5, 0.6]], null, { adj: -1, clip: 'leg' + s });
-      k.tube([[m(31.5), 65.5 + yb, 3.9], [m(31), 69.5 + yb, 3.5]], 'gold', { part: 'grv' + s });
+      k.tube([[m(31.5), 66 + yb, 3.9], [m(31.2), 68.5 + yb, 3.6]], 'gold', { part: 'grv' + s });
       k.px(m(30), 66 + yb, 'gold', 6); k.line(m(28), 68 + yb, m(34), 68 + yb, 'gold', 2);
       [28, 31, 34].forEach(function (cx) { k.tooth(m(cx), 75 + yb, m(cx - 0.3), 77.4 + yb, 1.8, 'bone'); });
     });
@@ -252,12 +252,12 @@
   // its back. Towel folded on the rim, wooden bucket, a delighted face.
   P[34] = function (k) {
     k.shadow(C, 76.5, 28, 2.3);
-    // steam columns
-    var so = { outline: 'none', shade: 'flat', flatTone: 4 };
-    [[36, 0], [43, 1]].forEach(function (d, i) {
-      var x = d[0], o = {}; for (var kk in so) o[kk] = so[kk]; o.part = 'stm' + i;
-      k.tube([[x, 36, 1.6], [x - 2, 30, 2], [x + 0.5, 24, 1.8], [x - 1.5, 18, 1.2], [x, 13, 0.5]], 'ice', o);
-      k.path([[x - 1, 34], [x - 3, 30], [x - 1, 25], [x - 2.5, 19]], 'white', 6);
+    // steam columns rising off the onsen
+    [[40, 0, 36, 10], [26, 1, 35, 17], [55, 2, 34, 19]].forEach(function (d) {
+      var x = d[0], y0 = d[2], y1 = d[3], h = y0 - y1;
+      var o = { outline: 'none', shade: 'flat', flatTone: 4, part: 'stm' + d[1] };
+      k.tube([[x, y0, 1.6], [x - 2, y0 - h * 0.3, 2], [x + 0.5, y0 - h * 0.6, 1.7], [x - 1, y1, 0.5]], 'ice', o);
+      k.path([[x - 1, y0 - 1], [x - 3, y0 - h * 0.3], [x - 1, y0 - h * 0.6]], 'white', 6);
     });
     // walking legs (behind)
     k.sym(C, function (m, s) {
@@ -273,10 +273,14 @@
     k.tufts([[18, 58], [21, 49], [27, 41]], 'magma', { part: 'shell', len: 2.4, w: 3, every: 3.5, seed: 2 });
     k.tufts([[53, 41], [59, 49], [62, 58]], 'magma', { part: 'shell', len: 2.4, w: 3, every: 3.5, seed: 3 });
     k.texture('shell', 'stone', { size: 4, seed: 3 });
-    k.ellipse(C, 40, 14.5, 4.4, 'stone', { part: 'rim' });
+    k.ellipse(C, 39, 17, 5.4, 'stone', { part: 'rim', light: 0.3 });
     k.texture('rim', 'stone', { size: 3, seed: 5 });
-    k.ellipse(C, 39.6, 11.5, 2.6, 'aqua', { part: 'pool', shade: 'flat', flatTone: 4, outline: 'none' });
-    k.path([[31, 39], [36, 38.5]], 'aqua', 6); k.path([[44, 40], [48, 40]], 'aqua', 5); k.px(40, 39, 'aqua', 6);
+    [[24, 41, 2.6], [29, 43, 2.8], [35, 44, 2.6], [41, 44.4, 2.8], [47, 43.6, 2.6], [52.5, 42, 2.6], [56.5, 40, 2.2]].forEach(function (r, i) {
+      k.ellipse(r[0], r[1], r[2] + 0.4, r[2] * 0.8, 'stone', { part: 'rock' + i, light: 0.25 });
+    });
+    k.ellipse(C, 38.6, 14, 3.4, 'aqua', { part: 'pool', shade: 'flat', flatTone: 3, outline: 'none' });
+    k.ellipse(C, 39.2, 11, 2.2, 'aqua', { clip: 'pool', tone: 4 });
+    k.path([[29, 37], [35, 36.5]], 'aqua', 6); k.path([[45, 38], [50, 38.5]], 'aqua', 5); k.px(41, 38, 'aqua', 6); k.px(37, 40, 'aqua', 5);
     // lava cracks
     k.path([[26, 47], [28, 52], [26, 57]], 'flame', 5); k.path([[54, 46], [52, 51], [54, 57]], 'flame', 5);
     k.px(28, 52, 'flame', 6); k.px(52, 51, 'flame', 6);
@@ -287,27 +291,27 @@
     k.path([[31.5, 53], [33, 54]], 'black', 0); k.path([[48.5, 53], [47, 54]], 'black', 0);
     k.rect(27, 53, 3, 1, 'sakura', { tone: 5, part: 'bs1', outline: 'none' });
     k.rect(51, 53, 3, 1, 'sakura', { tone: 5, part: 'bs2', outline: 'none' });
-    // folded towel on the left rim
-    k.poly([[22, 39.5], [32, 39.5], [31.5, 34.5], [22.5, 34.5]], 'white', { part: 'towel', flat: true });
+    // towel folded over the left rim
+    k.poly([[20, 36], [30, 37], [30.5, 41], [20.5, 40]], 'white', { part: 'towel', flat: true, light: 0.3 });
+    k.poly([[20.5, 40], [26, 40.5], [25.5, 46], [21, 45.5]], 'white', { part: 'towel2', flat: true });
     k.texture('towel', 'cloth', { size: 2 });
-    k.rect(22, 36, 10, 1, 'water', { part: 'stripe', tone: 4, outline: 'none' });
-    k.rect(22, 38, 10, 1, 'water', { part: 'stripe', tone: 3, outline: 'none' });
-    k.line(23, 35, 31, 35, 'white', 6);
+    k.line(20, 38, 30, 39, 'water', 4); k.line(21, 43, 25, 43.5, 'water', 3);
+    k.line(21, 37, 29, 38, 'white', 6);
     // wooden bucket on the right rim
-    k.poly([[48, 32], [58, 32], [57, 40.5], [49, 40.5]], 'wood', { part: 'oke' });
+    k.poly([[51, 29], [61, 29], [60, 37.5], [52, 37.5]], 'wood', { part: 'oke', light: 0.35 });
     k.texture('oke', 'bark', { size: 3 });
-    k.rect(48, 34, 11, 1, 'steel', { part: 'hoop', tone: 4, outline: 'none' });
-    k.rect(48, 38, 11, 1, 'steel', { part: 'hoop', tone: 2, outline: 'none' });
-    k.ellipse(53, 32.3, 5, 1.3, 'wood', { part: 'okt', tone: 1, outline: 'none' });
-    k.path([[50, 33], [55, 33]], 'wood', 6);
+    k.rect(51, 31, 11, 1, 'steel', { part: 'hoop', tone: 4, outline: 'none' });
+    k.rect(51, 35, 11, 1, 'steel', { part: 'hoop', tone: 3, outline: 'none' });
+    k.ellipse(56, 29.3, 5, 1.3, 'wood', { part: 'okt', tone: 1, outline: 'none' });
+    k.path([[53, 30], [58, 30]], 'wood', 6);
     // stalk eyes, squeezed shut with delight
     k.sym(C, function (m, s) {
-      k.tube([[m(35), 46, 1.5], [m(32.5), 31, 1.3]], 'magma', { part: 'st' + s });
-      k.ellipse(m(31.5), 27, 4.4, 4.2, 'magma', { part: 'eb' + s });
+      k.tube([[m(36), 50, 1.3], [m(35), 31, 1.1]], 'magma', { part: 'st' + s });
+      k.ellipse(m(34.5), 27, 4.6, 4.4, 'magma', { part: 'eb' + s });
     });
     var HE = { K: ['black', 0] };
-    pm(k, 29, 26, ['.KK.', 'K..K'], HE); pm(k, 47, 26, ['.KK.', 'K..K'], HE);
-    k.px(28, 29, 'sakura', 5); k.px(52, 29, 'sakura', 5);
+    pm(k, 32, 25, ['.KKK.', 'K...K', 'K...K'], HE); pm(k, 44, 25, ['.KKK.', 'K...K', 'K...K'], HE);
+    k.px(31, 29, 'sakura', 5); k.px(49, 29, 'sakura', 5);
     // GIANT claw (left), raised in joy
     k.tube([[24, 58, 3.4], [15, 56, 3.2], [11, 49, 3.2]], 'magma', { part: 'armL' });
     k.tube([[6, 38, 3.8], [3.5, 30, 3], [6, 22, 1.2]], 'magma', { part: 'fA' });
@@ -375,17 +379,15 @@
       k.ellipse(m(15), 42, 4.8, 4.4, 'obsidian', { part: 'arm' + s });
       k.tube([[m(26), 47, 0.6], [m(20), 47.5, 0.6]], null, { adj: 1, clip: 'arm' + s });
       k.tooth(m(12), 40, m(10), 34, 2.8, 'bone'); k.tooth(m(15.5), 39, m(15.5), 32.5, 2.8, 'bone'); k.tooth(m(19), 40, m(20.5), 34.5, 2.8, 'bone');
-      k.tube([[m(18), 51, 1.2], [m(18.5), 56, 1], [m(18), 58, 1.4]], 'flame', { part: 'drA' + s, shade: 'glow' });
+      k.tube([[m(19), 53.5, 0.9], [m(19.3), 56.5, 0.6]], 'magma', { part: 'drA' + s, tone: 4 }); k.circle(m(19.3), 57.5, 1.2, 'magma', { part: 'drA' + s, tone: 3 }); k.px(m(19), 57, 'magma', 5);
     });
     // crown of horns + jagged cheek frills
     k.sym(C, function (m, s) {
       k.tube([[m(32), 19, 3.8], [m(24), 11, 2.6], [m(20), 3, 0.8]], 'bone', { part: 'horn' + s });
-      k.tube([[m(35.5), 16.5, 1.8], [m(33.5), 9, 0.6]], 'bone', { part: 'hc' + s });
       k.px(m(27), 14, 'bone', 2); k.px(m(28), 15, 'bone', 2); k.px(m(23), 8, 'bone', 2);
       k.spike(m(28), 28, m(17), 26, 6.5, 'obsidian', { part: 'fr' + s });
       k.spike(m(28), 33, m(18), 36, 5.5, 'obsidian', { part: 'fr' + s });
     });
-    k.tube([[C, 16, 2], [C, 7.5, 0.6]], 'bone', { part: 'hcc' });
     // head, snout, jaw
     k.ellipse(C, 25.5, 14, 11.5, 'obsidian', { part: 'head' });
     k.texture('head', 'scales', { size: 3, seed: 5 });
@@ -393,11 +395,17 @@
     k.ellipse(C, 31, 10.5, 5.2, 'obsidian', { part: 'head' });
     k.px(36, 29, 'black', 0); k.px(37, 29, 'black', 0); k.px(43, 29, 'black', 0); k.px(44, 29, 'black', 0);
     k.px(36, 28, 'magma', 5); k.px(44, 28, 'magma', 5);
+    // gold crown band with three points
+    k.poly([[30, 18.5], [33, 14.5], [36, 14], [37.5, 8], [C, 13], [42.5, 8], [44, 14], [47, 14.5], [50, 18.5], [C, 16.5]], 'gold', { part: 'crown' });
+    k.spike(C, 14, C, 4, 3.6, 'gold', { part: 'crown' });
+    k.circle(C, 15, 1.6, 'red', { part: 'cgem' }); k.px(39, 14, 'white', 6);
+    k.px(34, 15, 'gold', 6); k.px(38, 10, 'gold', 6);
     // roaring maw with a magma glow inside
     k.mouth([[29.5, 33], [50.5, 33], [47.5, 41.5], [C, 44], [32.5, 41.5]], {});
     [31.5, 35, 38.5, 42, 45.5].forEach(function (tx) { k.tooth(tx + 1.5, 33, tx + 1.7, 36.5, 2.8, 'bone'); });
     k.tooth(34, 42, 34, 38.5, 2.6, 'bone'); k.tooth(46, 42, 46, 38.5, 2.6, 'bone');
-    k.tube([[46.5, 44, 1.1], [47, 47.5, 0.9], [46.8, 49, 1.3]], 'flame', { part: 'drJ', shade: 'glow' });
+    k.tube([[46, 43.5, 0.9], [46.3, 46, 0.6]], 'magma', { part: 'drJ', tone: 4 }); k.circle(46.3, 47.2, 1.2, 'magma', { part: 'drJ', tone: 3 }); k.px(46, 47, 'magma', 5);
+    k.px(35, 44, 'magma', 4); k.px(35, 45, 'magma', 3);
     // eyes
     k.eye(28.5, 20, { w: 8, h: 5, iris: 'thunder', side: 'L', angry: 2, brow: false });
     k.eye(43.5, 20, { w: 8, h: 5, iris: 'thunder', side: 'R', angry: 2, brow: false });

@@ -34,7 +34,7 @@
     k.shadow(C, 76.5, 19, 2.2);
     // cape of leaves flaring behind
     var hem = [[62, 73], [58, 70], [54, 75], [49, 71], [44.5, 75.5], [40, 72], [35.5, 75.5], [31, 71], [26, 75], [22, 70], [18, 73]];
-    k.poly([[29, 50], [51, 50], [58, 61]].concat(hem).concat([[22, 61]]), 'grass', { part: 'cape', shift: -1 });
+    k.poly([[29, 50], [51, 50], [58, 61]].concat(hem).concat([[22, 61]]), 'grass', { part: 'cape', light: -0.1 });
     k.tufts([[51, 50], [57, 60], [62, 72]], 'grass', { part: 'cape', len: 3.5, w: 3, every: 3, seed: 3 });
     k.tufts([[18, 72], [23, 60], [29, 50]], 'grass', { part: 'cape', len: 3.5, w: 3, every: 3, seed: 4 });
     k.texture('cape', 'fur', { seed: 2 });
@@ -81,8 +81,8 @@
     k.ellipse(C, 48.5, 9.5, 7, 'tan', { clip: 'head' });
     // leaf crown: gold circlet, red gem, leaf points
     k.sym(C, function (m, s) {
-      k.spike(m(30.5), 38, m(27), 29, 4.4, 'leaf', { part: 'cl1' + s });
-      k.spike(m(35), 36, m(33.5), 27, 4.4, 'grass', { part: 'cl2' + s });
+      k.leaf(m(30), 39, m(25), 30, 4.6, 'leaf', { part: 'cl1' + s });
+      k.leaf(m(34.5), 37, m(33), 28.5, 4.2, 'grass', { part: 'cl2' + s });
     });
     k.tube([[28, 39.5, 1.2], [34, 36.3, 1.3], [C, 35.5, 1.3], [46, 36.3, 1.3], [52, 39.5, 1.2]], 'gold', { part: 'band' });
     k.circle(C, 35.5, 1.6, 'red', { part: 'gem' }); k.px(39, 35, 'white', 6);
@@ -118,8 +118,8 @@
     // stubby feet
     k.sym(C, function (m, s) { k.ellipse(m(32), 73.5, 6.5, 3, 'cream', { part: 'foot' + s }); k.px(m(29), 74, 'cream', 2); k.px(m(33), 75, 'cream', 2); });
     // big round body = face
-    k.ellipse(C, 58, 15.5, 14, 'cream', { part: 'body', light: 0.12 });
-    k.tube([[27, 63, 0.6], [29, 68, 0.6], [34, 71, 0.6]], null, { adj: -1, clip: 'body' });
+    k.ellipse(C, 58.5, 15, 14, 'cream', { part: 'body', light: 0.12 });
+        k.tube([[27, 63, 0.6], [29, 68, 0.6], [34, 71, 0.6]], null, { adj: -1, clip: 'body' });
     // moss scarf
     k.poly([[25, 63], [55, 63], [53, 67], [C, 68.5], [27, 67]], 'grass', { part: 'scarf' });
     k.tufts([[54, 66.5], [47, 68.5], [33, 68.5], [26, 66.5]], 'grass', { part: 'scarf', len: 2.6, w: 2.6, every: 2, seed: 3 });
@@ -128,8 +128,8 @@
     // hands folded on the belly
     k.sym(C, function (m, s) { k.ellipse(m(33), 67.5, 4, 3, 'cream', { part: 'hand' + s }); k.px(m(31), 68, 'cream', 2); });
     // gills
-    k.ellipse(C, 41.5, 16, 2.6, 'tan', { part: 'gill', shift: -1 });
-    for (var gx = 26; gx <= 54; gx += 2) k.px(gx, 42, 'tan', 1);
+    k.ellipse(C, 41.5, 14, 2.4, 'tan', { part: 'gill', shift: -1 });
+    for (var gx = 28; gx <= 52; gx += 2) k.px(gx, 42, 'tan', 1);
     // wide dome cap, wavy rim, glowing spots
     k.ellipse(C, 31, 20, 10.5, 'fur', { part: 'cap' });
     k.ellipse(C, 38.5, 22.5, 3, 'fur', { part: 'cap' });
@@ -161,20 +161,19 @@
     pm(k, 29, 48, ['K.....K', 'KK...KK', '.KKKKK.'], E);
     pm(k, 44, 48, ['K.....K', 'KK...KK', '.KKKKK.'], E);
     k.sym(C, function (m, s) {
-      k.tube([[m(27.5), 46.5, 1.5], [m(32), 45.3, 1.6], [m(36), 46, 1.2]], 'white', { part: 'brow' + s });
+      k.tube([[m(27.5), 47, 0.8], [m(30), 45.5, 1.1], [m(33.5), 45, 1.1], [m(35.5), 45.5, 0.7]], 'bone', { part: 'brow' + s, light: 0.2 });
       k.rect(s > 0 ? 25 : 52, 51, 3, 2, 'sakura', { tone: 4, part: 'blush' + s, outline: 'none' });
     });
     // nose + big moustache hiding the mouth
     k.ellipse(C, 51, 2.4, 2, 'cream', { part: 'nose', light: 0.2 });
-    k.sym(C, function (m, s) { k.ellipse(m(35.5), 55, 5.5, 2.6, 'white', { part: 'must' }); });
-    k.tufts([[46, 56], [42, 57], [38, 57], [34, 56]], 'white', { part: 'must', len: 3.5, w: 2.6, every: 2, seed: 4 });
-    k.tufts([[51, 55], [48, 57]], 'white', { part: 'must', len: 3, w: 2.4, every: 2, seed: 5 });
-    k.tufts([[32, 57], [29, 55]], 'white', { part: 'must', len: 3, w: 2.4, every: 2, seed: 6 });
+    k.sym(C, function (m, s) { k.tube([[m(39), 54, 2.3], [m(34.5), 55.5, 2.4], [m(30.5), 55, 1.6], [m(28.5), 52.5, 0.7]], 'bone', { part: 'must', light: 0.15 }); });
+    k.tufts([[44, 57], [41, 57.5], [39, 57.5], [36, 57]], 'bone', { part: 'must', len: 1.6, w: 2, every: 2, seed: 4 });
     k.texture('must', 'fur', { seed: 7 });
-    k.px(39, 54, 'white', 2); k.px(40, 55, 'white', 2);
+    k.px(C, 54, 'bone', 1); k.px(C, 55, 'bone', 2);
+    k.path([[37, 59], [38, 60], [42, 60], [43, 59]], 'black', 1); k.px(39, 61, 'mouth', 4); k.px(40, 61, 'mouth', 4);
     // snot bubble
-    k.circle(46.5, 51, 2.6, 'ice', { part: 'bubble', shade: 'flat', flatTone: 5, outline: 'soft' });
-    k.px(45, 50, 'white', 6); k.px(48, 52, 'ice', 3);
+    k.circle(44.5, 52.5, 2.2, 'ice', { part: 'bubble', shade: 'flat', flatTone: 5, outline: 'soft' });
+    k.px(44, 52, 'white', 6); k.px(45, 53, 'ice', 3);
     // two little mushroom kids at his feet
     k.sym(C, function (m, s) {
       var x = m(14);
@@ -208,20 +207,20 @@
     k.ellipse(C, 67.5, 26, 3.8, 'stone', { part: 'rim', shift: -1 });
     k.texture('rim', 'stone', { size: 3, seed: 5 });
     // the mountain
-    k.poly([[14, 58], [20, 49], [27, 41], [32, 32], [36, 26], [40, 22], [44, 25], [49, 31], [54, 38], [60, 46], [66, 58]], 'stone', { part: 'mtn' });
+    k.poly([[14, 58], [20, 49], [27, 41], [32, 32], [35.5, 24], [38, 22.5], [43, 22.5], [45.5, 25], [49, 31], [54, 38], [60, 46], [66, 58]], 'stone', { part: 'mtn' });
     k.texture('mtn', 'stone', { size: 4, seed: 2 });
     k.path([[40, 23], [42, 28], [41, 33]], 'stone', 5); k.path([[44, 26], [47, 33], [46, 38]], 'stone', 2);
     // forest moss blanket with drips over the shell
     var drip = [[65, 58], [61, 60.5], [57, 57.5], [53, 60.5], [48, 58], [44, 61], [40, 58.5], [36, 61], [32, 58], [27, 60.5], [23, 57.5], [19, 60], [15, 58]];
-    k.poly([[14, 57], [18, 50], [24, 44], [30, 41], [36, 43], [42, 39], [48, 38], [54, 42], [60, 48], [66, 57]].concat(drip), 'grass', { part: 'moss' });
+    k.poly([[14, 57], [18, 50], [24, 44], [29, 38], [33, 33], [37, 34], [42, 30], [46, 27], [50, 31], [55, 38], [60, 47], [66, 57]].concat(drip), 'grass', { part: 'moss' });
     k.tufts(drip.slice().reverse(), 'grass', { part: 'moss', len: 2.8, w: 2.4, every: 2.3, seed: 12 });
-    k.tufts([[18, 50], [24, 44], [30, 41], [36, 43], [42, 39], [48, 38], [54, 42], [60, 48]], 'grass', { part: 'moss', len: 2.2, w: 2, every: 2.2, seed: 4 });
+    k.tufts([[18, 50], [24, 44], [29, 38], [33, 33], [37, 34], [42, 30], [46, 27], [50, 31], [55, 38], [60, 47]], 'grass', { part: 'moss', len: 2.2, w: 2, every: 2.2, seed: 4 });
     k.texture('moss', 'fur', { seed: 5 });
     // pines
-    [[21, 51, 8], [27, 46, 10], [53, 41, 9], [59, 48, 8], [47, 39, 6], [33, 44, 6]].forEach(function (t, i) {
+    [[21, 51, 8], [27, 45, 10], [31, 38, 7], [53, 40, 9], [59, 48, 8], [49, 33, 7], [44, 40, 6]].forEach(function (t, i) {
       var x = t[0], y = t[1], h = t[2];
-      k.spike(x, y, x, y - h, h * 0.75, 'grass', { part: 'pine' + i, light: -0.1 });
-      k.spike(x, y - h * 0.45, x, y - h * 1.2, h * 0.55, 'grass', { part: 'pine' + i });
+      k.spike(x, y, x, y - h, h * 0.75, 'grass', { part: 'pine' + i, shift: -1 });
+      k.spike(x, y - h * 0.45, x, y - h * 1.2, h * 0.55, 'grass', { part: 'pine' + i, shift: -1 });
       k.px(x, y + 1, 'wood', 2);
     });
     // waterfall from a spring near the summit
@@ -230,9 +229,10 @@
     k.ellipse(33.5, 58.5, 5, 1.7, 'white', { part: 'foam', shade: 'flat', flatTone: 6, outline: 'soft' });
     k.px(28, 57, 'white', 6); k.px(39, 56, 'white', 6);
     // summit shrine + torii
-    k.rect(37, 18, 7, 4, 'red', { part: 'hall' });
-    k.poly([[34.5, 18.5], [46.5, 18.5], [43, 15], [38, 15]], 'wood', { part: 'roof' });
-    k.px(40, 20, 'black', 0); k.px(40, 21, 'black', 0); k.px(35, 18, 'gold', 5); k.px(46, 18, 'gold', 5);
+    k.rect(37.5, 20, 6, 3, 'red', { part: 'hall' });
+    k.poly([[34, 20.5], [47, 20.5], [44, 17], [37, 17]], 'wood', { part: 'roof' });
+    k.line(37, 17, 44, 17, 'gold', 5); k.px(34, 20, 'gold', 5); k.px(46, 20, 'gold', 5);
+    k.px(40, 21, 'black', 1); k.px(41, 21, 'black', 1); k.px(40, 22, 'black', 1); k.px(41, 22, 'black', 1);
     k.line(47, 30, 47, 34, 'red', 3); k.line(51, 31, 51, 35, 'red', 3);
     k.line(45, 29, 53, 30, 'black', 1); k.line(46, 30, 52, 31, 'red', 4);
     // flowers on the moss
@@ -348,34 +348,33 @@
       k.tube([[m(23), 11, 1.3], [m(21), 5, 0.9]], 'wood', A);
       k.texture('tr' + s, 'bark', { size: 3 });
     });
-    // sacred canopy
-    [[10, 9, 8, 6], [22, 6, 8, 5], [34, 5, 7, 4], [46, 5, 7, 4], [58, 6, 8, 5], [70, 9, 8, 6], [15, 14, 6, 4], [65, 14, 6, 4], [40, 9, 4, 3]].forEach(function (c) { k.ellipse(c[0], c[1], c[2], c[3], 'grass', { part: 'canopy' }); });
-    k.tufts([[78, 12], [71, 16], [64, 18.5], [56, 12], [48, 10.5], [40, 11.5], [32, 10.5], [24, 12], [16, 18.5], [9, 16], [2, 12]], 'grass', { part: 'canopy', len: 3, w: 2.6, every: 2.4, seed: 6 });
-    k.tufts([[3, 7], [8, 3.5], [16, 1.5], [26, 1], [36, 1.2], [44, 1.2], [54, 1], [64, 1.5], [72, 3.5], [77, 7]], 'grass', { part: 'canopy', len: 1.5, w: 2.4, every: 3, seed: 8 });
-    k.texture('canopy', 'fur', { seed: 4 });
-    [[8, 6, 3.5, 2], [21, 3.5, 3.5, 1.8], [37, 3, 3, 1.5], [55, 3.5, 3.5, 1.8], [68, 6, 3.5, 2]].forEach(function (c) { k.ellipse(c[0], c[1], c[2], c[3], 'leaf', { clip: 'canopy', light: 0.15 }); });
-    k.tube([[6, 13, 0.6], [14, 17, 0.6], [22, 14, 0.6]], null, { adj: -1, clip: 'canopy' });
-    k.tube([[58, 14, 0.6], [66, 17, 0.6], [74, 13, 0.6]], null, { adj: -1, clip: 'canopy' });
+    // sacred canopy: an arched crown of leaf clumps
+    [[8, 15, 7, 5], [17, 9, 8, 5.5], [29, 5, 8.5, 4.5], [C, 3.5, 8, 3.5], [51, 5, 8.5, 4.5], [63, 9, 8, 5.5], [72, 15, 7, 5], [23, 14, 6, 3.5], [57, 14, 6, 3.5]].forEach(function (c, i) {
+      k.ellipse(c[0], c[1], c[2], c[3], i > 6 ? 'grass' : 'grass', { part: 'cn' + i, shift: i > 6 ? -1 : 0 });
+      k.texture('cn' + i, 'fur', { seed: 4 + i });
+      k.ellipse(c[0] - c[2] * 0.3, c[1] - c[3] * 0.4, c[2] * 0.45, c[3] * 0.35, 'leaf', { clip: 'cn' + i, light: 0.1 });
+    });
+    k.tufts([[79, 17], [72, 20], [64, 15], [57, 17.5], [50, 10], [C, 7.5], [30, 10], [23, 17.5], [16, 15], [8, 20], [1, 17]], 'grass', { part: 'cn9', len: 3, w: 2.4, every: 2.6, seed: 6 });
     // blossoms
-    [[13, 7], [30, 4], [49, 6], [62, 4], [74, 10], [4, 11]].forEach(function (p) { k.px(p[0], p[1], 'sakura', 5); k.px(p[0] + 1, p[1], 'sakura', 4); });
-    // kodama spirits sitting in the leaves
-    [[26, 9], [52, 8], [71, 5]].forEach(function (p, i) {
-      k.circle(p[0], p[1], 2.3, 'white', { part: 'kd' + i, light: 0.2 });
-      k.px(p[0] - 1, p[1], 'black', 1); k.px(p[0] + 1, p[1], 'black', 1); k.px(p[0], p[1] + 1, 'black', 2);
+    [[13, 8], [30, 3], [47, 4], [61, 6], [74, 13], [4, 14], [38, 6]].forEach(function (p) { k.px(p[0], p[1], 'sakura', 5); k.px(p[0] + 1, p[1], 'sakura', 4); });
+    // kodama spirits peeking from the leaves
+    [[24, 9], [60, 12]].forEach(function (p, i) {
+      k.ellipse(p[0], p[1], 2.6, 3, 'white', { part: 'kd' + i, light: 0.25, outline: 'soft' });
+      k.px(p[0] - 1, p[1] - 1, 'black', 0); k.px(p[0] + 1, p[1] - 1, 'black', 0); k.px(p[0], p[1] + 1, 'black', 1);
     });
     // lanterns hanging from the outer boughs
     k.sym(C, function (m, s) {
       var x = m(8);
-      k.line(x, 17, x, 19, 'black', 3);
-      k.rect(Math.round(x) - 2, 19, 5, 1, 'wood', { part: 'lc' + s });
-      k.ellipse(x + 0.5, 22.5, 2.6, 2.8, 'flame', { part: 'lan' + s, shade: 'glow', halo: 0.3 });
-      k.px(x, 26, 'red', 3);
+      k.line(x, 20, x, 21, 'black', 3);
+      k.rect(Math.round(x) - 2, 21, 5, 1, 'wood', { part: 'lc' + s });
+      k.ellipse(x + 0.5, 24.5, 2.6, 2.8, 'flame', { part: 'lan' + s, shade: 'glow', halo: 0.3 });
+      k.px(x, 28, 'red', 3);
     });
     // nest + chick on the right bough
-    k.ellipse(62, 19.5, 5, 2.4, 'wood', { part: 'nest' });
+    k.ellipse(63, 20.5, 5, 2.4, 'wood', { part: 'nest' });
     k.texture('nest', 'bark', { size: 2 });
-    k.circle(62, 16, 2.6, 'thunder', { part: 'chick' });
-    k.px(61, 15, 'black', 0); k.px(59, 16, 'red', 4); k.px(58, 16, 'red', 3); k.px(63, 14, 'thunder', 6);
+    k.circle(63, 17, 2.6, 'thunder', { part: 'chick' });
+    k.px(62, 16, 'black', 0); k.px(60, 17, 'red', 4); k.px(59, 17, 'red', 3); k.px(64, 15, 'thunder', 6);
     // flank + staggered hind legs
     k.ellipse(C, 55, 18, 8.5, 'fur', { part: 'flank', shift: -1 });
     k.texture('flank', 'fur', { seed: 12 });
@@ -410,7 +409,7 @@
     k.tufts([[47, 48.5], [33, 48.5]], 'cream', { part: 'ruff', len: 6, w: 3.2, every: 2.4, seed: 3 });
     k.tube([[27, 46, 2.2], [C, 50, 2.4], [53, 46, 2.2]], 'tan', { part: 'rope' });
     for (var i = 28; i <= 52; i += 2) k.px(i, 47 + (Math.abs(i - C) < 8 ? 1.5 : 0), 'tan', 1);
-    [[30, 48], [49.5, 48], [C - 1, 51]].forEach(function (p, i) {
+    [[30.5, 48], [48.5, 48]].forEach(function (p, i) {
       k.poly([[p[0], p[1]], [p[0] + 2, p[1]], [p[0] + 2, p[1] + 3], [p[0] + 3.5, p[1] + 3], [p[0] + 3.5, p[1] + 7], [p[0] + 1.5, p[1] + 7], [p[0] + 1.5, p[1] + 4], [p[0], p[1] + 4]], 'white', { part: 'shide' + i, shade: 'flat', flatTone: 5 });
     });
     // ears
@@ -539,8 +538,10 @@
     k.rect(33, 50, 14, 1, null, { adj: -2, clip: 'thorax' });
     k.px(36, 47, 'steel', 6);
     // royal fur ruff
-    k.ellipse(C, 44, 10, 3.2, 'cream', { part: 'ruff' });
-    k.tufts([[50.5, 44.5], [45, 46.5], [35, 46.5], [29.5, 44.5]], 'cream', { part: 'ruff', len: 3.5, w: 3, every: 2.2, seed: 3 });
+    k.ellipse(C, 44.5, 11.5, 3.6, 'cream', { part: 'ruff' });
+    k.tufts(arc(C, 44.5, 11.5, 3.6, 160, 200, 10), 'cream', { part: 'ruff', len: 2.5, w: 3, every: 2, seed: 3 });
+    k.tufts(arc(C, 44.5, 11.5, 3.6, -20, 20, 10), 'cream', { part: 'ruff', len: 2.5, w: 3, every: 2, seed: 5 });
+    k.tube([[30, 46, 0.6], [C, 47.5, 0.6], [50, 46, 0.6]], null, { adj: -1, clip: 'ruff' });
     k.texture('ruff', 'fur', { seed: 4 });
     // antennae
     k.sym(C, function (m, s) { k.tube([[m(33), 29, 0.6], [m(27), 23, 0.6], [m(21), 21, 0.5]], 'obsidian', { part: 'an' + s, noseam: true }); k.px(m(20), 20, 'thunder', 6); k.px(m(21), 20, 'thunder', 5); });
@@ -571,9 +572,9 @@
   P[48] = function (k) {
     k.shadow(C, 76.5, 22, 2.3);
     // the full drum ring
-    var RC = [C, 41], RR = 24;
+    var RC = [C, 43], RR = 27;
     k.tube(arc(RC[0], RC[1], RR, RR, 0, 360, 15).map(function (p) { return [p[0], p[1], 1.3]; }), 'red', { part: 'ring' });
-    [-90, -45, 0, 45, 135, 180, 225].forEach(function (a, i) {
+    [-150, -110, -70, -30, 10, 170, 50, 130].forEach(function (a, i) {
       var r = a * Math.PI / 180, x = RC[0] + Math.cos(r) * RR, y = RC[1] + Math.sin(r) * RR;
       k.circle(x, y, 4.4, 'wood', { part: 'drum' + i });
       k.circle(x, y, 3, 'cream', { part: 'dh' + i, spec: false });
@@ -601,21 +602,20 @@
     k.tube([[42, 64, 1], [44, 67, 0.8]], 'white', { part: 'knot' });
     // arms raised with lightning drumsticks
     k.sym(C, function (m, s) {
-      k.tube([[m(25), 48, 4], [m(17), 45, 3.4], [m(14), 38, 3]], 'aqua', { part: 'arm' + s });
-      k.tube([[m(22), 46, 0.6], [m(17), 43, 0.6]], null, { adj: 1, clip: 'arm' + s });
-      k.tube([[m(13.5), 34, 0.9], [m(10), 26, 0.8]], 'wood', { part: 'stick' + s });
-      bolt(k, m(10), 25, 0.9, -1, -s, 'thunder', { part: 'bolt' + s, shade: 'glow' });
-      k.circle(m(14), 35, 3.6, 'aqua', { part: 'fist' + s });
-      k.px(m(12), 34, 'aqua', 1); k.px(m(15), 33, 'aqua', 5);
-      k.tufts([[m(21.5), 43.5], [m(24), 42]], 'aqua', { part: 'arm' + s, len: 1.5, w: 2, every: 1.5 });
+      k.tube([[m(26), 49, 4.2], [m(17.5), 47, 3.6], [m(18.5), 38, 3.1]], 'aqua', { part: 'arm' + s });
+      k.tube([[m(23), 47, 0.6], [m(18), 45, 0.6]], null, { adj: 1, clip: 'arm' + s });
+      k.tube([[m(15.5), 44, 0.6], [m(16), 39, 0.6]], null, { adj: -1, clip: 'arm' + s });
+      k.tube([[m(19.5), 33, 0.9], [m(22.5), 26, 0.8]], 'wood', { part: 'stick' + s });
+      bolt(k, m(23.5), 25.5, 0.85, -1, -s, 'thunder', { part: 'bolt' + s, shade: 'glow' });
+      k.circle(m(19), 35, 3.7, 'aqua', { part: 'fist' + s });
+      k.px(m(17), 34, 'aqua', 1); k.px(m(20), 33, 'aqua', 5); k.px(m(18), 36, 'aqua', 1);
     });
     // wild hair, horns
-    k.ellipse(C, 31, 14, 6.5, 'dark', { part: 'hair' });
+    k.ellipse(C, 31, 12.5, 6, 'dark', { part: 'hair' });
     k.tube([[32, 29, 3], [27, 24, 1.8], [22, 23, 0.5]], 'dark', { part: 'hair' });
     k.tube([[39, 27, 3], [36, 22, 1.8], [33, 19, 0.5]], 'dark', { part: 'hair' });
     k.tube([[47, 28, 3], [51, 23, 1.8], [56, 22, 0.5]], 'dark', { part: 'hair' });
-    k.tube([[28, 33, 2.4], [24, 31, 1.3], [22, 31, 0.5]], 'dark', { part: 'hair' });
-    k.tube([[52, 33, 2.4], [56, 31, 1.3], [58, 31, 0.5]], 'dark', { part: 'hair' });
+    
     k.texture('hair', 'fur', { seed: 3 });
     k.sym(C, function (m, s) {
       k.tube([[m(34), 29, 2.4], [m(32), 23, 1.6], [m(33), 19, 0.5]], 'bone', { part: 'horn' + s });
@@ -635,8 +635,8 @@
     k.mouth([[30.5, 42], [49.5, 42], [47, 47.5], [C, 49.5], [33, 47.5]], { tongue: false });
     [34, 37, C, 43].forEach(function (tx) { k.tooth(tx + 0.5, 42, tx + 0.7, 44, 2.2); });
     k.tooth(33.5, 47.5, 32.5, 43, 2.4); k.tooth(46.5, 47.5, 47.5, 43, 2.4);
-    k.tube([[43, 47, 1.7], [43.5, 50, 1.8], [43, 52, 1.2]], 'skin', { part: 'tongue' });
-    k.line(43, 48, 43, 51, 'skin', 2);
+    k.tube([[45, 47, 1.3], [45.5, 49.5, 1.4], [45, 51, 0.9]], 'skin', { part: 'tongue' });
+    k.px(45, 49, 'skin', 2);
     k.sym(C, function (m) { k.px(m(29), 41, 'sakura', 4); k.px(m(28), 41, 'sakura', 4); });
   };
 

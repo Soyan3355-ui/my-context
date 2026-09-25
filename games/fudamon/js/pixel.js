@@ -1409,13 +1409,13 @@
   function rimStones(m, tx, ty, salt, big) {
     var N = m & 1, E = m & 2, S = m & 4, W = m & 8, L = [];
     var j = function (k) { return (h2(tx | 0, ty | 0, salt + k) - 0.5); };
-    var r = big ? 4.2 : 3.9;
-    if (N) L.push([3 + j(1), 1.6, r + j(2) * 0.8], [9.5 + j(3) * 2, 1.2, r + 0.3 + j(4) * 0.8], [15.5, 1.8, r - 0.4]);
-    if (W) L.push([1.6, 3.5 + j(5), r], [1.2, 10 + j(6) * 2, r + 0.3], [1.8, 16, r - 0.4]);
-    if (E) L.push([14.4, 4 + j(7), r], [14.8, 10.5 + j(8) * 2, r + 0.2]);
+    var r = big ? 4.2 : 3.6, k0 = big ? 1.6 : 2.2;
+    if (N) L.push([3 + j(1), k0, r + j(2) * 0.8], [9.5 + j(3) * 2, k0 - 0.4, r + 0.3 + j(4) * 0.8], [15.5, k0 + 0.2, r - 0.4]);
+    if (W) L.push([k0, 3.5 + j(5), r], [k0 - 0.4, 10 + j(6) * 2, r + 0.3], [k0 + 0.2, 16, r - 0.4]);
+    if (E) L.push([16 - k0, 4 + j(7), r], [16.4 - k0, 10.5 + j(8) * 2, r + 0.2]);
     if ((m & 128) && !N && !W) L.push([0.4, 0.4, 3.4]);
     if ((m & 16) && !N && !E) L.push([15.6, 0.4, 3.4]);
-    if (S) L.push([2.5 + j(9), 14.8, r - 0.3], [8.5 + j(10) * 2, 15.2, r + 0.1], [14, 14.8, r - 0.3]);
+    if (S) L.push([2.5 + j(9), 16.4 - k0, r - 0.3], [8.5 + j(10) * 2, 16.8 - k0, r + 0.1], [14, 16.4 - k0, r - 0.3]);
     if ((m & 64) && !S && !W) L.push([0.4, 15.6, 3.4]);
     if ((m & 32) && !S && !E) L.push([15.6, 15.6, 3.4]);
     return L;
@@ -1539,25 +1539,28 @@
         if (d < d1) { d2 = d1; d1 = d; s1 = s; } else if (d < d2) d2 = d;
       }
       var e = d2 - d1, pool = s1[2] < 0.2;
-      var R = 5 + s1[3] * 3.2;          // plate radius
-      var inPlate = !pool && d1 < R && e > 2.4;
+      var R = 8 + s1[3] * 4;            // plate radius (large, so the voronoi polygon shapes the plate)
+      var gap = 1.8 + h2(Math.floor(wx / 3), Math.floor(wy / 3), 97) * 1.4; // ragged channel width
+      var inPlate = !pool && d1 < R && e > gap;
       var lx = wx - s1[0], ly = wy - s1[1], c;
       if (inPlate) {
-        var rim = Math.min(R - d1, e - 2.4);
+        var rim = Math.min(R - d1, e - gap);
         c = LV.c1;
-        if (lx + ly < -R * 0.55) c = LV.c2;
-        if (lx + ly < -R * 1.05) c = LV.c3;
-        if (lx + ly > R * 0.7) c = LV.c0;
+        if (rim < 2.2 && lx + ly < 0) c = LV.c2;      // lit upper-left edge of the plate
+        if (rim < 1.2 && lx + ly < 0) c = LV.c3;
+        if (rim < 2 && lx + ly > 1) c = LV.c0;
         if (rim < 1) c = (lx + ly < 0) ? LV.m0 : '#4a1c20';
-        // a glowing crack across bigger plates
-        var ang = s1[4] * Math.PI, cr = Math.abs(lx * Math.sin(ang) - ly * Math.cos(ang));
-        if (R > 6 && cr < 0.55 && rim >= 1.5) c = ((Math.floor(wx + wy) + f) % 4 === 0) ? LV.m4 : LV.m3;
-        else if (R > 6 && cr < 1.2 && rim >= 1.5) c = LV.m0;
+        if (((Math.floor(wx) * 5 + Math.floor(wy) * 3) % 17) === 0) c = LV.c2;
+        // a jagged glowing crack across bigger plates
+        var ang = s1[4] * Math.PI, along = lx * Math.cos(ang) + ly * Math.sin(ang);
+        var cr = Math.abs(lx * Math.sin(ang) - ly * Math.cos(ang) + (Math.floor(along / 2) & 1 ? 0.6 : -0.6));
+        if (R > 9 && cr < 0.55 && rim >= 1.6) c = ((Math.floor(wx + wy) + f) % 4 === 0) ? LV.m4 : LV.m3;
+        else if (R > 9 && cr < 1.3 && rim >= 1.6) c = LV.m0;
       } else {
         // molten channel: slow diagonal flow bands; bright glow hugging the plates
         var fl = Math.sin((wx * 0.42 + wy * 0.23) + f * 1.5708 + Math.sin(wy * 0.3 + s1[4] * 6) * 1.3);
         c = fl > 0.62 ? LV.m3 : fl < -0.72 ? LV.m1 : LV.m2;
-        if (!pool && d1 < R + 1.2 && e > 1.4) c = ((Math.floor(wx * 2 + wy) + f * 3) % 7 === 0) ? LV.m4 : LV.m3;
+        if (!pool && d1 < R + 1.2 && e > gap - 1) c = ((Math.floor(wx * 2 + wy) + f * 3) % 7 === 0) ? LV.m4 : LV.m3;
         if (pool && pools.indexOf(s1) < 0) pools.push(s1);
       }
       b.px(x, y, c);
@@ -1613,9 +1616,10 @@
   function springish(c) { return c === '' || c == null || c === 'Y'; }
   // soft steam puff; phase 0..3 = low & small .. high & faint
   function puff(b, x, y, ph, a) {
-    var yy = y - ph * 3, r = 1.6 + ph * 0.55, al = a * (1 - ph * 0.22);
-    b.ell(x + (ph & 1), yy, r + 0.8, r * 0.7 + 0.4, '#f4fffc', al * 0.45);
-    b.ell(x + (ph & 1) - 0.5, yy - 0.5, r * 0.7, r * 0.5, '#ffffff', al * 0.55);
+    var yy = y - ph * 3, r = 2.2 + ph * 0.6, al = a * (1 - ph * 0.24), cx = x + (ph & 1) * 0.7;
+    b.ell(cx, yy, r + 1.2, r * 0.75 + 0.6, '#f4fffc', al * 0.16);
+    b.ell(cx - 0.3, yy - 0.2, r + 0.2, r * 0.6 + 0.3, '#f4fffc', al * 0.2);
+    b.ell(cx - 0.7, yy - 0.6, r * 0.55, r * 0.4, '#ffffff', al * 0.25);
   }
   TILES.Y = function (nb, t, tx, ty) {
     var f = Math.floor(t * 2.2) % 4;
@@ -1804,7 +1808,7 @@
     yamabushi: {
       hair: ['#16111a', '#2a2026', '#463840'], hat: 'tokin', top: ['#bcb8cc', '#f0eef2', '#ffffff'], topStyle: 'robe',
       bot: ['#8e8878', '#bcb6a4', '#d8d2c0'], botStyle: 'hakama', shoe: ['#8a7040', '#c4a462'], inner: '#d8d2c0',
-      big: true, brow: true, skinTan: true, bigbeard: ['#16111a', '#2a2026', '#4e4048'], yuigesa: true, shakujo: true
+      big: true, brow: true, skinTan: true, bigbeard: ['#2e1e1c', '#4a3228', '#6e4c38'], yuigesa: true, shakujo: true
     },
     // ヨイ: moon shrine maiden
     miko: {
@@ -1821,8 +1825,8 @@
       top: [C.ye0, C.ye1, C.ye2], bot: [C.ye0, C.ye1], botStyle: 'skirt', shoe: ['#8a2e3a', '#d0485a'], net: true, collar: true
     },
     monk: {
-      hair: ['#c89c80', '#e8bea0', '#f8dcc0'], hat: 'bald', top: ['#16121e', '#27213a', '#403858'], topStyle: 'robe',
-      bot: ['#16121e', '#27213a', '#403858'], botStyle: 'hakama', shoe: [C.wh1, C.wh], inner: C.wh1, beads: true
+      hair: ['#c8906c', '#ecbc98', '#fde0c4'], hat: 'bald', top: ['#221c34', '#383050', '#584c78'], topStyle: 'robe',
+      bot: ['#221c34', '#383050', '#584c78'], botStyle: 'hakama', shoe: [C.wh1, C.wh], inner: C.wh1, beads: true
     }
   };
   var TAN = ['#b87650', '#dca47a', '#f0c49a'];
@@ -2134,9 +2138,9 @@
           H(3, 4, 10, 2, c[1]); H(3, 4, 9, 1, c[2]); H(12, 4, 1, 2, c[0]); Hp(3, 5, c[1]);
           Hp(13, 5, c[1]); Hp(13, 6, c[0]);
         } else if (d === 'up') {
-          H(6, 9, 4, 2, h[1]); Hp(7, 10, h[2]); H(9, 9, 1, 2, h[0]);
-          H(3, 4, 10, 2, c[1]); H(3, 4, 10, 1, c[2]); H(7, 5, 2, 2, c[1]); Hp(8, 6, c[0]);
-          Hp(6, 7, c[1]); Hp(6 - (S.frame === 1 ? 1 : 0), 8, c[0]); Hp(9, 7, c[1]); Hp(9 + (S.frame === 2 ? 1 : 0), 8, c[0]);
+          H(6, 8, 4, 3, h[1]); Hp(6, 8, h[2]); Hp(7, 8, h[2]); H(9, 8, 1, 3, h[0]); H(7, 7, 2, 1, h[0]);
+          H(3, 4, 10, 2, c[1]); H(3, 4, 10, 1, c[2]); H(8, 5, 2, 2, c[1]); Hp(9, 6, c[0]);
+          Hp(10, 7, c[1]); Hp(10 + (S.frame === 2 ? 1 : 0), 8, c[0]);
         } else {
           H(1, 6, 3, 3, h[1]); Hp(1, 8, h[0]); Hp(2, 6, h[2]);
           H(3, 4, 9, 2, c[1]); H(3, 4, 8, 1, c[2]); Hp(11, 5, c[0]);
@@ -2165,7 +2169,7 @@
         var moon = ['#c8962e', '#f4d26a', '#fff6c8'];
         if (d === 'down') {
           H(3, 6, 1, 7, h[1]); H(12, 6, 1, 7, h[0]); Hp(3, 12, h[0]); Hp(12, 12, h[0]);
-          Hp(11, 1, moon[2]); Hp(12, 2, moon[1]); Hp(12, 3, moon[1]); Hp(11, 4, moon[0]); Hp(10, 1, moon[1]);
+          Hp(10, 1, moon[1]); Hp(11, 1, moon[2]); Hp(11, 2, moon[2]); Hp(12, 2, moon[1]); Hp(11, 3, moon[1]); Hp(12, 3, moon[0]); Hp(11, 4, moon[0]); Hp(10, 4, moon[0]);
         } else if (d === 'up') {
           H(5, 10, 6, 2, h[1]); H(6, 12, 4, 5, h[1]); H(9, 12, 1, 5, h[0]); Hp(6, 12, h[2]); H(7, 17, 2, 1, h[0]);
           H(6, 11, 4, 1, C.wh); H(6, 12, 4, 1, C.ver1); Hp(9, 11, C.wh1);
@@ -2207,7 +2211,7 @@
         }
         break;
       case 'bald':
-        var s0 = h[0], s1 = mix(h[1], '#9aa0c8', 0.16), s2 = h[2];
+        var s0 = mix(h[0], '#8a88b0', 0.15), s1 = mix(h[1], '#a8a8d0', 0.12), s2 = h[2];
         if (d === 'down') {
           H(5, 2, 6, 1, s1); H(4, 3, 8, 1, s1); H(3, 4, 10, 2, s1); H(5, 3, 3, 1, s2); Hp(4, 4, s2); Hp(5, 2, s2);
           H(12, 4, 1, 2, s0); Hp(11, 3, s0);
@@ -2310,8 +2314,8 @@
     if (cfg.bigbeard) {
       var bb = cfg.bigbeard;
       if (d === 'down') {
-        H(3, 7, 1, 3, bb[1]); H(12, 7, 1, 3, bb[0]); H(4, 9, 8, 2, bb[1]); H(5, 11, 6, 1, bb[1]); H(6, 12, 4, 1, bb[0]);
-        H(6, 9, 4, 1, bb[0]); H(7, 10, 2, 1, '#6a3a34'); Hp(5, 10, bb[2]); Hp(9, 11, bb[2]); Hp(11, 10, bb[0]);
+        H(3, 8, 1, 2, bb[1]); H(12, 8, 1, 2, bb[0]); H(4, 10, 8, 1, bb[1]); H(5, 11, 6, 1, bb[1]); H(6, 12, 4, 1, bb[0]);
+        H(6, 9, 4, 1, bb[1]); Hp(5, 9, bb[1]); Hp(10, 9, bb[0]); H(7, 10, 2, 1, '#7a3a34'); Hp(5, 10, bb[2]); Hp(9, 11, bb[2]); Hp(11, 10, bb[0]);
       } else if (d === 'right') {
         H(6, 7, 1, 3, bb[1]); H(7, 9, 5, 2, bb[1]); H(8, 11, 4, 1, bb[1]); H(9, 12, 2, 1, bb[0]);
         H(9, 9, 3, 1, bb[0]); Hp(11, 10, '#6a3a34'); Hp(8, 10, bb[2]); Hp(10, 11, bb[2]);
