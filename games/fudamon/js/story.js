@@ -34,7 +34,7 @@ function buildNPCs(map){
     add({key:'trader',sprite:'trader',x:21,y:24,dir:'left',talk:talkTrader});
     add({key:'fisher',sprite:'fisher',x:8,y:28,dir:'up',talk:talkFisher});
     add({key:'guardian',sprite:'guardian',x:13,y:4,dir:'down',talk:talkGuardian});
-    add({key:'rival',sprite:'rival',x:15,y:6,dir:'left',vis:()=>!!S.flags.badge,talk:async()=>{await say('祠のご神木が 光ったの、見たか？<br>…おれ、もっと強くなる。次は 負けないからな！',NM.rival)}});
+    add({key:'rival',sprite:'rival',x:14,y:6,dir:'left',vis:()=>!!S.flags.badge,talk:async()=>{await say('祠のご神木が 光ったの、見たか？<br>…おれ、もっと強くなる。次は 負けないからな！',NM.rival)}});
   }
   return L;
 }
@@ -52,18 +52,18 @@ async function talkSensei(){
   if(!S.flags.starter){await say('ケースの中の 3枚から 好きな札を えらびなさい。<br>ケースの前で 調べてごらん。',NM.sensei);return}
   if(!S.flags.badge){
     const tips=['北の 祠には 祠守りの イワオが いる。<br>あの人に 認められたら 一人前の 封札師だよ。','魔物は 弱らせてから 札を 投げると 封じやすい。<br>HPが 赤くなったら 投げどきさ。','炎は草に、草は水と雷に、水は炎に、雷は水に 強い。<br>光と闇は おたがいに 強いんだ。','同じ魔物でも キラや ゴールドの札が あるんだよ。<br>わたしも 集めるのに 夢中になった ものさ。'];
-    await say(tips[(S.flags.tipI=(S.flags.tipI||0)+1)%tips.length],NM.sensei);return}
+    await say(tips[(S.flags.tipI=(S.flags.tipI??-1)+1)%tips.length],NM.sensei);return}
   await say('イワオに 認められたんだって？<br>ふふ、わたしの 見立てどおりだ。<br>これからも いろんな 札と 出会いなさい。',NM.sensei);
 }
 async function talkKid(n){
   if(!S.flags.starter){await say('ここから 先は 草むらだよ！<br>自分の カードを 持ってないと 野生の魔物に おそわれちゃうぞ！',NM.kid);await say('ミケも 通せんぼ してるし！',NM.kid);return}
   const L=['イナビーって 知ってる？ おしりが ピリピリ するんだ。<br>ぼく、いつか キラの イナビーを 封印するんだ！','草むらを 歩くと 魔物が 飛び出してくるよ。<br>Shiftキーか Bボタンで 走れるって 知ってた？','封札パックって 知ってる？<br>行商人の マツさんが 売ってるんだって！'];
-  await say(L[(n.t=(n.t||0)+1)%L.length],NM.kid);
+  await say(L[(n.t=(n.t??-1)+1)%L.length],NM.kid);
 }
 async function talkCat(n){
   if(!S.flags.starter){await say('ミケは 道の まんなかで 気持ちよさそうに 寝ている…。');await say('ぐぅ… ぐぅ…');return}
   const L=['ニャーン。','ミケは おなかを 見せて ごろんと した。','ミケは しっぽで ソーヤの 足を なでた。<br>…なんだか 誇らしげだ。','ミケは じっと 草むらを 見つめている。<br>何かが いるのかも しれない。'];
-  snd('blip');await say(L[(n.t=(n.t||0)+1)%L.length],NM.cat);
+  snd('blip');await say(L[(n.t=(n.t??-1)+1)%L.length],NM.cat);
 }
 async function talkGranny(){await say('夕方になるとね、わたしの 影が ひとつ 多い 日が あるのよ。<br>カゲボウって 子の しわざらしいねぇ。',NM.granny);await say('悪さは しないよ。 ちょっと さみしがりな だけさね。',NM.granny)}
 async function talkFarmer(){await say('おれの 畑は 草タイプの 魔物に 大人気でなぁ。<br>野菜が 食われないように 炎タイプの 札を 持ち歩いとるんだ。',NM.villager.replace('ヨシオ','ハルオ'));await say('相性さえ 覚えりゃ、格上の 魔物とも 渡りあえるぞ！','農家のハルオ')}
@@ -72,13 +72,13 @@ async function talkFisher(){
   if(!S.flags.fisherGift){S.flags.fisherGift=true;await say('ほれ、若いの。 これを 持っていけ。',NM.fisher);await getItem('potion',2)}
 }
 async function talkTrader(){
-  if(!S.flags.traderMet){S.flags.traderMet=true;await say('おや、見習いさんかい？ わたしは 札と 香を 売り歩く マツと いう者。<br>旅の 支度なら まかせておくれ。',NM.trader)}
+  if(!S.flags.traderMet){S.flags.traderMet=true;await say('おや、見習いさんかい？ わたしは 札と 香を 売り歩く マツと いう者。<br>旅の 支度なら まかせておくれ。',NM.trader);await say('そうだ、ひとつ 頼みが あるんだ。<br>野生の 魔物を 3種類 封印して 見せてくれたら、お礼を はずむよ。',NM.trader)}
   const i=await ask('なにか 用かい？',NM.trader,['買い物をする','頼みごと','またね']);
-  if(i===0){await new Promise(res=>shopScreen(()=>{closePanel();res()}));await say('毎度あり！ 良い 札と 出会えますように。',NM.trader)}
+  if(i===0){G.bought=false;await new Promise(res=>shopScreen(()=>{closePanel();res()}));await say(G.bought?'毎度あり！ 良い 札と 出会えますように。':'また いつでも 寄っておくれ。',NM.trader)}
   if(i===1){
     if(S.flags.traderGift){await say('キラの 札を 集めるなら 銀や 金の 封札が おすすめさ。<br>札の 気品が 魔物を 引きよせるのさ。',NM.trader);return}
-    const n=sealedCount();
-    if(n<3){await say(`ちがう 種類の 魔物を 3種類 封印して 見せておくれ。<br>いまは ${n}種類だね。 お礼は はずむよ！`,NM.trader);return}
+    const n=Object.values(S.dex).filter(d=>d.wild).length;
+    if(n<3){await say(`野生の 魔物を 3種類 封印して 見せておくれ。<br>いまは ${n}種類だね。 お礼は はずむよ！`,NM.trader);return}
     await say('おお、3種類も！ 見事な 札さばきだ。<br>約束の お礼だよ。',NM.trader);S.flags.traderGift=true;await getItem('silver',2);
   }
 }
@@ -88,7 +88,7 @@ async function talkYoshio(n){
 }
 async function yoshioBattle(n){
   await say('おう、見かけない 札さばきだな！<br>田んぼ仕事の 合間の 一勝負だ！',NM.villager);
-  const r=await runBattle({trainer:{name:'農家のヨシオ',sprite:'villager',team:[{id:13,lv:5},{id:9,lv:6}],reward:150,smart:.4,intro:'農家のヨシオが 勝負を しかけてきた！',winLine:'まいった！ 若いのに やるなぁ！'}});
+  const r=await runBattle({trainer:{name:'農家のヨシオ',sprite:'villager',team:[{id:17,lv:4},{id:21,lv:4}],reward:150,smart:.3,intro:'農家のヨシオが 勝負を しかけてきた！',winLine:'まいった！ 若いのに やるなぁ！'}});
   if(r==='win'){S.flags.yoshio=true;n.sight=0}
 }
 async function talkGuardian(n){
@@ -97,13 +97,13 @@ async function talkGuardian(n){
     await say('封札師の 印が ほしいなら、わしに 札の 力を 示してみよ。',NM.guardian)}
   const i=await ask('試練を 受けるか？',NM.guardian,['受ける','まだ準備が…']);
   if(i!==0){await say('うむ。 そこの 井戸の 水を 飲めば 疲れも とれよう。',NM.guardian);return}
-  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:10,lv:7},{id:23,lv:9}],reward:500,smart:.35,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
+  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:22,lv:6},{id:23,lv:7}],reward:500,smart:.3,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
   if(r==='win')await endingSequence();
 }
 async function getItem(k,n){
   snd('item');
-  if(k==='coins'){S.coins+=n;await say(`<b>${n}両</b> を 手に入れた！`);return}
-  S.items[k]+=n;await say(`<b>${ITEMS[k].n}</b> を ${n}${k==='potion'?'個':'枚'} 手に入れた！`);
+  if(k==='coins'){S.coins+=n;await say(`<b>${n}両</b>を 手に入れた！`);return}
+  S.items[k]+=n;await say(`<b>${ITEMS[k].n}</b>を ${n}${k==='potion'?'個':'枚'} 手に入れた！`);
 }
 
 /* ---------------- examine tiles ---------------- */
@@ -138,9 +138,12 @@ function checkTrainers(){
 }
 async function spotted(n,dist){
   G.lock++;n.alert=true;snd('exclaim');await sleep(700);n.alert=false;
-  if(dist>1)await moveNPC(n,n.dir,dist-1,5);
+  if(!partyCards().some(c=>c.hp>0)){G.lock--;return}
+  const back=n.dir;if(dist>1)await moveNPC(n,n.dir,dist-1,5);
   G.p.dir=OPP[n.dir];
-  await yoshioBattle(n);G.lock--;
+  await yoshioBattle(n);
+  if(dist>1&&G.mapId==='field'){await moveNPC(n,OPP[back],dist-1,5);n.dir=back}
+  G.lock--;
 }
 function checkTriggers(){
   if(G.mapId==='shop'&&!S.flags.metSensei){S.flags.metSensei=true;G.lock++;senseiIntro().finally(()=>G.lock--);return true}
@@ -188,8 +191,9 @@ async function starterChosen(id){
   S.items.potion+=2;snd('item');await say('<b>回復の香</b>を 2個 もらった！');
   await say('野生の 魔物は 弱らせてから 封札を 投げると 封じやすい。<br>村の 北、草むらの 先の 古札の祠へ 行きなさい。',NM.sensei);
   await say('祠守りの イワオに 認められたら、<br>おまえも 一人前の 封札師だ。',NM.sensei);
+  await say('道の わきの 草むらで 魔物と 戦えば 札は 強くなる。<br>Lv9になれば 大技も 覚えるよ。 急がず 仲間を 増やしなさい。',NM.sensei);
   await say('へへっ、祠には おれが 先に 着いてやる！<br>じゃあな！',NM.rival);
-  await moveNPC(rv,'down',3,6);
+  await moveNPC(rv,'down',3,6);await moveNPC(rv,'left',2,6);await moveNPC(rv,'down',1,6);
   S.flags.rivalLeft=true;snd('door');
   G.npcs=buildNPCs(G.mapId);
   saveGame();
@@ -201,17 +205,17 @@ function showObjective(t){const o=$('#objective');o.innerHTML=`<small>もくて�
 async function endingSequence(){
   G.lock++;
   S.flags.badge=true;snd('item');
-  await say('イワオから <b>封札師の印</b> を うけとった！');
+  await say('イワオから <b>封札師の印</b>を うけとった！');
   await say('これで おまえも 一人前の 封札師だ。<br>…む？ ご神木の 様子が…。',NM.guardian);
   bgm('shrine');
   // sacred tree glows, sky phenomenon
   for(let i=0;i<3;i++){G.flash=.7;G.flashCol='#fff4d0';G.shake=3;snd('charge');await sleep(500)}
   const sky=$('#skyevent');sky.innerHTML=`<div class="whale">${art(MON[25])}</div><div class="aurora"></div>`;sky.hidden=false;snd('rare');
-  await sky.querySelector('.whale').animate([{transform:'translate(-40%,30%) scale(.6)',opacity:0},{transform:'translate(40%,-5%) scale(1)',opacity:.95,offset:.5},{transform:'translate(140%,-30%) scale(.7)',opacity:0}],{duration:RM?600:4200,easing:'ease-in-out',fill:'forwards'}).finished;
+  await sky.querySelector('.whale').animate([{transform:'translate(-10cqw,10cqh) rotate(-6deg) scale(.7)',opacity:0},{transform:'translate(35cqw,3cqh) rotate(2deg) scale(1)',opacity:.85,offset:.45},{transform:'translate(115cqw,-4cqh) rotate(-4deg) scale(.8)',opacity:0}],{duration:RM?600:4200,easing:'ease-in-out',fill:'forwards'}).finished;
   sky.hidden=true;sky.innerHTML='';
   await say('い、今のは…！？<br>空を 泳ぐ… クジラ…？',S.name);
-  G.npcs=buildNPCs('field');const rv=npc('rival');rv.x=13;rv.y=10;rv.dir='up';
-  await moveNPC(rv,'up',3,6);await moveNPC(rv,'right',2,6);rv.dir='left';
+  G.npcs=buildNPCs('field');const rv=npc('rival');rv.x=14;rv.y=11;rv.dir='up';
+  await moveNPC(rv,'up',5,6);rv.dir='left';
   await say('はぁ、はぁ… 見たか ソーヤ！<br>空に でっかい 魔物が…！',NM.rival);
   await say('伝説の 魔物… オーロラクジラ。<br>ご神木が 目をさまし、古い 札の 封印が ゆるんだようだ。',NM.guardian);
   await say('この 世界には まだ 見ぬ 札が 眠っている。<br>若き 封札師たちよ… 旅立つ ときが 来たようだな。',NM.guardian);
@@ -253,13 +257,14 @@ function showTitle(){
   el.hidden=false;
   bgm('title');
   let nav;const go=async t=>{nav.close();unlockAudio();snd('confirm');
-    if(t==='new'&&cont){const i=await ask('前の 記録は 消えてしまうけど、はじめから 遊ぶ？',null,['はじめから','やめる']);if(i!==0){nav=navPanel(el,{});return}}
+    if(t==='new'&&cont){el.hidden=true;const i=await ask('前の 記録は 消えてしまうけど、はじめから 遊ぶ？',null,['はじめから','やめる']);if(i!==0){el.hidden=false;nav=navPanel(el,{});return}}
     el.classList.add('out');await sleep(RM?0:450);el.hidden=true;el.classList.remove('out');G.cam=null;G.p.hidden=false;
     if(t==='cont'){loadGame();startWorld()}else{S=freshState();try{localStorage.removeItem(SAVE_KEY)}catch(e){}await intro()}};
   el.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.t)));
   nav=navPanel(el,{});
 }
 function startWorld(){
+  if(S.flags.starter&&!S.flags.rivalLeft){S.flags.rivalLeft=true;S.items.white+=5;S.items.potion+=2;S.map='shop';S.x=5;S.y=4;S.dir='down'}
   window.AUDIO&&AUDIO.setMuted(!!S.muted);
   loadMap(S.map);G.p.x=S.x;G.p.y=S.y;G.p.dir=S.dir;G.p.moving=false;G.p.hidden=false;G.scene='world';G.fade=0;G.lock=0;
   G.areaName=areaAt(S.map,S.y);showBanner(G.areaName);updateBGM();

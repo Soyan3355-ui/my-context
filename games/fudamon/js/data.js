@@ -7,7 +7,7 @@ const TYPES={
   thunder:{n:'雷',c:'#e0ac14',c2:'#fff1a0'},
   dark:{n:'闇',c:'#6e4fcf',c2:'#cbbaff'},
   light:{n:'光',c:'#e57aaa',c2:'#fff0f6'},
-  normal:{n:'無',c:'#8d8aa3',c2:'#eeeeee'}
+  normal:{n:'無',c:'#6a6784',c2:'#eeeeee'}
 };
 const EFF={fire:{grass:2,water:.5,fire:.5},water:{fire:2,grass:.5,water:.5},grass:{water:2,thunder:1.5,fire:.5,grass:.5},thunder:{water:2,grass:.5,thunder:.5},dark:{light:2,dark:.5},light:{dark:2,light:.5}};
 const eff=(a,d)=>(EFF[a]&&EFF[a][d])||1;
@@ -94,11 +94,11 @@ const MAPS={
 'TTTT""""""...PP...""""""TTTT',
 'TTTT""""""...PP...""""""TTTT',
 'TTTT""""",...PP...,"""""TTTT',
-'TTTT...,.....PP.....c...TTTT',
+'TTTT...,.....PP.......cTTTT',
 'TTT~~~~~~~~~~bb~~~~~~~~~~TTT',
 'TT~~~~~~~~~~~bb~~~~~~~~~~~TT',
 'TTT..~~~~~~~~bb~~~~~~~...TTT',
-'TTT,..R......PP..........TTT',
+'TTT,R........PP..........TTT',
 'TTTpppppp....PP."""""""".TTT',
 'TTTpppppp....PP""""""""""TTT',//30
 'TTTpppppp.,..PP""""""""""TTT',
@@ -140,7 +140,7 @@ const MAPS={
   home:{name:'ソーヤの家',rows:[
 'qqqqqqqqqq',
 'qqqqqqqqqq',
-'kko....oyo',
+'kkooooooyo',
 'oooouuoooo',
 'ooootuoooo',
 'oooouuoooo',
@@ -168,6 +168,7 @@ const WARPS={
 function areaAt(map,y){
   if(map!=='field')return MAPS[map].name;
   if(y<=11)return '古札の祠';
+  if(y<=17)return 'ささやきの野原';
   if(y<=44)return 'そよ風の小道';
   return 'ツムギ村';
 }

@@ -77,12 +77,3 @@ function cardHTML(c,o={}){
   <div class="c-meta"><span class="c-stars">${'★'.repeat(m.r)}</span><span>${c.lv?'Lv'+c.lv:RAR[m.r].n}</span></div></div>
   ${v!=='normal'?`<span class="c-badge">${v==='gold'?'GOLD':'キラ'}</span>`:''}<div class="c-foil"></div></div>`;
 }
-function backHTML(){return `<div class="card back"><div class="ci"><div class="bk-ring"><span>封</span></div><div class="bk-txt">FUDA</div></div></div>`}
-function slotHTML(id){
-  const m=MON[id],d=S.dex[id];
-  if(d)return cardHTML({id,v:d.gold?'gold':d.holo?'holo':'normal'});
-  const head=`<div class="c-head"><span class="c-no">No.${pad3(id)}</span></div>`;
-  if(S.seen[id])return `<div class="card slot seen"><div class="ci">${head}<div class="c-art sil">${art(m)}</div><div class="c-name">${m.name}</div><div class="c-meta"><span>見かけた</span><span>${RAR[m.r].n}</span></div></div></div>`;
-  return `<div class="card slot"><div class="ci">${head}<div class="c-art q">?</div><div class="c-name">？？？</div><div class="c-meta"><span>未発見</span></div></div></div>`;
-}
-

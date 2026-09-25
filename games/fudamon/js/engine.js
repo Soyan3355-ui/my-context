@@ -22,7 +22,7 @@ function saveGame(){S.map=G.mapId;S.x=G.p.x;S.y=G.p.y;S.dir=G.p.dir;try{localSto
 /* ---------------- monster/card helpers ---------------- */
 function mstats(id,lv){const b=MON[id].b;return{hp:Math.floor(b.hp*2*lv/100+lv+10),atk:Math.floor(b.atk*2*lv/100+5),def:Math.floor(b.def*2*lv/100+5),spd:Math.floor(b.spd*2*lv/100+5)}}
 const need=lv=>10+lv*6;
-function movesOf(id,lv){const m=MON[id];const L=[{...MV.normal,t:'normal'},{...MV[m.t][0],t:m.t}];if(lv>=12||m.r>=3)L.push({...MV[m.t][1],t:m.t,p:m.r===4?100:85});return L}
+function movesOf(id,lv){const m=MON[id];const L=[{...MV.normal,t:'normal'},{...MV[m.t][0],t:m.t}];if(lv>=9||m.r>=3)L.push({...MV[m.t][1],t:m.t,p:m.r===4?100:85});return L}
 const card=uid=>S.cards.find(c=>c.uid===uid);
 const partyCards=()=>S.party.map(card).filter(Boolean);
 const maxHP=c=>mstats(c.id,c.lv).hp;
@@ -71,14 +71,14 @@ function navPanel(root,{onBack,onMove}={}){
   const items=()=>[...root.querySelectorAll('[data-nav]')].filter(b=>!b.closest('[hidden]'));
   const mark=(i,silent)=>{const L=items();if(!L.length)return;idx=clamp(i,0,L.length-1);L.forEach((b,j)=>b.classList.toggle('sel',j===idx));const el=L[idx];el.scrollIntoView&&el.scrollIntoView({block:'nearest'});if(!silent)snd('cursor');onMove&&onMove(el)};
   const move=dir=>{const L=items();if(!L.length)return;const cur=L[idx]||L[0];const r=cur.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-    let best=-1,bd=1e9;L.forEach((b,j)=>{if(j===idx)return;const q=b.getBoundingClientRect(),x=q.left+q.width/2,y=q.top+q.height/2,dx=x-cx,dy=y-cy;
+    let best=-1,bd=1e9;L.forEach((b,j)=>{if(j===idx||b.disabled)return;const q=b.getBoundingClientRect(),x=q.left+q.width/2,y=q.top+q.height/2,dx=x-cx,dy=y-cy;
       const ok=dir==='up'?dy<-4:dir==='down'?dy>4:dir==='left'?dx<-4:dx>4;if(!ok)return;
       const d=(dir==='up'||dir==='down')?Math.abs(dy)+Math.abs(dx)*2.2:Math.abs(dx)+Math.abs(dy)*2.2;if(d<bd){bd=d;best=j}});
     if(best>=0)mark(best)};
   const h=k=>{if(k==='a'){const b=items()[idx];if(b&&!b.disabled){b.click()}else snd('bump')}else if(k==='b'){if(onBack){snd('cancel');onBack()}}else if(DIRS[k])move(k)};
   root.addEventListener('pointerover',e=>{const b=e.target.closest('[data-nav]');if(!b)return;const j=items().indexOf(b);if(j>=0&&j!==idx)mark(j,true)});
   UI.push(h);
-  const api={h,refresh(keep){const L=items();const i=keep?Math.min(idx,L.length-1):0;const first=L.findIndex(b=>!b.disabled);mark(keep?i:(first<0?0:first),true)},close(){UI.pop(h)},get idx(){return idx},set(i){mark(i,true)}};
+  const api={h,refresh(keep){const L=items();const i=keep?Math.min(idx,L.length-1):0;const first=L.findIndex(b=>!b.disabled&&!b.hasAttribute('data-back'));mark(keep?i:(first<0?0:first),true)},close(){UI.pop(h)},get idx(){return idx},set(i){mark(i,true)}};
   api.refresh();return api;
 }
 
@@ -102,7 +102,7 @@ function loadMap(id){
 }
 function tileAt(x,y){const m=G.map;if(x<0||y<0||x>=m.w||y>=m.h)return '';return m.rows[y][x]}
 function npcAt(x,y){return G.npcs.find(n=>n.vis()&&((n.x===x&&n.y===y)||(n.moving&&n.tx===x&&n.ty===y)))}
-function blocked(x,y){const c=tileAt(x,y);if(!c||SOLID.has(c))return true;if(npcAt(x,y))return true;return false}
+function blocked(x,y){const c=tileAt(x,y);if(!c||SOLID.has(c))return true;if(c==='J'&&tileAt(x,y+1)==='I')return true;if(npcAt(x,y))return true;return false}
 
 /* ---------------- world update ---------------- */
 function tryMove(dir){

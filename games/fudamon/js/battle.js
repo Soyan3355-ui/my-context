@@ -186,7 +186,7 @@ async function doSeal(k){
   for(let i=0;i<30;i++){const a=Math.random()*Math.PI*2,s=100+Math.random()*200;BFX.parts.push({x:fc.x,y:fc.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,ay:200,drag:2,life:1,max:1,size:3+Math.random()*4,color:['#ff9ee6','#8fe8ff','#fff1b0','#ffffff','#d8432c'][i%5],shape:i%2?'star':'rect',rot:a,vr:8})}
   snd('sealOk');
   await bsay(`やった！<br>${m.name}を 封印した！`,1100);
-  const v=rollVariant(I.holo,I.gold),res=addCard(e.id,e.lv,v);res.c.hp=Math.max(1,Math.floor(maxHP(res.c)*e.hp/e.st.hp));
+  const v=rollVariant(I.holo,I.gold),res=addCard(e.id,e.lv,v);S.dex[e.id].wild=true;res.c.hp=Math.max(1,Math.floor(maxHP(res.c)*e.hp/e.st.hp));
   await reveal([res],v==='gold'?'ゴールドカードだ！！':v==='holo'?'キラカードだ！':'封印成功！');
   if(!S.party.includes(res.c.uid))await bsay(`${m.name}のカードは 札入れに しまわれた。`,900);
   await giveExp(Math.floor(e.lv*RAR[m.r].exp*.45));
@@ -201,7 +201,7 @@ async function giveExp(x){
       if(c.uid===B.active){snd('levelup');const el=bmon('me'),cc=center(el);for(let i=0;i<26;i++)BFX.parts.push({x:cc.x+(Math.random()-.5)*cc.w*.8,y:cc.y+cc.h*.4,vx:0,vy:-60-Math.random()*90,ay:-40,life:1,max:1,size:3+Math.random()*3,color:['#fff1b0','#ffffff','#8fe8ff'][i%3],shape:'star',rot:0,vr:6});
         el.animate([{filter:'brightness(1)'},{filter:'brightness(1.8) drop-shadow(0 0 10px #fff4c8)'},{filter:'brightness(1)'}],{duration:RM?1:700});hud(true)}else snd('levelup');
       await bsay(`${m.name}は レベル${c.lv}に あがった！`,900);
-      if(c.lv===12&&m.r<3)await bsay(`${m.name}は 大技「${MV[m.t][1].n}」を おぼえた！`,1100)}}
+      if(c.lv===9&&m.r<3)await bsay(`${m.name}は 大技「${MV[m.t][1].n}」を おぼえた！`,1100)}}
 }
 
 /* ---------- main flow ---------- */
@@ -240,6 +240,7 @@ async function turn(a){
 async function runBattle(opts){
   const bg=opts.bg||bgAt(G.mapId,G.p.y);
   const alive=partyCards().filter(c=>c.hp>0);
+  if(!alive.length){await say('元気な カードが いない！<br>メニューの「なかま」か、家や 井戸で 休ませて あげよう。');return 'none'}
   B={trainer:opts.trainer||null,team:opts.trainer?opts.trainer.team:[opts.wild],teamIdx:0,active:alive[0].uid,forced:false,freeze:false};
   const f0=B.team[0],st=mstats(f0.id,f0.lv);B.foe={id:f0.id,lv:f0.lv,st,hp:st.hp};S.seen[f0.id]=true;
   G.scene='battle';snd('encounter');bgm(opts.music||(B.trainer?'boss':'battle'));
@@ -281,7 +282,7 @@ async function runBattle(opts){
   if(opts.canLose&&result==='lose')healAll();
   updateBGM();
   await cardShutter(false);saveGame();
-  if(result==='lose'&&!opts.canLose){await say(`あわてて逃げたときに ${lost}両 落としてしまった…。<br>カードたちは すっかり 元気になった！`)}
+  if(result==='lose'&&!opts.canLose){await say(`${lost}両を 落としてしまった…。<br>でも カードたちは すっかり 元気に なった！`)}
   return result;
 }
 async function wildEncounter(e){

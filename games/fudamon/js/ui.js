@@ -13,7 +13,7 @@ function say(text,name,opt={}){
     const tick=()=>{if(done)return;const want=Math.floor((performance.now()-t0)/1000*speed);
       while(shown<want&&i<toks.length){const tk=toks[i++];acc+=tk;if(tk[0]!=='<'){shown++;if(shown%2===0&&tk.trim())snd('blip')}}
       tx.innerHTML=acc;if(i>=toks.length){finish();return}requestAnimationFrame(tick)};
-    const finish=()=>{acc=toks.join('');tx.innerHTML=acc;i=toks.length;done=true;car.hidden=!!opt.noWait;if(opt.noWait){UI.pop(h);res()}};
+    const finish=()=>{acc=toks.join('');tx.innerHTML=acc;i=toks.length;done=true;car.hidden=!!opt.noWait;if(opt.noWait){UI.pop(h);box.removeEventListener('click',clk);res()}};
     const h=k=>{if(k!=='a'&&k!=='b')return;if(!done){finish();return}UI.pop(h);box.removeEventListener('click',clk);snd('cursor');if(!opt.keep)box.hidden=true;res()};
     const clk=()=>sendKey('a');box.addEventListener('click',clk);
     UI.push(h);tick();
@@ -46,7 +46,8 @@ function openMainMenu(){
     ${items.map(([k,l,d])=>`<button class="mm-it" data-nav data-k="${k}"><b>${l}</b><small>${d}</small></button>`).join('')}</div>
     <div class="mm-party">${pc.map(c=>{const r=c.hp/maxHP(c);return `<div class="mm-card">${cardHTML(c)}<span class="bar"><i style="width:${r*100}%;background:${hpColor(r)}"></i></span></div>`}).join('')||'<p class="muted">まだカードを持っていない</p>'}
     <p class="mm-time">プレイ時間 ${fmtTime(S.time)}</p></div></div>`,{onBack:done,cls:'menu'});
-  $('#panel').querySelectorAll('.mm-it').forEach(b=>b.addEventListener('click',async()=>{const k=b.dataset.k;snd('confirm');
+  if(G.menuIdx)panelNav.set(G.menuIdx);
+  $('#panel').querySelectorAll('.mm-it').forEach((b,bi)=>b.addEventListener('click',async()=>{const k=b.dataset.k;snd('confirm');G.menuIdx=bi;
     if(k==='close'){done();return}
     if(k==='party')partyScreen(()=>{closePanel();G.lock--;openMainMenu()});
     if(k==='dex')dexScreen(()=>{closePanel();G.lock--;openMainMenu()});
@@ -56,25 +57,25 @@ function openMainMenu(){
   }));
 }
 function fmtTime(s){s=Math.floor(s);return `${Math.floor(s/60)}分${String(s%60).padStart(2,'0')}秒`}
-function head(title,sub){return `<div class="ph"><button class="back" data-nav data-back aria-label="もどる">もどる</button><h2>${title}</h2><span>${sub||''}</span></div>`}
+function head(title,sub){return `<div class="ph"><button class="pback" data-nav data-back aria-label="もどる">もどる</button><h2>${title}</h2><span>${sub||''}</span></div>`}
 function wireBack(fn){const b=$('#panel [data-back]');b&&b.addEventListener('click',()=>{snd('cancel');fn()})}
 
 function partyScreen(back,{inBattle}={}){
   const pc=partyCards();
   const slots=[0,1,2].map(i=>{const c=pc[i];if(!c)return `<div class="slotempty">空き</div>`;const r=c.hp/maxHP(c);
     return `<button class="gcell" data-nav data-uid="${c.uid}">${cardHTML(c)}<span class="sub">${i===0?'<span class="lead-tag">先頭</span>':''}<span class="bar"><i style="width:${r*100}%;background:${hpColor(r)}"></i></span></span></button>`}).join('');
-  const list=[...S.cards].sort((a,b)=>a.id-b.id||b.lv-a.lv).map(c=>{const r=c.hp/maxHP(c);
+  const list=[...S.cards].filter(c=>!S.party.includes(c.uid)).sort((a,b)=>a.id-b.id||b.lv-a.lv).map(c=>{const r=c.hp/maxHP(c);
     return `<button class="gcell${S.party.includes(c.uid)?' inparty':''}" data-nav data-uid="${c.uid}">${cardHTML(c)}<span class="sub"><span class="bar"><i style="width:${r*100}%;background:${hpColor(r)}"></i></span></span></button>`}).join('');
-  const nav=openPanel(`${head('なかま',`パーティ ${pc.length}/3・札入れ ${S.cards.length}枚`)}<div class="pbody"><p class="lbl">パーティ（先頭のカードがバトルに出る）</p><div class="slots">${slots}</div><p class="lbl">札入れ</p><div class="grid">${list}</div></div>`,{onBack:back});
+  const nav=openPanel(`${head('なかま',`パーティ ${pc.length}/3・札入れ ${S.cards.length}枚`)}<div class="pbody"><p class="lbl">パーティ（先頭のカードがバトルに出る）</p><div class="slots">${slots}</div><p class="lbl">札入れ（パーティ以外のカード）</p>${list?`<div class="grid">${list}</div>`:'<p class="muted">まだ ありません。魔物を 封印すると ここに 入ります。</p>'}</div>`,{onBack:back});
   wireBack(back);
   $('#panel').querySelectorAll('[data-uid]').forEach(b=>b.addEventListener('click',()=>{snd('confirm');cardDetail(+b.dataset.uid,()=>partyScreen(back))}));
 }
 function cardDetail(uid,back){
   const c=card(uid);if(!c){back();return}const m=MON[c.id],st=mstats(c.id,c.lv),inP=S.party.includes(uid),idx=S.party.indexOf(uid);
   const mv=movesOf(c.id,c.lv).map(x=>`<div><span>${x.n}<span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span></span><span>威力${x.p}</span></div>`).join('');
-  const nb=(c.lv<12&&m.r<3)?`<div class="muted"><span>Lv12で「${MV[m.t][1].n}」を覚える</span></div>`:'';
+  const nb=(c.lv<9&&m.r<3)?`<div class="muted"><span>Lv9で「${MV[m.t][1].n}」を覚える</span></div>`:'';
   const acts=[];
-  if(inP){if(idx>0)acts.push(`<button class="pbtn" data-nav data-a="lead">先頭にする</button>`);acts.push(`<button class="pbtn" data-nav data-a="out" ${S.party.length<=1?'disabled':''}>パーティから外す</button>`)}
+  if(inP){if(idx>0)acts.push(`<button class="pbtn" data-nav data-a="lead">先頭にする</button>`);const lastOk=c.hp>0&&partyCards().filter(x=>x.hp>0&&x.uid!==uid).length===0;acts.push(`<button class="pbtn" data-nav data-a="out" ${S.party.length<=1||lastOk?'disabled':''}>${lastOk&&S.party.length>1?'元気なカードが いなくなる':'パーティから外す'}</button>`)}
   else acts.push(`<button class="pbtn shu" data-nav data-a="in" ${S.party.length>=3?'disabled':''}>${S.party.length>=3?'パーティが満員':'パーティに入れる'}</button>`);
   acts.push(`<button class="pbtn" data-nav data-a="sell" ${inP?'disabled':''}>手放す +${sellPrice(c)}両</button>`);
   openPanel(`${head(m.name,`No.${pad3(m.id)} ・ ${TYPES[m.t].n}タイプ ・ ${RAR[m.r].n}`)}<div class="pbody detailwrap"><div class="detail">${cardHTML(c)}</div>
@@ -99,14 +100,14 @@ function slotHTML(id){
   const m=MON[id],d=S.dex[id];
   if(d)return cardHTML({id,v:d.gold?'gold':d.holo?'holo':'normal'});
   const hd=`<div class="c-head"><span class="c-no">No.${pad3(id)}</span></div>`;
-  if(S.seen[id])return `<div class="card slot seen"><div class="ci">${hd}<div class="c-art sil">${art(m)}</div><div class="c-name">${m.name}</div><div class="c-meta"><span>見かけた</span></div></div></div>`;
+  if(S.seen[id])return `<div class="card slot seen"><div class="ci">${hd}<div class="c-art sil">${art(m)}</div><div class="c-name">${m.name}</div><div class="c-meta"><span>見かけた</span><span>${RAR[m.r].n}</span></div></div></div>`;
   return `<div class="card slot"><div class="ci">${hd}<div class="c-art q">?</div><div class="c-name">？？？</div><div class="c-meta"><span>未発見</span></div></div></div>`;
 }
 function dexScreen(back){
   const n=sealedCount(),h=Object.values(S.dex).filter(d=>d.holo).length,g=Object.values(S.dex).filter(d=>d.gold).length;
   let cells='';for(let id=1;id<=TOTAL;id++){const d=S.dex[id];
     cells+=`<button class="gcell" data-nav data-id="${id}">${slotHTML(id)}<span class="pips"><i class="${d?'on':''}">N</i><i class="${d&&d.holo?'on h':''}">キ</i><i class="${d&&d.gold?'on g':''}">金</i></span></button>`}
-  openPanel(`${head('封札図鑑',`封印 ${n}/${TOTAL}・キラ ${h}・ゴールド ${g}`)}<div class="pbody"><div class="progress"><span class="bar"><i style="width:${n/TOTAL*100}%"></i></span><span class="bar h"><i style="width:${h/TOTAL*100}%"></i></span><span class="bar g"><i style="width:${g/TOTAL*100}%"></i></span></div><div class="grid">${cells}</div></div>`,{onBack:back});
+  openPanel(`${head('封札図鑑',`封印 ${n}/${TOTAL}・キラ ${h}・ゴールド ${g}`)}<div class="pbody"><div class="progress"><div class="prow"><span>封印</span><span class="bar"><i style="width:${n/TOTAL*100}%"></i></span><span>${n}/${TOTAL}</span></div><div class="prow"><span>キラ</span><span class="bar h"><i style="width:${h/TOTAL*100}%"></i></span><span>${h}/${TOTAL}</span></div><div class="prow"><span>ゴールド</span><span class="bar g"><i style="width:${g/TOTAL*100}%"></i></span><span>${g}/${TOTAL}</span></div></div><div class="grid">${cells}</div></div>`,{onBack:back});
   wireBack(back);
   $('#panel').querySelectorAll('[data-id]').forEach(b=>b.addEventListener('click',()=>{const id=+b.dataset.id;
     if(!S.dex[id]){snd('bump');toast(S.seen[id]?'見かけたけど、まだ封印していない':'まだ出会っていない');return}snd('confirm');dexDetail(id,null,()=>dexScreen(back))}));
@@ -154,11 +155,11 @@ function shopScreen(back){
   <button class="shoprow" data-nav data-k="pack" ${S.coins<PACK_PRICE?'disabled':''}><span class="ico pack"></span><span><b>封札パック</b><small>ランダムなカードが3枚。R以上1枚確定。その場で開封！</small></span><span class="pr">${PACK_PRICE}両</span></button></div></div>`,{onBack:back});
   wireBack(back);
   $('#panel').querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',async()=>{const k=b.dataset.k;
-    if(k==='pack'){if(S.coins<PACK_PRICE)return;S.coins-=PACK_PRICE;snd('coin');closePanel();
+    if(k==='pack'){if(S.coins<PACK_PRICE)return;S.coins-=PACK_PRICE;G.bought=true;snd('coin');closePanel();
       const pool=[];for(let i=1;i<=TOTAL;i++)if(MON[i].r<4)pool.push(i);const ids=[pickWeighted(pool),pickWeighted(pool),pickWeighted(pool)];
       if(ids.every(i=>MON[i].r<2))ids[2]=pickWeighted(pool.filter(i=>MON[i].r>=2));
       const got=ids.map(id=>addCard(id,rnd(4,9),rollVariant(.15,.03)));await reveal(got,'封札パック開封！');shopScreen(back);return}
-    const I=ITEMS[k];if(S.coins<I.price)return;S.coins-=I.price;S.items[k]++;snd('coin');toast(`${I.n}を 買った`);shopScreen(back);panelNav.set([...$('#panel').querySelectorAll('[data-nav]')].indexOf($(`#panel [data-k="${k}"]`)))}));
+    const I=ITEMS[k];if(S.coins<I.price)return;S.coins-=I.price;S.items[k]++;G.bought=true;snd('coin');toast(`${I.n}を 買った`);shopScreen(back);panelNav.set([...$('#panel').querySelectorAll('[data-nav]')].indexOf($(`#panel [data-k="${k}"]`)))}));
 }
 
 /* ---------------- card reveal ---------------- */
