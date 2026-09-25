@@ -296,6 +296,8 @@ function boot(){
   initCanvas();fxInit();initPad();
   const last=SLOTS.find(n=>readSlot(n));if(last&&loadGame(last)){window.AUDIO&&AUDIO.setMuted(!!S.muted)}else S=freshState();
   showTitle();requestAnimationFrame(frame);
+  // warm the sprite cache a few at a time so the album never hitches
+  let wid=1;const warm=()=>{if(!window.PIXKIT||wid>TOTAL)return;for(let k=0;k<3&&wid<=TOTAL;k++,wid++){try{PIXKIT.render(wid)}catch(e){}}setTimeout(warm,60)};setTimeout(warm,800);
 }
 {let booted=false;const go=()=>{if(booted)return;booted=true;boot()};(document.fonts&&document.fonts.ready||Promise.resolve()).then(go);setTimeout(go,1500)}
 

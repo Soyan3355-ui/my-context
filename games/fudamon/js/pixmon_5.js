@@ -566,12 +566,12 @@
     // towering wave-crest mane behind: one great breaker curling over from the left, a smaller one at the right
     k.tube([[57, 52, 4.6], [62, 42, 4.4], [61, 33, 3], [56, 29, 1]], 'water', { part: 'wave2', shift: -1 });
     k.tufts([[64, 48], [66, 40], [64, 31], [58, 26]], 'white', { part: 'foam2', len: 2.6, w: 2.6, every: 2.4, seed: 9, light: 0.3 });
-    var WV = [[24, 54, 6.4], [18, 41, 6.6], [19.5, 28, 6], [27.5, 17, 5], [40, 11.5, 4.2], [52.5, 12.5, 3.4], [60, 18, 2.6], [61, 24.5, 1.8], [56.5, 26.5, 1]];
+    var WV = [[24, 54, 6.4], [18, 41, 6.6], [19.5, 28, 6], [27.5, 17, 5], [40, 12, 4.2], [52.5, 13, 3.4], [60, 18.5, 2.6], [61, 24.5, 1.8], [56.5, 26.5, 1]];
     k.tube(WV, 'water', { part: 'wave', shift: -1 });
     k.texture('wave', 'scales', { size: 5, seed: 3 });
     k.tube(WV.slice(0, 6).map(function (p) { return [p[0] + 2, p[1] + 2, 0.7]; }), 'aqua', { clip: 'wave', tone: 4 });
     k.tube(WV.slice(1, 5).map(function (p) { return [p[0] - 1.6, p[1] - 1, 0.6]; }), 'aqua', { clip: 'wave', tone: 3 });
-    k.tufts([[12, 40], [13.5, 28], [21, 15], [34, 7], [49, 6.5], [60, 11], [66, 19]], 'white', { part: 'foamW', len: 3, w: 3.4, every: 2.8, seed: 5, light: 0.3 });
+    k.tufts([[12, 40], [13.5, 28], [21, 15], [34, 7.5], [49, 7], [60, 11.5], [66, 19]], 'white', { part: 'foamW', len: 3, w: 3.4, every: 2.8, seed: 5, light: 0.3 });
     k.circle(58.5, 24, 3, 'white', { part: 'foamW', light: 0.3 });
     k.tufts([[61, 26.5], [57, 28], [54, 26.5]], 'white', { part: 'foamW', len: 2.6, w: 2, every: 2, seed: 2 });
     // breaking-wave tail
