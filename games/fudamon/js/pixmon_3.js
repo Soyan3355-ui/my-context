@@ -77,51 +77,54 @@
   P[12] = function (k) {
     k.shadow(C, 76.5, 14, 2);
     // drifting glow spores
-    [[13, 44], [67, 38], [64, 58], [15, 60], [10, 30], [70, 26]].forEach(function (p, i) { k.sparkle(p[0], p[1], 1, i % 2 ? 'leaf' : 'light'); });
+    [[13, 44], [67, 38], [65, 58], [14, 60], [12, 30], [68, 24]].forEach(function (p, i) { k.sparkle(p[0], p[1], 1, i % 2 ? 'leaf' : 'light'); });
     // stubby feet
     k.sym(C, function (m, s) { k.ellipse(m(33.5), 73.5, 5, 2.8, 'cream', { part: 'foot' + s }); k.px(m(31), 74, 'cream', 2); });
-    // chubby body
-    k.ellipse(C, 62, 13, 12, 'cream', { part: 'body' });
-    k.texture('body', 'dots', { seed: 4 });
-    k.tube([[31, 66, 0.6], [33, 70, 0.6], [37, 72, 0.6]], null, { adj: -1, clip: 'body' });
+    // chubby body = face
+    k.ellipse(C, 59, 13, 12.5, 'cream', { part: 'body', light: 0.12 });
+    k.tube([[30, 64, 0.6], [32, 68, 0.6], [36, 70.5, 0.6]], null, { adj: -1, clip: 'body' });
     // moss scarf low on the belly
-    k.poly([[28, 64], [52, 64], [50, 67.5], [C, 69], [30, 67.5]], 'grass', { part: 'scarf' });
-    k.tufts([[51, 67], [45, 68.5], [35, 68.5], [29, 67]], 'grass', { part: 'scarf', len: 2.4, w: 2.4, every: 2, seed: 3 });
+    k.poly([[28, 63], [52, 63], [50, 66.5], [C, 68], [30, 66.5]], 'grass', { part: 'scarf' });
+    k.tufts([[51, 66], [45, 67.5], [35, 67.5], [29, 66]], 'grass', { part: 'scarf', len: 2.4, w: 2.4, every: 2, seed: 3 });
     k.texture('scarf', 'fur', { seed: 5 });
-    k.px(33, 65, 'sakura', 5); k.px(47, 66, 'white', 6);
+    k.px(33, 64, 'sakura', 5); k.px(47, 65, 'white', 6);
     // hugging a baby sprout in a nut pot
     k.ellipse(C, 69.5, 3.8, 2.8, 'wood', { part: 'pot' });
     k.tube([[C, 68, 0.8], [C, 64.5, 0.7]], 'leaf', { part: 'bstem' });
     k.leaf(C, 65, 35.5, 62, 4, 'leaf', { part: 'bl1' });
     k.leaf(C, 65, 44.5, 62.5, 4, 'grass', { part: 'bl2' });
     k.sym(C, function (m, s) { k.ellipse(m(34.5), 69, 3.2, 2.8, 'cream', { part: 'hand' + s }); });
-    // gills under the cap
-    k.ellipse(C, 50, 14.5, 4, 'tan', { part: 'gill', shift: -1 });
-    for (var gx = 29; gx <= 51; gx += 2) k.line(gx, 48, C + (gx - C) * 0.7, 52, 'tan', 1);
-    // round dome cap, wavy rim, glowing spots
-    k.ellipse(C, 41, 17.5, 10.5, 'fur', { part: 'cap' });
-    k.ellipse(C, 47, 18.5, 3, 'fur', { part: 'cap' });
-    k.tufts([[58, 47.5], [50, 50.5], [30, 50.5], [22, 47.5]], 'fur', { part: 'cap', len: 1.8, w: 3.2, every: 3.4, seed: 9 });
+    // gills peeking under the brim
+    k.ellipse(C, 44, 12, 2.4, 'tan', { part: 'gill', shift: -1 });
+    for (var gx = 31; gx <= 49; gx += 2) k.px(gx, 44, 'tan', 1);
+    // smaller dome cap sitting up high, wavy rim, glowing spots
+    k.ellipse(C, 35.5, 13.5, 8.5, 'fur', { part: 'cap' });
+    k.ellipse(C, 41, 15, 2.6, 'fur', { part: 'cap' });
+    k.tufts([[54, 41.5], [48, 43.5], [32, 43.5], [26, 41.5]], 'fur', { part: 'cap', len: 1.6, w: 3, every: 3.4, seed: 9 });
     k.texture('cap', 'fur', { seed: 6 });
-    [[31, 37, 3.2], [44, 35, 2.6], [52, 41.5, 2.2], [26, 44, 1.7], [38, 43.5, 1.9], [48, 31.5, 1.3]].forEach(function (s) {
+    [[33, 33, 2.8], [44, 31, 2.3], [50, 37, 1.9], [29, 39, 1.5], [39, 38.5, 1.7], [47, 28, 1.2]].forEach(function (s) {
       k.circle(s[0], s[1], s[2], 'leaf', { clip: 'cap', tone: 5 });
       k.circle(s[0] + 0.4, s[1] + 0.4, Math.max(0.8, s[2] - 1.2), 'leaf', { clip: 'cap', tone: 6 });
     });
-    k.ellipse(C, 48.5, 18, 1, null, { adj: -1, clip: 'cap' });
-    k.tube([[26, 36, 0.6], [30, 32, 0.6], [36, 30.5, 0.6]], null, { adj: 1, clip: 'cap' });
+    k.ellipse(C, 42.5, 16, 1, null, { adj: -1, clip: 'cap' });
+    k.tube([[27, 32, 0.6], [31, 28.5, 0.6], [36, 27.5, 0.6]], null, { adj: 1, clip: 'cap' });
     // little sprout on top
-    k.tube([[43, 31, 0.8], [44, 28, 0.6]], 'leaf', { part: 'tstem' });
-    k.leaf(44, 28.5, 50, 26, 3.6, 'grass', { part: 'tleaf' });
-    // dozy face: droopy closed lids, soft smile, rosy cheeks
-    var E = { K: ['black', 0], k: ['cream', 2], L: ['cream', 5] };
-    pm(k, 31, 55, ['.LLL.', 'KKKKK', '.k..k'], E);
-    pmx(k, 44, 55, ['.LLL.', 'KKKKK', '.k..k'], E);
-    k.sym(C, function (m, s) { k.rect(s > 0 ? 29 : 49, 59, 3, 1, 'sakura', { tone: 4, part: 'blush' + s, outline: 'none' }); });
-    k.path([[37, 60], [38, 61], [42, 61], [43, 60]], 'black', 0);
-    k.px(C, 61.5, 'mouth', 4);
+    k.tube([[43, 27.5, 0.8], [44, 24.5, 0.6]], 'leaf', { part: 'tstem' });
+    k.leaf(44, 25, 50, 22.5, 3.6, 'grass', { part: 'tleaf' });
+    // soft shade under the brim
+    k.ellipse(C, 47, 11, 1.2, null, { adj: -1, clip: 'body' });
+    // dozy face: content closed eyes, rosy cheeks, soft smile
+    var E = { K: ['black', 0], l: ['black', 3], c: ['cream', 2] };
+    pm(k, 30, 50, ['K....K', 'KK..KK', '.KKKK.'], E);
+    pm(k, 44, 50, ['K....K', 'KK..KK', '.KKKK.'], E);
+    k.sym(C, function (m, s) { k.rect(s > 0 ? 28 : 49, 53, 3, 2, 'sakura', { tone: 4, part: 'blush' + s, outline: 'none' }); });
+    k.px(29, 53, 'sakura', 5); k.px(50, 53, 'sakura', 5);
+    k.px(C, 54, 'cream', 2);
+    k.path([[37, 56], [38, 57], [42, 57], [43, 56]], 'black', 0);
+    k.px(39, 58, 'mouth', 4); k.px(C, 58, 'mouth', 4);
     // snot bubble
-    k.circle(45.5, 60.5, 2.4, 'ice', { part: 'bubble', shade: 'flat', flatTone: 5, outline: 'soft' });
-    k.px(45, 59, 'white', 6); k.px(46, 62, 'ice', 3);
+    k.circle(46, 58.5, 2.3, 'ice', { part: 'bubble', shade: 'flat', flatTone: 5, outline: 'soft' });
+    k.px(45, 57, 'white', 6); k.px(47, 59, 'ice', 3);
   };
 
   // 14 ハナカマキリ — grass R, かっこいい: orchid mantis in petal armour, scythes raised high. Gag: none needed, pure menace — a severed petal falling from its blade.
@@ -271,64 +274,66 @@
     k.path([[31, 35], [34, 36], [38, 38]], 'black', 0); k.path([[49, 35], [46, 36], [42, 38]], 'black', 0);
   };
 
-  // 18 カミナリコゾウ — thunder C, かわいい: little thunder imp in tiger-pelt shorts with a drum ring. Gag: akanbe (pulling an eyelid, tongue out).
+  // 18 カミナリコゾウ — thunder C, かわいい: little thunder imp in tiger-pelt shorts with an arc of drums. Gag: akanbe (pulling an eyelid, tongue out).
   P[18] = function (k) {
     k.shadow(C, 76.5, 13, 2);
-    // drum ring: a full circle of taiko behind it
-    var R = [];
-    for (var a = 0; a <= 24; a++) { var t = a / 24 * Math.PI * 2; R.push([C + Math.cos(t) * 23, 47 + Math.sin(t) * 21, 1.2]); }
-    k.tube(R, 'red', { part: 'ring' });
-    for (var d = 0; d < 8; d++) {
-      var t2 = -Math.PI / 2 + (d + 0.5) / 8 * Math.PI * 2, dx = C + Math.cos(t2) * 23, dy = 47 + Math.sin(t2) * 21;
-      k.circle(dx, dy, 3.8, 'wood', { part: 'drum' + d });
-      k.circle(dx, dy, 2.6, 'cream', { part: 'dh' + d, spec: false });
-      pm(k, Math.round(dx) - 1, Math.round(dy) - 1, ['rR', 'Rr'], { r: ['red', 4], R: ['red', 2] });
-    }
+    // arc of 4 taiko behind the shoulders
+    k.sym(C, function (m, s) {
+      k.tube([[m(17), 60, 1.2], [m(15), 50, 1.2], [m(17), 40, 1.2], [m(23), 32, 1.2], [m(29), 29, 1.2]], 'red', { part: 'ring' + s });
+      [[15.5, 55], [17, 40]].forEach(function (d, i) {
+        k.circle(m(d[0]), d[1], 4.2, 'wood', { part: 'drum' + s + i });
+        k.circle(m(d[0]), d[1], 2.8, 'cream', { part: 'dh' + s + i, spec: false });
+        pm(k, Math.round(m(d[0])) - 1, d[1] - 1, ['rR', 'Rr'], { r: ['red', 4], R: ['red', 2] });
+        k.px(m(d[0]) - 4, d[1], 'gold', 5); k.px(m(d[0]) + 4, d[1], 'gold', 5);
+      });
+    });
     // legs + feet
     k.sym(C, function (m, s) {
-      k.tube([[m(36), 67, 2.4], [m(35), 72, 2.2]], 'aqua', { part: 'leg' + s });
+      k.tube([[m(36), 68, 2.4], [m(35), 72, 2.2]], 'aqua', { part: 'leg' + s });
       k.ellipse(m(34), 74, 4, 2.2, 'aqua', { part: 'leg' + s });
     });
     // body + tiger shorts
-    k.ellipse(C, 62, 8.5, 7, 'aqua', { part: 'body' });
-    k.px(C, 59, 'aqua', 1); k.px(39, 60, 'aqua', 2); k.px(36, 58, 'aqua', 5);
-    k.poly([[31, 63], [49, 63], [50, 70], [43, 70], [C, 68], [37, 70], [30, 70]], 'thunder', { part: 'shorts' });
-    [[33, 64, 34, 68], [36, 64, 35, 67], [44, 64, 45, 67], [47, 64, 46, 69], [41, 65, 42, 66]].forEach(function (l) { k.line(l[0], l[1], l[2], l[3], 'black', 1); });
-    k.rect(30, 63, 20, 1, 'thunder', { adj: -2, clip: 'shorts' });
-    // right arm thrown up with a drumstick
-    k.tube([[47, 60, 2.2], [52, 56, 2], [54, 51, 1.8]], 'aqua', { part: 'armR' });
-    k.circle(54.5, 49.5, 2.6, 'aqua', { part: 'fistR' });
-    k.tube([[55, 49, 1], [61, 40, 0.9]], 'wood', { part: 'bachi' });
-    k.circle(61.5, 39, 2, 'red', { part: 'bknob' });
-    k.path([[64, 36], [66, 34], [65, 33], [67, 31]], 'thunder', 6);
-    // wild dark hair with a lightning-bolt forelock
-    k.ellipse(C, 40, 12, 6, 'obsidian', { part: 'hair' });
-    k.tube([[34, 38, 2.8], [29, 33, 1.8], [24, 32, 0.5]], 'obsidian', { part: 'hair' });
-    k.tube([[39, 36, 2.8], [37, 31, 1.8], [34, 28, 0.5]], 'obsidian', { part: 'hair' });
-    k.tube([[45, 37, 2.8], [49, 32, 1.8], [54, 31, 0.5]], 'obsidian', { part: 'hair' });
-    k.tube([[30, 41, 2.4], [25, 40, 1.3], [21, 42, 0.5]], 'obsidian', { part: 'hair' });
-    k.tube([[50, 41, 2.4], [55, 40, 1.3], [59, 42, 0.5]], 'obsidian', { part: 'hair' });
+    k.ellipse(C, 63, 8, 6.5, 'aqua', { part: 'body' });
+    k.px(36, 60, 'aqua', 5);
+    k.poly([[31, 64], [49, 64], [50, 71], [43, 71], [C, 69], [37, 71], [30, 71]], 'thunder', { part: 'shorts' });
+    [[33, 65, 34, 69], [36, 65, 35, 68], [44, 65, 45, 68], [47, 65, 46, 70], [41, 66, 42, 67]].forEach(function (l) { k.line(l[0], l[1], l[2], l[3], 'black', 1); });
+    k.rect(30, 64, 20, 1, 'thunder', { adj: -2, clip: 'shorts' });
+    // wild hair (lighter violet so the edge reads on dark), bolt forelock
+    k.ellipse(C, 38, 13, 6, 'dark', { part: 'hair' });
+    k.tube([[33, 36, 3], [28, 31, 1.8], [23, 30, 0.5]], 'dark', { part: 'hair' });
+    k.tube([[39, 34, 3], [37, 29, 1.8], [34, 26, 0.5]], 'dark', { part: 'hair' });
+    k.tube([[46, 35, 3], [50, 30, 1.8], [55, 29, 0.5]], 'dark', { part: 'hair' });
+    k.tube([[29, 40, 2.4], [26, 38, 1.3], [24, 38, 0.5]], 'dark', { part: 'hair' });
+    k.tube([[51, 40, 2.4], [54, 38, 1.3], [56, 38, 0.5]], 'dark', { part: 'hair' });
     k.texture('hair', 'fur', { seed: 3 });
-    k.sym(C, function (m, s) { k.tube([[m(36), 38, 1.8], [m(35), 33.5, 1.1], [m(36), 31, 0.4]], 'bone', { part: 'horn' + s }); });
-    // head + ears
-    k.sym(C, function (m, s) { k.ellipse(m(28.5), 48, 2.2, 2.8, 'aqua', { part: 'ear' + s }); });
-    k.ellipse(C, 48, 11, 9, 'aqua', { part: 'head' });
-    k.tufts([[30, 42], [36, 40.5], [44, 40.5], [50, 42]], 'obsidian', { part: 'fringe', len: 3, w: 3, every: 2.5, seed: 5 });
-    k.poly([[43, 38], [47, 38], [44.5, 42], [47, 42], [41, 48], [42.5, 43.5], [40.5, 43.5]], 'thunder', { part: 'bolt', shade: 'glow' });
-    // akanbe: left eye pulled wide, right eye cheeky squint
-    k.eye(31, 45, { w: 5, h: 5, iris: 'red', side: 'L', angry: 0, lid: 0.1 });
-    k.rect(31, 50, 5, 1, 'skin', { tone: 3, part: 'lidin', outline: 'none' });
-    k.eye(44, 45, { w: 5, h: 4, iris: 'red', side: 'R', angry: 1.4 });
+    k.sym(C, function (m, s) { k.tube([[m(35), 36, 1.8], [m(34), 31.5, 1.1], [m(35), 29, 0.4]], 'bone', { part: 'horn' + s }); });
+    // big head + ears
+    k.sym(C, function (m, s) { k.ellipse(m(26), 48, 2.4, 3, 'aqua', { part: 'ear' + s }); });
+    k.ellipse(C, 47, 13.5, 10.5, 'aqua', { part: 'head', light: 0.1 });
+    k.tufts([[29, 40], [35, 38.5], [45, 38.5], [51, 40]], 'dark', { part: 'fringe', len: 3, w: 3, every: 2.5, seed: 5 });
+    k.poly([[43, 36], [47, 36], [44.5, 40], [47, 40], [41, 46], [42.5, 41.5], [40.5, 41.5]], 'thunder', { part: 'bolt', shade: 'glow' });
+    // right arm thrown up with a drumstick
+    k.tube([[47, 61, 2.2], [52, 59, 2], [54, 55, 1.8]], 'aqua', { part: 'armR' });
+    k.circle(54.5, 53.5, 2.6, 'aqua', { part: 'fistR' });
+    k.tube([[55, 53, 1], [57, 45.5, 0.9]], 'wood', { part: 'bachi' });
+    k.circle(57, 44.5, 2, 'red', { part: 'bknob' });
+    // akanbe: left eye wide with the red under-lid dragged down by a finger
+    k.eye(29, 42, { w: 6, h: 5, iris: 'red', side: 'L', angry: 0, lid: 0.1 });
+    k.rect(29, 47, 6, 1, 'skin', { tone: 4, part: 'lidin', outline: 'none' });
+    k.rect(30, 48, 4, 1, 'skin', { tone: 2, part: 'lidin', outline: 'none' });
+    // right eye: cheeky squint
+    pm(k, 45, 43, ['KKKKK.', '.KrWK.', '..KK..'], { K: ['black', 0], r: ['red', 4], W: ['white', 6] });
+    k.line(45, 41, 51, 40, 'black', 0);
     // left arm up, finger dragging the lower lid
-    k.tube([[33, 60, 2], [28, 57, 1.7], [30, 53, 1.5]], 'aqua', { part: 'armL' });
-    k.ellipse(31, 52.5, 2.2, 1.8, 'aqua', { part: 'handL' });
-    k.tube([[32.5, 52, 0.7], [33.5, 51, 0.6]], 'aqua', { part: 'finger' });
-    // grin + tongue out
-    k.mouth([[37, 53], [46, 53], [44.5, 56], [39, 56]], { tongue: false });
-    k.tube([[42, 55, 1.7], [42.5, 58, 1.8], [42, 59.5, 1.2]], 'skin', { part: 'tongue' });
-    k.line(42, 56, 42, 58, 'skin', 2);
-    k.tooth(39, 53, 39, 55, 1.8);
-    k.px(50, 52, 'sakura', 4); k.px(51, 52, 'sakura', 4);
+    k.tube([[33, 61, 2], [27, 57, 1.7], [29, 52, 1.5]], 'aqua', { part: 'armL' });
+    k.ellipse(30, 51.5, 2.4, 2, 'aqua', { part: 'handL' });
+    k.tube([[31, 50.5, 0.8], [31.5, 49, 0.7]], 'aqua', { part: 'finger' });
+    // wide grin + tongue out
+    k.mouth([[35, 51], [48, 51], [46, 55], [41, 56], [37, 54.5]], { tongue: false });
+    k.tooth(37.5, 51, 37.7, 53, 1.8); k.tooth(45.5, 51, 45.3, 53, 1.8);
+    k.tube([[42, 54, 1.9], [42.5, 57.5, 2], [42, 59.5, 1.3]], 'skin', { part: 'tongue' });
+    k.line(42, 55, 42, 58, 'skin', 2);
+    k.px(49, 49, 'sakura', 4); k.px(50, 49, 'sakura', 4); k.px(51, 49, 'sakura', 3);
   };
 
   // 19 ライジュウマル — thunder R, かっこいい: raijū wildcat crouched to pounce, lightning-striped fur, bolt tail.
