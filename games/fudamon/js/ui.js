@@ -210,7 +210,7 @@ function initPad(){
 async function evolveCard(uid){
   const c=card(uid);const E=EVO[c.id];if(!c||!E)return;
   // consume duplicates: prefer non-party, lowest level
-  const dups=S.cards.filter(x=>x.id===c.id&&x.uid!==uid).sort((a,b)=>(S.party.includes(a.uid)-S.party.includes(b.uid))||a.lv-b.lv).slice(0,E.dup);
+  const dups=S.cards.filter(x=>x.id===c.id&&x.uid!==uid).sort((a,b)=>{const vr={normal:0,holo:1,gold:2};return (vr[a.v]-vr[b.v])||(S.party.includes(a.uid)-S.party.includes(b.uid))||a.lv-b.lv}).slice(0,E.dup);
   const gone=new Set(dups.map(d=>d.uid));S.cards=S.cards.filter(x=>!gone.has(x.uid));S.party=S.party.filter(u=>!gone.has(u));
   const from=c.id,to=E.to;G.lock++;
   const md=$('#modal');

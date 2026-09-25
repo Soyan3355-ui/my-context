@@ -25,7 +25,7 @@ function clearSlot(n){try{localStorage.removeItem(slotKey(n));if(n===1)localStor
 
 /* ---------------- monster/card helpers ---------------- */
 function mstats(id,lv){const b=MON[id].b;return{hp:Math.floor(b.hp*2*lv/100+lv+10),atk:Math.floor(b.atk*2*lv/100+5),def:Math.floor(b.def*2*lv/100+5),spd:Math.floor(b.spd*2*lv/100+5)}}
-const need=lv=>10+lv*6;
+const need=lv=>Math.floor(12+lv*lv*.8);
 function movesOf(id,lv){const m=MON[id];const L=[{...MV.normal,t:'normal',pp:25},{...MV[m.t][0],t:m.t,pp:20}];if(lv>=9||m.r>=3)L.push({...MV[m.t][1],t:m.t,p:m.r===4?100:85,pp:m.r===4?8:10});return L}
 const STRUGGLE={n:'ふんばる',p:35,acc:1,t:'normal'};
 function ppLeft(c,i){c.pp=c.pp||{};const mx=movesOf(c.id,c.lv)[i].pp;if(c.pp[i]==null||c.pp[i]>mx)c.pp[i]=mx;return c.pp[i]}
@@ -225,7 +225,7 @@ function renderWorld(t){
     if(p.y<=17){// shrine motes
       for(let i=0;i<14;i++){const sx=((i*53.7+t*6*(1+i%3))%(VW+20))-10,sy=VH-((i*37.1+t*(8+i%5*3))%(VH+20));const a=.35+.35*Math.sin(t*2+i);ctx.fillStyle=`rgba(255,244,200,${a})`;ctx.fillRect(Math.round(sx),Math.round(sy),1+(i%3===0),1+(i%3===0))}}
   }else if(G.mapId==='valley'){// drifting mist banks
-    for(let i=0;i<7;i++){const w=90+i*17,x=((i*97+t*(5+i%3*2))%(VW+w*2))-w,y=((i*61)%(VH+40))-20+Math.sin(t*.3+i)*6;const g2=ctx.createRadialGradient(x,y,4,x,y,w*.6);g2.addColorStop(0,'rgba(235,245,250,.30)');g2.addColorStop(1,'rgba(235,245,250,0)');ctx.fillStyle=g2;ctx.fillRect(x-w,y-w,w*2,w*2)}
+    for(let i=0;i<7;i++){const w=90+i*17,x=((i*97+t*(5+i%3*2))%(VW+w*2))-w,y=((i*61)%(VH+40))-20+Math.sin(t*.3+i)*6;const g2=ctx.createRadialGradient(x,y,4,x,y,w*.6);g2.addColorStop(0,'rgba(235,245,250,.46)');g2.addColorStop(1,'rgba(235,245,250,0)');ctx.fillStyle=g2;ctx.fillRect(x-w,y-w,w*2,w*2)}
   }else if(G.mapId==='mount'){// rising embers + heat
     for(let i=0;i<22;i++){const sx=((i*47.3+Math.sin(t*1.3+i)*8)%VW),sy=VH-((i*31.7+t*(14+i%4*6))%(VH+10));const a=.5+.4*Math.sin(t*6+i);ctx.fillStyle=i%3?`rgba(255,150,60,${a})`:`rgba(255,220,120,${a})`;ctx.fillRect(Math.round(sx),Math.round(sy),1+(i%4===0),1)}
   }else if(G.mapId==='forest'){// night: darkness with player light + lantern glows

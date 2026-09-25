@@ -77,9 +77,9 @@ async function talkGuard(n){
 /* ---------------- rival rematches ---------------- */
 function rivalStarter(){return RIVAL_OF[S.flags.starter]||6}
 const RIVAL={
-  rv2:{map:'valley',at:(x,y)=>x===16&&y===6,team:()=>[{id:rivalStarter(),lv:13},{id:16,lv:11}],pre:['よう ソーヤ！ やっと 追いついたな！','霧の 谷で 腕試しだ！ いくぜ！'],win:'くっ… 谷の 霧で 前が 見えなかった だけだ！',lose:'へへっ、おれの 勝ち！<br>先に 行ってるぜ！',post:'おれの 相棒も もうすぐ 進化しそうなんだ。<br>同じ 札を 集めて レベルを 上げると 進化するんだぜ！'},
-  rv3:{map:'mount',at:(x,y)=>x===22&&y===15,team:()=>[{id:EVO[rivalStarter()].to,lv:18},{id:17,lv:16},{id:14,lv:17}],pre:['ソーヤ！ 見ろよ、おれの 相棒！<br>ついに 進化したんだぜ！','熱い 山には 熱い 勝負が お似合いだ！'],win:'進化しても 勝てないなんて… おまえ、どこまで 強くなるんだ。',lose:'進化の 力、思い知ったか！',post:'月影の森の 先に… あのクジラの 手がかりが あるらしいぜ。'},
-  rv4:{map:'forest',at:(x,y)=>x>=11&&x<=18&&y===23,team:()=>[{id:EVO[rivalStarter()].to,lv:23},{id:19,lv:22},{id:20,lv:24}],pre:['来たな ソーヤ。','ここで 決着 つけようぜ。 どっちが クジラに ふさわしいか！'],win:'…負けだ。 完全に な。<br>クジラは おまえに ゆずるよ。 行ってこい！',lose:'はぁ、はぁ… 勝った…！<br>でも おまえも 強くなったな。',post:'おれは もっと 強くなって、いつか あのオロチも 封印してやる。'}
+  rv2:{map:'valley',at:(x,y)=>y===6&&x>=4&&x<=12,team:()=>[{id:rivalStarter(),lv:13},{id:16,lv:11}],pre:['よう ソーヤ！ やっと 追いついたな！','霧の 谷で 腕試しだ！ いくぜ！'],win:'くっ… 谷の 霧で 前が 見えなかった だけだ！',lose:'へへっ、おれの 勝ち！<br>先に 行ってるぜ！',post:'おれの 相棒も もうすぐ 進化しそうなんだ。<br>同じ 札を 集めて レベルを 上げると 進化するんだぜ！'},
+  rv3:{map:'mount',at:(x,y)=>y===12&&x>=10&&x<=22,team:()=>[{id:EVO[rivalStarter()].to,lv:18},{id:17,lv:16},{id:14,lv:17}],pre:['ソーヤ！ 見ろよ、おれの 相棒！<br>ついに 進化したんだぜ！','熱い 山には 熱い 勝負が お似合いだ！'],win:'進化しても 勝てないなんて… おまえ、どこまで 強くなるんだ。',lose:'進化の 力、思い知ったか！',post:'月影の森の 先に… あのクジラの 手がかりが あるらしいぜ。'},
+  rv4:{map:'forest',at:(x,y)=>y>=17&&y<=23&&x>=9&&x<=19,team:()=>[{id:EVO[rivalStarter()].to,lv:23},{id:19,lv:22},{id:20,lv:24}],pre:['来たな ソーヤ。','ここで 決着 つけようぜ。 どっちが クジラに ふさわしいか！'],win:'…負けだ。 完全に な。<br>クジラは おまえに ゆずるよ。 行ってこい！',lose:'はぁ、はぁ… 勝った…！<br>でも おまえも 強くなったな。',post:'おれは もっと 強くなって、いつか 伝説の 札を ぜんぶ 封印してやる。'}
 };
 async function rivalEvent(key){
   const R=RIVAL[key];G.lock++;S.flags[key]=true;
@@ -91,7 +91,7 @@ async function rivalEvent(key){
   for(const l of R.pre)await say(l,NM.rival);
   const r=await runBattle({trainer:{name:'レン',sprite:'rival',team:R.team(),reward:600,smart:.5,intro:'ライバルの レンが 勝負を しかけてきた！',winLine:R.win,loseLine:R.lose},canLose:true});
   await say(R.post,NM.rival);
-  await moveNPC(rv,OPP[d],dist+2,7);G.npcs=G.npcs.filter(n=>n!==rv);
+  if(dist>0)await moveNPC(rv,OPP[d],dist,7);snd('run');G.npcs=G.npcs.filter(n=>n!==rv);
   updateBGM();saveGame();G.lock--;
 }
 
@@ -105,9 +105,9 @@ async function whaleEvent(){
   await say('オオオォォ………ン');
   sky.hidden=true;sky.innerHTML='';
   const r=await runBattle({wild:{id:30,lv:30},bg:ENC.legend,music:'legend'});
-  if(r==='sealed'||r==='win'){S.flags.whaleDone=true;saveGame();
-    await say(r==='sealed'?'伝説の 魔物… オーロラクジラを 封印した！':'オーロラクジラは 満足そうに 空へ 帰っていった…。');
-    await finalEnding();}
+  if(r==='sealed'||r==='win'){const first=!S.flags.whaleDone;S.flags.whaleDone=true;saveGame();
+    await say(r==='sealed'?'伝説の 魔物… オーロラクジラを 封印した！':'オーロラクジラは 空へ 帰っていった…。<br>ご神木に 祈れば、また 会えるかもしれない。');
+    if(first)await finalEnding();}
   else{await say('オーロラクジラは 雲の 向こうへ 消えていった…。<br>準備を ととのえて、また ご神木に 祈ろう。')}
   G.lock--;
 }
@@ -117,7 +117,7 @@ async function orochiEvent(){
   G.shake=6;snd('charge');await sleep(600);G.shake=8;G.flash=.6;G.flashCol='#6b2dbb';await sleep(500);
   const r=await runBattle({wild:{id:25,lv:35},bg:{bg:['#1a0f2e','#6b4bb8'],floor:'#3a2a5e'},music:'legend'});
   if(r==='sealed'){S.flags.orochiDone=true;await say('クロガネオロチを 封印した！<br>ツムギ村の 伝説に、新しい 一ページが 刻まれた。')}
-  else if(r==='win'){S.flags.orochiDone=true;await say('クロガネオロチは 地の 底へ 沈んでいった…。')}
+  else if(r==='win'){await say('クロガネオロチは 地の 底へ 沈んでいった…。<br>封印しない かぎり、また 目を覚ますだろう。')}
   else await say('オロチの 気配が 地の 底へ 消えた…。<br>また 石の 輪に 立てば 現れるだろう。');
   saveGame();G.lock--;
 }
@@ -148,11 +148,11 @@ buildNPCs=function(map){
     add({key:'attendant',sprite:'monk',x:23,y:5,dir:'left',vis:()=>!F.badge,talk:async()=>{await say('この 先は 霧の 渓谷へ つづく 道。<br>祠守りの 印を もつ 者しか 通せぬ 決まりじゃ。',NM.attendant)}});
   }
   if(map==='valley'){
-    add({key:'minamo',sprite:'ama',x:F.b2?7:6,y:22,dir:F.b2?'down':'up',guard:'minamo',talk:talkGuard});
+    add({key:'minamo',sprite:'ama',x:F.b2?5:6,y:F.b2?23:22,dir:F.b2?'right':'up',guard:'minamo',talk:talkGuard});
     add({key:'vfisher',sprite:'fisher',x:12,y:15,dir:'right',talk:async()=>{await say('この 谷の 川の 主は ミズチの 仲間じゃと いう。<br>霧の 濃い 日は 草むらの 奥から 鳴き声が するぞ。','釣り人')}});
   }
   if(map==='mount'){
-    add({key:'goen',sprite:'yamabushi',x:27,y:F.b3?20:21,dir:F.b3?'down':'left',guard:'goen',talk:talkGuard});
+    add({key:'goen',sprite:'yamabushi',x:F.b3?26:27,y:F.b3?20:21,dir:F.b3?'down':'left',guard:'goen',talk:talkGuard});
     add({key:'onsen',sprite:'granny',x:6,y:5,dir:'left',talk:async()=>{await say('ここの 湯だまりは よう 効くよ。<br>調べて ゆっくり つかって いきな。','湯守りのばあさん')}});
   }
   if(map==='forest'){
@@ -171,6 +171,7 @@ const _examine=examine;
 examine=function(c,x,y){
   if(G.mapId==='field'&&c==='O'&&S.flags.badge){
     if(badgeCount()>=4&&!S.flags.whaleDone)return whaleEvent;
+    if(S.flags.whaleDone&&!S.dex[30])return whaleEvent;
     if(S.flags.whaleDone)return()=>say('ご神木の 上に、ときどき オーロラが ゆらめいている。');
     return()=>say(`ご神木が ほのかに 光っている…。<br>印が あと ${4-badgeCount()}つ そろえば、何かが 起こりそうだ。`);}
   if(G.mapId==='mount'&&c==='Y')return async()=>{await say('あったかい 温泉だ。 ちょっと つかっていこう…。');await restFade();S.flags.healAt='mount';await say('ぽかぽか… カードたちも すっかり 元気に なった！')};

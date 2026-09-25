@@ -271,6 +271,7 @@ function showTitle(){
   nav=navPanel(el,{});
 }
 function startWorld(){
+  Input.tap=null;Input.held=[];
   if(S.flags.starter&&!S.flags.rivalLeft){S.flags.rivalLeft=true;S.items.white+=5;S.items.potion+=2;S.map='shop';S.x=5;S.y=4;S.dir='down'}
   window.AUDIO&&AUDIO.setMuted(!!S.muted);
   loadMap(S.map);G.p.x=S.x;G.p.y=S.y;G.p.dir=S.dir;G.p.moving=false;G.p.hidden=false;G.scene='world';G.fade=0;G.lock=0;
@@ -309,7 +310,7 @@ function slotSummary(n){const s=readSlot(n);if(!s)return null;
 function pickSlot(mode){
   return new Promise(res=>{const md=$('#modal');
     const rows=SLOTS.map(n=>{const x=slotSummary(n);const dis=(mode==='load'&&!x)?'disabled':'';
-      return `<button class="slotrow${n===SLOT&&mode==='save'?' cur':''}" data-nav data-n="${n}" ${dis}><span class="sn">${n}</span>${x?`<span class="sart">${x.lid?art(MON[x.lid]):''}</span><span class="sinfo"><b>${x.where}${x.done?' <i class="clr">クリア</i>':''}</b><small>相棒 ${x.lead}　印 ${x.badges}/4　図鑑 ${x.dex}/${TOTAL}</small><small>プレイ時間 ${x.time}</small></span>`:'<span class="sinfo"><b class="empty">空きスロット</b><small>ここから 新しい 冒険を はじめられる</small></span>'}</button>`}).join('');
+      return `<button class="slotrow${n===SLOT&&mode==='save'?' cur':''}" data-nav data-n="${n}" ${dis}><span class="sn">${n}</span>${x?`<span class="sart">${x.lid?art(MON[x.lid]):''}</span><span class="sinfo"><b>${x.where}${x.done?' <i class="clr">全章クリア</i>':''}</b><small>相棒 ${x.lead}　印 ${x.badges}/4　図鑑 ${x.dex}/${TOTAL}</small><small>プレイ時間 ${x.time}</small></span>`:'<span class="sinfo"><b class="empty">空きスロット</b><small>ここから 新しい 冒険を はじめられる</small></span>'}</button>`}).join('');
     md.innerHTML=`<div class="slotbox"><h2 class="m-title">${mode==='load'?'どの 記録で あそぶ？':mode==='new'?'どこに 記録する？':'どこに レポートを 書く？'}</h2><div class="slots3">${rows}</div><button class="pbtn" data-nav data-back>もどる</button></div>`;
     md.hidden=false;let nav;
     const done=v=>{nav.close();md.hidden=true;md.innerHTML='';res(v)};

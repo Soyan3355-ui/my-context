@@ -198,7 +198,8 @@ async function doSeal(k){
 
 /* ---------- exp ---------- */
 async function giveExp(x){
-  for(const c of partyCards()){if(c.hp<=0)continue;const g=c.uid===B.active?x:Math.floor(x*.4);if(!g)continue;const m=MON[c.id];c.exp+=g;
+  const fl=B&&B.foe?B.foe.lv:0;
+  for(const c of partyCards()){if(c.hp<=0)continue;const sc=fl?clamp(fl/c.lv,.4,1.3):1;const g=Math.max(1,Math.floor((c.uid===B.active?x:x*.4)*sc));if(!g)continue;const m=MON[c.id];c.exp+=g;
     if(c.uid===B.active){await bsay(`${m.name}は ${g} けいけんちを もらった！`,650);hud()}
     while(c.lv<50&&c.exp>=need(c.lv)){const old=maxHP(c);c.exp-=need(c.lv);c.lv++;c.hp=Math.min(maxHP(c),c.hp+maxHP(c)-old);
       if(c.uid===B.active){snd('levelup');const el=bmon('me'),cc=center(el);for(let i=0;i<26;i++)BFX.parts.push({x:cc.x+(Math.random()-.5)*cc.w*.8,y:cc.y+cc.h*.4,vx:0,vy:-60-Math.random()*90,ay:-40,life:1,max:1,size:3+Math.random()*3,color:['#fff1b0','#ffffff','#8fe8ff'][i%3],shape:'star',rot:0,vr:6});
