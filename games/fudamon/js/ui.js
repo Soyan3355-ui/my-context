@@ -71,7 +71,7 @@ function partyScreen(back,{inBattle}={}){
   $('#panel').querySelectorAll('[data-uid]').forEach(b=>b.addEventListener('click',()=>{snd('confirm');cardDetail(+b.dataset.uid,()=>partyScreen(back))}));
 }
 function cardDetail(uid,back){
-  const c=card(uid);if(!c){back();return}const m=MON[c.id],st=mstats(c.id,c.lv),inP=S.party.includes(uid),idx=S.party.indexOf(uid);
+  const c=card(uid);if(!c){back();return}const m=MON[c.id],st=mstats(c.id,c.lv,c.v),inP=S.party.includes(uid),idx=S.party.indexOf(uid);
   const mv=movesOf(c.id,c.lv).map((x,i)=>`<div><span>${x.n}<span class="tchip" style="--c:${TYPES[x.t].c}">${TYPES[x.t].n}</span></span><span>威力${x.p}・PP ${ppLeft(c,i)}/${x.pp}</span></div>`).join('');
   const nb=(c.lv<9&&m.r<3)?`<div class="muted"><span>Lv9で「${MV[m.t][1].n}」を覚える</span></div>`:'';
   const acts=[];
@@ -83,7 +83,7 @@ function cardDetail(uid,back){
     evoInfo=`<div class="evoreq"><b>進化 → ${S.dex[E.to]?MON[E.to].name:'？？？'}</b><span class="${c.lv>=E.lv?'ok':''}">Lv${E.lv} 以上（いま Lv${c.lv}）</span>${E.dup?`<span class="${dups>=E.dup?'ok':''}">重ねる 同じ札 ${Math.min(dups,E.dup)}/${E.dup}枚</span>`:''}</div>`}
   acts.push(`<button class="pbtn" data-nav data-a="sell" ${inP?'disabled':''}>手放す +${sellPrice(c)}両</button>`);
   openPanel(`${head(m.name,`No.${pad3(m.id)} ・ ${TYPES[m.t].n}タイプ ・ ${RAR[m.r].n}`)}<div class="pbody detailwrap"><div class="detail">${cardHTML(c)}</div>
-  <div class="dinfo"><div class="stats"><div><small>HP</small><b>${c.hp}/${st.hp}</b></div><div><small>こうげき</small><b>${st.atk}</b></div><div><small>ぼうぎょ</small><b>${st.def}</b></div><div><small>すばやさ</small><b>${st.spd}</b></div></div>
+  <div class="dinfo">${c.v&&c.v!=='normal'?`<div class="vbonus ${c.v}">${c.v==='gold'?'ゴールドの 力':'キラの 力'}：すべての 能力が <b>+${c.v==='gold'?10:5}%</b></div>`:''}<div class="stats"><div><small>HP</small><b>${c.hp}/${st.hp}</b></div><div><small>こうげき</small><b>${st.atk}</b></div><div><small>ぼうぎょ</small><b>${st.def}</b></div><div><small>すばやさ</small><b>${st.spd}</b></div></div>
   <div class="expl"><span>次のLvまで ${need(c.lv)-c.exp} EXP</span><span class="bar exp"><i style="width:${c.exp/need(c.lv)*100}%"></i></span></div>
   ${evoInfo}<div class="mvl">${mv}${nb}</div><p class="flav">${m.flavor}</p><div class="acts">${acts.join('')}</div></div></div>`,{onBack:back});
   wireBack(back);tiltCard($('#panel .detail'));
@@ -168,7 +168,7 @@ function backHTML(){return `<div class="card back"><div class="ci"><div class="b
 function reveal(list,title){
   return new Promise(res=>{
     const md=$('#modal');
-    const tag=x=>`${x.isNew?'<span class="tag new">NEW!</span>':''}${x.c.v==='holo'?'<span class="tag h">キラカード!</span>':x.c.v==='gold'?'<span class="tag g">ゴールド!!</span>':''}<span class="tag">${RAR[MON[x.c.id].r].n}</span>`;
+    const tag=x=>`${x.isNew?'<span class="tag new">NEW!</span>':''}${x.c.v==='holo'?'<span class="tag h">キラ! 能力+5%</span>':x.c.v==='gold'?'<span class="tag g">ゴールド!! 能力+10%</span>':''}<span class="tag">${RAR[MON[x.c.id].r].n}</span>`;
     md.innerHTML=`<div class="rvbox"><h2 class="m-title">${title}</h2><div class="rv-row n${list.length}">${list.map((x,i)=>`<div class="rv"><div class="flip" data-i="${i}"><div class="flipper"><div class="face">${backHTML()}</div><div class="face front">${cardHTML(x.c)}</div></div></div><div class="rv-tag">${tag(x)}</div></div>`).join('')}</div>
     <div class="m-act"><button class="pbtn shu" data-nav id="rvOk">${list.length>1?'めくる':'OK'}</button></div></div>`;
     md.hidden=false;

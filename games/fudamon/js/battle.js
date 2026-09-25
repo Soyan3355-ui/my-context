@@ -9,7 +9,7 @@ function bfxStop(){cancelAnimationFrame(BFX.raf);BFX.parts=[]}
 function center(el){const r=el.getBoundingClientRect(),b=BFX.cv.getBoundingClientRect();return{x:r.left-b.left+r.width/2,y:r.top-b.top+r.height/2,w:r.width,h:r.height}}
 function U(side){
   if(side==='foe'){const e=B.foe;return{m:MON[e.id],lv:e.lv,st:e.st,hp:e.hp,set:v=>{e.hp=v}}}
-  const c=card(B.active);return{m:MON[c.id],lv:c.lv,st:mstats(c.id,c.lv),hp:c.hp,set:v=>{c.hp=v}}
+  const c=card(B.active);return{m:MON[c.id],lv:c.lv,st:mstats(c.id,c.lv,c.v),hp:c.hp,set:v=>{c.hp=v}}
 }
 const bmon=side=>$(side==='foe'?'#bF':'#bM');
 
