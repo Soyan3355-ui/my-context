@@ -285,6 +285,8 @@
         }
         this.chanceCD -= dt; this.pinchCD -= dt;
         for (let t = 0; t < 2; t++) if (this.counterT[t] > 0) this.counterT[t] -= dt;
+        // a queued substitution goes on at a quiet moment if play has not stopped for a while
+        if (this.subQueue.length && this.clock + (this.half - 1) * 1000 - this.subQueue[0].at > 8 && !b.shot && !this.sp && Math.abs(b.x - CX) < 200) this.applySubs();
         if (this.half === 2 && this.tac[1] === 'long' && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
           this.tac[1] = 'press';
           this.benchBubble[1] = { text: 'ハイプレスじゃあ！ 前から潰せぇ！', t: 2.6 };
@@ -1688,7 +1690,7 @@
       const outP = r.field[pn.out].p, inD = r.bench[pn.inn].d;
       if (outP.gk !== (inD.pos === 'GK')) { pn.msg = { text: 'GKはGK同士でしか交代できません', t: 0 }; Sound.play('cancel'); return; }
       this.subsLeft--;
-      this.subQueue.push({ outId: outP.id, inDef: inD });
+      this.subQueue.push({ outId: outP.id, inDef: inD, at: this.clock + (this.half - 1) * 1000 });
       this.bench.splice(pn.inn, 1);
       pn.out = pn.inn = -1;
       Sound.play('stamp');
