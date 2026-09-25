@@ -240,7 +240,7 @@ async function turn(a){
 async function runBattle(opts){
   const bg=opts.bg||bgAt(G.mapId,G.p.y);
   const alive=partyCards().filter(c=>c.hp>0);
-  if(!alive.length){await say('元気な カードが いない！<br>メニューの「なかま」か、家や 井戸で 休ませて あげよう。');return 'none'}
+  if(!alive.length){await say('元気な カードが いない！<br>家や 祠の 井戸、行商人マツの ところで 休ませて あげよう。');return 'none'}
   B={trainer:opts.trainer||null,team:opts.trainer?opts.trainer.team:[opts.wild],teamIdx:0,active:alive[0].uid,forced:false,freeze:false};
   const f0=B.team[0],st=mstats(f0.id,f0.lv);B.foe={id:f0.id,lv:f0.lv,st,hp:st.hp};S.seen[f0.id]=true;
   G.scene='battle';snd('encounter');bgm(opts.music||(B.trainer?'boss':'battle'));

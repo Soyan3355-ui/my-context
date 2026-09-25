@@ -123,7 +123,7 @@ const MAPS={
 'TTTT""""""...PP...""""""TTTT',
 'TTTT""""""...PP...""""""TTTT',
 'TTTT""""",...PP...,"""""TTTT',
-'TTTT...,.....PP.......cTTTT',
+'TTTT...,.....PP........cTTTT',
 'TTT~~~~~~~~~~bb~~~~~~~~~~TTT',
 'TT~~~~~~~~~~~bb~~~~~~~~~~~TT',
 'TTT..~~~~~~~~bb~~~~~~~...TTT',
@@ -202,7 +202,7 @@ function areaAt(map,y){
   return 'ツムギ村';
 }
 const ENC={
-  route:{lv:[3,6],pool:[1,2,5,6,9,10,13,14,17,21,22,27,31,35,39,40,43,47,48],bg:['#9ed49a','#e8f6cf'],floor:'#6fae5f'},
+  route:{lv:[2,5],pool:[1,2,5,6,9,10,13,14,17,21,22,27,31,35,39,40,43,47,48],bg:['#9ed49a','#e8f6cf'],floor:'#6fae5f'},
   meadow:{lv:[6,9],pool:[3,7,11,15,18,19,23,17,21,22,10,28,32,36,44,29,33,37,41,45,49,51],bg:['#8f9ad8','#e6e2fb'],floor:'#6f7fb8'},
   village:{bg:['#a5dc9c','#eef7d6'],floor:'#79b566'},
   shrine:{bg:['#c7b6e8','#fff1e2'],floor:'#b0a0cf'},

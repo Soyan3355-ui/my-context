@@ -32,7 +32,7 @@ function buildNPCs(map){
     add({key:'farmer2',sprite:'villager',x:8,y:53,dir:'left',talk:talkFarmer});
     add({key:'yoshio',sprite:'villager',x:16,y:36,dir:'left',sight:3,trainer:'yoshio',talk:talkYoshio});
     add({key:'trader',sprite:'trader',x:21,y:24,dir:'left',talk:talkTrader});
-    add({key:'fisher',sprite:'fisher',x:8,y:28,dir:'up',talk:talkFisher});
+    add({key:'fisher',sprite:'fisher',x:9,y:28,dir:'up',talk:talkFisher});
     add({key:'guardian',sprite:'guardian',x:13,y:4,dir:'down',talk:talkGuardian});
     add({key:'rival',sprite:'rival',x:14,y:6,dir:'left',vis:()=>!!S.flags.badge,talk:async()=>{await say('祠のご神木が 光ったの、見たか？<br>…おれ、もっと強くなる。次は 負けないからな！',NM.rival)}});
   }
@@ -73,7 +73,8 @@ async function talkFisher(){
 }
 async function talkTrader(){
   if(!S.flags.traderMet){S.flags.traderMet=true;await say('おや、見習いさんかい？ わたしは 札と 香を 売り歩く マツと いう者。<br>旅の 支度なら まかせておくれ。',NM.trader);await say('そうだ、ひとつ 頼みが あるんだ。<br>野生の 魔物を 3種類 封印して 見せてくれたら、お礼を はずむよ。',NM.trader)}
-  const i=await ask('なにか 用かい？',NM.trader,['買い物をする','頼みごと','またね']);
+  const i=await ask('なにか 用かい？',NM.trader,['買い物をする','頼みごと','休ませてもらう','またね']);
+  if(i===2){await say('旅の 疲れには この お香が いちばんさ。',NM.trader);await restFade();await say('カードたちも すっかり 元気に なったね。',NM.trader);return}
   if(i===0){G.bought=false;await new Promise(res=>shopScreen(()=>{closePanel();res()}));await say(G.bought?'毎度あり！ 良い 札と 出会えますように。':'また いつでも 寄っておくれ。',NM.trader)}
   if(i===1){
     if(S.flags.traderGift){await say('キラの 札を 集めるなら 銀や 金の 封札が おすすめさ。<br>札の 気品が 魔物を 引きよせるのさ。',NM.trader);return}
@@ -164,7 +165,7 @@ async function starterCase(){
   const opts=[[1,'炎タイプ','すばやく 攻める いたずらっ子'],[5,'水タイプ','打たれ強い のんびり屋'],[9,'草タイプ','バランスの いい がんばり屋']];
   while(true){
     const pick=await new Promise(res=>{const md=$('#modal');
-      md.innerHTML=`<div class="rvbox"><h2 class="m-title">最初の相棒をえらぼう</h2><div class="rv-row n3">${opts.map(([id,t,d],i)=>`<button class="pick" data-nav data-i="${i}">${cardHTML({id,lv:5})}<span class="pdesc"><b>${t}</b>${d}</span></button>`).join('')}</div><p class="m-hint">矢印キーで えらんで 決定</p></div>`;
+      md.innerHTML=`<div class="rvbox"><h2 class="m-title">最初の相棒をえらぼう</h2><div class="rv-row n3">${opts.map(([id,t,d],i)=>`<button class="pick" data-nav data-i="${i}">${cardHTML({id,lv:5})}<span class="pdesc"><b>${t}</b>${d}</span></button>`).join('')}</div><p class="m-hint">カードを えらんで 決定（タップでもOK）</p></div>`;
       md.hidden=false;let nav;md.querySelectorAll('.pick').forEach(b=>b.addEventListener('click',()=>{snd('confirm');nav.close();md.hidden=true;res(+b.dataset.i)}));
       nav=navPanel(md,{onBack:()=>{nav.close();md.hidden=true;md.innerHTML='';res(-1)}});nav.set(1);});
     if(pick<0)return;
@@ -184,6 +185,7 @@ async function starterChosen(id){
   rv.dir=G.p.x<rv.x?'left':'right';
   const res=await runBattle({trainer:{name:'レン',sprite:'rival',team:[{id:rid,lv:4}],gentle:true,smart:0,intro:'ライバルの レンが 勝負を しかけてきた！',winLine:'くっそー！ 最初の 勝負は 負けか…！',loseLine:'へへっ、おれの 勝ちだな！<br>でも いい 勝負だったぜ！'},canLose:true,bg:ENC.indoor});
   healAll();
+  if(res!=='win'){const c=S.cards[0];c.exp+=30;while(c.exp>=need(c.lv)){c.exp-=need(c.lv);c.lv++}c.hp=maxHP(c)}
   await say(res==='win'?'ちぇっ… 今日は ゆずってやるよ。<br>でも 次は ぜったい 負けないからな！':'おまえの 札、けっこう やるじゃん。<br>次は もっと 強くなって こいよな！',NM.rival);
   await say('ふたりとも 見事な 勝負だった。<br>カードの 傷は わたしが 手当てしておいたよ。',NM.sensei);
   await say('ソーヤ、これを 持って いきなさい。',NM.sensei);
@@ -240,7 +242,7 @@ function showEnding(){
   el.hidden=false;
   let nav;el.querySelectorAll('[data-e]').forEach(b=>b.addEventListener('click',()=>{snd('confirm');nav.close();el.hidden=true;el.innerHTML='';
     if(b.dataset.e==='cont'){G.scene='world';fadeTo(0,.5);updateBGM()}else showTitle()}));
-  nav=navPanel(el,{});
+  nav=navPanel(el,{});el.scrollTop=0;
 }
 
 /* ---------------- title & intro ---------------- */

@@ -234,7 +234,9 @@ let last=performance.now();
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;G.t+=dt;
   if(G.scene==='title'&&G.cam&&G.map){G.cam.y=clamp(46*TS-(G.t*5)%(40*TS),0,G.map.h*TS-VH);G.cam.x=(G.map.w*TS-VW)/2+Math.sin(G.t*.2)*40}
-  if(G.scene==='world'||G.scene==='title'){if(G.scene==='world'){S.time+=dt;updatePlayer(dt)}updateNPCs(dt);updateParts(G.parts,dt);
+  if(G.scene==='world'||G.scene==='title'){if(G.scene==='world')updatePlayer(dt)}
+  if(G.scene==='world'||G.scene==='battle'){S.time+=dt}
+  if(G.scene==='world'||G.scene==='title'){updateNPCs(dt);updateParts(G.parts,dt);
     for(const b of G.amb){b.ph+=dt;b.x=b.hx+Math.sin(G.t*.7+b.ph)*18;b.y=b.hy+Math.sin(G.t*1.3+b.ph*2)*8}
     if(G.map)renderWorld(G.t)}
   G.shake=Math.max(0,G.shake-dt*30);G.flash=Math.max(0,G.flash-dt*3);

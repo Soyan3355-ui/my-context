@@ -163,10 +163,10 @@ button{font:inherit;color:inherit}
 .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .face.front{transform:rotateY(180deg)}
 .face>.card{width:100%;height:100%;aspect-ratio:auto;min-width:0;min-height:0}
-.rv-tag{visibility:hidden;display:flex;gap:.6cqw;flex-wrap:wrap;justify-content:center;min-height:3cqw}
+.rv-tag{visibility:hidden;display:flex;align-items:center;gap:.6cqw;flex-wrap:wrap;justify-content:center;min-height:3cqw}
 .rv.open .rv-tag{visibility:visible;animation:pop .4s .3s both}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
-.tag{font-size:min(2cqw,12px);font-weight:900;padding:.1cqw 1.4cqw;border-radius:99px;background:var(--paper);color:var(--ink)}
+.tag{display:inline-flex;align-items:center;line-height:1.4;font-size:min(2cqw,12px);font-weight:900;padding:.1cqw 1.4cqw;border-radius:99px;background:var(--paper);color:var(--ink)}
 .tag.new{background:var(--shu);color:#fff}
 .tag.h{background:linear-gradient(90deg,#ff9ee6,#8fe8ff,#d2ff8f)}
 .tag.g{background:linear-gradient(90deg,#fff1b0,#e6b34f)}
@@ -313,7 +313,7 @@ button{font:inherit;color:inherit}
 .help b{color:var(--muted);font-family:var(--f-dot);font-weight:400;background:#ffffff10;border-radius:4px;padding:0 6px;margin-right:4px}
 @media (pointer:coarse),(max-width:700px){.help{display:none}}
 @container (max-width:560px){.tt-hint{display:none}.tt-c.c4,.tt-c.c5{display:none}
-  .bt-bottom{height:31%}.bt-plat.m{bottom:31.5%}.bt-mon.m{bottom:33%}.plate.m{bottom:34%}.bt-cmd .cb-grid{gap:.7cqw}.bt-cmd{padding:.9cqw}.cb{padding:.1cqw 1.3cqw}.bt-msg{margin:.9cqw}}
+  .bt-bottom{height:31%}.bt-mon.m{width:28%}.cb-back{right:auto;left:1.2cqw}.end-cards{display:none}.end-in{gap:.8cqh;padding:2cqh 4cqw}.bt-plat.m{bottom:31.5%}.bt-mon.m{bottom:33%}.plate.m{bottom:34%}.bt-cmd .cb-grid{gap:.7cqw}.bt-cmd{padding:.9cqw}.cb{padding:.1cqw 1.3cqw}.bt-msg{margin:.9cqw}}
 @media (prefers-reduced-motion:reduce){.bob,.c-foil,.tt-c,.logo em,.bt-sky .cl{animation:none!important}}
 
 /* ===== card ===== */
