@@ -14,6 +14,7 @@
     roster: [], formation: 'balance', trained: null, recruit: null, result: null, growth: null, auto: false, talked: {},
     reset() {
       this.roster = Data.HOME.map((p) => Object.assign({}, p, { stats: Object.assign({}, p.stats), base: Object.assign({}, p.stats) }));
+      this.lineup = Data.DEFAULT_LINEUP.slice();
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
     },
   };
@@ -900,65 +901,159 @@
     return s;
   }
 
-  // ---------------- TACTICS ----------------
+  // ---------------- TACTICS (formation + lineup + combos) ----------------
+  function activeCombos(ids) { return Data.COMBOS.filter((c) => c.ids.every((id) => ids.includes(id))); }
   function Tactics() {
-    const s = { t: 0, keys: Object.keys(Data.FORMATIONS), sel: 0, anim: 1, pos: null };
-    s.enter = () => { s.sel = s.keys.indexOf(State.formation); s.pos = Data.FORMATIONS[State.formation].slots.map((a) => a.slice()); };
-    const choose = (i) => { if (i !== s.sel) { s.sel = i; Sound.play('cursor'); } };
+    const s = { t: 0, keys: Object.keys(Data.FORMATIONS), pos: null, pick: null, cursor: 0, hover: null, flash: {} };
+    const BX = 10, BY = 34, BW = 280, BH = 196;
+    const byId = (id) => State.roster.find((p) => p.id === id);
+    const bench = () => State.roster.filter((p) => !State.lineup.includes(p.id));
+    s.enter = () => { Sound.bgm('hub'); s.pos = Data.FORMATIONS[State.formation].slots.map((a) => a.slice()); };
+    const boardXY = (i) => {
+      if (i === 0) return [BX + 4 + 0.04 * (BW - 8), BY + 4 + 0.5 * (BH - 8)];
+      const [nx, ny] = s.pos[i - 1];
+      return [BX + 4 + nx * (BW - 8), BY + 4 + ny * (BH - 8)];
+    };
+    const benchRect = (i) => ({ x: 298, y: 74 + i * 25, w: 174, h: 23 });
+    const formRect = (i) => ({ x: 298 + i * 59, y: 34, w: 56, h: 20 });
+    // selectable targets: 0..10 = lineup slots, 11.. = bench
+    const targets = () => State.lineup.map((id, i) => ({ kind: 'slot', i, id })).concat(bench().map((p, i) => ({ kind: 'bench', i, id: p.id })));
+    const targetRect = (tg) => {
+      if (tg.kind === 'bench') return benchRect(tg.i);
+      const [x, y] = boardXY(tg.i);
+      return { x: x - 12, y: y - 12, w: 24, h: 26 };
+    };
+    const swap = (a, b) => {
+      const pa = byId(a.id), pb = byId(b.id);
+      if (a.kind === 'bench' && b.kind === 'bench') return false;
+      if ((pa.pos === 'GK') !== (pb.pos === 'GK') && (a.kind === 'slot' && a.i === 0 || b.kind === 'slot' && b.i === 0 || pa.pos === 'GK' || pb.pos === 'GK')) {
+        s.msg = { text: 'GKはGK同士でしか入れ替えられません', t: 0 }; Sound.play('cancel'); return false;
+      }
+      const before = activeCombos(State.lineup).map((c) => c.id);
+      if (a.kind === 'slot' && b.kind === 'slot') { const tmp = State.lineup[a.i]; State.lineup[a.i] = State.lineup[b.i]; State.lineup[b.i] = tmp; }
+      else { const slot = a.kind === 'slot' ? a : b, bn = a.kind === 'slot' ? b : a; State.lineup[slot.i] = bn.id; }
+      Sound.play('stamp', { vol: 0.6 }); Game.addShake(1.5, 0.12);
+      const after = activeCombos(State.lineup);
+      const born = after.filter((c) => !before.includes(c.id));
+      if (born.length) { s.newCombo = { c: born[0], t: 0 }; Sound.play('levelup', { vol: 0.5 }); }
+      return true;
+    };
+    const click = (tg) => {
+      if (!s.pick) { s.pick = tg; Sound.play('select'); return; }
+      if (s.pick.kind === tg.kind && s.pick.i === tg.i) { s.pick = null; Sound.play('cancel'); return; }
+      swap(s.pick, tg); s.pick = null;
+    };
     s.update = (dt) => {
       s.t += dt;
-      if (Input.hit('up')) choose((s.sel + 2) % 3);
-      if (Input.hit('down')) choose((s.sel + 1) % 3);
-      s.keys.forEach((k, i) => { const r = { x: 300, y: 44 + i * 58, w: 172, h: 52 }; if (E.hoverIn(r) && Input.mouse.moved) choose(i); if (E.clickedIn(r)) { choose(i); s.confirm(); } });
-      const tgt = Data.FORMATIONS[s.keys[s.sel]].slots;
+      if (s.msg) { s.msg.t += dt; if (s.msg.t > 2) s.msg = null; }
+      if (s.newCombo) { s.newCombo.t += dt; if (s.newCombo.t > 2.6) s.newCombo = null; }
+      const tgs = targets();
+      const tgt = Data.FORMATIONS[State.formation].slots;
       s.pos.forEach((p, i) => { p[0] = lerp(p[0], tgt[i][0], clamp(dt * 10, 0, 1)); p[1] = lerp(p[1], tgt[i][1], clamp(dt * 10, 0, 1)); });
-      if (Input.hit('ok')) s.confirm();
-      if (Input.hit('back')) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); }
-      if (State.auto && s.t > 1) s.confirm();
-    };
-    s.confirm = () => {
-      if (s.done) return; s.done = true;
-      State.formation = s.keys[s.sel];
-      Sound.play('stamp'); Game.addShake(2, 0.15);
-      setTimeout(() => Game.goto(Hub(), 'stripe'), 350);
+      // formation tabs
+      s.keys.forEach((k, i) => { if (E.clickedIn(formRect(i)) && State.formation !== k) { State.formation = k; Sound.play('select'); } });
+      // mouse
+      s.hover = null;
+      tgs.forEach((tg) => { if (E.hoverIn(targetRect(tg))) s.hover = tg; });
+      if (s.hover && Input.mouse.clicked) click(s.hover);
+      // keyboard
+      if (Input.hit('down') || Input.hit('right')) { s.cursor = (s.cursor + 1) % tgs.length; Sound.play('cursor'); s.kb = true; }
+      if (Input.hit('up') || Input.hit('left')) { s.cursor = (s.cursor + tgs.length - 1) % tgs.length; Sound.play('cursor'); s.kb = true; }
+      if (Input.mouse.moved) s.kb = false;
+      if (Input.hit('ok')) click(tgs[s.cursor]);
+      if (Input.hit('c1') || Input.hit('c2') || Input.hit('c3')) { const i = Input.hit('c1') ? 0 : Input.hit('c2') ? 1 : 2; State.formation = s.keys[i]; Sound.play('select'); }
+      const done = { x: 298, y: 214, w: 174, h: 18 };
+      if (Input.hit('back') || E.clickedIn(done)) {
+        if (s.pick && Input.hit('back')) { s.pick = null; Sound.play('cancel'); return; }
+        Sound.play('select'); Game.goto(Hub(), 'stripe');
+      }
+      if (State.auto && s.t > 1) Game.goto(Hub(), 'stripe');
     };
     s.draw = (g) => {
       g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);
-      panel(g, 6, 4, 200, 24, 'dark');
+      g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
+      panel(g, 6, 4, 150, 24, 'dark');
       text(g, '作戦ボード', 16, 9, { size: 14, color: '#ffd24a' });
+      text(g, 'クリックで2人を選ぶと入れ替え', 164, 12, { size: 8, color: '#c9d6e6' });
       // board
-      const bx = 10, by = 34, bw = 280, bh = 200;
-      panel(g, bx - 4, by - 4, bw + 8, bh + 8, ['#2a1a24', '#8a5a3a', '#6a4028', '#a86a44']);
-      g.fillStyle = '#4fa84a'; g.fillRect(bx, by, bw, bh);
-      for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#469a42' : '#5bb655'; g.fillRect(bx + i * 35, by, 35, bh); }
+      panel(g, BX - 4, BY - 4, BW + 8, BH + 8, ['#2a1a24', '#8a5a3a', '#6a4028', '#a86a44']);
+      g.fillStyle = '#4fa84a'; g.fillRect(BX, BY, BW, BH);
+      for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#469a42' : '#5bb655'; g.fillRect(BX + i * 35, BY, 35, BH); }
       g.fillStyle = '#ffffff';
-      g.fillRect(bx + 4, by + 4, bw - 8, 1); g.fillRect(bx + 4, by + bh - 5, bw - 8, 1); g.fillRect(bx + 4, by + 4, 1, bh - 8); g.fillRect(bx + bw - 5, by + 4, 1, bh - 8); g.fillRect(bx + bw / 2, by + 4, 1, bh - 8);
-      g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(bx + bw / 2 + 0.5, by + bh / 2, 22, 0, Math.PI * 2); g.stroke();
-      g.strokeRect(bx + 4.5, by + bh / 2 - 45, 40, 90); g.strokeRect(bx + bw - 44.5, by + bh / 2 - 45, 40, 90);
-      // GK
-      const gk = State.roster[0];
-      const put = (p, nx, ny) => {
-        const x = bx + 4 + nx * (bw - 8), y = by + 4 + ny * (bh - 8);
-        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(Math.round(x) - 8, Math.round(y) + 12, 16, 3);
-        g.drawImage(Art.sprite(p.look, 'side', 'walk1'), Math.round(x) - 8, Math.round(y) - 8);
-        text(g, p.name, Math.round(x), Math.round(y) + 15, { size: 8, align: 'center', color: '#ffffff', outline: OUT });
-      };
-      put(gk, 0.03, 0.5);
-      s.pos.forEach(([nx, ny], i) => put(State.roster[i + 1], nx, ny));
-      // arrow showing direction
-      text(g, '攻める方向 ▶', bx + bw - 6, by + bh + 8, { size: 8, align: 'right', color: '#9fdcff' });
-      // list
-      s.keys.forEach((k, i) => {
-        const f = Data.FORMATIONS[k];
-        const r = { x: 300, y: 44 + i * 58, w: 172, h: 52 };
-        const sel = s.sel === i, cur = State.formation === k;
-        panel(g, r.x - (sel ? 4 : 0), r.y, r.w, r.h, sel ? 'gold' : 'paper');
-        text(g, f.name, r.x + 8 - (sel ? 4 : 0), r.y + 6, { size: 11, color: '#2a1a24' });
-        wrap(g, f.desc, 156, 8).forEach((l, j) => text(g, l, r.x + 8 - (sel ? 4 : 0), r.y + 24 + j * 11, { size: 8, color: '#6d4f3a' }));
-        if (cur) { panel(g, r.x + r.w - 44, r.y - 6, 40, 14, 'crimson'); text(g, '採用中', r.x + r.w - 24, r.y - 4, { size: 8, align: 'center', color: '#ffffff' }); }
+      g.fillRect(BX + 4, BY + 4, BW - 8, 1); g.fillRect(BX + 4, BY + BH - 5, BW - 8, 1); g.fillRect(BX + 4, BY + 4, 1, BH - 8); g.fillRect(BX + BW - 5, BY + 4, 1, BH - 8); g.fillRect(BX + BW / 2, BY + 4, 1, BH - 8);
+      g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.arc(BX + BW / 2 + 0.5, BY + BH / 2, 20, 0, Math.PI * 2); g.stroke();
+      g.strokeRect(BX + 4.5, BY + BH / 2 - 44, 36, 88); g.strokeRect(BX + BW - 40.5, BY + BH / 2 - 44, 36, 88);
+      // combo links on the board
+      const combos = activeCombos(State.lineup);
+      combos.forEach((c) => {
+        const [a, b] = c.ids.map((id) => State.lineup.indexOf(id));
+        const [ax, ay] = boardXY(a), [bx, by] = boardXY(b);
+        g.strokeStyle = c.kind === 'bad' ? '#ff6a6a' : c.kind === 'mixed' ? '#d8a8f0' : '#ffd24a';
+        g.setLineDash([3, 2]); g.lineDashOffset = -s.t * 10; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(ax, ay - 4); g.lineTo(bx, by - 4); g.stroke(); g.setLineDash([]); g.lineWidth = 1;
       });
-      text(g, 'Z / クリック：決定　X：もどる', 386, 226, { size: 8, align: 'center', color: '#c9d6e6' });
-      text(g, 'ハーフタイムにも変更できます', 386, 240, { size: 8, align: 'center', color: '#6a7498' });
+      const tgs = targets();
+      State.lineup.forEach((id, i) => {
+        const p = byId(id), [x, y] = boardXY(i);
+        const tg = tgs[i];
+        const hl = (s.pick && s.pick.kind === 'slot' && s.pick.i === i), hv = (s.hover === tg) || (s.kb && s.cursor === i);
+        if (hl || hv) { g.fillStyle = hl ? 'rgba(255,210,74,0.6)' : 'rgba(255,255,255,0.35)'; g.fillRect(Math.round(x) - 10, Math.round(y) - 10, 20, 24); }
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(Math.round(x) - 6, Math.round(y) + 10, 12, 3);
+        g.drawImage(Art.sprite(p.look, 'side', hl ? 'cheer' : 'walk1'), Math.round(x) - 8, Math.round(y) - 10 - (hl ? Math.round(Math.abs(Math.sin(s.t * 8)) * 2) : 0));
+        text(g, p.name, Math.round(x), Math.round(y) + 12, { size: 8, align: 'center', color: '#ffffff', outline: OUT });
+      });
+      text(g, '攻める方向 ▶', BX + BW - 4, BY + BH + 6, { size: 8, align: 'right', color: '#9fdcff' });
+      // formation tabs
+      s.keys.forEach((k, i) => {
+        const r = formRect(i), f = Data.FORMATIONS[k], cur = State.formation === k;
+        const hv = E.hoverIn(r);
+        panel(g, r.x, r.y, r.w, r.h, cur ? 'gold' : hv ? 'sky' : 'paper');
+        text(g, f.name.split(' ')[1], r.x + r.w / 2, r.y + 1, { size: 8, align: 'center', color: '#2a1a24' });
+        text(g, f.short, r.x + r.w / 2, r.y + 10, { size: 8, align: 'center', color: '#6d4f3a' });
+      });
+      // bench
+      text(g, 'ベンチ', 300, 60, { size: 9, color: '#9fdcff' });
+      bench().forEach((p, i) => {
+        const r = benchRect(i), tg = tgs[11 + i];
+        const hl = s.pick && s.pick.kind === 'bench' && s.pick.i === i, hv = s.hover === tg || (s.kb && s.cursor === 11 + i);
+        panel(g, r.x + (hl ? 4 : 0), r.y, r.w, r.h, hl ? 'gold' : hv ? 'sky' : 'paper');
+        g.drawImage(Art.sprite(p.look, 'down', 'walk1'), r.x + 3 + (hl ? 4 : 0), r.y);
+        text(g, p.name, r.x + 22 + (hl ? 4 : 0), r.y + 2, { size: 9, color: '#2a1a24' });
+        text(g, p.pos + '・' + p.trait, r.x + 22 + (hl ? 4 : 0), r.y + 12, { size: 8, color: '#6d4f3a' });
+      });
+      // combos
+      const cy0 = 74 + bench().length * 25 + 6;
+      text(g, 'コンビ（' + combos.length + '）', 300, cy0, { size: 9, color: '#ffd24a' });
+      combos.slice(0, 8).forEach((c, i) => {
+        const x = 300 + (i % 2) * 88, y = cy0 + 12 + Math.floor(i / 2) * 11;
+        g.fillStyle = c.kind === 'bad' ? '#ff6a6a' : c.kind === 'mixed' ? '#d8a8f0' : '#ffd24a'; g.fillRect(x, y + 3, 4, 4);
+        text(g, c.name, x + 7, y, { size: 8, color: '#ffffff' });
+      });
+      const done = { x: 298, y: 214, w: 174, h: 18 };
+      panel(g, done.x, done.y, done.w, done.h, E.hoverIn(done) ? 'gold' : 'dark');
+      text(g, 'X / クリック：決定してもどる', done.x + done.w / 2, done.y + 4, { size: 8, align: 'center', color: E.hoverIn(done) ? '#2a1a24' : '#c9d6e6' });
+      // info strip
+      const focus = s.hover || (s.kb ? tgs[s.cursor] : null) || s.pick;
+      panel(g, 6, 236, 468, 30, 'paper');
+      if (s.msg) text(g, s.msg.text, 16, 245, { size: 10, color: '#e0474c' });
+      else if (focus) {
+        const p = byId(focus.id);
+        drawPortrait(g, p.id, 'normal', 8, 237, 0.5);
+        text(g, p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
+        const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
+        text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
+      } else text(g, '選手にカーソルを合わせると特性と相性が見られます。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
+      if (s.newCombo) {
+        const k = Ease.outBack(clamp(s.newCombo.t / 0.3, 0, 1)), c = s.newCombo.c;
+        const a = 1 - clamp((s.newCombo.t - 2.2) / 0.4, 0, 1);
+        g.globalAlpha = a;
+        panel(g, W / 2 - 130, 100 - (1 - k) * 30, 260, 58, c.kind === 'bad' ? 'crimson' : 'gold');
+        c.ids.forEach((id, i) => { const img = portrait(id, c.kind === 'bad' ? 'determined' : 'happy'); if (img) g.drawImage(img, 11, 6, 24, 24, W / 2 - 124 + i * 26, 113 - (1 - k) * 30, 24, 24); });
+        text(g, c.kind === 'bad' ? 'ケンカ成立…！' : 'コンビ成立！', W / 2 - 68, 106 - (1 - k) * 30, { size: 8, color: c.kind === 'bad' ? '#ffe0e0' : '#4a2a10' });
+        text(g, c.name, W / 2 - 68, 118 - (1 - k) * 30, { size: 12, color: c.kind === 'bad' ? '#ffffff' : '#2a1a24' });
+        wrap(g, c.desc, 190, 8).slice(0, 2).forEach((l, j) => text(g, l, W / 2 - 68, 134 + j * 10 - (1 - k) * 30, { size: 8, color: c.kind === 'bad' ? '#ffe0e0' : '#6d4f3a' }));
+        g.globalAlpha = 1;
+      }
     };
     return s;
   }
@@ -1034,7 +1129,7 @@
 
   function startMatch() {
     return new Match({
-      formation: State.formation, auto: State.auto, home: State.roster,
+      formation: State.formation, auto: State.auto, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
       onEnd: (r) => { State.result = r; Game.goto(Result(r), 'iris'); },
     });
   }

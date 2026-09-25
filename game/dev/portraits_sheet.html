@@ -24,7 +24,9 @@
 (function () {
   var q = new URLSearchParams(location.search);
   var scale = parseInt(q.get('scale') || '4', 10);
-  var ids = q.get('ids') ? q.get('ids').split(',') : Portraits.ids;
+  // ?set=new shows only the 11v11 expansion squad; ?ids=a,b picks specific ids
+  var NEW = ['kawataro', 'mask', 'mame', 'shizuku', 'daifuku', 'hikaru', 'ume', 'kotaro'];
+  var ids = q.get('ids') ? q.get('ids').split(',') : (q.get('set') === 'new' ? NEW : Portraits.ids);
   var bg = q.get('bg') || 'both';
   var exprs = q.get('exprs') ? q.get('exprs').split(',') : ['normal', 'happy', 'surprised', 'determined', 'sad'];
   function sheet(host) {

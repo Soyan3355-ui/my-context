@@ -47,49 +47,103 @@
   function drawHair(g, L, dir, hx, hy) {
     // head box: hx..hx+5, hy..hy+5 (6x6)
     const H = L.hair, Hd = L.hairD, Hl = shade(L.hair, 0.35);
-    const st = L.style;
-    if (st === 'bald') {
-      if (dir === 'up') px(g, L.skinD, hx + 1, hy + 1, 4, 2);
-      px(g, shade(L.skin, 0.35), hx + 3, hy, 2, 1);
-      if (L.extra === 'mustache' && dir !== 'up') px(g, H, hx + 1, hy + 4, 4, 1);
+    const st = L.style, ex = L.extra;
+    const side = dir === 'side', up = dir === 'up';
+    if (st === 'helmet') {
+      px(g, '#9aa0b0', hx - 1, hy - 1, 8, 7); px(g, '#5a5f6a', hx - 1, hy + 5, 8, 1); px(g, '#c9cdd8', hx, hy - 1, 4, 1);
+      if (!up) { px(g, '#2a2a38', side ? hx + 2 : hx, hy + 2, side ? 5 : 6, 2); px(g, '#ff8a3a', side ? hx + 3 : hx + 1, hy + 2, side ? 3 : 4, 1); }
+      px(g, '#5a5f6a', hx + (side ? 0 : 5), hy + 1, 1, 1);
       return;
     }
-    if (dir === 'up') {
+    if (st === 'mask') {
+      px(g, '#d8303a', hx, hy - 1, 6, 7); px(g, '#9e2030', hx + 5, hy, 1, 5);
+      if (!up) {
+        const ex0 = side ? hx + 3 : hx + 1;
+        px(g, '#ffffff', ex0, hy + 1, 2, 2); if (!side) px(g, '#ffffff', hx + 3, hy + 1, 2, 2);
+        px(g, OUT, ex0 + (side ? 1 : 0), hy + 2, 1, 1); if (!side) px(g, OUT, hx + 3, hy + 2, 1, 1);
+        px(g, '#ffd24a', hx + (side ? 2 : 0), hy, side ? 4 : 6, 1);
+        px(g, L.skin, side ? hx + 4 : hx + 2, hy + 4, 2, 1);
+      } else { px(g, '#ffd24a', hx + 2, hy - 1, 2, 6); }
+      return;
+    }
+    if (st === 'bald') {
+      if (up) px(g, L.skinD, hx + 1, hy + 1, 4, 2);
+      px(g, shade(L.skin, 0.35), hx + 3, hy, 2, 1);
+      if (ex === 'mustache' && !up) px(g, H, hx + 1, hy + 4, 4, 1);
+      if (ex === 'beard') {
+        if (!up) { px(g, '#f4f4f4', side ? hx + 2 : hx + 1, hy + 4, 4, 2); px(g, '#f4f4f4', side ? hx + 3 : hx + 2, hy + 6, 2, 2); px(g, '#d0d0d8', side ? hx + 3 : hx + 2, hy + 7, 2, 1); }
+        px(g, '#f4f4f4', hx, hy + 2, 1, 2); if (!side) px(g, '#f4f4f4', hx + 5, hy + 2, 1, 2);
+        if (!up) { px(g, '#f4f4f4', side ? hx + 3 : hx + 1, hy + 1, side ? 3 : 4, 1); }
+      }
+      return;
+    }
+    if (st === 'kappa') {
+      // fringe of hair around a pale dish
+      px(g, H, hx - 1, hy - 1, 8, 2); px(g, Hd, hx - 1, hy + 1, 1, 2); px(g, Hd, hx + 6, hy + 1, 1, 2);
+      px(g, '#eef6e0', hx + 1, hy - 2, 4, 2); px(g, '#c8d8b8', hx + 1, hy - 1, 4, 1);
+      if (!up) {
+        if (side) { px(g, '#f0a030', hx + 5, hy + 3, 2, 2); px(g, '#c07a18', hx + 5, hy + 4, 2, 1); }
+        else { px(g, '#f0a030', hx + 2, hy + 4, 2, 2); px(g, '#c07a18', hx + 2, hy + 5, 2, 1); }
+      }
+      return;
+    }
+    if (up) {
       px(g, H, hx, hy - 1, 6, 5); px(g, Hd, hx, hy + 3, 6, 1); px(g, Hl, hx + 1, hy - 1, 3, 1);
       if (st === 'ponytail') { px(g, H, hx + 2, hy + 4, 2, 3); px(g, Hd, hx + 2, hy + 6, 2, 1); }
-      if (st === 'long') px(g, H, hx, hy + 3, 6, 2);
+      if (st === 'long' || st === 'hime') px(g, H, hx, hy + 3, 6, 3);
+      if (st === 'hime') px(g, '#e0474c', hx + 1, hy + 3, 4, 1);
     } else if (dir === 'down') {
       px(g, H, hx, hy - 1, 6, 2); px(g, H, hx, hy + 1, 1, 2); px(g, H, hx + 5, hy + 1, 1, 2);
       px(g, Hl, hx + 1, hy - 1, 2, 1);
       if (st === 'long') { px(g, H, hx, hy + 1, 3, 2); px(g, H, hx, hy + 3, 1, 2); }
+      if (st === 'hime') { px(g, H, hx, hy + 1, 6, 1); px(g, H, hx - 1, hy + 1, 1, 5); px(g, H, hx + 6, hy + 1, 1, 5); }
       if (st === 'bob') { px(g, H, hx - 1, hy + 1, 1, 3); px(g, H, hx + 6, hy + 1, 1, 3); }
-    } else { // side (facing right)
+    } else {
       px(g, H, hx, hy - 1, 6, 2); px(g, H, hx, hy + 1, 3, 2); px(g, Hd, hx, hy + 3, 2, 1);
       px(g, Hl, hx + 2, hy - 1, 3, 1);
       if (st === 'ponytail') { px(g, H, hx - 2, hy, 2, 2); px(g, Hd, hx - 3, hy + 1, 2, 2); }
       if (st === 'long') { px(g, H, hx + 3, hy + 1, 3, 1); }
+      if (st === 'hime') { px(g, H, hx, hy + 1, 3, 5); px(g, H, hx + 3, hy + 1, 3, 1); px(g, '#e0474c', hx - 1, hy + 1, 2, 2); }
       if (st === 'bob') px(g, H, hx - 1, hy + 1, 1, 3);
     }
+    if (st === 'perm') {
+      const bumps = side ? [[-1, 0], [1, -2], [3, -2], [-1, 2], [5, -1]] : [[-1, 0], [1, -2], [4, -2], [6, 0], [-1, 2], [6, 2]];
+      for (const [a, b2] of bumps) px(g, H, hx + a, hy + b2, 2, 2);
+    }
     if (st === 'spiky') {
-      if (dir === 'side') { px(g, H, hx, hy - 2, 1, 1); px(g, H, hx + 2, hy - 2, 1, 1); px(g, H, hx + 4, hy - 2, 1, 1); }
+      if (side) { px(g, H, hx, hy - 2, 1, 1); px(g, H, hx + 2, hy - 2, 1, 1); px(g, H, hx + 4, hy - 2, 1, 1); }
       else { px(g, H, hx, hy - 2, 1, 1); px(g, H, hx + 2, hy - 2, 2, 1); px(g, H, hx + 5, hy - 2, 1, 1); }
+      if (L.streak) px(g, L.streak, hx + (side ? 2 : 3), hy - 2, 1, 3);
     }
     if (st === 'pomp') {
-      if (dir === 'side') { px(g, H, hx + 2, hy - 3, 5, 2); px(g, Hl, hx + 3, hy - 3, 3, 1); }
+      if (side) { px(g, H, hx + 2, hy - 3, 5, 2); px(g, Hl, hx + 3, hy - 3, 3, 1); }
       else { px(g, H, hx + 1, hy - 3, 4, 2); px(g, Hl, hx + 2, hy - 3, 2, 1); }
     }
-    if (st === 'band' || L.extra === 'band' || L.extra === 'towel') {
-      const bc = L.extra === 'towel' ? '#f4f4f4' : '#e0474c';
+    if (st === 'band' || ex === 'band' || ex === 'towel' || ex === 'bandana') {
+      const bc = ex === 'towel' || ex === 'bandana' ? '#f4f4f4' : '#e0474c';
       px(g, bc, hx, hy, 6, 1);
-      if (dir === 'side') px(g, bc, hx - 1, hy + 1, 1, 1);
-      if (L.extra === 'towel') px(g, '#4f8ee8', hx + (dir === 'side' ? 1 : 0), hy, 2, 1);
+      if (side) px(g, bc, hx - 1, hy + 1, 1, 1);
+      if (ex === 'towel') px(g, '#4f8ee8', hx + (side ? 1 : 0), hy, 2, 1);
+      if (ex === 'bandana') px(g, '#e0474c', hx + (side ? 4 : 2), hy, 1, 1);
     }
-    if (L.extra === 'goggles' && dir !== 'up') { px(g, '#5a5f6a', hx, hy, 6, 1); px(g, '#8fd6e8', hx + (dir === 'side' ? 3 : 1), hy, 2, 1); if (dir === 'down') px(g, '#8fd6e8', hx + 3, hy, 2, 1); }
-    if (L.extra === 'scarf') { px(g, '#d8404a', hx - 1, hy - 1, 8, 2); px(g, '#fff', hx + 1, hy - 1, 1, 1); px(g, '#fff', hx + 4, hy, 1, 1); }
-    if (L.extra === 'cap') {
-      if (dir === 'side') { px(g, '#2f86c4', hx, hy - 1, 6, 2); px(g, '#2f86c4', hx - 2, hy, 2, 1); }
+    if (ex === 'goggles' && !up) { px(g, '#5a5f6a', hx, hy, 6, 1); px(g, '#8fd6e8', hx + (side ? 3 : 1), hy, 2, 1); if (dir === 'down') px(g, '#8fd6e8', hx + 3, hy, 2, 1); }
+    if (ex === 'scarf') { px(g, '#d8404a', hx - 1, hy - 1, 8, 2); px(g, '#fff', hx + 1, hy - 1, 1, 1); px(g, '#fff', hx + 4, hy, 1, 1); }
+    if (ex === 'cap') {
+      if (side) { px(g, '#2f86c4', hx, hy - 1, 6, 2); px(g, '#2f86c4', hx - 2, hy, 2, 1); }
       else px(g, '#2f86c4', hx, hy - 1, 6, 2);
     }
+    if (ex === 'chef') { px(g, '#ffffff', hx, hy - 4, 6, 4); px(g, '#ffffff', hx - 1, hy - 5, 8, 2); px(g, '#d8dce8', hx, hy - 1, 6, 1); }
+    if (ex === 'shades' && !up) {
+      if (side) { px(g, '#ffd24a', hx + 3, hy + 2, 3, 1); px(g, '#ff5aa8', hx + 3, hy + 3, 2, 1); }
+      else { px(g, '#ffd24a', hx, hy + 2, 6, 1); px(g, '#ff5aa8', hx, hy + 3, 2, 1); px(g, '#ff5aa8', hx + 4, hy + 3, 2, 1); }
+    }
+    if (ex === 'glasses' && !up) { if (side) px(g, '#c9e8ff', hx + 4, hy + 2, 2, 1); else { px(g, '#c9e8ff', hx, hy + 2, 2, 1); px(g, '#c9e8ff', hx + 4, hy + 2, 2, 1); } }
+  }
+
+  function bodyOf(L) {
+    if (L.body === 'big') return { tw: 5, th: 6, lw: 3, lh: 3 };
+    if (L.body === 'small') return { tw: 3, th: 4, lw: 2, lh: 1 };
+    return { tw: 4, th: 5, lw: 2, lh: 3 };
   }
 
   function buildFrame(L, dir, frame) {
@@ -97,66 +151,62 @@
     const T = L.shirt, Td = L.shirtD, Tl = L.shirtL || shade(L.shirt, 0.3);
     const P = L.shorts, Pd = L.shortsD || shade(L.shorts, -0.25);
     const K = L.socks, B = '#3a2c30', Sk = L.skin, Skd = L.skinD;
+    const bd = bodyOf(L);
     const cx = 8;
-    // animation params
     let bob = 0, lA = 0, rA = 0, lL = 0, rL = 0, armsUp = false, kick = false;
-    if (frame === 'walk0') { bob = 0; lL = -1; rL = 1; lA = 1; rA = -1; }
+    if (frame === 'walk0') { lL = -1; rL = 1; lA = 1; rA = -1; }
     if (frame === 'walk1') { bob = -1; }
-    if (frame === 'walk2') { bob = 0; lL = 1; rL = -1; lA = -1; rA = 1; }
+    if (frame === 'walk2') { lL = 1; rL = -1; lA = -1; rA = 1; }
     if (frame === 'walk3') { bob = -1; }
     if (frame === 'cheer') { armsUp = true; bob = -1; }
     if (frame === 'kick') { kick = true; }
-    const by = 21 + bob; // feet line
+    const by = 21 + bob;
+    const legTop = by - (bd.lh + 2);
+    const shortsTop = legTop - 2;
+    const torsoTop = shortsTop - bd.th;
+    const hy = torsoTop - 6;
+    const tw = bd.tw, lw = bd.lw;
     if (dir === 'side') {
-      // legs (back leg darker)
-      const legTop = by - 5;
+      const sw2 = tw + 1; // side torso width
       if (kick) {
-        px(g, Skd, cx - 2, legTop, 2, 3); px(g, K, cx - 2, legTop + 3, 2, 1); px(g, B, cx - 2, legTop + 4, 2, 1);
-        px(g, Sk, cx + 1, legTop, 2, 2); px(g, Sk, cx + 3, legTop + 1, 2, 1); px(g, K, cx + 4, legTop + 2, 2, 1); px(g, B, cx + 5, legTop + 2, 2, 1);
+        px(g, Skd, cx - 2, legTop, lw, bd.lh); px(g, K, cx - 2, legTop + bd.lh, lw, 1); px(g, B, cx - 2, legTop + bd.lh + 1, lw, 1);
+        px(g, Sk, cx + 1, legTop, lw, 2); px(g, Sk, cx + 3, legTop + 1, 2, 1); px(g, K, cx + 4, legTop + 2, 2, 1); px(g, B, cx + 5, legTop + 2, 2, 1);
       } else {
         const s1 = lL * 2, s2 = rL * 2;
-        px(g, Skd, cx - 1 + s2, legTop, 2, 3); px(g, K, cx - 1 + s2, legTop + 3, 2, 1); px(g, B, cx - 1 + s2, legTop + 4, 3, 1);
-        px(g, Sk, cx - 1 + s1, legTop, 2, 3); px(g, K, cx - 1 + s1, legTop + 3, 2, 1); px(g, B, cx - 1 + s1, legTop + 4, 3, 1);
+        px(g, Skd, cx - 1 + s2, legTop, lw, bd.lh); px(g, K, cx - 1 + s2, legTop + bd.lh, lw, 1); px(g, B, cx - 1 + s2, legTop + bd.lh + 1, lw + 1, 1);
+        px(g, Sk, cx - 1 + s1, legTop, lw, bd.lh); px(g, K, cx - 1 + s1, legTop + bd.lh, lw, 1); px(g, B, cx - 1 + s1, legTop + bd.lh + 1, lw + 1, 1);
       }
-      // shorts
-      px(g, P, cx - 3, by - 7, 5, 2); px(g, Pd, cx - 3, by - 6, 5, 1);
-      // torso
-      px(g, T, cx - 3, by - 12, 5, 5); px(g, Td, cx - 3, by - 8, 5, 1); px(g, Tl, cx, by - 12, 2, 1);
-      // arm
-      if (armsUp) { px(g, T, cx - 1, by - 15, 2, 3); px(g, Sk, cx - 1, by - 17, 2, 2); }
-      else { const a = lA; px(g, Td, cx - 1 + a, by - 12, 2, 2); px(g, Sk, cx - 1 + a * 2, by - 10, 2, 2); }
-      // head
-      const hx = cx - 3, hy = by - 18;
+      px(g, P, cx - 3, shortsTop, sw2, 2); px(g, Pd, cx - 3, shortsTop + 1, sw2, 1);
+      px(g, T, cx - 3, torsoTop, sw2, bd.th); px(g, Td, cx - 3, shortsTop - 1, sw2, 1); px(g, Tl, cx, torsoTop, 2, 1);
+      if (armsUp) { px(g, T, cx - 1, torsoTop - 3, 2, 3); px(g, Sk, cx - 1, torsoTop - 5, 2, 2); }
+      else { const a = lA; px(g, Td, cx - 1 + a, torsoTop, 2, 2); px(g, Sk, cx - 1 + a * 2, torsoTop + 2, 2, bd.th - 3); }
+      const hx = cx - 3;
       px(g, Sk, hx, hy, 6, 6); px(g, Skd, hx, hy + 5, 6, 1); px(g, Skd, hx + 5, hy + 1, 1, 1);
-      px(g, OUT, hx + 4, hy + 2, 1, 2); // eye
-      px(g, '#e8938a', hx + 5, hy + 4, 1, 1);
+      px(g, OUT, hx + 4, hy + 2, 1, 2);
+      if (!L.noBlush) px(g, '#e8938a', hx + 5, hy + 4, 1, 1);
       drawHair(g, L, 'side', hx, hy);
     } else {
       const up = dir === 'up';
-      const legTop = by - 5;
-      // legs
-      px(g, Sk, cx - 3, legTop + lL, 2, 3 - lL); px(g, K, cx - 3, legTop + 3, 2, 1); px(g, B, cx - 3, legTop + 4 + Math.min(0, lL), 2, 1);
-      px(g, Skd, cx + 1, legTop + rL, 2, 3 - rL); px(g, K, cx + 1, legTop + 3, 2, 1); px(g, B, cx + 1, legTop + 4 + Math.min(0, rL), 2, 1);
-      // shorts
-      px(g, P, cx - 3, by - 7, 6, 2); px(g, Pd, cx + 1, by - 7, 2, 2); px(g, Pd, cx - 1, by - 6, 1, 1);
-      // torso
-      px(g, T, cx - 4, by - 12, 8, 5); px(g, Td, cx + 2, by - 12, 2, 5); px(g, Td, cx - 4, by - 8, 8, 1);
-      if (!up) { px(g, L.collar || '#ffffff', cx - 1, by - 12, 2, 1); px(g, Tl, cx - 3, by - 11, 1, 2); }
-      else if (L.num) { px(g, '#ffffff', cx - 1, by - 11, 2, 3); }
-      // arms
+      const lx = cx - 1 - lw, rx = cx + 1;
+      px(g, Sk, lx, legTop + lL, lw, bd.lh - lL); px(g, K, lx, legTop + bd.lh, lw, 1); px(g, B, lx, legTop + bd.lh + 1 + Math.min(0, lL), lw, 1);
+      px(g, Skd, rx, legTop + rL, lw, bd.lh - rL); px(g, K, rx, legTop + bd.lh, lw, 1); px(g, B, rx, legTop + bd.lh + 1 + Math.min(0, rL), lw, 1);
+      px(g, P, cx - tw + 1, shortsTop, tw * 2 - 2, 2); px(g, Pd, cx + 1, shortsTop, tw - 2, 2); px(g, Pd, cx - 1, shortsTop + 1, 1, 1);
+      px(g, T, cx - tw, torsoTop, tw * 2, bd.th); px(g, Td, cx + tw - 2, torsoTop, 2, bd.th); px(g, Td, cx - tw, shortsTop - 1, tw * 2, 1);
+      if (!up) { px(g, L.collar || '#ffffff', cx - 1, torsoTop, 2, 1); px(g, Tl, cx - tw + 1, torsoTop + 1, 1, 2); }
+      else if (L.num) { px(g, '#ffffff', cx - 1, torsoTop + 1, 2, Math.min(3, bd.th - 2)); }
+      const al = cx - tw - 2, ar = cx + tw;
       if (armsUp) {
-        px(g, T, cx - 6, by - 14, 2, 3); px(g, Sk, cx - 6, by - 17, 2, 3);
-        px(g, Td, cx + 4, by - 14, 2, 3); px(g, Sk, cx + 4, by - 17, 2, 3);
+        px(g, T, al, torsoTop - 2, 2, 3); px(g, Sk, al, torsoTop - 5, 2, 3);
+        px(g, Td, ar, torsoTop - 2, 2, 3); px(g, Sk, ar, torsoTop - 5, 2, 3);
       } else {
-        px(g, T, cx - 6, by - 12 + Math.max(0, lA), 2, 2); px(g, Sk, cx - 6, by - 10 + lA, 2, 2);
-        px(g, Td, cx + 4, by - 12 + Math.max(0, rA), 2, 2); px(g, Skd, cx + 4, by - 10 + rA, 2, 2);
+        px(g, T, al, torsoTop + Math.max(0, lA), 2, 2); px(g, Sk, al, torsoTop + 2 + lA, 2, bd.th - 3);
+        px(g, Td, ar, torsoTop + Math.max(0, rA), 2, 2); px(g, Skd, ar, torsoTop + 2 + rA, 2, bd.th - 3);
       }
-      // head
-      const hx = cx - 3, hy = by - 18;
+      const hx = cx - 3;
       px(g, Sk, hx, hy, 6, 6); px(g, Skd, hx, hy + 5, 6, 1); px(g, Skd, hx + 5, hy, 1, 5);
       if (!up) {
         px(g, OUT, hx + 1, hy + 2, 1, 2); px(g, OUT, hx + 4, hy + 2, 1, 2);
-        px(g, '#e8938a', hx, hy + 4, 1, 1); px(g, '#e8938a', hx + 5, hy + 4, 1, 1);
+        if (!L.noBlush) { px(g, '#e8938a', hx, hy + 4, 1, 1); px(g, '#e8938a', hx + 5, hy + 4, 1, 1); }
         if (frame === 'cheer') px(g, '#8a2a30', hx + 2, hy + 4, 2, 1);
       }
       drawHair(g, L, up ? 'up' : 'down', hx, hy);
@@ -166,20 +216,19 @@
   }
 
   function buildDive(L) {
-    // lying horizontally facing right, arms stretched: 22x12
     const [c, g] = makeCanvas(24, 12);
     const T = L.shirt, Td = L.shirtD, Sk = L.skin;
-    px(g, Sk, 18, 3, 4, 2); // arms
+    px(g, Sk, 18, 3, 4, 2);
     px(g, T, 15, 3, 3, 2);
-    px(g, Sk, 11, 2, 5, 5); px(g, L.skinD, 11, 6, 5, 1); // head
+    const headCol = L.style === 'mask' ? '#d8303a' : L.style === 'helmet' ? '#9aa0b0' : Sk;
+    px(g, headCol, 11, 2, 5, 5); px(g, L.skinD, 11, 6, 5, 1);
     px(g, OUT, 14, 4, 1, 1);
-    const HL = Object.assign({}, L);
-    // hair over head
-    px(g, L.hair, 11, 2, 2, 5); px(g, L.hair, 11, 2, 5, 1);
+    if (L.style !== 'bald' && L.style !== 'mask' && L.style !== 'helmet') { px(g, L.hair, 11, 2, 2, 5); px(g, L.hair, 11, 2, 5, 1); }
+    if (L.extra === 'chef') px(g, '#ffffff', 9, 2, 3, 5);
     px(g, T, 5, 3, 6, 5); px(g, Td, 5, 7, 6, 1);
     px(g, L.shorts, 2, 4, 3, 4);
     px(g, Sk, 0, 5, 2, 2); px(g, L.socks, 0, 7, 2, 1);
-    if (HL.extra === 'towel') px(g, '#f4f4f4', 13, 2, 1, 5);
+    if (L.extra === 'towel') px(g, '#f4f4f4', 13, 2, 1, 5);
     outline(c);
     return c;
   }
@@ -221,9 +270,9 @@
 
   // ---------- pitch ----------
   // world geometry
-  const PITCH = { x: 40, y: 64, w: 600, h: 330 }; // playing area in world coords
+  const PITCH = { x: 44, y: 64, w: 820, h: 460 }; // playing area in world coords
   const WORLD = { w: PITCH.x * 2 + PITCH.w, h: PITCH.y + PITCH.h + 70 };
-  const GOAL_W = 64, GOAL_D = 14, BOX_W = 96, BOX_H = 170, SMALL_W = 34, SMALL_H = 96;
+  const GOAL_W = 64, GOAL_D = 14, BOX_W = 112, BOX_H = 220, SMALL_W = 40, SMALL_H = 112, PEN = 76, ARC = 46, CIRCLE = 54;
 
   function buildPitch(evening) {
     const [c, g] = makeCanvas(WORLD.w, WORLD.h);
@@ -235,13 +284,13 @@
     g.fillStyle = '#c7a878'; g.fillRect(PITCH.x - 18, PITCH.y - 14, PITCH.w + 36, PITCH.h + 30);
     for (let i = 0; i < 1600; i++) { g.fillStyle = R() < 0.5 ? '#b6966a' : '#d6ba8c'; g.fillRect(PITCH.x - 18 + ((R() * (PITCH.w + 36)) | 0), PITCH.y - 14 + ((R() * (PITCH.h + 30)) | 0), 1, 1); }
     // grass stripes
-    const stripes = 12, sw = PITCH.w / stripes;
+    const stripes = 16, sw = PITCH.w / stripes;
     for (let i = 0; i < stripes; i++) {
       g.fillStyle = i % 2 ? '#4fa84a' : '#5bb655';
       g.fillRect(Math.round(PITCH.x + i * sw), PITCH.y - 4, Math.ceil(sw), PITCH.h + 8);
     }
     // grass texture tufts
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 9000; i++) {
       const x = PITCH.x + R() * PITCH.w, y = PITCH.y - 4 + R() * (PITCH.h + 8);
       const band = Math.floor((x - PITCH.x) / sw) % 2;
       g.fillStyle = R() < 0.5 ? (band ? '#469a42' : '#52a84c') : (band ? '#5ab352' : '#66c05e');
@@ -256,8 +305,8 @@
         g.fillRect(x | 0, y | 0, 1 + (R() * 2 | 0), 1);
       }
     };
-    worn(PITCH.x + 14, PITCH.y + PITCH.h / 2, 16, 34, 420);
-    worn(PITCH.x + PITCH.w - 14, PITCH.y + PITCH.h / 2, 16, 34, 420);
+    worn(PITCH.x + 14, PITCH.y + PITCH.h / 2, 18, 38, 480);
+    worn(PITCH.x + PITCH.w - 14, PITCH.y + PITCH.h / 2, 18, 38, 480);
     worn(PITCH.x + PITCH.w / 2, PITCH.y + PITCH.h / 2, 26, 16, 220);
     // lines
     g.fillStyle = 'rgba(255,255,248,0.92)';
@@ -272,14 +321,14 @@
       L(bx, cy - BOX_H / 2, BOX_W, 2); L(bx, cy + BOX_H / 2 - 2, BOX_W, 2); L(side ? bx : gx + BOX_W - 2, cy - BOX_H / 2, 2, BOX_H);
       const sx = side ? gx - SMALL_W : gx;
       L(sx, cy - SMALL_H / 2, SMALL_W, 2); L(sx, cy + SMALL_H / 2 - 2, SMALL_W, 2); L(side ? sx : gx + SMALL_W - 2, cy - SMALL_H / 2, 2, SMALL_H);
-      L(gx + dx * 66 - 1, cy - 1, 3, 3); // penalty spot
+      L(gx + dx * PEN - 1, cy - 1, 3, 3); // penalty spot
       // arc
       g.beginPath(); g.strokeStyle = 'rgba(255,255,248,0.92)'; g.lineWidth = 2;
       g.save(); g.beginPath(); g.rect(side ? 0 : gx + BOX_W, 0, side ? gx - BOX_W : WORLD.w, WORLD.h); g.clip();
-      g.beginPath(); g.ellipse(gx + dx * 66, cy, 40, 40, 0, 0, Math.PI * 2); g.stroke(); g.restore();
+      g.beginPath(); g.ellipse(gx + dx * PEN, cy, ARC, ARC, 0, 0, Math.PI * 2); g.stroke(); g.restore();
     }
     g.beginPath(); g.strokeStyle = 'rgba(255,255,248,0.92)'; g.lineWidth = 2;
-    g.arc(PITCH.x + PITCH.w / 2, cy, 44, 0, Math.PI * 2); g.stroke();
+    g.arc(PITCH.x + PITCH.w / 2, cy, CIRCLE, 0, Math.PI * 2); g.stroke();
     L(PITCH.x + PITCH.w / 2 - 2, cy - 2, 4, 4);
     // de-antialias stroked arcs: quantize alpha
     const id = g.getImageData(0, 0, WORLD.w, WORLD.h);

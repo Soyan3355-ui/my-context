@@ -6,7 +6,7 @@
   const CX = P.x + P.w / 2, CY = P.y + P.h / 2;
   const GW = Art.GOAL_W;
   const TOP_H = 20, BOT_H = 50, VIEW_H = H - TOP_H - BOT_H;
-  const HALF_LEN = 70; // real seconds per half
+  const HALF_LEN = 80; // real seconds per half
 
   const goalX = (t) => (t === 0 ? P.x + P.w : P.x);
   const ownGoalX = (t) => (t === 0 ? P.x : P.x + P.w);
@@ -22,7 +22,11 @@
       this.fx = new Particles();
       this.fxTop = new Particles();
       this.players = [];
-      const home = opts.home || Data.HOME, away = opts.away || Data.AWAY;
+      const byId = (id) => Data.HOME.find((d) => d.id === id);
+      const home = opts.home || Data.DEFAULT_LINEUP.map(byId), away = opts.away || Data.AWAY;
+      const homeIds = home.map((d) => d.id);
+      this.combos = Data.COMBOS.filter((c) => c.ids.every((id) => homeIds.includes(id)));
+      this.comboCD = {}; this.traitCD = {}; this.comboShow = null;
       home.forEach((d, i) => this.players.push(this.mk(d, 0, i)));
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
@@ -69,9 +73,41 @@
     gk(t) { return this.players.find((p) => p.team === t && p.gk); }
     stat(p, k) {
       let v = p.st[k];
-      if (p.team === 0) v *= this.moraleMul[0];
-      if (p.team === 0 && this.boost[k]) v += this.boost[k];
+      if (p.team === 0) {
+        v *= this.moraleMul[0];
+        if (this.boost[k]) v += this.boost[k];
+        const id = p.id;
+        if (this.combo('ayashii') && (id === 'kawataro' || id === 'mask') && k === 'def') v += 6;
+        if (this.combo('kaze') && (id === 'tsubame' || id === 'shizuku') && (k === 'spd' || k === 'pas')) v += 5;
+        if (this.combo('shitei') && id === 'haruki' && k === 'spd') v += 5;
+        if (this.combo('okan') && id === 'ponta' && k === 'def') v += 10;
+        if (this.combo('ace') && (id === 'leo' || id === 'hikaru') && k === 'sht') v += 8;
+        if (this.combo('bonsai') && (id === 'kazuha' || id === 'mame') && k === 'pas') v += 8;
+        if (id === 'ponta' && this.pontaAwake) v += 10;
+        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 10);
+      }
       return v;
+    }
+    has(id) { return this.players.some((p) => p.team === 0 && p.id === id); }
+    combo(id) { return this.combos.some((c) => c.id === id); }
+    role(p) { return p.gk ? 'GK' : (this.form[p.team].roles || [])[p.slot] || 'MF'; }
+    traitPop(p, name) {
+      if (p.team !== 0) return;
+      const now = Game.time;
+      if (this.traitCD[p.id] && now - this.traitCD[p.id] < 6) return;
+      this.traitCD[p.id] = now;
+      this.popups.push({ x: p.x, y: p.y - 40, text: '★' + name, color: '#ffd24a', t: 0, size: 8, tag: true });
+      Sound.play('coin', { vol: 0.35, pitch: 1.4 });
+    }
+    comboFx(id) {
+      const c = this.combos.find((x) => x.id === id);
+      if (!c) return;
+      const now = Game.time;
+      if (this.comboCD[id] && now - this.comboCD[id] < 18) return;
+      this.comboCD[id] = now;
+      this.comboShow = { c, t: 0 };
+      Sound.play('levelup', { vol: 0.35 });
+      this.tick('コンビ発動！「' + c.name + '」', c.kind === 'bad' ? '#ffb0a0' : '#ffd24a');
     }
     slotPos(p, kickoff) {
       if (p.gk) return [ownGoalX(p.team) + dirX(p.team) * 10, CY];
@@ -152,6 +188,7 @@
       this.netShake[0] *= Math.pow(0.02, raw); this.netShake[1] *= Math.pow(0.02, raw);
       for (let i = 0; i < 2; i++) if (this.benchBubble[i]) { this.benchBubble[i].t -= raw; if (this.benchBubble[i].t <= 0) this.benchBubble[i] = null; }
       if (this.cutin) { this.cutin.t += raw; if (this.cutin.t > this.cutin.dur) this.cutin = null; }
+      if (this.comboShow) { this.comboShow.t += raw; if (this.comboShow.t > 2.8) this.comboShow = null; }
 
       if (this.meter) { this.updateMeter(raw); }
       if (this.halftimeUI) { this.updateHalftime(raw); return; }
@@ -243,6 +280,14 @@
         if (this.clock >= HALF_LEN && !b.shot && !this.sp && !(b.pass && b.z > 4)) { this.endHalf(); return; }
         if (this.half === 2) {
           this.evening = clamp(this.clock / HALF_LEN * 1.3, 0, 1);
+          if (this.clock > HALF_LEN * 0.7 && !this.pontaAwake && this.score[0] <= this.score[1] && this.has('ponta')) {
+            this.pontaAwake = true;
+            const pt = this.players.find((q) => q.team === 0 && q.id === 'ponta');
+            pt.sta = 100; this.traitCD.ponta = -99; this.traitPop(pt, 'はらぺこ覚醒！');
+            this.cutin = { id: 'ponta', expr: 'determined', t: 0, dur: 2.4, text: 'ポン太、腹ペコ覚醒！', color: '#f08a3a' };
+            this.say(pt, '試合のあとの、たこ焼きのためにッ！', 2.2);
+            this.tick('ポン太の目の色が変わった…！ はらぺこ覚醒だ！', '#ffd24a');
+          }
           if (this.clock > HALF_LEN * 0.72 && !this.lateMusic) { this.lateMusic = true; Sound.bgm('match_late'); this.tick('試合は終盤！', '#ffd24a'); }
         }
       }
@@ -303,12 +348,12 @@
       // attacking support (two nearest teammates offer passing angles)
       let supporters = [];
       if (b.owner && !b.owner.gk && !sp) {
-        supporters = this.team(b.owner.team).filter((p) => p !== b.owner && !p.gk && !p.state).sort((a, c) => dist(a.x, a.y, b.x, b.y) - dist(c.x, c.y, b.x, b.y)).slice(0, 2);
+        supporters = this.team(b.owner.team).filter((p) => p !== b.owner && !p.gk && !p.state).sort((a, c) => dist(a.x, a.y, b.x, b.y) - dist(c.x, c.y, b.x, b.y)).slice(0, 3);
       }
       for (const p of this.players) {
         if (p.state) continue;
         const t = p.team;
-        if (sp && sp.taker === p) { p.tx = sp.x - dirX(t) * (sp.type === 'throw' ? 0 : 5); p.ty = sp.y + (sp.type === 'throw' ? (sp.y < CY ? -3 : 3) : 0); p.run = true; continue; }
+        if (sp && sp.taker === p) { p.hurry = true; p.tx = sp.x - dirX(t) * (sp.type === 'throw' ? 0 : 5); p.ty = sp.y + (sp.type === 'throw' ? (sp.y < CY ? -3 : 3) : 0); p.run = true; continue; }
         if (p.gk) { this.gkTarget(p, chaser); continue; }
         if (b.owner === p) { this.carrierAI(p, dt); continue; }
         if (loose && chaser[t] === p) { p.tx = this.chaseAt[0]; p.ty = this.chaseAt[1]; p.run = true; continue; }
@@ -318,7 +363,7 @@
         // set-piece etiquette: keep distance, and stay out of the box while the keeper holds the ball
         if (sp && t !== sp.team) {
           const d = dist(p.tx, p.ty, sp.x, sp.y);
-          if (d < 40) { const a = Math.atan2(p.ty - sp.y, p.tx - sp.x); p.tx = sp.x + Math.cos(a) * 40; p.ty = sp.y + Math.sin(a) * 40; }
+          if (d < 44) { const a = Math.atan2(p.ty - sp.y, p.tx - sp.x); p.tx = sp.x + Math.cos(a) * 44; p.ty = sp.y + Math.sin(a) * 44; p.run = true; }
           if (sp.type === 'gk' || sp.type === 'goalkick') {
             const edge = ownGoalX(sp.team) + dirX(sp.team) * (Art.BOX_W + 14);
             if (this.proj(sp.team, p.tx) < this.proj(sp.team, edge)) p.tx = edge;
@@ -330,7 +375,7 @@
       if (b.owner && presser && this.state === 'play' && !this.meter && !sp) {
         const c = b.owner;
         const d = dist(presser.x, presser.y, c.x, c.y);
-        if (d < 9 && presser.tackCD <= 0) this.tryTackle(presser, c);
+        if (d < this.reach(presser) && presser.tackCD <= 0) this.tryTackle(presser, c, d);
       }
     }
 
@@ -346,7 +391,8 @@
       // width: spread out when in possession
       let hy = CY + (P.y + f[1] * P.h - CY) * 1.2;
       hy = lerp(hy, b.y, 0.12);
-      const fwd = f[0] > 0.6;
+      const fwd = this.role(p) === 'FW' || (p.id === 'tsubame' && ballP > 20 && this.proj(t, b.x) > this.proj(t, p.x) - 40);
+      if (p.id === 'tsubame' && fwd && Math.random() < 0.002) this.traitPop(p, '朝刊ダッシュ');
       const ballAdv = ballP;
       if (fwd && ballAdv > -60) {
         // forwards alternate between dropping to receive and running in behind
@@ -362,7 +408,7 @@
         if (p.supT <= 0 || !p.sup) {
           p.supT = rand(0.5, 0.9);
           let best = null, bs = -1e9;
-          const angs = supIdx === 0 ? [-0.7, 0.7, -1.4, 1.4] : [-2.2, 2.2, -0.35, 0.35];
+          const angs = supIdx === 0 ? [-0.7, 0.7, -1.4, 1.4] : supIdx === 1 ? [-2.2, 2.2, -0.35, 0.35] : [-1.1, 1.1, -2.6, 2.6];
           for (const a0 of angs) {
             const a = (dx > 0 ? 0 : Math.PI) + a0;
             const r = 58 + supIdx * 12;
@@ -470,7 +516,7 @@
       const ord = this.order[t] ? this.order[t].id : null;
       let best = { k: 'drib', s: 30 + this.stat(p, 'spd') * 0.25 - (pressure < 18 ? 22 : 0) + rand(0, 14) };
       // shoot
-      const range = 70 + this.stat(p, 'sht') * 0.58 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 16 : 0);
+      const range = 88 + this.stat(p, 'sht') * 0.6 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 16 : 0);
       if (dGoal < range && Math.abs(p.y - CY) < 110) {
         let s = 22 + (range - dGoal) * 0.55 + (pressure < 20 ? 10 : 0) + (dGoal < 110 ? 90 : 0) + rand(0, 20);
         if (ord === 'shoot') s += 25;
@@ -491,7 +537,8 @@
       for (const m of this.team(t)) {
         if (m === p || m.gk || m.state) continue;
         const d = dist(p.x, p.y, m.x, m.y);
-        if (d < 24 || d > 260) continue;
+        if (d < 24 || d > 300) continue;
+        if (this.combo('ace') && ((p.id === 'leo' && m.id === 'hikaru') || (p.id === 'hikaru' && m.id === 'leo'))) continue;
         const [, open] = this.nearestOpp(m);
         const lane = this.laneBlock(p.x, p.y, m.x, m.y, t);
         const prog = (m.x - p.x) * dx;
@@ -508,7 +555,7 @@
           if (this.proj(t, m.x) <= this.proj(t, off) + 1) {
             const tl = this.laneBlock(p.x, p.y, tx, ty, t);
             let open2 = 99; for (const o of this.players) if (o.team !== t && !o.gk) open2 = Math.min(open2, dist(o.x, o.y, tx, ty));
-            let s2 = 26 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.6 - (tl < 10 ? 70 : tl < 16 ? 25 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16);
+            let s2 = 18 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.6 - (tl < 10 ? 70 : tl < 16 ? 25 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16);
             if (p.id === 'kazuha') s2 += 12;
             if (s2 > best.s) best = { k: 'through', s: s2, m, tx, ty };
           }
@@ -542,8 +589,15 @@
       if (fx !== undefined) { tx = fx; ty = fy; }
       else { tx = m.x + m.vx * 0.3; ty = m.y + m.vy * 0.3; }
       const acc = this.stat(p, 'pas') + (this.order[p.team] && this.order[p.team].id === 'pass' ? 10 : 0);
-      const err = ((100 - acc) / 100) * 0.26 * rand(-1, 1);
+      let err = ((100 - acc) / 100) * 0.26 * rand(-1, 1);
       const d = dist(p.x, p.y, tx, ty);
+      if (p.team === 0) {
+        if (p.id === 'mame' && d > 140) { err = 0; this.traitPop(p, '枯れた技'); }
+        if (this.combo('bunkei') && p.id === 'kazuha' && m.id === 'leo') { err *= 0.3; this.comboFx('bunkei'); this.bunkeiT = Game.time; }
+        if (this.combo('bonsai') && ((p.id === 'mame' && m.id === 'kazuha') || (p.id === 'kazuha' && m.id === 'mame'))) { err *= 0.5; this.comboFx('bonsai'); }
+        if (this.combo('kaze') && ((p.id === 'tsubame' && m.id === 'shizuku') || (p.id === 'shizuku' && m.id === 'tsubame'))) { err *= 0.5; this.comboFx('kaze'); }
+        if (p.id === 'kazuha' && fx !== undefined) this.traitPop(p, '行間を読む');
+      }
       const ang = Math.atan2(ty - p.y, tx - p.x) + err;
       const air = lofted || d > 190;
       const sp = air ? clamp(d * 1.05 + 60, 110, 240) : clamp(d * 1.5 + 70, 120, 300);
@@ -590,12 +644,15 @@
       if (attackerQ === 'just') sigma *= 0.3; else if (attackerQ === 'good') sigma *= 0.7; else if (attackerQ === 'bad') sigma *= 1.35;
       const aimY = CY + rand(-1, 1) * (GW / 2 - 4);
       const ty = aimY + (rand(-1, 1) + rand(-1, 1) + rand(-1, 1)) * 0.75 * sigma;
-      const power = (header ? 170 + sht * 0.8 : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0);
+      const power = (header ? 170 + sht * 0.8 + (p.id === 'mask' ? 50 : 0) : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0);
       const onTarget = Math.abs(ty - CY) < GW / 2 - 1;
       const gk = this.gk(1 - t);
-      let pSave = 0.5 + this.stat(gk, 'def') / 170 - (power - 300) / 600 + dGoal / 1400 - (Math.abs(ty - CY) / (GW / 2)) * 0.22;
+      let pSave = 0.45 + this.stat(gk, 'def') / 170 - (power - 300) / 600 + dGoal / 1400 - (Math.abs(ty - CY) / (GW / 2)) * 0.22;
       if (header) pSave -= 0.08;
-      if (gk.id === 'gen' && Math.random() < 0.5) pSave += 0.06; // 網さばき
+      if (gk.id === 'gen' && b.z < 10 && Math.random() < 0.5) { pSave += 0.06; gk.netTrait = true; } // 網さばき
+      if (gk.id === 'daifuku') pSave += 0.06;
+      if (gk.team === 0 && this.combo('kabe') && dGoal < 110) { pSave += 0.12; this.comboFx('kabe'); }
+      if (header && p.id === 'mask') pSave -= 0.1;
       if (attackerQ === 'just') pSave -= 0.34; else if (attackerQ === 'good') pSave -= 0.12; else if (attackerQ === 'bad') pSave += 0.12;
       if (defenderQ === 'just') pSave += 0.5; else if (defenderQ === 'good') pSave += 0.2; else if (defenderQ === 'bad') pSave -= 0.08;
       pSave = clamp(pSave, 0.05, 0.95);
@@ -606,6 +663,7 @@
       b.vz = header ? -30 : dGoal > 150 ? rand(40, 90) : rand(10, 50);
       b.pass = null;
       b.shot = { team: t, shooter: p, save, ty, power: attackerQ === 'just', t: 0 };
+      if (t === 0 && this.combo('ace') && (p.id === 'leo' || p.id === 'hikaru')) this.comboFx('ace');
       p.rec.shot++; this.shots[t]++; if (onTarget) this.onTarget[t]++;
       p.kickAnim = 0.3;
       if (attackerQ === 'just') {
@@ -619,25 +677,34 @@
 
     gkSmother(gk, c) {
       gk.tackCD = 1.0;
-      const pr = clamp(0.35 + (this.stat(gk, 'def') - this.stat(c, 'spd')) / 120, 0.2, 0.75);
+      const pr = clamp(0.35 + (this.stat(gk, 'def') - this.stat(c, 'spd')) / 120 - (gk.id === 'daifuku' ? 0.1 : 0), 0.2, 0.75);
       Sound.play('tackle', { pan: this.pan(gk.x) });
       this.fx.burst(c.x, c.y, 10, { color: ['#d6ba8c', '#ffffff'], speedMin: 20, speedMax: 70, lifeMax: 0.4, size: 2, flatY: 0.5, up: 10 });
       if (Math.random() < pr) {
         gk.rec.save++;
         Game.addShake(2, 0.15);
         this.popup(gk.x, gk.y - 50, gk.team === 0 ? '飛び出した！' : 'キャッチ！', gk.team === 0 ? '#ffd24a' : '#ffb0a0', 9);
-        if (gk.team === 0) this.tick('ゲンさん、果敢に飛び出してボールを押さえた！', '#9fdcff');
+        if (gk.team === 0) this.tick(gk.name + '、飛び出してボールを押さえた！', '#9fdcff');
         this.gkCatch(gk);
       } else { gk.state = 'down'; gk.stT = 0.6; }
     }
 
-    tryTackle(d, c) {
+    reach(p) { return p.id === 'kawataro' ? 16 : p.id === 'ume' ? 13 : 9; }
+    tryTackle(d, c, range) {
       d.tackCD = rand(0.7, 1.3);
       d.rec.tackle++;
       const cs = this.stat(c, 'spd') * 0.5 + this.stat(c, 'pas') * 0.2 + (c.id === 'yukimaru' ? 14 : 0);
       let pr = 0.3 + (this.stat(d, 'def') - cs) / 110;
       if (this.order[d.team] && this.order[d.team].id === 'defend') pr += 0.1;
-      if (d.id === 'tetsuyama') pr += 0.08;
+      if (d.id === 'tetsuyama' || d.id === 'kotaro') pr += 0.08;
+      if (d.id === 'ume') pr += 0.08;
+      const slide = range > 10;
+      if (slide) { d.x = lerp(d.x, c.x, 0.6); d.y = lerp(d.y, c.y, 0.6); }
+      if (d.id === 'kawataro' && slide && Math.random() < 0.12) {
+        d.state = 'down'; d.stT = 0.8; d.vx = (c.x - d.x) * 8; d.vy = (c.y - d.y) * 8; d.tackCD = 1.2;
+        this.popup(d.x, d.y - 40, 'すべりすぎ！', '#9fdcff', 8); Sound.play('tackle', { vol: 0.5 });
+        return;
+      }
       pr = clamp(pr, 0.1, 0.72);
       const b = this.ball;
       // tackling from behind risks a foul
@@ -648,6 +715,10 @@
       if (Math.random() < (behind ? 0.35 : 0.06) * (d.id === 'morio' ? 0.4 : 1)) { this.foul(d, c); return; }
       if (Math.random() < pr) {
         d.rec.tackleOk++;
+        if (d.id === 'kawataro' && slide) this.traitPop(d, 'すべりこみ');
+        if (d.id === 'ume') this.traitPop(d, 'なぎなた');
+        if (d.id === 'ponta' && this.combo('okan')) this.comboFx('okan');
+        if (this.combo('ayashii') && (d.id === 'kawataro' || d.id === 'mask')) this.comboFx('ayashii');
         Game.addShake(2, 0.15);
         if (Math.random() < 0.55) {
           b.owner = d; b.last = d; b.pass = null; d.decT = 0.25; d.rec.touch++;
@@ -669,25 +740,29 @@
       c.state = 'down'; c.stT = 0.9;
       Sound.play('whistle');
       Game.addShake(2, 0.15);
-      this.popup(c.x, c.y - 44, 'ファウル！', '#ffd24a', 10);
+      this.popup(c.x, c.y - 58, 'ファウル！', '#ffd24a', 10);
       this.tick(d.name + 'のファウル。' + (c.team === 0 ? 'ハマカゼ' : 'ヤマオロシ') + 'のフリーキック。', '#fff6e0');
       if (d.team === 0) this.say(d, pick(['あっ、ごめん！', 'しまった…']), 1.2);
       let x = c.x, y = c.y;
       // keep free kicks outside the penalty area for this demo's rules
       const gx = goalX(c.team);
       if (Math.abs(x - gx) < Art.BOX_W + 6 && Math.abs(y - CY) < Art.BOX_H / 2 + 6) x = gx - dirX(c.team) * (Art.BOX_W + 8);
-      this.startSetPiece('free', c.team, x, y);
+      this.startSetPiece('free', c.team, x, y, c);
+      // the offender backs off the ball
+      const a = Math.atan2(d.y - c.y, d.x - c.x) || Math.PI;
+      d.x = c.x + Math.cos(a) * 18; d.y = c.y + Math.sin(a) * 18; d.vx = d.vy = 0;
     }
 
     // ---------------- set pieces ----------------
-    startSetPiece(type, team, x, y) {
+    startSetPiece(type, team, x, y, forced) {
       const b = this.ball;
       b.owner = null; b.pass = null; b.shot = null; b.vx = b.vy = b.vz = 0; b.z = 0; b.held = false;
       b.x = x; b.y = y;
       let taker;
       if (type === 'gk' || type === 'goalkick') taker = this.gk(team);
+      else if (forced) taker = forced;
       else taker = this.team(team).filter((q) => !q.gk && q.state !== 'down').sort((a, c) => dist(a.x, a.y, x, y) - dist(c.x, c.y, x, y))[0] || this.team(team).find((q) => !q.gk);
-      const dur = { kick: 0.35, throw: 1.4, corner: 1.5, goalkick: 1.4, free: 1.5, gk: rand(1.0, 1.6) }[type];
+      const dur = { kick: 0.35, throw: 1.2, corner: 1.5, goalkick: 1.4, free: 1.8, gk: rand(1.0, 1.6) }[type];
       this.sp = { type, team, x, y, t: 0, dur, taker };
       if (type === 'gk') { b.owner = taker; b.held = true; b.last = taker; }
       const label = { throw: 'スローイン', corner: 'コーナーキック', goalkick: 'ゴールキック', free: 'フリーキック' }[type];
@@ -714,10 +789,16 @@
         tk.cheer = 0.35;
         this.doPass(tk, near, false);
         b.vz = 50; b.z = 10; b.vx *= 0.8; b.vy *= 0.8;
+        // release from just inside the touchline and never back out of play
+        b.y = sp.y < CY ? P.y + 4 : P.y + P.h - 4;
+        if ((sp.y < CY && b.vy < 25) || (sp.y > CY && b.vy > -25)) b.vy = (sp.y < CY ? 1 : -1) * Math.max(25, Math.abs(b.vy));
         Sound.play('kick', { vol: 0.3 });
       } else if (sp.type === 'corner') {
         const inBox = mates.filter((m) => Math.abs(m.x - goalX(t)) < Art.BOX_W + 20);
         this.doCross(tk, inBox.length ? pick(inBox) : mates[0]);
+      } else if (sp.type === 'gk' && sp.target) {
+        this.doPass(tk, sp.target, true); this.ball.vz = 150; tk.cheer = 0.3;
+        this.comboFx('shitei'); this.say(tk, 'ハルキ、走れぇ！', 1.2);
       } else if (sp.type === 'goalkick' || sp.type === 'gk') {
         this.gkDistribute(tk, sp.type === 'gk');
       } else if (sp.type === 'free') {
@@ -734,6 +815,10 @@
       b.shot = null; b.pass = null;
       if (gk.state === 'down') gk.state = '';
       this.startSetPiece('gk', gk.team, gk.x, gk.y);
+      if (gk.team === 0 && gk.id === 'gen' && this.combo('shitei')) {
+        const h = this.players.find((q) => q.team === 0 && q.id === 'haruki');
+        if (h && !h.state && this.proj(0, h.x) > this.proj(0, CX) - 60) { this.sp.dur = 0.55; this.sp.target = h; }
+      }
     }
     gkDistribute(gk, fromHands) {
       const t = gk.team;
@@ -770,7 +855,8 @@
         let tx = p.tx, ty = p.ty;
         if (toHome) { tx = p.homeX; ty = p.homeY; }
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy);
-        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6);
+        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6) * (p.hurry && this.sp && this.sp.taker === p ? 1.5 : 1);
+        if (!this.sp) p.hurry = false;
         if (this.ball.owner === p) sp *= 0.86;
         if (this.state === 'fulltime' || this.state === 'halfend') sp *= 0.5;
         let vx = 0, vy = 0;
@@ -784,7 +870,9 @@
         p.rec.dist += v * dt;
         if (this.state === 'play') {
           let drain = (0.12 + (v / 100) * 0.55) * (1.45 - p.st.sta / 100) * dt;
-          if (p.id === 'ponta' && this.half === 2) drain *= 1.35;
+          if (p.id === 'ponta' && this.half === 2 && !this.pontaAwake) drain *= 1.35;
+          if (this.combo('tofu') && p.team === 0 && (p.id === 'ponta' || p.id === 'morio')) drain *= 0.75;
+          if (this.combo('okan') && p.id === 'ponta') drain *= 1.25;
           if (p.gk) drain *= 0.3;
           p.sta = Math.max(0, p.sta - drain * 2.2);
         }
@@ -855,7 +943,7 @@
       }
       if (b.shot) {
         const gk = this.gk(1 - b.shot.team);
-        if (b.shot.save && dist(gk.x, gk.y - 4, b.x, b.y - b.z * 0.5) < 13) { this.onSave(gk); return; }
+        if (b.shot.save && dist(gk.x, gk.y - 4, b.x, b.y - b.z * 0.5) < (gk.id === 'daifuku' ? 18 : 13)) { this.onSave(gk); return; }
       }
       const lineL = P.x, lineR = P.x + P.w;
       if (b.x <= lineL || b.x >= lineR) {
@@ -871,11 +959,16 @@
       if (this.state !== 'play' || this.meter) return;
       // headers: a dropping ball at head height
       if (b.z > 7 && b.z < 24 && !b.shot && !(b.headCD > 0)) {
-        for (const p of this.players) {
-          if (p.state || p.gk) continue;
-          if (b.lastKick === p && b.kickImm > 0) continue;
-          if (dist(p.x, p.y, b.x, b.y) > 9) continue;
-          this.header(p);
+        const cands = this.players.filter((p) => !p.state && !p.gk && !(b.lastKick === p && b.kickImm > 0) && dist(p.x, p.y, b.x, b.y) < (p.id === 'mask' ? 13 : 9));
+        if (cands.length) {
+          // aerial duel: jump + strength decides, the masked man almost always wins
+          const power = (p) => this.stat(p, 'def') * 0.5 + this.stat(p, 'sht') * 0.2 + (p.def.look.body === 'big' ? 12 : 0) + (p.id === 'mask' ? 40 : 0) + rand(0, 25);
+          cands.sort((a, c) => power(c) - power(a));
+          const w = cands[0];
+          if (w.id === 'mask' && cands.some((q) => q.team !== w.team)) this.traitPop(w, '空中戦の鬼');
+          else if (w.id === 'mask' && Math.random() < 0.3) this.traitPop(w, '空中戦の鬼');
+          for (const q of cands.slice(1)) if (q.team !== w.team) { q.state = 'header'; q.stT = 0.4; }
+          this.header(w);
           return;
         }
       }
@@ -902,8 +995,9 @@
         if (b.pass && b.pass.to !== p && p.team !== b.pass.from.team) {
           if (b.tried.has(p)) continue;
           b.tried.add(p);
-          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900;
+          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0);
           if (Math.random() > ic) continue;
+          if (p.id === 'shizuku') this.traitPop(p, '神託');
         }
         if (d < bd) { bd = d; best = p; }
       }
@@ -966,8 +1060,8 @@
       this.popup(gk.x, gk.y - 50, gk.team === 0 ? 'ナイスセーブ！' : 'セーブ！', gk.team === 0 ? '#ffd24a' : '#ffb0a0', 10);
       Sound.play('ooh');
       this.crowdHype = 0.9;
-      if (gk.team === 0) { this.tick('ゲンさん、がっちり止めたー！', '#9fdcff'); this.say(gk, pick(['網にかかったな！', 'ふんっ！', 'まだまだ！']), 1.3); }
-      else this.tick('岩井、ファインセーブ！ 惜しい！', '#ff9a8a');
+      if (gk.team === 0) { this.tick(gk.name + '、がっちり止めた！', '#9fdcff'); if (Math.random() < 0.3) this.say(gk, gk.id === 'gen' ? pick(['網にかかったな', 'ふんっ']) : pick(['もちっと止めた！', 'ふぅ…']), 1.1); if (gk.id === 'daifuku') this.fx.burst(gk.x, gk.y - 10, 14, { color: '#ffffff', speedMin: 10, speedMax: 40, lifeMax: 0.8, size: 2 }); }
+      else this.tick(gk.name + '、ファインセーブ！ 惜しい！', '#ff9a8a');
       b.shot = null;
       if (Math.random() < 0.6) {
         this.gkCatch(gk);
@@ -1133,6 +1227,7 @@
       this.banner('後半開始！', 'big', 1.6);
       Sound.bgm('match');
       this.tick('日も傾いてきました。後半キックオフ！', '#ffd24a');
+      if (this.combo('tofu')) setTimeout(() => this.comboFx('tofu'), 2500);
       this.chanceCD = 6; this.pinchCD = 10;
     }
     minute() { return Math.min(45, Math.floor((this.clock / HALF_LEN) * 45)) + (this.half === 2 ? 45 : 0); }
@@ -1147,7 +1242,9 @@
     // ---------------- chance / pinch timing meter ----------------
     openMeter(kind, p) {
       const b = this.ball;
-      this.meter = { kind, p, t: 0, pos: 0, dir: 1, speed: kind === 'chance' ? 1.9 : 2.2, result: null, rt: 0, autoAim: clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) };
+      const just = kind === 'chance' ? (p.id === 'leo' ? (this.combo('bunkei') && Game.time - (this.bunkeiT || -99) < 4 ? 0.09 : 0.07) : p.id === 'hikaru' && this.crowdHype > 0.55 ? 0.08 : 0.05) : 0.05;
+      if (kind === 'chance' && just > 0.05) this.traitPop(p, p.id === 'leo' ? '目立ちたがり' : '映え');
+      this.meter = { just, kind, p, t: 0, pos: 0, dir: 1, speed: kind === 'chance' ? 1.9 : 2.2, result: null, rt: 0, autoAim: clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) };
       if (kind === 'chance') this.chanceCD = rand(9, 13); else this.pinchCD = rand(10, 15);
       Game.timeScale = 0.05;
       Sound.play('chance');
@@ -1183,7 +1280,7 @@
     resolveMeter() {
       const m = this.meter;
       const d = Math.abs(m.pos - 0.5);
-      if (d < 0.05) {
+      if (d < m.just) {
         m.result = 'just'; Sound.play('just'); Game.doFlash(0.55, '#ffffff'); Game.addShake(3, 0.2);
         this.popupMeter('JUST!!', '#ffd24a');
         this.fxTop.burst(W / 2, H / 2 + 36, 26, { color: ['#ffd24a', '#ffffff', '#9fdcff'], speedMin: 60, speedMax: 180, lifeMin: 0.3, lifeMax: 0.6, size: 3, kind: 'star', drag: 0.05 });
@@ -1257,6 +1354,16 @@
       }
       for (const pp of this.popups) {
         const k = pp.t / 1.2;
+        if (pp.tag) {
+          const yy = Math.round(pp.y - oy - Ease.outCubic(Math.min(1, k * 2)) * 8);
+          E.setFont(g, 8);
+          const tw = Math.ceil(g.measureText(pp.text).width) + 8;
+          g.globalAlpha = k > 0.8 ? (1 - k) * 5 : 1;
+          panel(g, Math.round(pp.x - ox - tw / 2), yy - 2, tw, 13, 'gold');
+          text(g, pp.text, Math.round(pp.x - ox), yy, { size: 8, align: 'center', color: '#4a2a10' });
+          g.globalAlpha = 1;
+          continue;
+        }
         text(g, pp.text, Math.round(pp.x - ox), Math.round(pp.y - oy - Ease.outCubic(Math.min(1, k * 2)) * 10), { size: pp.size, align: 'center', color: pp.color, outline: '#2a1a24', alpha: k > 0.8 ? (1 - k) * 5 : 1 });
       }
       for (let i = 0; i < 2; i++) if (this.benchBubble[i]) this.drawBenchBubble(g, i, ox, oy);
@@ -1423,6 +1530,7 @@
       this.drawHUD(g);
       this.fxTop.draw(g);
       for (const bn of this.banners) this.drawBanner(g, bn);
+      if (this.comboShow) this.drawCombo(g);
       if (this.cutin) this.drawCutin(g, this.cutin);
       if (this.meter) this.drawMeter(g);
       if (this.halftimeUI) this.drawHalftime(g);
@@ -1562,6 +1670,20 @@
       text(g, bn.text, W / 2 + (1 - inK) * 80, H / 2 - 6 - size / 2, { size, align: 'center', color: '#ffffff', outline: '#10304f', outlineW: 2, alpha: a });
     }
 
+    drawCombo(g) {
+      const cs = this.comboShow, c = cs.c, t = cs.t;
+      const inK = Ease.outBack(clamp(t / 0.35, 0, 1)), out = clamp((t - 2.4) / 0.3, 0, 1);
+      const w = 196, x = Math.round(W - w - 6 + (1 - inK) * 220 + out * 220), y = TOP_H + 6;
+      const style = c.kind === 'bad' ? 'crimson' : c.kind === 'mixed' ? ['#2a1a24', '#b06ad8', '#7a4aa0', '#d8a8f0'] : 'gold';
+      panel(g, x, y, w, 34, style);
+      c.ids.forEach((id, i) => {
+        const img = portrait(id, c.kind === 'bad' ? 'determined' : 'happy');
+        g.fillStyle = '#10182e'; g.fillRect(x + 4 + i * 27, y + 4, 26, 26);
+        if (img) g.drawImage(img, 11, 6, 24, 24, x + 5 + i * 27, y + 5, 24, 24);
+      });
+      text(g, c.kind === 'bad' ? 'ケンカ発動！' : 'コンビ発動！', x + 62, y + 4, { size: 8, color: c.kind === 'bad' ? '#ffe0e0' : '#4a2a10' });
+      text(g, c.name, x + 62, y + 16, { size: 11, color: c.kind === 'bad' || c.kind === 'mixed' ? '#ffffff' : '#2a1a24', outline: c.kind === 'bad' || c.kind === 'mixed' ? '#2a0e14' : undefined });
+    }
     drawCutin(g, c) {
       const t = c.t, d = c.dur;
       const inK = Ease.outCubic(clamp(t / 0.3, 0, 1));
@@ -1629,8 +1751,8 @@
         g.fillStyle = '#0a0e1c'; g.fillRect(x, y, bw, bh);
         g.fillStyle = '#3a4466'; g.fillRect(x + 1, y + 1, bw - 2, bh - 2);
         g.fillStyle = '#4fb4e8'; g.fillRect(x + bw * 0.33, y + 1, bw * 0.34, bh - 2);
-        g.fillStyle = '#ffd24a'; g.fillRect(Math.round(x + bw * 0.45), y + 1, Math.round(bw * 0.1), bh - 2);
-        g.fillStyle = '#fff1a0'; g.fillRect(Math.round(x + bw * 0.45), y + 1, Math.round(bw * 0.1), 2);
+        g.fillStyle = '#ffd24a'; g.fillRect(Math.round(x + bw * (0.5 - m.just)), y + 1, Math.round(bw * m.just * 2), bh - 2);
+        g.fillStyle = '#fff1a0'; g.fillRect(Math.round(x + bw * (0.5 - m.just)), y + 1, Math.round(bw * m.just * 2), 2);
         text(g, 'JUST', W / 2, y + 4, { size: 8, align: 'center', color: '#4a2a10' });
         const cx2 = Math.round(x + m.pos * bw);
         g.fillStyle = '#ffffff'; g.fillRect(cx2 - 1, y - 4, 3, bh + 8);
@@ -1664,11 +1786,11 @@
       // stamina list
       text(g, 'スタミナ', 36, 116, { size: 9, color: '#6d4f3a' });
       this.team(0).forEach((p, i) => {
-        const y = 128 + i * 12;
-        text(g, p.name, 36, y, { size: 8, color: '#2a1a24' });
-        g.fillStyle = '#2a1a24'; g.fillRect(84, y + 2, 102, 6);
+        const col = i < 6 ? 0 : 1, y = 128 + (i % 6) * 12, x0 = 36 + col * 104;
+        text(g, p.name, x0, y, { size: 8, color: '#2a1a24' });
+        g.fillStyle = '#2a1a24'; g.fillRect(x0 + 48, y + 2, 46, 6);
         g.fillStyle = p.sta > 50 ? '#6cc35a' : p.sta > 25 ? '#ffd24a' : '#e0474c';
-        g.fillRect(85, y + 3, Math.round(p.sta), 4);
+        g.fillRect(x0 + 49, y + 3, Math.round(p.sta * 0.44), 4);
       });
       // manager talk
       const img = portrait('nagisa', 'normal');

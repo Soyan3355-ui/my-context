@@ -1,0 +1,15 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sprite sheet</title>
+<style>body{background:#4fa84a;margin:0}canvas{image-rendering:pixelated}</style></head><body>
+<canvas id="game" style="display:none"></canvas><canvas id="c"></canvas>
+<script src="../js/engine.js"></script><script src="../js/art.js"></script><script src="../js/data.js"></script>
+<script>
+const all = Data.HOME.concat(Data.AWAY);
+const c = document.getElementById('c'); const S = 4;
+const frames = [['down','walk1'],['down','walk0'],['side','walk1'],['side','walk2'],['up','walk1'],['down','cheer'],['side','kick']];
+c.width = frames.length * 20 * S + 100; c.height = all.length * 26 * S;
+const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+all.forEach((p, i) => {
+  g.fillStyle = '#fff'; g.font = '14px sans-serif'; g.fillText(p.name, 4, i * 26 * S + 50);
+  frames.forEach(([d, f], j) => g.drawImage(Art.sprite(p.look, d, f), 100 + j * 20 * S, i * 26 * S, 16 * S, 22 * S));
+});
+</script></body></html>
