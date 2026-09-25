@@ -76,7 +76,7 @@
   };
 
   // 4 ホムラドラ — fire SR: obsidian dragon rearing up, bat wings spread. Gag: a roaring, toothy laugh.
-  P[4] = function (k) {
+  P[5] = function (k) {
     k.shadow(C, 76.5, 25, 2.4);
     // bat wings
     k.sym(C, function (m, s) {
@@ -143,7 +143,7 @@
   };
 
   // 8 ミズチ — water SR: river dragon rising from its coils, clutching a pearl. Gag: goggle eyes + proud buck-fanged grin.
-  P[8] = function (k) {
+  P[10] = function (k) {
     k.shadow(C, 76.5, 26, 2.2);
     k.tube([[26, 65, 5], [40, 61, 5.5], [55, 64, 5], [60, 68, 4.8]], 'water', { part: 'coilB', shift: -1 });
     k.sym(C, function (m, s) {
@@ -215,7 +215,7 @@
   };
 
   // 12 モリノヌシ — grass SR: old forest-lord stag. Gag: grumpy half-lidded glare, chewing a sprig, a chick nesting in his antlers.
-  P[12] = function (k) {
+  P[15] = function (k) {
     k.shadow(C, 76.5, 24, 2.4);
     // antler crown
     k.sym(C, function (m, s) {
@@ -298,7 +298,7 @@
   };
 
   // 17 カゲボウ — dark C: hooded shadow wraith. Gag: jiangshi talisman slapped on its hood, "boo!" claws, lolling tongue.
-  P[17] = function (k) {
+  P[21] = function (k) {
     k.shadow(C, 76.5, 12, 1.8);
     wisp(k, 8, 60, 0.9, 'w1'); wisp(k, 72, 58, 0.9, 'w2'); wisp(k, 66, 30, 0.7, 'w3');
     // floppy hood tip
@@ -346,7 +346,7 @@
   };
 
   // 22 ホシウサ — light C: star rabbit with a crystal crest. Gag: one ear flopped over, giant buck teeth, fighting bandana.
-  P[22] = function (k) {
+  P[26] = function (k) {
     k.shadow(C, 76.5, 15, 2);
     k.star(55, 60, 6, 'gold', { part: 'tail', halo: 0.2 });
     // body, feet, arms

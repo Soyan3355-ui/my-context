@@ -11,7 +11,7 @@ const ITEMSPOTS={
 };
 const itemAt=(x,y)=>(ITEMSPOTS[G.mapId]||[]).find(i=>!S.picked[i.id]&&i.x===x&&i.y===y);
 const _blocked=blocked;blocked=function(x,y){return _blocked(x,y)||!!itemAt(x,y)};
-const RIVAL_OF={1:5,5:9,9:1};
+const RIVAL_OF={1:6,6:11,11:1};
 const NM={mom:'お母さん',sensei:'コハル先生',rival:'レン',kid:'タイチ',cat:'ミケ',granny:'ウメばあちゃん',villager:'農家のヨシオ',fisher:'ゲンじい',trader:'行商人マツ',guardian:'祠守りイワオ'};
 
 /* ---------------- NPC definitions ---------------- */
@@ -84,12 +84,12 @@ async function talkTrader(){
   }
 }
 async function talkYoshio(n){
-  if(S.flags.yoshio){await say('ふう、田んぼ仕事より くたびれたわい。<br>アワフグは 田んぼの 水路に よく おるぞ。',NM.villager);return}
+  if(S.flags.yoshio){await say('ふう、田んぼ仕事より くたびれたわい。<br>カッパチは 田んぼの 水路に よく おるぞ。',NM.villager);return}
   await yoshioBattle(n);
 }
 async function yoshioBattle(n){
   await say('おう、見かけない 札さばきだな！<br>田んぼ仕事の 合間の 一勝負だ！',NM.villager);
-  const r=await runBattle({trainer:{name:'農家のヨシオ',sprite:'villager',team:[{id:17,lv:4},{id:21,lv:4}],reward:150,smart:.3,intro:'農家のヨシオが 勝負を しかけてきた！',winLine:'まいった！ 若いのに やるなぁ！'}});
+  const r=await runBattle({trainer:{name:'農家のヨシオ',sprite:'villager',team:[{id:21,lv:4},{id:26,lv:4}],reward:150,smart:.3,intro:'農家のヨシオが 勝負を しかけてきた！',winLine:'まいった！ 若いのに やるなぁ！'}});
   if(r==='win'){S.flags.yoshio=true;n.sight=0}
 }
 async function talkGuardian(n){
@@ -98,7 +98,7 @@ async function talkGuardian(n){
     await say('封札師の 印が ほしいなら、わしに 札の 力を 示してみよ。',NM.guardian)}
   const i=await ask('試練を 受けるか？',NM.guardian,['受ける','まだ準備が…']);
   if(i!==0){await say('うむ。 そこの 井戸の 水を 飲めば 疲れも とれよう。',NM.guardian);return}
-  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:22,lv:6},{id:23,lv:7}],reward:500,smart:.3,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
+  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:27,lv:6},{id:28,lv:7}],reward:500,smart:.3,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
   if(r==='win')await endingSequence();
 }
 async function getItem(k,n){
@@ -122,7 +122,7 @@ function examine(c,x,y){
   if(c==='O')return()=>say(S.flags.badge?'ご神木は まだ ほのかに 光っている…。':'しめ縄の かかった ご神木。<br>耳を あてると、とくん、とくん と 音が する。');
   if(c==='A')return()=>say('古札の祠。 おさい銭箱の 奥に、古い 札が まつられている。');
   if(c==='v')return()=>say('トマトや なすが 実っている。<br>ツムギ村の 夏野菜は おいしいと 評判だ。');
-  if(c==='p')return()=>say('青々とした 田んぼ。 水面に 空が うつっている。<br>小さな 泡が ぷくぷく… アワフグかも。');
+  if(c==='p')return()=>say('青々とした 田んぼ。 水面に 空が うつっている。<br>小さな 泡が ぷくぷく… カッパチかも。');
   if(c==='~')return()=>say('水が きらきら 光っている。');
   if(c==='f')return()=>say('ひまわりの プランター。 お日さまの 方を 向いている。');
   if(c==='c')return()=>say('わらの 束が 積んである。 ほんのり 夏の におい。');
@@ -162,7 +162,7 @@ async function senseiIntro(){
 async function starterCase(){
   if(S.flags.starter){await say('ガラスケースの中で 封札が ほのかに 光っている。');return}
   if(!S.flags.metSensei)return;
-  const opts=[[1,'炎タイプ','すばやく 攻める いたずらっ子'],[5,'水タイプ','打たれ強い のんびり屋'],[9,'草タイプ','バランスの いい がんばり屋']];
+  const opts=[[1,'炎タイプ','すばやく 攻める いたずらっ子'],[6,'水タイプ','打たれ強い のんびり屋'],[11,'草タイプ','バランスの いい がんばり屋']];
   while(true){
     const pick=await new Promise(res=>{const md=$('#modal');
       md.innerHTML=`<div class="rvbox"><h2 class="m-title">最初の相棒をえらぼう</h2><div class="rv-row n3">${opts.map(([id,t,d],i)=>`<button class="pick" data-nav data-i="${i}">${cardHTML({id,lv:5})}<span class="pdesc"><b>${t}</b>${d}</span></button>`).join('')}</div><p class="m-hint">カードを えらんで 決定（タップでもOK）</p></div>`;
@@ -212,7 +212,7 @@ async function endingSequence(){
   bgm('shrine');
   // sacred tree glows, sky phenomenon
   for(let i=0;i<3;i++){G.flash=.7;G.flashCol='#fff4d0';G.shake=3;snd('charge');await sleep(500)}
-  const sky=$('#skyevent');sky.innerHTML=`<div class="whale">${art(MON[25])}</div><div class="aurora"></div>`;sky.hidden=false;snd('rare');
+  const sky=$('#skyevent');sky.innerHTML=`<div class="whale">${art(MON[30])}</div><div class="aurora"></div>`;sky.hidden=false;snd('rare');
   await sky.querySelector('.whale').animate([{transform:'translate(-10cqw,10cqh) rotate(-6deg) scale(.7)',opacity:0},{transform:'translate(35cqw,3cqh) rotate(2deg) scale(1)',opacity:.85,offset:.45},{transform:'translate(115cqw,-4cqh) rotate(-4deg) scale(.8)',opacity:0}],{duration:RM?600:4200,easing:'ease-in-out',fill:'forwards'}).finished;
   sky.hidden=true;sky.innerHTML='';
   await say('い、今のは…！？<br>空を 泳ぐ… クジラ…？',S.name);
@@ -251,7 +251,7 @@ function showTitle(){
   loadMap('field');G.p.hidden=true;G.cam={x:0,y:46*TS};G.fade=0;
   const cont=hasSave();
   const el=$('#title');
-  const fl=[1,5,9,21,17,13];
+  const fl=[1,6,11,26,21,5];
   el.innerHTML=`<div class="tt-cards">${fl.map((id,i)=>`<div class="tt-c c${i}">${cardHTML({id,v:i===3?'holo':i===1?'gold':'normal'})}</div>`).join('')}</div>
   <div class="tt-in"><p class="eyebrow">見習い封札師の旅 ─ 体験版</p><h1 class="logo"><em>封札</em><span>モンスターズ</span></h1>
   <div class="tt-menu">${cont?'<button class="pbtn shu" data-nav data-t="cont">つづきから</button>':''}<button class="pbtn ${cont?'':'shu'}" data-nav data-t="new">はじめから</button></div>

@@ -13,10 +13,10 @@ const OPP={up:'down',down:'up',left:'right',right:'left'};
 
 /* ---------------- save state ---------------- */
 const SAVE_KEY='fudamon-slice-v1';
-function freshState(){return{v:3,name:'ソーヤ',map:'home',x:6,y:3,dir:'down',coins:300,items:{white:0,silver:0,gold:0,potion:0},cards:[],party:[],dex:{},seen:{},uid:1,flags:{},picked:{},time:0,muted:false}}
+function freshState(){return{v:4,name:'ソーヤ',map:'home',x:6,y:3,dir:'down',coins:300,items:{white:0,silver:0,gold:0,potion:0},cards:[],party:[],dex:{},seen:{},uid:1,flags:{},picked:{},time:0,muted:false}}
 let S=freshState();
-function hasSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return !!(s&&s.v===3)}catch(e){return false}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===3){S=s;return true}}catch(e){}return false}
+function hasSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));return !!(s&&s.v===4)}catch(e){return false}}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&s.v===4){S=s;return true}}catch(e){}return false}
 function saveGame(){S.map=G.mapId;S.x=G.p.x;S.y=G.p.y;S.dir=G.p.dir;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}}
 
 /* ---------------- monster/card helpers ---------------- */
