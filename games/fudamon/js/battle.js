@@ -23,7 +23,7 @@ function bsay(text,ms){const el=$('#bmsg');const toks=tokenize(text);let acc='',
 
 /* ---------- HUD ---------- */
 function plateHTML(side){const u=U(side),r=u.hp/u.st.hp,sealed=side==='foe'&&S.dex[u.m.id];
-  return `<div class="nm"><span>${u.m.name}<i class="rar r${u.m.r}">${RAR[u.m.r].n}</i>${sealed?'<i class="sealmark" title="封印済み">封</i>':''}</span><span class="lv">Lv${u.lv}</span></div>
+  return `<div class="nm"><span>${u.m.name}<i class="rar r${u.m.r}">${RAR[u.m.r].n}</i>${sealed?`<i class="sealmark" title="封印済み">封</i><i class="owncnt" title="手持ちの枚数">×${S.cards.filter(c=>c.id===u.m.id).length}</i>`:''}</span><span class="lv">Lv${u.lv}</span></div>
   <div class="hpl"><b>HP</b><span class="bar"><i style="width:${r*100}%;background:${hpColor(r)}"></i></span></div>
   ${side==='me'?`<div class="hpn"><span class="tchip" style="--c:${TYPES[u.m.t].c}">${TYPES[u.m.t].n}</span><span>${u.hp}/${u.st.hp}</span></div><span class="bar exp"><i style="width:${card(B.active).exp/need(u.lv)*100}%"></i></span>`:`<div class="hpn"><span class="tchip" style="--c:${TYPES[u.m.t].c}">${TYPES[u.m.t].n}</span>${B.trainer?`<span class="balls">${B.team.map((t,i)=>`<i class="${i<B.teamIdx?'down':''}"></i>`).join('')}</span>`:''}</div>`}`}
 function hud(full){if(!B)return;for(const side of['foe','me']){const el=$(side==='foe'?'#pF':'#pM');const u=U(side);
