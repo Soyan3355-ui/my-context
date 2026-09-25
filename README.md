@@ -7,6 +7,7 @@
 - [profile.md](profile.md) — 事業・役割・活動内容
 - [working_style.md](working_style.md) — AIとの対話の好み
 - [values.md](values.md) — 価値観・判断軸
+- [notion-map.md](notion-map.md) — Notion との対応表・同期ルール
 
 ## 私について（要約）
 - 名前：橋口創也（そーやん）
