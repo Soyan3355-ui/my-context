@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audio Test</title>
+<style>
+  :root { --bg:#fdf6e3; --fg:#233; --btn:#2a7ab0; --btn2:#d9822b; --panel:#fff; --line:#e3d8bd; }
+  body { margin:0; padding:16px; font:14px/1.4 system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+  h1 { font-size:18px; margin:0 0 8px; }
+  h2 { font-size:14px; margin:16px 0 6px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:10px; }
+  .grid { display:flex; flex-wrap:wrap; gap:6px; }
+  button { border:0; border-radius:6px; padding:6px 10px; background:var(--btn); color:#fff; font:inherit; cursor:pointer; }
+  button.bgm { background:var(--btn2); }
+  button.on { outline:3px solid #333; }
+  label { display:inline-flex; align-items:center; gap:6px; margin-right:14px; }
+  input[type=range] { width:140px; }
+  pre { white-space:pre-wrap; font-size:12px; max-height:340px; overflow:auto; background:#f4efe0; padding:8px; border-radius:6px; }
+</style>
+</head>
+<body>
+<h1>ハマカゼFC — Audio Test</h1>
+<p>Click anything to start audio (Sound.init() runs on the first gesture).</p>
+
+<div class="panel">
+  <h2>SFX</h2>
+  <div class="grid" id="sfx"></div>
+  <p>
+    <label>pitch <input type="range" id="pitch" min="0.5" max="2" step="0.05" value="1"><span id="pitchV">1</span></label>
+    <label>pan <input type="range" id="pan" min="-1" max="1" step="0.1" value="0"><span id="panV">0</span></label>
+    <button id="typeTest">blip x40 (typewriter)</button>
+    <button id="statClimb">statup climb</button>
+  </p>
+</div>
+
+<div class="panel">
+  <h2>BGM</h2>
+  <div class="grid" id="bgm"></div>
+  <p>
+    <button id="stop">stopBgm(1)</button>
+    <button id="duck">duck(0.7, 2)</button>
+    <label>rate <input type="range" id="rate" min="0.25" max="1.5" step="0.05" value="1"><span id="rateV">1</span></label>
+  </p>
+</div>
+
+<div class="panel">
+  <h2>Mix</h2>
+  <label>crowd <input type="range" id="crowd" min="0" max="1" step="0.05" value="0"><span id="crowdV">0</span></label>
+  <label>master <input type="range" id="vol" min="0" max="1" step="0.05" value="0.6"><span id="volV">0.6</span></label>
+  <label><input type="checkbox" id="mute"> muted</label>
+</div>
+
+<div class="panel">
+  <h2>Offline render check</h2>
+  <button id="render">Render all (peak / RMS)</button>
+  <pre id="out"></pre>
+</div>
+
+<script src="../js/audio.js"></script>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function init() { Sound.init(); }
+  document.addEventListener('pointerdown', init, true);
+  document.addEventListener('keydown', init, true);
+
+  Sound._sfxNames.forEach(function (n) {
+    var b = document.createElement('button');
+    b.textContent = n;
+    b.onclick = function () { Sound.play(n, { pitch: +$('pitch').value, pan: +$('pan').value }); };
+    $('sfx').appendChild(b);
+  });
+  Sound._bgmNames.forEach(function (n) {
+    var b = document.createElement('button');
+    b.className = 'bgm'; b.textContent = n; b.dataset.name = n;
+    b.onclick = function () {
+      Sound.bgm(n);
+      Array.prototype.forEach.call($('bgm').children, function (x) { x.classList.toggle('on', x.dataset.name === n); });
+    };
+    $('bgm').appendChild(b);
+  });
+  $('stop').onclick = function () { Sound.stopBgm(1); Array.prototype.forEach.call($('bgm').children, function (x) { x.classList.remove('on'); }); };
+  $('duck').onclick = function () { Sound.duck(0.7, 2); };
+  $('typeTest').onclick = function () {
+    var i = 0, id = setInterval(function () { Sound.play('blip', { pitch: 0.9 + Math.random() * 0.2 }); if (++i >= 40) clearInterval(id); }, 33);
+  };
+  $('statClimb').onclick = function () {
+    for (var i = 0; i < 6; i++) (function (k) { setTimeout(function () { Sound.play('statup', { pitch: Math.pow(2, k * 2 / 12) }); }, k * 140); })(i);
+  };
+  function slider(id, fn) { $(id).oninput = function () { $(id + 'V').textContent = this.value; fn(+this.value); }; }
+  slider('pitch', function () {});
+  slider('pan', function () {});
+  slider('rate', function (v) { Sound.setBgmRate(v); });
+  slider('crowd', function (v) { Sound.crowd(v); });
+  slider('vol', function (v) { Sound.masterVolume(v); });
+  $('mute').onchange = function () { Sound.setMuted(this.checked); };
+
+  $('render').onclick = function () {
+    var names = Sound._sfxNames.concat(Sound._bgmNames, ['crowd']), out = $('out'), i = 0;
+    out.textContent = 'name            peak    rms     activeRms  activeSec\n';
+    (function next() {
+      if (i >= names.length) return;
+      var n = names[i++];
+      Sound._renderOffline(n).then(function (r) {
+        out.textContent += (n + '                ').slice(0, 16) + r.peak.toFixed(3) + '   ' + r.rms.toFixed(4) + '  ' +
+          r.activeRms.toFixed(4) + '     ' + r.activeSec.toFixed(2) + (r.peak >= 1 ? '  CLIP!' : r.peak < 0.01 ? '  SILENT?' : '') + '\n';
+        next();
+      }, function (e) { out.textContent += n + ' ERROR ' + e.message + '\n'; next(); });
+    })();
+  };
+})();
+</script>
+</body>
+</html>
