@@ -32,6 +32,7 @@
       this.tstats = [{ counter: 0, pressWin: 0, long: 0, chainMax: 0 }, { counter: 0, pressWin: 0, long: 0, chainMax: 0 }];
       this.bench = (opts.bench || Data.HOME.filter((d) => d.bench)).slice();
       this.subsLeft = 3; this.subQueue = []; this.subbedOut = []; this.panel = null;
+      this.ana = { behind: [0, 0, 0], shotLane: [0, 0, 0] }; this.memos = []; this.memoKeys = {}; this.memoT = 3;
       home.forEach((d, i) => this.players.push(this.mk(d, 0, i)));
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
@@ -69,7 +70,8 @@
         def, id: def.id, name: def.name, team, gk: def.pos === 'GK', slot: def.pos === 'GK' ? -1 : idx - 1,
         st, x: CX, y: CY, vx: 0, vy: 0, tx: CX, ty: CY, face: team === 0 ? 'right' : 'left', animT: Math.random() * 4,
         sta: 100, state: '', stT: 0, decT: 0, tackCD: 0, bubble: null, cheer: 0, runTarget: null,
-        rec: { pass: 0, passOk: 0, shot: 0, goal: 0, tackle: 0, tackleOk: 0, save: 0, dist: 0, touch: 0, assist: 0, dribble: 0 },
+        rec: { pass: 0, passOk: 0, shot: 0, goal: 0, tackle: 0, tackleOk: 0, save: 0, dist: 0, touch: 0, assist: 0, dribble: 0,
+          longAtt: 0, longOk: 0, prAtt: 0, prOk: 0, thrAtt: 0, thrOk: 0, airW: 0, airL: 0, lost: 0, beaten: 0, onT: 0, faced: 0, distEarly: 0, distLate: 0, shotNear: 0 },
       };
     }
 
@@ -285,6 +287,7 @@
         }
         this.chanceCD -= dt; this.pinchCD -= dt;
         for (let t = 0; t < 2; t++) if (this.counterT[t] > 0) this.counterT[t] -= dt;
+        this.memoT -= dt; if (this.memoT <= 0) { this.memoT = 2; this.liveMemo(); }
         // a queued substitution goes on at a quiet moment if play has not stopped for a while
         if (this.subQueue.length && this.clock + (this.half - 1) * 1000 - this.subQueue[0].at > 8 && !b.shot && !this.sp && Math.abs(b.x - CX) < 200) this.applySubs();
         if (this.half === 2 && this.tac[1] === 'long' && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
@@ -633,7 +636,7 @@
       if (best.k === 'shoot') this.wantShoot(p);
       else if (best.k === 'long') { this.doPass(best.m ? p : p, best.m, true, best.m.x + dx * 30, best.m.y); this.ball.vz = 150; this.tstats[t].long++; if (Math.random() < 0.35) this.tick((t === 0 ? 'ハマカゼ' : 'ヤマオロシ') + '、前線へロングボール！', t === 0 ? '#9fdcff' : '#ff9a8a'); }
       else if (best.k === 'pass') this.doPass(p, best.m);
-      else if (best.k === 'through') this.doPass(p, best.m, false, best.tx, best.ty);
+      else if (best.k === 'through') { this.doPass(p, best.m, false, best.tx, best.ty); this.ball.pass.through = true; p.rec.thrAtt++; }
       else if (best.k === 'cross') this.doCross(p, best.m);
       else this.dribbleDir(p, dx);
     }
@@ -675,7 +678,10 @@
       this.releaseBall(p);
       b.vx = Math.cos(ang) * sp; b.vy = Math.sin(ang) * sp;
       b.vz = air ? clamp(d * 0.55, 70, 150) : 0;
-      b.pass = { from: p, to: m, tx, ty, t: 0, air };
+      const pressured = this.nearestOpp(p)[1] < 16;
+      b.pass = { from: p, to: m, tx, ty, t: 0, air, long: d > 170 || !!air, pressured };
+      if (b.pass.long) p.rec.longAtt++;
+      if (pressured) p.rec.prAtt++;
       b.tried = new Set();
       p.rec.pass++;
       p.kickAnim = 0.2;
@@ -735,7 +741,12 @@
       b.pass = null;
       b.shot = { team: t, shooter: p, save, ty, power: attackerQ === 'just', t: 0 };
       if (t === 0 && this.combo('ace') && (p.id === 'leo' || p.id === 'hikaru')) this.comboFx('ace');
-      p.rec.shot++; this.shots[t]++; if (onTarget) this.onTarget[t]++;
+      p.rec.shot++; this.shots[t]++; if (onTarget) { this.onTarget[t]++; p.rec.onT++; gk.rec.faced++; }
+      if (t === 1) {
+        this.ana.shotLane[this.lane(p.y)]++;
+        const nd = this.team(0).filter((q) => !q.gk).sort((a, c) => dist(a.x, a.y, p.x, p.y) - dist(c.x, c.y, p.x, p.y))[0];
+        if (nd && dist(nd.x, nd.y, p.x, p.y) < 40) nd.rec.shotNear++;
+      }
       p.kickAnim = 0.3;
       if (attackerQ === 'just') {
         Sound.play('power_shot'); Game.addShake(4, 0.3); Game.doHitstop(0.08);
@@ -792,7 +803,7 @@
         if (this.combo('ayashii') && (d.id === 'kawataro' || d.id === 'mask')) this.comboFx('ayashii');
         Game.addShake(2, 0.15);
         if (Math.random() < 0.55) {
-          b.owner = d; b.last = d; b.pass = null; d.decT = 0.25; d.rec.touch++;
+          b.owner = d; b.last = d; b.pass = null; d.decT = 0.25; d.rec.touch++; c.rec.lost++;
           this.onPossession(d, c.team, false);
           c.state = 'down'; c.stT = 0.7; c.vx = (c.x - d.x) * 3; c.vy = (c.y - d.y) * 3;
           if (Math.random() < 0.5) this.say(d, d.team === 0 ? pick(['もらった！', 'いただき！', 'よっしゃ！']) : pick(['甘いッ！', 'フン！']), 1);
@@ -804,6 +815,7 @@
         if (d.team === 0) this.tick(d.name + '、ボールを奪った！', '#9fdcff');
       } else {
         d.state = 'down'; d.stT = 0.45; d.vx = (c.x - d.x) * 4; d.vy = (c.y - d.y) * 4;
+        d.rec.beaten++;
         c.rec.dribble++;
         if (c.team === 0 && Math.random() < 0.4) this.say(c, pick(['ほいっと！', 'かわした！']), 0.9);
       }
@@ -944,6 +956,10 @@
         const v = Math.hypot(p.vx, p.vy);
         p.rec.dist += v * dt;
         if (this.state === 'play') {
+          if (this.half === 1 && this.clock < HALF_LEN * 0.3) p.rec.distEarly += v * dt;
+          if (this.half === 2 && this.clock > HALF_LEN * 0.7) p.rec.distLate += v * dt;
+        }
+        if (this.state === 'play') {
           let drain = (0.12 + (v / 100) * 0.55) * (1.45 - p.st.sta / 100) * dt;
           if (p.id === 'ponta' && this.half === 2 && !this.pontaAwake) drain *= 1.35;
           if (this.combo('tofu') && p.team === 0 && (p.id === 'ponta' || p.id === 'morio')) drain *= 0.75;
@@ -1043,7 +1059,8 @@
           const w = cands[0];
           if (w.id === 'mask' && cands.some((q) => q.team !== w.team)) this.traitPop(w, '空中戦の鬼');
           else if (w.id === 'mask' && Math.random() < 0.3) this.traitPop(w, '空中戦の鬼');
-          for (const q of cands.slice(1)) if (q.team !== w.team) { q.state = 'header'; q.stT = 0.4; }
+          w.rec.airW++;
+          for (const q of cands.slice(1)) if (q.team !== w.team) { q.state = 'header'; q.stT = 0.4; q.rec.airL++; }
           this.header(w);
           return;
         }
@@ -1144,6 +1161,9 @@
       const prevTeam = b.last ? b.last.team : -1;
       if (pass && pass.from.team === p.team && pass.from !== p) {
         pass.from.rec.passOk++;
+        if (pass.long) pass.from.rec.longOk++;
+        if (pass.pressured) pass.from.rec.prOk++;
+        if (pass.through) { pass.from.rec.thrOk++; if (p.team === 1) this.ana.behind[this.lane(p.y)]++; }
         this.lastPasser = pass.from;
       } else if (pass && pass.from.team !== p.team) {
         if (p.team === 0 && !p.gk) this.tick(p.name + '、パスカット！', '#9fdcff');
@@ -1341,7 +1361,7 @@
     finish() {
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
-      this.result = { score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
+      this.result = { analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
       if (this.opts.onEnd) this.opts.onEnd(this.result);
     }
 
@@ -1630,6 +1650,82 @@
       text(g, who, x + 4 + tagW / 2, y - 8, { size: 8, align: 'center', color: '#ffffff', outline: t === 0 ? '#10304f' : '#4a1018' });
       text(g, bb.text, x + w / 2, y + 4, { size: 10, align: 'center', color: t === 0 ? '#10304f' : '#7c1e2c' });
       g.globalAlpha = 1;
+    }
+
+    // ---------------- analysis: what the match says about where to train ----------------
+    lane(y) { return y < CY - 60 ? 0 : y > CY + 60 ? 2 : 1; }
+    memo(key, textStr) {
+      if (this.memoKeys[key]) return;
+      this.memoKeys[key] = true;
+      this.memos.push({ key, text: textStr, min: this.minute() });
+      this.tick('ナギサのメモ：' + textStr, '#c8f08a');
+      Sound.play('page', { vol: 0.4 });
+    }
+    homeRecs() { return this.team(0).concat(this.subbedOut).map((p) => p.rec); }
+    sumRec(k) { return this.homeRecs().reduce((a, r) => a + (r[k] || 0), 0); }
+    liveMemo() {
+      const S = (k) => this.sumRec(k);
+      const LANE = ['上サイド', '中央', '下サイド'];
+      if (S('airL') >= 4 && S('airL') > S('airW') * 1.5) this.memo('air', '空中戦で競り負けてます（' + S('airW') + '勝' + S('airL') + '敗）');
+      if (S('longAtt') >= 5 && S('longOk') / S('longAtt') < 0.4) this.memo('long', '長いパスがつながりません（' + S('longOk') + '/' + S('longAtt') + '）');
+      if (S('prAtt') >= 6 && S('prOk') / S('prAtt') < 0.55) this.memo('press', '寄せられるとパスミスが出ます（' + S('prOk') + '/' + S('prAtt') + '）');
+      const bh = this.ana.behind, bi = bh.indexOf(Math.max(...bh));
+      if (bh[bi] >= 2) this.memo('behind', LANE[bi] + 'で裏を取られてます（' + bh[bi] + '回）');
+      if (S('beaten') >= 5) this.memo('beaten', '1対1で何度もかわされてます（' + S('beaten') + '回）');
+      if (S('shot') >= 5 && S('onT') / S('shot') < 0.4) this.memo('shot', 'シュートが枠に飛びません（枠内' + S('onT') + '/' + S('shot') + '）');
+      const tired = this.team(0).filter((p) => !p.gk && p.sta < 25);
+      if (tired.length >= 3) this.memo('tired', tired.map((p) => p.name).slice(0, 3).join('・') + 'がバテてきてます');
+      if (S('lost') >= 5) this.memo('lost', 'ボールを持ったところを狙われてます（奪われ' + S('lost') + '回）');
+    }
+    analyze() {
+      const out = [];
+      const all = this.team(0).concat(this.subbedOut);
+      const S = (k) => this.sumRec(k);
+      const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+      const worst = (fAtt, fOk, min = 2) => all.filter((p) => p.rec[fAtt] >= min).sort((a, c) => (a.rec[fOk] / a.rec[fAtt]) - (c.rec[fOk] / c.rec[fAtt]))[0];
+      const add = (o) => out.push(o);
+      if (S('longAtt') >= 4) {
+        const r = pct(S('longOk'), S('longAtt')), w = worst('longAtt', 'longOk');
+        if (r < 50) add({ sev: 60 - r, cat: 'pas', title: 'ロングパスの精度', value: '成功率 ' + r + '%（' + S('longOk') + '/' + S('longAtt') + '）', who: w && w.name, tip: '長い距離のパス精度（パス）が足りていません。' });
+      }
+      if (S('prAtt') >= 5) {
+        const r = pct(S('prOk'), S('prAtt')), w = worst('prAtt', 'prOk');
+        if (r < 65) add({ sev: 70 - r, cat: 'pas', title: 'プレッシャー下のパス', value: '成功率 ' + r + '%（' + S('prOk') + '/' + S('prAtt') + '）', who: w && w.name, tip: '寄せられた時に慌ててしまう。技術（パス）を上げるか、プレスを回避する戦術を。' });
+      }
+      const aw = S('airW'), al = S('airL');
+      if (aw + al >= 4 && al > aw) add({ sev: (al - aw) * 8 + 10, cat: 'def', title: '空中戦', value: aw + '勝 ' + al + '敗', who: (all.filter((p) => p.rec.airL > 0).sort((a, c) => c.rec.airL - a.rec.airL)[0] || {}).name, tip: 'ハイボールの競り合いに負けている。守備力と体の強さが必要。' });
+      if (S('tackle') >= 5) {
+        const r = pct(S('tackleOk'), S('tackle'));
+        if (r < 40) add({ sev: 45 - r, cat: 'def', title: 'ボール奪取', value: '成功率 ' + r + '%（' + S('tackleOk') + '/' + S('tackle') + '）', who: (worst('tackle', 'tackleOk', 3) || {}).name, tip: '奪いに行っても取り切れていない。守備力（ディフェンス）の強化を。' });
+      }
+      const bh = this.ana.behind, bsum = bh[0] + bh[1] + bh[2];
+      if (bsum >= 2) {
+        const LANE = ['上サイド', '中央', '下サイド'], bi = bh.indexOf(Math.max(...bh));
+        const slow = all.filter((p) => this.role(p) === 'DF' || p.def.pos === 'DF').sort((a, c) => a.st.spd - c.st.spd)[0];
+        add({ sev: bsum * 12, cat: 'spd', title: '裏への対応', value: '裏を取られた ' + bsum + '回（' + LANE[bi] + 'が多い）', who: slow && slow.name, tip: 'DFラインの背後を突かれている。DFのスピードか、ラインを下げる戦術を。' });
+      }
+      if (S('shot') >= 4) {
+        const r = pct(S('onT'), S('shot'));
+        if (r < 50) add({ sev: 55 - r, cat: 'sht', title: 'シュート精度', value: '枠内 ' + r + '%（' + S('onT') + '/' + S('shot') + '）', who: (worst('shot', 'onT', 2) || {}).name, tip: 'チャンスは作れているが枠に飛んでいない。シュート練習を。' });
+      } else if (S('shot') <= 2) add({ sev: 20, cat: 'sht', title: 'シュート数', value: 'わずか ' + S('shot') + '本', who: null, tip: 'ゴール前まで運べていない。攻撃の形（パスやスピード）を見直そう。' });
+      const early = all.reduce((a, p) => a + p.rec.distEarly, 0), late = all.reduce((a, p) => a + p.rec.distLate, 0);
+      if (early > 0 && late > 0) {
+        const drop = Math.round((1 - late / early) * 100);
+        const tired = all.filter((p) => !p.gk && p.rec.distEarly > 0).sort((a, c) => (a.rec.distLate / a.rec.distEarly) - (c.rec.distLate / c.rec.distEarly))[0];
+        if (drop > 12) add({ sev: drop, cat: 'sta', title: '終盤の運動量', value: '走行量が ' + drop + '% ダウン', who: tired && tired.name, tip: '後半の終盤に足が止まっている。スタミナの強化か、早めの交代を。' });
+      }
+      if (S('lost') >= 4) add({ sev: S('lost') * 5, cat: 'spd', title: 'ボールロスト', value: 'タックルで奪われた ' + S('lost') + '回', who: (all.slice().sort((a, c) => c.rec.lost - a.rec.lost)[0] || {}).name, tip: '持ちすぎて奪われている。スピードかパスの判断を上げよう。' });
+      out.sort((a, c) => c.sev - a.sev);
+      // one bright spot
+      const good = [];
+      const thr = all.slice().sort((a, c) => c.rec.thrOk - a.rec.thrOk)[0];
+      if (thr && thr.rec.thrOk >= 2) good.push({ cat: 'pas', title: 'スルーパス', value: thr.name + 'が ' + thr.rec.thrOk + '本成功', who: thr.name, tip: '裏へのパスは武器になっている。' });
+      const air = all.slice().sort((a, c) => c.rec.airW - a.rec.airW)[0];
+      if (air && air.rec.airW >= 3) good.push({ cat: 'def', title: '空中戦の強さ', value: air.name + 'が ' + air.rec.airW + '勝', who: air.name, tip: 'セットプレーやロングボールで生かせる。' });
+      const tk = all.slice().sort((a, c) => c.rec.tackleOk - a.rec.tackleOk)[0];
+      if (tk && tk.rec.tackleOk >= 3) good.push({ cat: 'def', title: 'ボール奪取', value: tk.name + 'が ' + tk.rec.tackleOk + '回奪取', who: tk.name, tip: '守備の要になっている。' });
+      if (this.tstats[0].chainMax >= 8) good.push({ cat: 'pas', title: 'パスワーク', value: '最長 ' + this.tstats[0].chainMax + '本連続', who: null, tip: 'つなぐ力はある。' });
+      return { issues: out.slice(0, 3), good: good[0] || null, memos: this.memos.slice() };
     }
 
     // ---------------- bench panel: team tactic + substitutions ----------------
@@ -2111,6 +2207,12 @@
         g.fillStyle = p.sta > 50 ? '#6cc35a' : p.sta > 25 ? '#ffd24a' : '#e0474c';
         g.fillRect(x0 + 49, y + 3, Math.round(p.sta * 0.44), 4);
       });
+      // Nagisa's notes so far
+      g.fillStyle = '#e8d6ae'; g.fillRect(30, 204, 196, 34);
+      text(g, 'ナギサのメモ', 34, 206, { size: 8, color: '#2f86c4' });
+      const ms = this.memos.slice(-2);
+      if (!ms.length) text(g, '今のところ大きな問題はなし！', 34, 218, { size: 8, color: '#6d4f3a' });
+      ms.forEach((m, i) => E.wrap(g, '・' + m.text, 188, 8).slice(0, 1).forEach((l) => text(g, l, 34, 217 + i * 10, { size: 8, color: '#2a1a24' })));
       // manager talk
       const img = portrait('nagisa', 'normal');
       if (h.phase === 'talk') {
