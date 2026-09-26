@@ -62,7 +62,7 @@ def('オーロラクジラ','light',4,112,100,96,70,{shape:'wide',top:['crown'],
 const EVO={};
 function evo(from,name,flavor){const b=MON[from];const st=k=>Math.round(b.b[k]*1.35);const id=MON.length;
   MON.push({id,name,t:b.t,r:Math.min(4,b.r+1),b:{hp:st('hp'),atk:st('atk'),def:st('def'),spd:st('spd')},art:b.art,flavor,evoFrom:from,ult:b.r===4});
-  EVO[from]={to:id,lv:[0,14,20,26,40][b.r],dup:[0,2,1,1,0][b.r]}}
+  EVO[from]={to:id,lv:[0,19,25,31,45][b.r],dup:[0,2,1,1,0][b.r]}}
 evo(1,'ホムラギツネ','三本の 燃える尾を もつ 炎狐。尾が 一本 増えるたびに 百年 生きると いう。');
 evo(2,'オオダルマ','両目が 入った 福の だるま。そばに いるだけで 家じゅうが ぽかぽか あたたまる。');
 evo(3,'シシオウエン','炎の たてがみを もつ 獅子の王。祠の 門を 千年 守り続けてきた。');
