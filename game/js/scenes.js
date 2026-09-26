@@ -818,8 +818,11 @@
         { who: 'nagisa', expr: 'determined', side: 'right', text: '今週末から「港湾地区リーグ」が開幕します。6チームの総当たり、全5節です。' },
         { who: 'nagisa', expr: 'normal', side: 'right', text: '開幕戦の相手は、隣町の「ヤマオロシ鉄工団」。去年2位の強豪です。' },
         { who: 'otaki', expr: 'surprised', text: '鉄工団だって！？ いきなり大変な相手じゃないか！', fx: 'shake' },
+        { who: 'nagisa', expr: 'sad', side: 'right', text: '正直に言うと……うちは、去年もその前も、ずっとリーグ最下位なんです。' },
+        { who: 'otaki', expr: 'normal', text: '他所のチームからは「港のお遊びクラブ」なんて呼ばれてるくらいさ。悔しいけどね。' },
+        { who: 'nagisa', expr: 'determined', side: 'right', text: 'でも……だからこそです。監督となら、見返してやれる気がするんです！' },
         { who: 'nagisa', expr: 'normal', side: 'right', text: 'シーズンが終わったら移籍市場も開きます。順位がいいほど、商店街からの応援資金も増えるそうです。' },
-        { who: 'otaki', expr: 'determined', text: 'ようし…！ 監督、選手たちのこと、頼んだよ。優勝したらたこ焼き食べ放題だ！' },
+        { who: 'otaki', expr: 'determined', text: 'ようし…！ 監督、選手たちのこと、頼んだよ。舐めてた連中を、一泡吹かせてやろうじゃないか！' },
         { who: 'nagisa', expr: 'happy', side: 'right', text: 'まずはクラブハウスへ行きましょう。みんなを紹介しますね！' },
       ],
       next: () => Hub(true),
@@ -1665,15 +1668,15 @@
 
   const CAPTAIN_LINES = {
     yamaoroshi: [{ who: 'onigawara', expr: 'normal', side: 'right', text: 'ガッハッハ！ 港のお遊びクラブが相手とはな。鉄工団の練習にもならんわ！' }, { who: 'tetsuyama', expr: 'determined', side: 'right', text: '監督、油断は禁物です。…だが、手加減はしない。' }],
-    shiomi: [{ who: 'kaoru', expr: 'happy', side: 'right', text: 'いらっしゃい。今日はうちの「品ぞろえ」、たっぷり見ていってください。' }],
-    chikurin: [{ who: 'tatsumi', expr: 'determined', side: 'right', text: '押忍！ 90分、前から追いかけ回しますんで！ 覚悟してください！' }],
-    yukemuri: [{ who: 'oyuki', expr: 'normal', side: 'right', text: 'ようこそお越しくださいました。…ゴール前では、手加減いたしませんよ。' }],
-    minori: [{ who: 'gonzo', expr: 'happy', side: 'right', text: 'ガハハ！ 今年は豊作だべ。ボールも米俵みてぇに運んでやる！' }],
-    kaiyou: [{ who: 'reon', expr: 'normal', side: 'right', text: '海陽学園の伝統、丁寧なパスワークで崩させてもらいます。' }],
-    tekkyo: [{ who: 'daigo', expr: 'determined', side: 'right', text: 'こっちは就業後もフルパワーだ。県リーグの厳しさ、思い知れ。' }],
-    shirasagi: [{ who: 'shirou', expr: 'normal', side: 'right', text: '…あなた方の噂は聞いている。だが白鷺は静かに、確実に勝つ。' }],
-    kurogane: [{ who: 'kurou', expr: 'normal', side: 'right', text: '始発から終電まで走り続ける。逃げ場はないと思ってくれ。' }],
-    minatomirai: [{ who: 'kai', expr: 'happy', side: 'right', text: 'へえ、地区リーグ上がりが相手か。……退屈させないでくれよ？' }],
+    shiomi: [{ who: 'kaoru', expr: 'happy', side: 'right', text: 'あら、万年最下位さんじゃないですか。今日もうちの「品ぞろえ」、たっぷり見ていってくださいな。' }],
+    chikurin: [{ who: 'tatsumi', expr: 'determined', side: 'right', text: '押忍！ 最下位のチームと聞いて、正直軽く見てました！ でも90分、前から追いかけ回しますんで！ 覚悟してください！' }],
+    yukemuri: [{ who: 'oyuki', expr: 'normal', side: 'right', text: 'ようこそお越しくださいました、最下位のクラブさん。…ゴール前では、手加減いたしませんよ。' }],
+    minori: [{ who: 'gonzo', expr: 'happy', side: 'right', text: 'ガハハ！ 今年も最下位のとこが相手かい。今年は豊作だべ、ボールも米俵みてぇに運んでやる！' }],
+    kaiyou: [{ who: 'reon', expr: 'normal', side: 'right', text: '失礼ながら、格下だとは伺っています。海陽学園の伝統、丁寧なパスワークで崩させてもらいます。' }],
+    tekkyo: [{ who: 'daigo', expr: 'determined', side: 'right', text: '毎年最下位のチームだろう？ こっちは就業後もフルパワーだ。県リーグの厳しさ、思い知れ。' }],
+    shirasagi: [{ who: 'shirou', expr: 'normal', side: 'right', text: '…あなた方の噂は聞いている。負け続けているクラブだと。だが白鷺は静かに、確実に勝つ。' }],
+    kurogane: [{ who: 'kurou', expr: 'normal', side: 'right', text: '最下位相手に手加減する気はない。始発から終電まで走り続ける。逃げ場はないと思ってくれ。' }],
+    minatomirai: [{ who: 'kai', expr: 'happy', side: 'right', text: 'へえ、あの万年最下位が地区リーグ上がりか。……退屈させないでくれよ？' }],
   };
   function leagueName() { return State.tier === 'prefecture' ? '県リーグ' : '港湾地区リーグ'; }
   function tierLabel(t) { return t === 'prefecture' ? '県リーグ' : '地区リーグ'; }
@@ -1699,6 +1702,9 @@
       if (Math.abs(diff) <= 3) L.push({ who: 'nagisa', expr: 'determined', text: '勝ち点差はわずか' + Math.abs(diff) + '。この一戦で順位が動きます。' });
     }
     if (reunion && reunion.length) L.push({ who: 'nagisa', expr: 'sad', text: '相手には、かつての仲間、' + reunion.join('・') + 'がいます。' });
+    if (State.rank() === League.teamsForTier(State.tier).length) {
+      L.push({ who: 'leo', expr: 'determined', text: pick(['万年最下位……上等じゃん。今日、その呼び方終わらせてやるよ。', '誰も期待してねぇみたいだけど、だからこそ気持ちいいんだよな。見返してやろうぜ。', '舐められっぱなしなのも、今日で終わりにする。']) });
+    }
     return L;
   }
   function PreMatch() {

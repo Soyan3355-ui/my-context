@@ -10,6 +10,11 @@
   // tactic tuning knobs (calibrated against docs/tactics_research.md by simulation)
   const TUNE = window.TACTIC_TUNE = Object.assign({ pressErr: 1.2, pressLine: 80, pressMark: 0, presser2: 1, longMF: 70, counterLine: 75, counterGoalSide: 5, possShort: 18 }, window.TACTIC_TUNE || {});
 
+  const LINE_OPTS = [
+    { v: -1, label: '低め（リスク回避）', desc: '裏を取られにくいが、間延びしやすい。' },
+    { v: 0, label: 'バランス', desc: '標準的なライン設定。' },
+    { v: 1, label: '高め（コンパクト）', desc: 'プレスが利くが、ロングボールで裏を取られやすい。' },
+  ];
   const STAT_GRADES = [[80, 'S'], [70, 'A'], [60, 'B'], [50, 'C'], [40, 'D'], [30, 'E'], [0, 'F']];
   const STAT_GRADE_COL = { S: '#ffd24a', A: '#e0474c', B: '#f08a3a', C: '#e8c83a', D: '#6cc35a', E: '#4fb4e8', F: '#8a8496' };
   const goalX = (t) => (t === 0 ? P.x + P.w : P.x);
@@ -47,6 +52,7 @@
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
       this.ace = [this.players.find((p) => p.team === 0 && p.id === 'leo') || null, this.players.find((p) => p.team === 1 && p.id === this.opp.captain) || null];
       this.specialCD = {};
+      this.lineBias = [0, 0]; // -1 deep/risk-averse .. 0 balanced .. 1 high/compact (team 0 only, set via the halftime bench panel)
       this.score = [0, 0];
       this.half = 1; this.clock = 0; this.state = 'intro'; this.stateT = 0;
       this.order = [null, null]; this.kiai = [60, 60];
@@ -497,6 +503,8 @@
       const neutral = [0.14, 0.45], rz = this.realize(t);
       lo = lerp(neutral[0], lo, rz); hi = lerp(neutral[1], hi, rz);
       if (this.tacOf(t) === 'counter' && this.scoreDiff(t) < 0) { lo = neutral[0]; hi = neutral[1]; }
+      // the manager's own dial: a higher, more compact line presses better but leaves more room in behind for long balls
+      if (t === 0 && this.lineBias[0]) { lo += this.lineBias[0] * 0.06; hi += this.lineBias[0] * 0.07; }
       if (attacking) { lo += 0.08; hi += this.tacOf(t) === 'counter' ? 0.06 : 0.12; }
       const ord = this.order[t] ? this.order[t].id : null;
       if (ord === 'attack') { lo += 0.05; hi += 0.06; }
@@ -2059,7 +2067,52 @@
     openHalftime() {
       Sound.bgm('halftime');
       this.h1Snap = { tac: this.tac[0], form: this.form[0], score: this.score.slice(), shots: this.shots.slice(), onTarget: this.onTarget.slice() };
-      this.halftimeUI = { t: 0, sel: 0, phase: 'talk', chosen: null };
+      const report = this.htAnalysis();
+      this.halftimeUI = { t: 0, sel: 0, phase: 'talk', chosen: null, report, opts: this.htBuildOptions(report) };
+    }
+    // a quick data-driven read of the first half, in the same spirit as liveMemo()/analyze()
+    htAnalysis() {
+      const S = (k) => this.sumRec(k);
+      const LANE = ['上サイド', '中央', '下サイド'];
+      const bh = this.ana.behind, bi = bh.indexOf(Math.max(...bh));
+      const sd = this.scoreDiff(0);
+      const cands = [];
+      if (S('prAtt') >= 4 && S('prOk') / S('prAtt') < 0.55) cands.push({ issue: 'press', sev: 4, headline: '相手のプレスにパスを引っかけられています', detail: '寄せられると精度が落ちています（成功' + S('prOk') + '/' + S('prAtt') + '）。' });
+      if (bh[bi] >= 2) cands.push({ issue: 'behind', sev: 4, headline: LANE[bi] + 'の裏を繰り返し取られています', detail: bh[bi] + '回、裏へ抜け出されました。' });
+      if (S('shot') >= 3 && S('onT') / S('shot') < 0.4) cands.push({ issue: 'shots', sev: 3, headline: 'シュートが枠を捉えられていません', detail: '枠内は' + S('onT') + '/' + S('shot') + '本のみです。' });
+      if (this.realize(0) < 0.72) cands.push({ issue: 'tacpoor', sev: 2, headline: '「' + Data.TACTICS[this.tac[0]].name + '」がまだ浸透していません', detail: '実現度' + Math.round((this.realize(0) - 0.5) * 200) + '%と低めです。' });
+      if (sd < 0) cands.push({ issue: 'losing', sev: 3 + Math.abs(sd), headline: 'リードを許しています', detail: (-sd) + '点のビハインドです。' });
+      if (sd > 0) cands.push({ issue: 'winning', sev: 2, headline: 'リードして折り返しました', detail: 'このまま逃げ切りたいところです。' });
+      cands.sort((a, c) => c.sev - a.sev);
+      return cands[0] || { issue: 'neutral', headline: '拮抗した展開です', detail: '大きな綻びは見えません。' };
+    }
+    htBuildOptions(a) {
+      const T = Data.TACTICS, opts = [];
+      if (a.issue === 'press') {
+        opts.push({ id: 'tac', tac: 'possession', label: 'ポゼッションで剥がす', desc: '短くつないで、プレスの矢印をずらしましょう。' });
+        opts.push({ id: 'tac', tac: 'long', label: 'ロングボールで裏へ', desc: '無理につながず、素早く前線へ送りましょう。' });
+      } else if (a.issue === 'behind') {
+        opts.push({ id: 'line', v: -1, label: 'ラインを下げてリスク回避', desc: '裏のスペースを消して、まず失点を防ぎます。' });
+        opts.push({ id: 'tac', tac: 'counter', label: '堅守速攻に変更', desc: '引いて奪って、素早く仕留めます。' });
+      } else if (a.issue === 'shots') {
+        opts.push({ id: 'tac', tac: 'possession', label: 'つないで崩す', desc: '崩してから、質の高い一本を狙います。' });
+        opts.push({ id: 'form', form: 'attack', label: '全員攻撃（4-3-3）に', desc: '前線の人数を増やし、こぼれ球も狙います。' });
+      } else if (a.issue === 'tacpoor') {
+        const best = Object.keys(T).filter((k) => k !== this.tac[0]).sort((x, y) => this.realize(0, y) - this.realize(0, x))[0];
+        opts.push({ id: 'tac', tac: best, label: '「' + T[best].name + '」に変更', desc: '選手たちが慣れている戦術です。' });
+        opts.push({ id: 'keep', label: 'このまま貫く', desc: '今の戦術を信じて続けます。' });
+      } else if (a.issue === 'losing') {
+        opts.push({ id: 'form', form: 'attack', label: '全員攻撃（4-3-3）に', desc: '前がかりに人数をかけます。' });
+        opts.push({ id: 'tac', tac: 'press', label: 'ハイプレスに変更', desc: '高い位置から奪いに行きます。' });
+      } else if (a.issue === 'winning') {
+        opts.push({ id: 'form', form: 'defense', label: 'カウンター布陣（5-3-2）に', desc: 'リードを守り切る形に。' });
+        opts.push({ id: 'tac', tac: 'counter', label: '堅守速攻を継続', desc: '奪ったら素早く仕留めます。' });
+      } else {
+        opts.push({ id: 'keep', label: 'このまま貫く', desc: '大きな問題はなさそうです。' });
+        opts.push({ id: 'form', form: 'balance', label: 'バランス（4-4-2）を保つ', desc: '無理に変えず、様子を見ます。' });
+      }
+      opts.push({ id: 'bench', label: 'ベンチ指示（自分で選ぶ）', desc: '戦術・フォーメーション・選手交代（残り' + this.subsLeft + '）' });
+      return opts;
     }
     updateHalftime(raw) {
       const h = this.halftimeUI;
@@ -2079,28 +2132,26 @@
         if (h.t > 0.6 && (Input.hit('ok') || Input.mouse.clicked || (this.auto && h.t > 2))) this.startSecondHalf();
       }
     }
-    halftimeOptions() {
-      return [
-        { id: 'praise', label: 'ほめてのばす', desc: '全員のスタミナが回復し、少し調子が上がる。' },
-        { id: 'scold', label: '喝を入れる', desc: '気合ゲージが満タンに。ただしスタミナ回復は少なめ。' },
-        { id: 'bench', label: 'ベンチ指示', desc: '戦術の変更・選手交代（残り' + this.subsLeft + '）' },
-      ];
-    }
+    halftimeOptions() { return this.halftimeUI.opts; }
     htRect(i) { return { x: 244, y: 118 + i * 34, w: 220, h: 30 }; }
     chooseHalftime(o) {
       const h = this.halftimeUI;
       Sound.play('select');
       h.chosen = o; h.phase = 'reply'; h.t = 0;
-      if (o.id === 'praise') {
-        for (const p of this.team(0)) p.sta = Math.min(100, p.sta + 45);
-        this.moraleMul[0] = Math.min(1.12, this.moraleMul[0] + 0.05);
-        h.reply = { who: 'ponta', expr: 'happy', text: '監督にほめられたら、腹八分目でも走れるっス！' };
-      } else if (o.id === 'scold') {
-        for (const p of this.team(0)) p.sta = Math.min(100, p.sta + 25);
-        this.kiai[0] = 100;
-        h.reply = { who: 'leo', expr: 'determined', text: '……ッス。後半、オレが決めてやるよ。見てな。' };
+      for (const p of this.team(0)) p.sta = Math.min(100, p.sta + 35);
+      this.kiai[0] = 100;
+      if (o.id === 'tac') {
+        this.setTactic(o.tac);
+        h.reply = { who: 'kazuha', expr: 'determined', text: '了解です。後半は「' + Data.TACTICS[o.tac].name + '」でいきましょう。' };
+      } else if (o.id === 'form') {
+        this.setFormation(o.form);
+        h.reply = { who: 'kazuha', expr: 'determined', text: '了解です。フォーメーションを「' + Data.FORMATIONS[o.form].short + '」に変えましょう。' };
+      } else if (o.id === 'line') {
+        this.setLineBias(o.v);
+        h.reply = { who: 'kazuha', expr: 'determined', text: '了解です。ラインを' + (o.v < 0 ? '下げます' : o.v > 0 ? '上げます' : '普段通りに') + '。' };
+      } else if (o.id === 'keep') {
+        h.reply = { who: 'leo', expr: 'determined', text: '……このままでいい。オレたちを信じろ。' };
       } else {
-        for (const p of this.team(0)) p.sta = Math.min(100, p.sta + 35);
         h.phase = 'talk';
         this.openPanel(true);
       }
@@ -2573,12 +2624,14 @@
     panelField() { return this.team(0).slice().sort((a, c) => (a.gk ? -1 : c.gk ? 1 : a.slot - c.slot)); }
     panelBenchVis() { return 4; } // rows that fit between the header and the confirm/close buttons
     panelRects() {
-      const r = { tacs: [], forms: [], field: [], bench: [] };
+      const r = { tacs: [], forms: [], lines: [], field: [], bench: [] };
       Object.keys(Data.TACTICS).forEach((k, i) => r.tacs.push({ x: 26 + i * 108, y: 42, w: 104, h: 26, k }));
       Object.keys(Data.FORMATIONS).forEach((k, i) => r.forms.push({ x: 26 + i * 108, y: 42, w: 104, h: 26, k }));
+      LINE_OPTS.forEach((o, i) => r.lines.push({ x: 26 + i * 144, y: 42, w: 140, h: 26, v: o.v }));
       if (this.panel && this.panel.fromHalftime) {
-        r.tabTac = { x: 110, y: 24, w: 50, h: 14 };
-        r.tabForm = { x: 164, y: 24, w: 74, h: 14 };
+        r.tabTac = { x: 110, y: 24, w: 42, h: 14 };
+        r.tabForm = { x: 154, y: 24, w: 62, h: 14 };
+        r.tabLine = { x: 218, y: 24, w: 42, h: 14 };
       }
       this.panelField().forEach((p, i) => r.field.push({ x: 24, y: 100 + i * 12, w: 206, h: 12, p }));
       const pn = this.panel, VIS = this.panelBenchVis();
@@ -2600,14 +2653,17 @@
       if (pn.fromHalftime) {
         if (E.clickedIn(r.tabTac)) { pn.mode = 'tac'; Sound.play('cursor'); }
         if (E.clickedIn(r.tabForm)) { pn.mode = 'form'; Sound.play('cursor'); }
+        if (E.clickedIn(r.tabLine)) { pn.mode = 'line'; Sound.play('cursor'); }
         if (pn.mode === 'tac') {
           for (let i = 0; i < 4; i++) if (Input.hit('c' + (i + 1))) this.setTactic(keys[i]);
           r.tacs.forEach((b) => { if (E.clickedIn(b)) this.setTactic(b.k); });
-        } else {
+        } else if (pn.mode === 'form') {
           r.forms.forEach((b) => { if (E.clickedIn(b)) this.setFormation(b.k); });
+        } else {
+          r.lines.forEach((b) => { if (E.clickedIn(b)) this.setLineBias(b.v); });
         }
       } else {
-        r.tacs.forEach((b) => { if (E.clickedIn(b)) { pn.msg = { text: '戦術・フォーメーションの変更はハーフタイムのみ行えます', t: 0 }; Sound.play('cancel'); } });
+        r.tacs.forEach((b) => { if (E.clickedIn(b)) { pn.msg = { text: '戦術・フォーメーション・ラインの変更はハーフタイムのみ行えます', t: 0 }; Sound.play('cancel'); } });
       }
       r.field.forEach((b, i) => { if (E.clickedIn(b)) { if (this.subQueue.some((q) => q.outId === b.p.id)) return; pn.out = pn.out === i ? -1 : i; Sound.play('cursor'); } });
       r.bench.forEach((b) => { if (E.clickedIn(b)) { pn.inn = pn.inn === b.idx ? -1 : b.idx; Sound.play('cursor'); } });
@@ -2645,6 +2701,14 @@
       Sound.play('stamp', { vol: 0.6 });
       this.benchBubble[0] = { text: 'フォーメーション「' + Data.FORMATIONS[k].short + '」に切り替え！', t: 2.4 };
       this.tick('ハマカゼ、フォーメーションを「' + Data.FORMATIONS[k].name + '」に変更。', '#ffd24a');
+    }
+    setLineBias(v) {
+      if (this.lineBias[0] === v) return;
+      this.lineBias[0] = v;
+      Sound.play('stamp', { vol: 0.6 });
+      const o = LINE_OPTS.find((x) => x.v === v);
+      this.benchBubble[0] = { text: v > 0 ? 'ラインを上げてコンパクトに！' : v < 0 ? 'ラインを下げて構えるぞ！' : '普段通りのラインで！', t: 2.4 };
+      this.tick('ハマカゼ、守備ラインを「' + o.label + '」に設定。', '#ffd24a');
     }
     confirmSub() {
       const pn = this.panel, r = this.panelRects();
@@ -2699,6 +2763,8 @@
         text(g, '戦術', r.tabTac.x + r.tabTac.w / 2, r.tabTac.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
         panel(g, r.tabForm.x, r.tabForm.y, r.tabForm.w, r.tabForm.h, pn.mode === 'form' ? 'gold' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
         text(g, 'フォメ', r.tabForm.x + r.tabForm.w / 2, r.tabForm.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
+        panel(g, r.tabLine.x, r.tabLine.y, r.tabLine.w, r.tabLine.h, pn.mode === 'line' ? 'gold' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+        text(g, 'ライン', r.tabLine.x + r.tabLine.w / 2, r.tabLine.y + 3, { size: 7, align: 'center', color: '#2a1a24' });
       } else {
         text(g, '試合は一時停止中（戦術変更はハーフタイムのみ）', 110, 28, { size: 8, color: '#9a8e7a' });
       }
@@ -2717,7 +2783,7 @@
         });
         const mu0 = Data.MATCHUP[this.tac[0]][this.tac[1]];
         text(g, Data.TACTICS[this.tac[0]].desc + '　対' + Data.TACTICS[this.tac[1]].name + '：' + mu0[1], 26, 73, { size: 8, color: '#4a2a10' });
-      } else {
+      } else if (pn.mode === 'form') {
         r.forms.forEach((b, i) => {
           const F = Data.FORMATIONS[b.k], cur = this.form[0] === F, hv = E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h });
           panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
@@ -2725,6 +2791,15 @@
           text(g, F.short, b.x + 8, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
         });
         text(g, this.form[0].desc, 26, 73, { size: 8, color: '#4a2a10' });
+      } else {
+        r.lines.forEach((b) => {
+          const cur = this.lineBias[0] === b.v, hv = E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h });
+          const o = LINE_OPTS.find((x) => x.v === b.v);
+          panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+          text(g, o.label, b.x + 8, b.y + 8, { size: 9, color: '#2a1a24' });
+        });
+        const cur = LINE_OPTS.find((x) => x.v === this.lineBias[0]);
+        text(g, cur.desc, 26, 73, { size: 8, color: '#4a2a10' });
       }
       g.fillStyle = '#d9c39a'; g.fillRect(24, 84, W - 48, 1);
       text(g, 'ピッチ上（交代する選手）', 24, 88, { size: 8, color: '#6d4f3a' });
@@ -3153,8 +3228,8 @@
       if (h.phase === 'talk') {
         if (img) g.drawImage(img, 244, 64, 48, 48);
         panel(g, 296, 66, 168, 44, 'sky');
-        const lines = E.wrap(g, '監督、後半に向けてみんなに一言お願いします！', 156, 9);
-        lines.forEach((l, i) => text(g, l, 302, 72 + i * 12, { size: 9, color: '#10182e' }));
+        const lines = E.wrap(g, h.report.headline + '。' + h.report.detail, 156, 8);
+        lines.slice(0, 3).forEach((l, i) => text(g, l, 302, 70 + i * 11, { size: 8, color: '#10182e' }));
         const opts = this.halftimeOptions();
         opts.forEach((o, i) => {
           const r = this.htRect(i);
