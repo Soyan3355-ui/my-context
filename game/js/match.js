@@ -77,7 +77,7 @@
       return {
         def, id: def.id, name: def.name, team, gk: def.pos === 'GK', slot: def.pos === 'GK' ? -1 : idx - 1,
         st, x: CX, y: CY, vx: 0, vy: 0, tx: CX, ty: CY, face: team === 0 ? 'right' : 'left', animT: Math.random() * 4,
-        sta: 100, state: '', stT: 0, decT: 0, tackCD: 0, bubble: null, cheer: 0, runTarget: null,
+        sta: 100, state: '', stT: 0, decT: 0, tackCD: 0, bubble: null, cheer: 0, runTarget: null, tiredFxT: rand(1, 3), tiredSaid: 0,
         rec: { pass: 0, passOk: 0, shot: 0, goal: 0, tackle: 0, tackleOk: 0, save: 0, dist: 0, touch: 0, assist: 0, dribble: 0,
           longAtt: 0, longOk: 0, prAtt: 0, prOk: 0, thrAtt: 0, thrOk: 0, airW: 0, airL: 0, lost: 0, beaten: 0, onT: 0, faced: 0, distEarly: 0, distLate: 0, shotNear: 0 },
       };
@@ -1056,11 +1056,19 @@
         const nd = this.team(0).filter((q) => !q.gk).sort((a, c) => dist(a.x, a.y, p.x, p.y) - dist(c.x, c.y, p.x, p.y))[0];
         if (nd && dist(nd.x, nd.y, p.x, p.y) < 40) nd.rec.shotNear++;
       }
-      p.kickAnim = 0.3;
+      // a hard shot snaps out faster and hits harder, even outside the JUST-timing flourish
+      const pw = header ? clamp((sht - 30) / 60, 0, 1) : clamp((power - 260) / 170, 0, 1);
+      p.kickAnim = clamp(0.34 - pw * 0.12, 0.18, 0.34);
       if (attackerQ === 'just') {
         Sound.play('power_shot'); Game.addShake(4, 0.3); Game.doHitstop(0.08);
         this.fx.burst(b.x, b.y, 18, { color: ['#9fdcff', '#ffffff', '#ffd24a'], speedMin: 40, speedMax: 140, lifeMin: 0.2, lifeMax: 0.5, size: 2, kind: 'star', drag: 0.05 });
-      } else Sound.play(header ? 'kick' : 'shoot', { pan: this.pan(p.x) });
+      } else {
+        Sound.play(header ? 'kick' : 'shoot', { pan: this.pan(p.x), pitch: 1.1 - pw * 0.22 });
+        if (pw > 0.35) {
+          Game.addShake(1 + pw * 2, 0.1 + pw * 0.08); Game.doHitstop(pw * 0.03);
+          this.fx.burst(b.x, b.y, Math.round(3 + pw * 9), { color: pw > 0.75 ? ['#ffd24a', '#ffffff'] : ['#ffffff', '#9fdcff'], speedMin: 30 + pw * 40, speedMax: 70 + pw * 90, lifeMin: 0.15, lifeMax: 0.25 + pw * 0.2, size: 1 + Math.round(pw * 2), kind: 'star', drag: 0.06 });
+        }
+      }
       if (header) this.tick((t === 0 ? '' : '') + p.name + '、ヘディングシュート！', t === 0 ? '#9fdcff' : '#ff9a8a');
       else if (t === 0) this.tick(p.name + '、シュート！', '#9fdcff'); else this.tick(p.name + 'のシュート！', '#ff9a8a');
       this.crowdHype = 0.8;
@@ -1518,8 +1526,19 @@
           else if (p === this.presser2 || p === this.pressMark || (this.tacOf(p.team) === 'press' && p.run && this.carrierTeam() !== p.team)) drain *= 2.2;
           else if (this.tacOf(p.team) === 'press') drain *= 1.4;
           p.sta = Math.max(0, p.sta - drain * 1.15);
+          // fatigue tells: a breathless line the first time it gets bad, then sweat while it stays low
+          if (p.sta < 32 && p.tiredSaid < 1) { p.tiredSaid = 1; this.say(p, pick(['ハァ…ハァ…', 'きつい…', '足が…重い…']), 1.3); }
+          else if (p.sta < 14 && p.tiredSaid < 2) { p.tiredSaid = 2; this.say(p, pick(['もう限界…', 'まだ…いける…！']), 1.3); }
+          if (p.sta < 34) {
+            p.tiredFxT -= dt;
+            if (p.tiredFxT <= 0) {
+              p.tiredFxT = rand(1.6, 2.6) * (p.sta < 16 ? 0.6 : 1);
+              this.fx.add({ x: p.x + rand(-2, 2), y: p.y - 22, vx: rand(-3, 3), vy: rand(6, 12), g: 14, life: 0.55, size: 2, color: 'rgba(159,220,255,0.85)', kind: 'rect', shrink: true });
+            }
+          } else p.tiredSaid = 0;
         }
-        p.animT += dt * (v / 9);
+        // a tired player's stride looks heavier, even before their top speed drops much
+        p.animT += dt * (v / 9) * (p.sta < 16 ? 0.55 : p.sta < 34 ? 0.75 : 1);
         if (v > 8) {
           if (Math.abs(p.vx) > Math.abs(p.vy) * 0.8) p.face = p.vx > 0 ? 'right' : 'left';
           else p.face = p.vy < 0 ? 'up' : 'down';
@@ -1574,8 +1593,9 @@
       }
       const fr = Math.exp((b.z > 0 ? -0.25 : -1.25) * dt);
       b.vx *= fr; b.vy *= fr;
-      if (sp > 230 && Math.random() < 0.8) {
-        this.fx.add({ x: b.x, y: b.y - b.z, vx: rand(-8, 8), vy: rand(-8, 8), life: 0.25, size: b.shot && b.shot.power ? 3 : 2, color: b.shot && b.shot.power ? pick(['#ffd24a', '#9fdcff', '#ffffff']) : 'rgba(255,255,255,0.7)' });
+      if (sp > 180 && Math.random() < 0.35 + clamp((sp - 180) / 260, 0, 1) * 0.5) {
+        const hot = sp > 340;
+        this.fx.add({ x: b.x, y: b.y - b.z, vx: rand(-8, 8), vy: rand(-8, 8), life: 0.25, size: b.shot && b.shot.power ? 3 : hot ? 2.5 : 2, color: b.shot && b.shot.power ? pick(['#ffd24a', '#9fdcff', '#ffffff']) : hot ? 'rgba(255,180,70,0.85)' : 'rgba(255,255,255,0.6)' });
       }
       if (b.pass) { b.pass.t += dt; if (b.pass.t > 2.4) b.pass = null; }
       if (b.shot) b.shot.t += dt;
@@ -2305,7 +2325,10 @@
       if (frame === 'stand') frame = 'walk1';
       img = Art.sprite(L, dir, frame);
       const jump = p.cheer > 0 ? Math.round(Math.abs(Math.sin(Game.time * 10 + p.x)) * 4) : 0;
-      g.drawImage(img, x - 8, y - 21 - jump);
+      // exhausted players sag a little and their idle stance droops, breathing hard
+      const tired = p.sta < 34 && p.cheer <= 0 && p.state !== 'header';
+      const sag = tired ? (p.sta < 16 ? 2 : 1) + (p.moving ? 0 : Math.round(Math.abs(Math.sin(Game.time * 3 + p.x)) * (p.sta < 16 ? 2 : 1))) : 0;
+      g.drawImage(img, x - 8, y - 21 - jump + sag);
       // stamina warning
       if (p.team === 0 && p.sta < 25 && this.state === 'play' && Math.floor(Game.time * 3) % 2) {
         g.fillStyle = '#9fdcff'; g.fillRect(x + 5, y - 22, 1, 2); g.fillRect(x + 5, y - 19, 1, 1);
