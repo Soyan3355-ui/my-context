@@ -26,7 +26,7 @@
       const table = {};
       for (const id of League.teamsForTier(this.tier)) table[id] = { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 };
       this.season = { week: 0, rounds: League.fixtures(League.teamsForTier(this.tier)), table, results: [], log: [] };
-      this.budget = 60; this.income = 0;
+      this.budget = 45; this.income = 0;
       this.morale = {}; this.benchWeeks = {}; this.bonds = {};
       for (const p of this.roster) { this.morale[p.id] = 62; this.benchWeeks[p.id] = 0; }
       for (const a of this.roster) for (const b of this.roster) if (a.id < b.id) this.bonds[a.id + '|' + b.id] = 50;
@@ -35,6 +35,7 @@
       this.setplay = { unlocked: [], ck: 'std', fk: 'std', lv: 0, prog: 0 };
       this.seasonNo = 1; this.history = []; this.clubMods = {}; this.extraFA = []; this.listed = null; this.bought = [];
       this.h2h = {}; this.lastSeasonRanks = {}; this.promo = null;
+      this.identity = null;
       if (typeof applyClubs === 'function') applyClubs();
     },
     nextSetplay() { return Data.SETPLAY_UNLOCK.find((k) => !this.setplay.unlocked.includes(k)); },
@@ -77,7 +78,7 @@
   const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
-    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo'];
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -832,8 +833,65 @@
         { who: 'otaki', expr: 'determined', text: 'ようし…！ 監督、選手たちのこと、頼んだよ。舐めてた連中を、一泡吹かせてやろうじゃないか！' },
         { who: 'nagisa', expr: 'happy', side: 'right', text: 'まずはクラブハウスへ行きましょう。みんなを紹介しますね！' },
       ],
-      next: () => Hub(true),
+      next: () => TeamPolicy(true),
     });
+  }
+
+  // ---------------- TEAM POLICY: the manager decides what kind of club this is ----------------
+  const IDENTITIES = {
+    speed: { name: 'スピード重視', stat: 'spd', desc: '走力とスピードで圧倒する。運動量で試合を支配する。', trainHint: '砂浜ダッシュ', signHint: '足の速い選手' },
+    power: { name: 'フィジカル重視', stat: 'def', desc: '当たり負けしない、堅い守備を土台にする。', trainHint: '鳥かごパス回し', signHint: '守備の堅い選手' },
+    technique: { name: 'テクニック重視', stat: 'pas', desc: 'パスをつないで崩す、技巧派を目指す。', trainHint: '鳥かごパス回し', signHint: 'パス精度の高い選手' },
+    finish: { name: '得点力重視', stat: 'sht', desc: '決定力で勝ち切る、一撃必殺のチームにする。', trainHint: 'シュート練習', signHint: 'シュート力のある選手' },
+  };
+  function TeamPolicy(first) {
+    const s = { t: 0, menu: null, confirmed: null };
+    s.enter = () => { Sound.bgm('halftime'); Sound.crowd(0); };
+    const items = () => Object.keys(IDENTITIES).map((k) => {
+      const I = IDENTITIES[k];
+      return { id: k, label: I.name + (State.identity === k ? '（現在の方針）' : ''), sub: I.desc };
+    });
+    s.update = (dt) => {
+      s.t += dt;
+      if (!s.menu) {
+        s.menu = new Menu(items(), W / 2 - 150, 96, 300, 30, 4);
+        s.menu.lock = 0.2;
+      }
+      if (s.confirmed) {
+        if (s.t2 === undefined) s.t2 = 0; s.t2 += dt;
+        if (s.t2 > 0.6 && (okPressed() || (State.auto && s.t2 > 1.6))) {
+          Sound.play('select');
+          Game.goto(first ? Hub(true) : Hub(), 'stripe');
+        }
+        return;
+      }
+      if (State.auto && s.t > 1) { s.menu.sel = 0; Input.pressed.ok = true; }
+      const r = s.menu.update(dt);
+      if (!r) return;
+      const changed = State.identity !== r.id;
+      State.identity = r.id;
+      s.confirmed = { changed, I: IDENTITIES[r.id] };
+      Sound.play('levelup');
+    };
+    s.draw = (g) => {
+      g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
+      panel(g, W / 2 - 160, 8, 320, 30, 'dark');
+      text(g, 'チームの方針', W / 2, 14, { size: 14, align: 'center', color: '#ffd24a' });
+      text(g, first ? '監督、どんなチームを目指しますか？' : '方針を見直しますか？（今は「' + (State.identity ? IDENTITIES[State.identity].name : '未定') + '」）', W / 2, 46, { size: 9, align: 'center', color: '#c9d6e6' });
+      if (!s.confirmed) s.menu.draw(g);
+      else {
+        const I = s.confirmed.I;
+        panel(g, W / 2 - 160, 90, 320, 130, 'gold');
+        text(g, '方針：' + I.name + 'に決定！', W / 2, 100, { size: 13, align: 'center', color: '#2a1a24' });
+        wrap(g, I.desc, 280, 9).forEach((l, i) => text(g, l, W / 2, 122 + i * 12, { size: 9, align: 'center', color: '#4a2a10' }));
+        text(g, '練習：「' + I.trainHint + '」がおすすめです', W / 2, 160, { size: 9, align: 'center', color: '#10304f' });
+        text(g, '移籍市場：「' + I.signHint + '」を優先的に紹介します', W / 2, 174, { size: 9, align: 'center', color: '#10304f' });
+        text(g, '（練習の成長が少し伸びやすくなります）', W / 2, 196, { size: 8, align: 'center', color: '#6d4f3a' });
+        if (s.t2 > 0.6) text(g, 'Z / クリック：すすむ', W / 2, 240, { size: 9, align: 'center', color: '#2f86c4', alpha: blink() });
+      }
+    };
+    return s;
   }
 
   // ---------------- HUB ----------------
@@ -893,6 +951,7 @@
       for (const pp of HUB_PEOPLE) { const r = { x: pp.x - 2, y: pp.y - 44, w: 36, h: 46 }; if (E.hoverIn(r)) s.hover = pp; }
       if (s.hover && Input.mouse.clicked && Input.mouse.x < 300) {
         const h = s.hover;
+        if (h.id === 'poster') { Sound.play('select'); Game.goto(TeamPolicy(false), 'stripe'); return; }
         const idx = (State.talked[h.id] || 0) % h.lines.length;
         State.talked[h.id] = (State.talked[h.id] || 0) + 1;
         Sound.play('select');
@@ -1092,7 +1151,8 @@
     const s = { t: 0, phase: 'pick', menu: null, tries: [], meter: null, fx: new Particles(), results: [], rt: 0, pick: null, reveal: 0, statAnim: 0 };
     s.enter = () => {
       Sound.bgm('hub');
-      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label, sub: tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub, tr })), 250, 54, 214, 30, 3);
+      const onPolicy = (tr) => State.identity && tr.gains[IDENTITIES[State.identity].stat] && Object.keys(tr.gains).sort((a, c) => tr.gains[c] - tr.gains[a])[0] === IDENTITIES[State.identity].stat;
+      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label + (onPolicy(tr) ? '★' : ''), sub: (tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub) + (onPolicy(tr) ? '（方針に合う）' : ''), tr })), 250, 54, 214, 30, 3);
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
     s.update = (dt) => {
@@ -1165,7 +1225,8 @@
           ups.tac = v;
         }
         for (const k in s.pick.gains) {
-          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 0.5;
+          const onPolicy = State.identity && IDENTITIES[State.identity].stat === k;
+          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 0.5 * (onPolicy ? 1.2 : 1);
           v = Math.max(1, Math.round(v + rand(-0.3, 0.3)));
           if (mult < 1 && Math.random() < 0.5) v = 0;
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
@@ -2486,18 +2547,36 @@
     { from: 'shiomi', id: 'kaoru', fee: 30, sal: 15, reason: '店を息子に任せ、上を目指したい' },
   ];
   function TransferMarket() {
-    const s = { t: 0, phase: 'leave', idx: 0, sel: 0, log: [] };
+    const s = { t: 0, phase: 'leave', idx: 0, tab: 'sign', sel: 0, log: [], rejected: {} };
     // players asking to leave: benched too long, or ready to hang up the boots
     const reqs = State.roster.filter((p) => (State.morale[p.id] ?? 60) < 40 || (p.age && p.age >= 80)).map((p) => ({ p, why: p.age >= 80 ? '「そろそろ、引退を考えとる」' : '「もっと試合に出たい。移籍させてほしい」' }));
+    const policyStat = () => State.identity ? IDENTITIES[State.identity].stat : null;
+    const bestStat = (d) => STAT_KEYS.slice().sort((a, c) => d.stats[c] - d.stats[a])[0];
+    const onPolicy = (d) => !!policyStat() && bestStat(d) === policyStat();
     const cands = () => State.freeAgents.filter((id) => faDef(id)).map((id) => ({ def: faDef(id), fee: 0, sal: faDef(id).sal, from: null, reason: (State.departed.some((d) => d.id === id) ? '古巣に戻りたがっている' : 'フリー。入団を希望している') }))
-      .concat((State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })));
+      .concat((State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })))
+      .filter((c) => !s.rejected[c.def.id])
+      .sort((a, c) => (onPolicy(c.def) ? 1 : 0) - (onPolicy(a.def) ? 1 : 0));
+    // a negotiation can fall through: free agents already want in, but poaching from a rival is a real gamble
+    const negFee = 4;
+    const signChance = (c) => {
+      const avg = avgStat(c.def);
+      if (!c.from) return clamp(0.92 - Math.max(0, avg - 45) / 300, 0.55, 0.92);
+      return clamp(0.78 - Math.max(0, avg - 40) / 130, 0.28, 0.78);
+    };
+    const chanceLabel = (p) => (p >= 0.7 ? { t: '有力', c: '#3f8a3e' } : p >= 0.45 ? { t: '五分五分', c: '#d48a1e' } : { t: '厳しい交渉', c: '#e0474c' });
+    const canRelease = (p) => {
+      if (State.roster.length <= 11) return 'これ以上、人数を減らせません';
+      if (p.pos === 'GK' && State.roster.filter((q) => q.pos === 'GK').length <= 1) return 'GKがいなくなってしまいます';
+      return null;
+    };
     const destinationFor = (p) => {
       const avg = (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5;
       if ((p.age && p.age >= 55)) return { kind: 'staff', text: p.name + 'はクラブに残り、ジュニアチームのコーチになった。「ときどき、トップの練習も見に来るぞ」' };
       if (avg >= 44) { const c = pick(League.clubsForTier(State.tier)); return { kind: 'rival', club: c.id, text: p.name + 'は' + c.name + 'へ移籍した。来季、敵として再会する…。' }; }
       return { kind: 'away', text: p.name + 'は町を出た。「いつか、もっとうまくなって戻ってくるよ」' };
     };
-    s.enter = () => { Sound.bgm('hub'); Save.write('market'); if (!reqs.length) s.phase = 'sign'; };
+    s.enter = () => { Sound.bgm('hub'); Save.write('market'); if (!reqs.length) s.phase = 'market'; };
     const cardRect = (i) => ({ x: 10, y: 60 + (i - s.off) * 30, w: 200, h: 28 });
     s.off = 0;
     const VIS = 6;
@@ -2512,7 +2591,7 @@
           if (keep) { if (State.budget < keepCost) { Sound.play('cancel'); s.flash = { text: '予算が足りない', t: 0 }; return; } State.budget -= keepCost; State.morale[rq.p.id] = 60; s.log.push(rq.p.name + 'を引き止めた（-' + keepCost + '万円）'); Sound.play('select'); }
           else {
             const gks = State.roster.filter((q) => q.pos === 'GK').length;
-            if (State.roster.length <= 11 || (rq.p.pos === 'GK' && gks <= 1)) { State.morale[rq.p.id] = 45; s.log.push(rq.p.name + 'は「' + (rq.p.pos === 'GK' && gks <= 1 ? 'GKがいなくなる' : '人数が足りない') + 'なら、もう1年だけ」と残ってくれた'); Sound.play('page'); s.idx++; if (s.idx >= reqs.length) s.phase = 'sign'; return; }
+            if (State.roster.length <= 11 || (rq.p.pos === 'GK' && gks <= 1)) { State.morale[rq.p.id] = 45; s.log.push(rq.p.name + 'は「' + (rq.p.pos === 'GK' && gks <= 1 ? 'GKがいなくなる' : '人数が足りない') + 'なら、もう1年だけ」と残ってくれた'); Sound.play('page'); s.idx++; if (s.idx >= reqs.length) s.phase = 'market'; return; }
             const d = destinationFor(rq.p);
             State.roster = State.roster.filter((q) => q !== rq.p); State.lineup = State.lineup.map((id) => (id === rq.p.id ? null : id));
             State.departed.push({ id: rq.p.id, name: rq.p.name, dest: d.kind, club: d.club, season: State.seasonNo, p: JSON.parse(JSON.stringify(rq.p)) });
@@ -2521,32 +2600,64 @@
             s.log.push(d.text); Sound.play('page');
           }
           s.idx++;
-          if (s.idx >= reqs.length) s.phase = 'sign';
+          if (s.idx >= reqs.length) s.phase = 'market';
         };
         if (State.auto && s.t > 1) { act(false); return; }
         if (Input.hit('left') || Input.hit('c1') || E.clickedIn({ x: 250, y: 200, w: 106, h: 24 })) act(true);
         else if (Input.hit('right') || Input.hit('c2') || E.clickedIn({ x: 360, y: 200, w: 106, h: 24 })) act(false);
         return;
       }
-      if (s.phase === 'sign') {
-        const list = cands();
+      if (s.phase === 'market') {
+        const tabSignR = { x: 10, y: 32, w: 100, h: 20 }, tabRelR = { x: 114, y: 32, w: 100, h: 20 };
+        if (E.clickedIn(tabSignR) && s.tab !== 'sign') { s.tab = 'sign'; s.sel = 0; s.off = 0; Sound.play('cursor'); }
+        if (E.clickedIn(tabRelR) && s.tab !== 'release') { s.tab = 'release'; s.sel = 0; s.off = 0; Sound.play('cursor'); }
+        if (Input.hit('c3')) { s.tab = s.tab === 'sign' ? 'release' : 'sign'; s.sel = 0; s.off = 0; Sound.play('cursor'); }
+        const list = s.tab === 'sign' ? cands() : State.roster;
         if (Input.hit('up')) { s.sel = (s.sel + list.length) % (list.length + 1); Sound.play('cursor'); }
         if (Input.hit('down')) { s.sel = (s.sel + 1) % (list.length + 1); Sound.play('cursor'); }
         scroll(list.length);
         list.forEach((c, i) => { if (i >= s.off && i < s.off + VIS && E.clickedIn(cardRect(i))) { s.sel = i; Sound.play('cursor'); } });
         const doneR = { x: 10, y: 60 + Math.min(VIS, list.length) * 30 + 4, w: 200, h: 22 };
         if (E.clickedIn(doneR)) s.sel = list.length;
-        const c = list[s.sel];
-        const buy = () => {
-          const cost = c.fee + c.sal;
-          if (State.roster.length >= SQUAD_MAX) { s.flash = { text: '選手枠がいっぱい（' + SQUAD_MAX + '人）', t: 0 }; Sound.play('cancel'); return; }
-          if (State.budget < cost) { s.flash = { text: '予算が足りない', t: 0 }; Sound.play('cancel'); return; }
-          State.budget -= cost; signPlayer(c.def, c.from); s.log.push(c.def.name + 'を獲得（-' + cost + '万円）'); Sound.play('levelup'); Game.doFlash(0.3);
-          s.sel = 0;
-        };
         if (State.auto && s.t > 1) { s.phase = 'summary'; s.t = 0; return; }
-        if (c && (Input.hit('ok') || E.clickedIn({ x: 250, y: 226, w: 214, h: 24 }))) buy();
-        else if (!c && (Input.hit('ok') || E.clickedIn(doneR))) { s.phase = 'summary'; s.t = 0; Sound.play('select'); }
+        if (s.tab === 'sign') {
+          const c = list[s.sel];
+          const attempt = () => {
+            if (State.roster.length >= SQUAD_MAX) { s.flash = { text: '選手枠がいっぱい（' + SQUAD_MAX + '人）', t: 0 }; Sound.play('cancel'); return; }
+            if (State.budget < negFee) { s.flash = { text: '予算が足りない（交渉費用）', t: 0 }; Sound.play('cancel'); return; }
+            State.budget -= negFee;
+            const chance = signChance(c);
+            if (Math.random() < chance) {
+              const cost = c.fee + c.sal;
+              if (State.budget < cost) { s.rejected[c.def.id] = true; s.log.push(c.def.name + 'との交渉はまとまったが、予算が足りず破談に…'); s.flash = { text: '交渉成立も、予算不足で破談…', t: 0 }; Sound.play('cancel'); return; }
+              State.budget -= cost; signPlayer(c.def, c.from);
+              s.log.push(c.def.name + 'の獲得に成功！（交渉費+移籍金 計' + (cost + negFee) + '万円）'); Sound.play('levelup'); Game.doFlash(0.3);
+            } else {
+              s.rejected[c.def.id] = true;
+              s.log.push(pick([c.def.name + 'との交渉は決裂した…', c.def.name + 'は他クラブへの加入を決めた', c.def.name + 'から「今回は見送りたい」と返事が来た']));
+              Sound.play('cancel');
+            }
+            s.sel = 0;
+          };
+          if (c && (Input.hit('ok') || E.clickedIn({ x: 250, y: 238, w: 214, h: 24 }))) attempt();
+          else if (!c && (Input.hit('ok') || E.clickedIn(doneR))) { s.phase = 'summary'; s.t = 0; Sound.play('select'); }
+        } else {
+          const p = list[s.sel];
+          const release = () => {
+            const err = canRelease(p);
+            if (err) { s.flash = { text: err, t: 0 }; Sound.play('cancel'); return; }
+            const d = destinationFor(p);
+            State.roster = State.roster.filter((q) => q !== p);
+            State.lineup = State.lineup.map((id) => (id === p.id ? null : id));
+            State.departed.push({ id: p.id, name: p.name, dest: d.kind, club: d.club, season: State.seasonNo, p: JSON.parse(JSON.stringify(p)) });
+            fillLineup();
+            if (d.kind === 'staff') State.staff.push(p.id);
+            s.log.push(d.text); Sound.play('page');
+            s.sel = 0;
+          };
+          if (p && (Input.hit('ok') || E.clickedIn({ x: 250, y: 238, w: 214, h: 24 }))) release();
+          else if (!p && (Input.hit('ok') || E.clickedIn(doneR))) { s.phase = 'summary'; s.t = 0; Sound.play('select'); }
+        }
         return;
       }
       if (s.phase === 'summary' && s.t > 1 && (okPressed() || (State.auto && s.t > 2))) Game.goto(Credits(), 'iris');
@@ -2573,32 +2684,64 @@
         panel(g, 250, 200, 106, 24, E.hoverIn({ x: 250, y: 200, w: 106, h: 24 }) ? 'gold' : 'sky'); text(g, '← 引き止める', 303, 206, { size: 9, align: 'center', color: '#10304f' });
         panel(g, 360, 200, 106, 24, E.hoverIn({ x: 360, y: 200, w: 106, h: 24 }) ? 'gold' : 'crimson'); text(g, '送り出す →', 413, 206, { size: 9, align: 'center', color: '#ffffff' });
         if (s.flash) text(g, s.flash.text, 250, 232, { size: 9, color: '#e0474c' });
-      } else if (s.phase === 'sign') {
-        const list = cands();
-        text(g, '獲得候補', 12, 40, { size: 10, color: '#9fdcff' });
-        if (s.off > 0) text(g, '▲', 204, 48, { size: 8, color: '#9fdcff' });
-        if (s.off + VIS < list.length) text(g, '▼ ほか' + (list.length - s.off - VIS) + '人', 206, 40, { size: 8, align: 'right', color: '#9fdcff' });
+      } else if (s.phase === 'market') {
+        const list = s.tab === 'sign' ? cands() : State.roster;
+        const tabSignR = { x: 10, y: 34, w: 100, h: 20 }, tabRelR = { x: 114, y: 34, w: 100, h: 20 };
+        panel(g, tabSignR.x, tabSignR.y, tabSignR.w, tabSignR.h, s.tab === 'sign' ? 'gold' : 'dark');
+        text(g, '獲得候補', tabSignR.x + 50, tabSignR.y + 5, { size: 9, align: 'center', color: s.tab === 'sign' ? '#2a1a24' : '#ffffff' });
+        panel(g, tabRelR.x, tabRelR.y, tabRelR.w, tabRelR.h, s.tab === 'release' ? 'gold' : 'dark');
+        text(g, '自チーム（放出）', tabRelR.x + 50, tabRelR.y + 5, { size: 9, align: 'center', color: s.tab === 'release' ? '#2a1a24' : '#ffffff' });
+        text(g, State.identity ? 'チーム方針：' + IDENTITIES[State.identity].name : 'チーム方針：未定', 226, 39, { size: 8, color: '#ffd24a' });
+        if (s.off > 0) text(g, '▲', 204, 54, { size: 8, color: '#9fdcff' });
+        if (s.off + VIS < list.length) text(g, '▼ ほか' + (list.length - s.off - VIS) + '人', 206, 46, { size: 8, align: 'right', color: '#9fdcff' });
         list.forEach((c, i) => {
           if (i < s.off || i >= s.off + VIS) return;
           const r = cardRect(i), sel = s.sel === i;
           panel(g, r.x + (sel ? 4 : 0), r.y, r.w, r.h, sel ? 'gold' : 'paper');
-          g.drawImage(Art.sprite(c.def.look, 'down', 'walk1'), r.x + 4 + (sel ? 4 : 0), r.y + 3);
-          text(g, c.def.name + '　' + c.def.pos, r.x + 24 + (sel ? 4 : 0), r.y + 3, { size: 9, color: '#2a1a24' });
-          text(g, (c.from ? League.clubById(c.from).short + 'から' : 'フリー') + '　' + (c.fee + c.sal) + '万円', r.x + 24 + (sel ? 4 : 0), r.y + 15, { size: 8, color: '#6d4f3a' });
+          const look = s.tab === 'sign' ? c.def.look : c.look;
+          g.drawImage(Art.sprite(look, 'down', 'walk1'), r.x + 4 + (sel ? 4 : 0), r.y + 3);
+          if (s.tab === 'sign') {
+            text(g, c.def.name + '　' + c.def.pos + (onPolicy(c.def) ? '★' : ''), r.x + 24 + (sel ? 4 : 0), r.y + 3, { size: 9, color: '#2a1a24' });
+            text(g, (c.from ? League.clubById(c.from).short + 'から' : 'フリー') + '　' + (c.fee + c.sal) + '万円', r.x + 24 + (sel ? 4 : 0), r.y + 15, { size: 8, color: '#6d4f3a' });
+          } else {
+            const leaving = reqs.some((rq) => rq.p === c);
+            text(g, c.name + '　' + c.pos + (leaving ? '（退団希望）' : ''), r.x + 24 + (sel ? 4 : 0), r.y + 3, { size: 9, color: leaving ? '#e0474c' : '#2a1a24' });
+            text(g, '年齢' + (c.age || '?') + '　やる気' + (State.morale[c.id] ?? 60), r.x + 24 + (sel ? 4 : 0), r.y + 15, { size: 8, color: '#6d4f3a' });
+          }
         });
         const doneR = { x: 10, y: 60 + Math.min(VIS, list.length) * 30 + 4, w: 200, h: 22 };
         panel(g, doneR.x + (s.sel === list.length ? 4 : 0), doneR.y, doneR.w, doneR.h, s.sel === list.length ? 'gold' : 'dark');
         text(g, '移籍市場を閉じる', doneR.x + 100, doneR.y + 5, { size: 9, align: 'center', color: s.sel === list.length ? '#2a1a24' : '#ffffff' });
         const c = list[s.sel];
-        panel(g, 218, 36, 256, 222, 'paper');
-        if (c) {
+        panel(g, 218, 56, 256, 210, 'paper');
+        if (c && s.tab === 'sign') {
           const d = c.def;
-          g.fillStyle = '#e8d6ae'; g.fillRect(226, 44, 72, 72);
-          drawPortrait(g, d.id, 'normal', 226, 44, 1.5);
-          if (d.nick) text(g, '「' + d.nick + '」', 304, 44, { size: 8, color: '#e0474c' });
-          text(g, d.full || d.name, 304, 56, { size: 11, color: '#2a1a24' });
-          text(g, (d.age ? d.age + '歳 ' : '') + d.pos + '　' + (d.local ? '地元出身' : 'よそ者'), 304, 72, { size: 8, color: '#6d4f3a' });
-          wrap(g, c.reason, 164, 8).slice(0, 2).forEach((l, i) => text(g, l, 304, 86 + i * 10, { size: 8, color: '#2f86c4' }));
+          g.fillStyle = '#e8d6ae'; g.fillRect(226, 64, 72, 72);
+          drawPortrait(g, d.id, 'normal', 226, 64, 1.5);
+          if (d.nick) text(g, '「' + d.nick + '」', 304, 64, { size: 8, color: '#e0474c' });
+          text(g, d.full || d.name, 304, 76, { size: 11, color: '#2a1a24' });
+          text(g, (d.age ? d.age + '歳 ' : '') + d.pos + '　' + (d.local ? '地元出身' : 'よそ者'), 304, 92, { size: 8, color: '#6d4f3a' });
+          wrap(g, c.reason, 164, 8).slice(0, 2).forEach((l, i) => text(g, l, 304, 104 + i * 10, { size: 8, color: '#2f86c4' }));
+          const chance = signChance(c), cl = chanceLabel(chance);
+          text(g, '交渉成立の可能性：' + cl.t + '（' + Math.round(chance * 100) + '%）', 226, 140, { size: 8, color: cl.c });
+          STAT_KEYS.forEach((k, i) => {
+            const y = 152 + i * 12;
+            text(g, STAT_NAMES[k], 228, y, { size: 8, color: '#2a1a24' });
+            drawGrade(g, 280, y, d.stats[k], 11);
+            statBar(g, 294, y + 1, 140, d.stats[k], STAT_COLORS[k]);
+            text(g, String(d.stats[k]), 466, y, { size: 8, align: 'right', color: '#2a1a24' });
+          });
+          if (onPolicy(d)) text(g, '★このチームの方針（' + IDENTITIES[State.identity].name + '）に合う選手です', 228, 214, { size: 8, color: '#e0474c' });
+          text(g, '交渉費用 ' + negFee + '万円（結果に関わらず消費）＋成立時 ' + (c.fee + c.sal) + '万円', 228, 224, { size: 8, color: '#6d4f3a' });
+          panel(g, 250, 238, 214, 24, E.hoverIn({ x: 250, y: 238, w: 214, h: 24 }) ? 'gold' : 'sky');
+          text(g, 'Z / クリック：交渉する', 357, 244, { size: 9, align: 'center', color: '#10304f' });
+        } else if (c && s.tab === 'release') {
+          const d = c;
+          g.fillStyle = '#e8d6ae'; g.fillRect(226, 64, 72, 72);
+          drawPortrait(g, d.id, 'normal', 226, 64, 1.5);
+          if (d.nick) text(g, '「' + d.nick + '」', 304, 64, { size: 8, color: '#e0474c' });
+          text(g, d.full || d.name, 304, 76, { size: 11, color: '#2a1a24' });
+          text(g, (d.age ? d.age + '歳 ' : '') + d.pos + '　やる気 ' + (State.morale[d.id] ?? 60), 304, 92, { size: 8, color: '#6d4f3a' });
           STAT_KEYS.forEach((k, i) => {
             const y = 122 + i * 12;
             text(g, STAT_NAMES[k], 228, y, { size: 8, color: '#2a1a24' });
@@ -2606,18 +2749,17 @@
             statBar(g, 294, y + 1, 140, d.stats[k], STAT_COLORS[k]);
             text(g, String(d.stats[k]), 466, y, { size: 8, align: 'right', color: '#2a1a24' });
           });
-          const rv = rivalsFor(d);
-          const notes = ['移籍金 ' + c.fee + '＋給料 ' + c.sal + '＝' + (c.fee + c.sal) + '万円',
-            rv.length ? '先発の' + rv.slice(0, 2).join('・') + (rv.length > 2 ? 'ら' : '') + 'と競争（出番が減るとやる気↓）' : 'このポジションは層が薄い',
-            d.local ? '地元出身：ホームの観客が増える' : 'よそ者：地元比率が下がると観客が減る'];
-          notes.forEach((l, i) => text(g, '・' + l, 228, 186 + i * 12, { size: 8, color: i === 1 && rv.length ? '#e0474c' : '#2a1a24' }));
-          panel(g, 250, 226, 214, 24, E.hoverIn({ x: 250, y: 226, w: 214, h: 24 }) ? 'gold' : 'sky');
-          text(g, 'Z / クリック：獲得する', 357, 232, { size: 9, align: 'center', color: '#10304f' });
+          const dest = destinationFor(d);
+          const err = canRelease(d);
+          text(g, '放出すると：' + (dest.kind === 'staff' ? 'クラブにコーチとして残る' : dest.kind === 'rival' ? 'ライバルクラブへ移籍する' : '町を出る（いつか戻るかも）'), 228, 196, { size: 8, color: '#2f86c4' });
+          if (err) text(g, '※' + err, 228, 210, { size: 8, color: '#e0474c' });
+          panel(g, 250, 238, 214, 24, err ? ['#2a1a24', '#c9bda8', '#a89c86', '#e0d6c4'] : E.hoverIn({ x: 250, y: 238, w: 214, h: 24 }) ? 'gold' : 'crimson');
+          text(g, 'Z / クリック：放出する', 357, 244, { size: 9, align: 'center', color: err ? '#7a6e5a' : '#ffffff' });
         } else {
-          text(g, 'ここまでの動き', 228, 46, { size: 10, color: '#10304f' });
-          s.log.slice(-10).forEach((l, i) => wrap(g, '・' + l, 236, 8).slice(0, 1).forEach((ll) => text(g, ll, 228, 64 + i * 13, { size: 8, color: '#2a1a24' })));
+          text(g, 'ここまでの動き', 228, 62, { size: 10, color: '#10304f' });
+          s.log.slice(-11).forEach((l, i) => wrap(g, '・' + l, 236, 8).slice(0, 1).forEach((ll) => text(g, ll, 228, 80 + i * 13, { size: 8, color: '#2a1a24' })));
         }
-        if (s.flash) text(g, s.flash.text, 250, 214, { size: 9, color: '#e0474c' });
+        if (s.flash) text(g, s.flash.text, 250, 234, { size: 9, color: '#e0474c' });
       } else {
         panel(g, 40, 40, 400, 210, 'paper');
         text(g, '移籍市場の結果', W / 2, 48, { size: 14, align: 'center', color: '#10304f' });
