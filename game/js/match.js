@@ -5,7 +5,7 @@
   const P = Art.PITCH;
   const CX = P.x + P.w / 2, CY = P.y + P.h / 2;
   const GW = Art.GOAL_W;
-  const TOP_H = 20, BOT_H = 50, VIEW_H = H - TOP_H - BOT_H;
+  const TOP_H = 20, BOT_H = 44, VIEW_H = H - TOP_H - BOT_H;
   const HALF_LEN = 100; // real seconds per half
   // tactic tuning knobs (calibrated against docs/tactics_research.md by simulation)
   const TUNE = window.TACTIC_TUNE = Object.assign({ pressErr: 1.2, pressLine: 80, pressMark: 0, presser2: 1, longMF: 70, counterLine: 75, counterGoalSide: 5, possShort: 18 }, window.TACTIC_TUNE || {});
@@ -23,6 +23,7 @@
       this.opts = opts;
       this.form = [Data.FORMATIONS[opts.formation || 'balance'], Data.FORMATIONS.balance];
       this.auto = !!opts.auto;
+      this.autoJust = !!opts.autoJust;
       this.fx = new Particles();
       this.fxTop = new Particles();
       this.players = [];
@@ -44,6 +45,7 @@
       home.forEach((d, i) => this.players.push(this.mk(d, 0, i)));
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
+      this.ace = [this.players.find((p) => p.team === 0 && p.id === 'leo') || null, this.players.find((p) => p.team === 1 && p.id === this.opp.captain) || null];
       this.score = [0, 0];
       this.half = 1; this.clock = 0; this.state = 'intro'; this.stateT = 0;
       this.order = [null, null]; this.kiai = [60, 60];
@@ -272,6 +274,12 @@
 
     handleOrders() {
       if (Input.hit('c5') || E.clickedIn(this.benchRect())) { this.openPanel(); return; }
+      if (Input.hit('c6') || E.clickedIn(this.autoJustRect())) {
+        this.autoJust = !this.autoJust; Sound.play('cursor');
+        if (window.Scenes && Scenes.State && Scenes.State.autoJust !== this.autoJust) Scenes.State.toggleAutoJust();
+        this.toast(this.autoJust ? '自動JUST：ON' : '自動JUST：OFF', '#ffd24a');
+        return;
+      }
       const ords = Data.ORDERS;
       for (let i = 0; i < 4; i++) {
         const r = this.orderRect(i);
@@ -282,6 +290,7 @@
     }
     orderRect(i) { return { x: 4 + i * 74, y: H - 34, w: 71, h: 30 }; }
     benchRect() { return { x: 300, y: H - 34, w: 54, h: 30 }; }
+    autoJustRect() { return { x: 292, y: 2, w: 38, h: 16 }; }
     issueOrder(team, o) {
       if (this.kiai[team] < o.cost) { if (team === 0) { Sound.play('miss_timing', { vol: 0.5 }); this.tick('ナギサ「監督、声が枯れてますよ！少し待って！」', '#ffb0a0'); } return; }
       this.kiai[team] -= o.cost;
@@ -293,6 +302,10 @@
         const replies = ['おう！', 'はい！', '了解！', 'まかせろ！', 'うっす！'];
         this.team(0).filter((p) => !p.gk).sort(() => Math.random() - 0.5).slice(0, 3).forEach((p, i) => setTimeout(() => this.say(p, pick(replies), 1.0), 120 + i * 90));
         this.tick('監督の指示！「' + o.shout + '」', '#ffd24a');
+        if (o.id === 'defend' && this.ace[1] && !this.ace[1].gk && !this._defendAceNoted) {
+          this._defendAceNoted = true;
+          this.sayNagisa(this.ace[1].name + 'を集中的に見ますよ！', 3.0, 'determined');
+        }
       } else {
         Sound.play('command', { pitch: 0.8, vol: 0.6 });
         this.tick(this.opp.short + ' ' + this.opp.coach + 'がゲキを飛ばす！', '#ff9a8a');
@@ -634,6 +647,11 @@
           if (d < md) { md = d; mark = o; }
         }
         if (mark) hy = lerp(hy, mark.y, 0.6);
+        // "守れ！" doubles down on shutting out the other side's ace, at the cost of the rest of the line's shape
+        if (t === 0 && ord === 'defend' && this.ace[1] && !this.ace[1].gk) {
+          const ad = dist(p.x, p.y, this.ace[1].x, this.ace[1].y);
+          if (ad < 130) { mark = this.ace[1]; hy = lerp(hy, mark.y, 0.85); p.run = true; }
+        }
         if (behindLine) {
           // recovery run: get goal-side of the ball
           hx = b.x - dx * 18; hy = lerp(hy, b.y, 0.4);
@@ -650,6 +668,9 @@
           if (o.team === t || o.gk || o === b.owner) continue;
           const d = dist(o.x, o.y, hx, hy);
           if (d < md) { md = d; mark = o; }
+        }
+        if (t === 0 && ord === 'defend' && role === 'MF' && this.ace[1] && !this.ace[1].gk && dist(p.x, p.y, this.ace[1].x, this.ace[1].y) < 150) {
+          mark = this.ace[1]; md = 0;
         }
         if (mark && role === 'MF') {
           const a = Math.atan2(CY - mark.y, gx - mark.x);
@@ -1187,6 +1208,7 @@
     }
     updateSetPiece(dt) {
       const sp = this.sp, b = this.ball, tk = sp.taker;
+      if (!tk) { this.sp = null; return; } // taker can vanish if selection ever comes up empty; never let a dead reference crash the sim
       sp.t += dt;
       if (sp.type === 'gk') { if (tk.state === 'dive') { b.x = tk.x + (tk.diveLeftward ? -6 : 6); b.y = tk.y - 2; b.z = 0; } else { b.x = tk.x + dirX(sp.team) * 3; b.y = tk.y - 8; b.z = 6; } }
       const ready = sp.type === 'gk' || dist(tk.x, tk.y, sp.x, sp.y) < 8;
@@ -2149,7 +2171,7 @@
       if (m.pos > 1) { m.pos = 2 - m.pos; m.dir = -1; }
       if (m.pos < 0) { m.pos = -m.pos; m.dir = 1; }
       let press = Input.hit('ok') || Input.mouse.clicked;
-      if (this.auto && Math.abs(m.pos - m.autoAim) < 0.03) press = true;
+      if ((this.auto || this.autoJust) && Math.abs(m.pos - m.autoAim) < 0.03) press = true;
       if (press) this.resolveMeter();
       else if (m.t > 3.2) { m.result = 'bad'; Sound.play('miss_timing'); this.popupMeter('タイミングを逃した…', '#c9d6e6'); }
     }
@@ -2368,6 +2390,12 @@
       // stamina warning
       if (p.team === 0 && p.sta < 25 && this.state === 'play' && Math.floor(Game.time * 3) % 2) {
         g.fillStyle = '#9fdcff'; g.fillRect(x + 5, y - 22, 1, 2); g.fillRect(x + 5, y - 19, 1, 1);
+      }
+      // the ace of each side is marked with a small crown, so a team's threat is legible at a glance
+      if (this.ace[p.team] === p) {
+        const cy = y - 27 - jump + Math.round(Math.sin(Game.time * 3) * 1);
+        g.fillStyle = p.team === 0 ? '#ffd24a' : '#ff6a6a';
+        g.fillRect(x - 3, cy, 7, 2); g.fillRect(x - 3, cy - 2, 1, 2); g.fillRect(x, cy - 3, 1, 3); g.fillRect(x + 3, cy - 2, 1, 2);
       }
     }
     drawBall(g, ox, oy) {
@@ -2816,6 +2844,12 @@
       const tot = this.poss[0] + this.poss[1] || 1;
       const pw = Math.round(64 * this.poss[0] / tot);
       g.fillStyle = '#4fb4e8'; g.fillRect(W / 2 - 32, 18, pw, 1); g.fillStyle = '#b8323a'; g.fillRect(W / 2 - 32 + pw, 18, 64 - pw, 1);
+      // auto-JUST toggle (6)
+      {
+        const r = this.autoJustRect(), hov = E.hoverIn(r);
+        panel(g, r.x, r.y, r.w, r.h, this.autoJust ? 'gold' : hov ? 'sky' : 'dark');
+        text(g, '6:自動J', r.x + r.w / 2, r.y + 4, { size: 7, align: 'center', color: this.autoJust ? '#10182e' : '#c9d6e6' });
+      }
 
       // bottom panel
       const by = H - BOT_H;
@@ -2860,18 +2894,18 @@
         text(g, this.subQueue.length ? '交代待ち' : '交代 ' + this.subsLeft, r.x + 18, r.y + 16 + push, { size: 8, color: '#4a2a10' });
       }
       // kiai gauge
-      const gx = 358, gy = by + 18;
+      const gx = 358, gy = by + 15;
       text(g, '気合', gx, gy - 2, { size: 8, color: '#ffd24a' });
-      g.fillStyle = '#0a0e1c'; g.fillRect(gx, gy + 8, 40, 20);
+      g.fillStyle = '#0a0e1c'; g.fillRect(gx, gy + 8, 40, 18);
       const kv = this.kiai[0] / 100;
-      const fillH = Math.round(18 * kv);
+      const fillH = Math.round(16 * kv);
       g.fillStyle = kv >= 0.35 ? '#ffd24a' : '#d48a1e';
-      g.fillRect(gx + 1, gy + 27 - fillH, 38, fillH);
-      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(gx + 1, gy + 27 - fillH, 38, 1);
-      for (let i = 1; i < 4; i++) { g.fillStyle = '#10182e'; g.fillRect(gx + 1, gy + 9 + i * 4.5, 38, 1); }
-      text(g, Math.floor(this.kiai[0]) + '', gx + 20, gy + 13, { size: 8, align: 'center', color: '#ffffff', outline: '#0a0e1c' });
+      g.fillRect(gx + 1, gy + 25 - fillH, 38, fillH);
+      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(gx + 1, gy + 25 - fillH, 38, 1);
+      for (let i = 1; i < 4; i++) { g.fillStyle = '#10182e'; g.fillRect(gx + 1, gy + 8 + i * 4, 38, 1); }
+      text(g, Math.floor(this.kiai[0]) + '', gx + 20, gy + 12, { size: 8, align: 'center', color: '#ffffff', outline: '#0a0e1c' });
       // minimap
-      const mx = 404, my = by + 6, mw = 72, mh = 40;
+      const mx = 404, my = by + 5, mw = 72, mh = 37;
       g.fillStyle = '#2a1a24'; g.fillRect(mx - 1, my - 1, mw + 2, mh + 2);
       g.fillStyle = '#3f8a3e'; g.fillRect(mx, my, mw, mh);
       g.fillStyle = '#4fa84a'; for (let i = 0; i < 6; i++) g.fillRect(mx + i * 12, my, 6, mh);

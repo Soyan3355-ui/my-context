@@ -65,6 +65,12 @@
     localRatio() { return this.lineup.filter((id) => (this.roster.find((q) => q.id === id) || {}).local).length / this.lineup.length; },
   };
   State.reset();
+  // オートJUST: a standing preference (not tied to a save slot) that auto-resolves the chance/pinch timing meter near its sweet spot
+  State.autoJust = (() => { try { return localStorage.getItem('hamakaze_fc_autojust') === '1'; } catch (e) { return false; } })();
+  State.toggleAutoJust = () => {
+    State.autoJust = !State.autoJust;
+    try { localStorage.setItem('hamakaze_fc_autojust', State.autoJust ? '1' : '0'); } catch (e) { /* ignore */ }
+  };
 
   // ---------------- save data (this browser only) ----------------
   const SAVE_KEY = 'hamakaze_fc_save_v1';
@@ -804,6 +810,7 @@
   function Hub(first) {
     const s = { t: 0, talk: null, menu: null, fx: new Particles(), hover: null };
     const fx = State.fixture();
+    const aceP = oppRoster(fx.opp).roster.find((p) => p.id === fx.opp.captain);
     const items = () => [
       { id: 'roster', label: '選手名鑑', sub: 'やる気・能力・人となり', icon: Icons.book },
       { id: 'train', label: '練習する', sub: State.trained ? '今週の練習は終わりました' : '週1回。能力や戦術理解がアップ', icon: Icons.shoe, disabled: !!State.trained },
@@ -901,7 +908,7 @@
       panel(g, 308, 6, 166, 42, 'dark');
       text(g, 'シーズン' + State.seasonNo + '　第' + (State.season.week + 1) + '節', 316, 11, { size: 10, color: '#9fdcff' });
       text(g, (fx.home ? 'ホーム' : 'アウェイ') + '　' + State.budget + '万円', 316, 25, { size: 9, color: '#ffffff' });
-      text(g, 'vs ' + fx.opp.name, 316, 37, { size: 8, color: fx.opp.light });
+      text(g, 'vs ' + fx.opp.name + (aceP ? '　エース：' + aceP.name : ''), 316, 37, { size: 8, color: fx.opp.light });
       s.menu.items = items();
       s.menu.draw(g);
       if (s.saved && s.t < 2.6) {
@@ -1704,7 +1711,7 @@
     const morale = 0.94 + 0.12 * (State.avgMorale() / 100) + (fx.home ? 0.03 * State.localRatio() : 0);
     return new Match({
       opp: fx.opp, away: opp.roster, reunion: opp.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
-      formation: State.formation, tactic: State.tactic, auto: State.auto, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
+      formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
       bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
       onEnd: (r) => { State.result = r; Game.goto(Result(r), 'iris'); },
     });
@@ -2189,7 +2196,7 @@
     const morale = 0.96 + 0.1 * (State.avgMorale() / 100) + (home ? 0.03 * State.localRatio() : 0);
     return new Match({
       opp: gk, away: oppData.roster, reunion: oppData.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
-      formation: State.formation, tactic: State.tactic, auto: State.auto,
+      formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust,
       home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
       bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
       onEnd,
