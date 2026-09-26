@@ -720,10 +720,14 @@
       if (p.wingRun > 0) {
         p.wingRun -= dt || 0;
         const toLine2 = Math.abs(goalX(t) - p.x);
-        const inBox2 = this.team(t).filter((m) => m !== p && !m.gk && Math.abs(m.x - goalX(t)) < Art.BOX_W + 70 && Math.abs(m.y - CY) < 110);
-        if ((toLine2 < 120 || (p.wingRun <= 0 && toLine2 < 260)) && inBox2.length) {
+        const mates2 = this.team(t).filter((m) => m !== p && !m.gk);
+        const inBox2 = mates2.filter((m) => Math.abs(m.x - goalX(t)) < Art.BOX_W + 70 && Math.abs(m.y - CY) < 110);
+        // once close to the byline, cross regardless of whether anyone has fully arrived in the box yet —
+        // a runner still arriving beats dribbling the ball out for a goal kick
+        if ((toLine2 < 120 || (p.wingRun <= 0 && toLine2 < 260)) && mates2.length) {
           p.wingRun = 0;
-          const m = inBox2.sort((a2, c) => this.aerial(c) - this.aerial(a2))[0];
+          const pool = inBox2.length ? inBox2 : mates2;
+          const m = pool.sort((a2, c) => (inBox2.length ? this.aerial(c) - this.aerial(a2) : this.proj(t, c.x) - this.proj(t, a2.x)))[0];
           if (t === 0 && this.isFullback(p)) this.tick(p.name + '、深い位置からクロス！', '#9fdcff');
           this.doCross(p, m);
           return;
@@ -752,7 +756,9 @@
         if (s > best.s) best = { k: 'shoot', s };
       }
       // breakaway: nobody left between the carrier and the keeper → go for goal
-      if (dGoal < 280 && !this.players.some((o) => o.team !== t && !o.gk && this.proj(t, o.x) > this.proj(t, p.x) - 6 && Math.abs(o.y - p.y) < 70)) {
+      // (only when the carrier is central enough that "running at goal" makes sense — a fullback
+      // in the corner has no defender near him either, but dribbling further just runs the ball out)
+      if (dGoal < 280 && Math.abs(p.y - CY) < 140 && !this.players.some((o) => o.team !== t && !o.gk && this.proj(t, o.x) > this.proj(t, p.x) - 6 && Math.abs(o.y - p.y) < 70)) {
         if (dGoal < 150) { const s1 = 150 + rand(0, 20); if (s1 > best.s) best = { k: 'shoot', s: s1 }; }
         else best = { k: 'drib', s: 999 };
       }
@@ -765,12 +771,22 @@
         if (sd > best.s) best = { k: 'drib', s: sd };
       }
       if (Math.abs(p.y - CY) > 70 && toLine < (wideMan ? 260 : 150)) {
-        const inBox = this.team(t).filter((m) => m !== p && !m.gk && Math.abs(m.x - gxT) < Art.BOX_W + 40 && Math.abs(m.y - CY) < 90);
-        if (inBox.length) {
-          const m = inBox.sort((a, c) => this.aerial(c) - this.aerial(a))[0];
-          const s = 70 + (130 - Math.min(130, toLine)) * 0.5 + (toLine > 130 ? -10 : 0) + (this.isFullback(p) ? 18 : 0) + inBox.length * 10 + rand(0, 20) + (tac === 'possession' && this.noShotT[t] > 20 ? 15 : 0);
+        const mates = this.team(t).filter((m) => m !== p && !m.gk);
+        const inBox = mates.filter((m) => Math.abs(m.x - gxT) < Art.BOX_W + 40 && Math.abs(m.y - CY) < 90);
+        // no one fully arrived yet is not a reason to keep dribbling toward the corner flag —
+        // whip it in for a runner still on the way, just with less confidence than an aimed cross
+        const pool = inBox.length ? inBox : (toLine < 90 ? mates : []);
+        if (pool.length) {
+          const m = pool.sort((a, c) => (inBox.length ? this.aerial(c) - this.aerial(a) : this.proj(t, c.x) - this.proj(t, a.x)))[0];
+          const s = (inBox.length ? 70 : 40) + (130 - Math.min(130, toLine)) * 0.5 + (toLine > 130 ? -10 : 0) + (this.isFullback(p) ? 18 : 0) + inBox.length * 10 + rand(0, 20) + (tac === 'possession' && this.noShotT[t] > 20 ? 15 : 0);
           if (s > best.s) best = { k: 'cross', s, m };
         }
+      }
+      // last resort: never let a wide dribble carry all the way to the byline with no delivery —
+      // a hopeful ball into the mixer beats running the ball out of play
+      if (best.k === 'drib' && Math.abs(p.y - CY) > 90 && toLine < 26) {
+        const mates = this.team(t).filter((m) => m !== p && !m.gk);
+        if (mates.length) best = { k: 'cross', s: 9999, m: mates.sort((a, c) => this.proj(t, c.x) - this.proj(t, a.x))[0] };
       }
       // passes (to feet, or into space ahead of a runner)
       const off = this.offsideX(t);
@@ -2018,6 +2034,7 @@
     minute() { return Math.min(45, Math.floor((this.clock / HALF_LEN) * 45)) + (this.half === 2 ? 45 : 0); }
 
     finish() {
+      if (this.result) return; // a match ends exactly once
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
       this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
