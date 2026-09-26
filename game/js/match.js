@@ -180,7 +180,8 @@
       Sound.crowd(0.35);
       this.state = 'intro'; this.stateT = 0;
       this.cam.y = P.y + P.h - 40;
-      this.tick('港FM実況：さあ、浜風グラウンドから練習試合をお届けします！', '#9fdcff');
+      this.tick('港FM実況：さあ、港湾地区リーグの一戦をお届けします！', '#9fdcff');
+      for (const nm of this.opts.reunion || []) this.tick('元ハマカゼの' + nm + 'が、今日は' + this.opp.short + 'の一員としてピッチに立つ！', '#ffd24a');
     }
     placeKickoff(team, snap) {
       this.kickoffTeam = team;
