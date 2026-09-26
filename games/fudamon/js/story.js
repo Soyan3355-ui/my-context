@@ -101,7 +101,7 @@ async function talkGuardian(n){
     await say('封札師の 印が ほしいなら、わしに 札の 力を 示してみよ。',NM.guardian)}
   const i=await ask('試練を 受けるか？',NM.guardian,['受ける','まだ準備が…']);
   if(i!==0){await say('うむ。 そこの 井戸の 水を 飲めば 疲れも とれよう。',NM.guardian);return}
-  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:27,lv:11},{id:26,lv:12},{id:28,lv:14}],reward:800,smart:.5,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
+  const r=await runBattle({trainer:{name:'祠守りイワオ',sprite:'guardian',team:[{id:27,lv:12},{id:26,lv:13},{id:28,lv:15}],reward:800,smart:.5,intro:'祠守りイワオが 試練の 勝負を 挑んできた！',winLine:'見事…！ その 札さばき、しかと 見届けた。'},music:'boss',bg:ENC.shrine});
   if(r==='win')await endingSequence();
 }
 async function getItem(k,n){
@@ -198,7 +198,7 @@ async function starterChosen(id){
   await say('祠守りの イワオに 認められたら、<br>おまえも 一人前の 封札師だ。',NM.sensei);
   await say('封札が 足りなくなったら、うちの 店で 買っていきなさい。<br>わたしに 話しかければ いつでも 売ってあげるよ。',NM.sensei);
   await say('道の わきの 草むらで 魔物と 戦えば 札は 強くなる。<br>Lv9になれば 大技も 覚えるよ。 急がず 仲間を 増やしなさい。',NM.sensei);
-  await say('イワオは 手ごわいよ。 Lv15くらいまで 鍛えて、<br>回復の香も 忘れずに 持っていきなさい。',NM.sensei);
+  await say('イワオは 手ごわいよ。 Lv15くらいまで 鍛えて、<br>できれば 札を 進化させてから 挑みなさい。',NM.sensei);
   await say('へへっ、祠には おれが 先に 着いてやる！<br>じゃあな！',NM.rival);
   await moveNPC(rv,'down',3,6);await moveNPC(rv,'left',2,6);await moveNPC(rv,'down',1,6);
   S.flags.rivalLeft=true;snd('door');
