@@ -951,6 +951,7 @@
   function Roster() {
     const s = { t: 0, sel: 0, anim: 0 };
     const list = () => State.roster;
+    const backRect = () => ({ x: 400, y: 6, w: 74, h: 20 });
     s.enter = () => { Sound.bgm('hub'); s.anim = 0; Game.tweens.to(s, { anim: 1 }, 0.5, Ease.outCubic); };
     const setSel = (i) => { if (i !== s.sel) { s.sel = i; Sound.play('cursor'); s.anim = 0; Game.tweens.to(s, { anim: 1 }, 0.4, Ease.outCubic); } };
     s.update = (dt) => {
@@ -959,8 +960,7 @@
       if (Input.hit('up')) setSel((s.sel + L.length - 1) % L.length);
       if (Input.hit('down')) setSel((s.sel + 1) % L.length);
       L.forEach((p, i) => { const r = { x: 8, y: 32 + i * 14, w: 120, h: 13 }; if (E.hoverIn(r) && Input.mouse.moved) setSel(i); if (E.clickedIn(r)) setSel(i); });
-      const back = { x: 150, y: 6, w: 56, h: 20 };
-      if (Input.hit('back') || E.clickedIn(back)) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); }
+      if (Input.hit('back') || E.clickedIn(backRect())) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); }
       if (State.auto && s.t > 1.5) Game.goto(Hub(), 'stripe');
     };
     s.draw = (g) => {
@@ -978,9 +978,6 @@
         g.fillStyle = mo >= 60 ? '#6cc35a' : mo >= 40 ? '#ffd24a' : '#e0474c'; g.fillRect(122 + ox, y + 4, 5, 5);
         if (!State.lineup.includes(p.id)) text(g, '控', 116 + ox, y + 2, { size: 8, align: 'right', color: '#9a8e7a' });
       });
-      const back = { x: 150, y: 6, w: 56, h: 20 };
-      panel(g, back.x, back.y, back.w, back.h, E.hoverIn(back) ? 'gold' : 'dark');
-      text(g, 'X：もどる', back.x + 28, back.y + 5, { size: 8, align: 'center', color: E.hoverIn(back) ? '#2a1a24' : '#c9d6e6' });
       // detail
       const p = L[s.sel];
       const k = s.anim;
@@ -1019,6 +1016,10 @@
         if (v > b) text(g, '+' + (v - b), 466 + dx, y + 1, { size: 8, color: '#e0474c' });
       });
       g.globalAlpha = 1;
+      // drawn last so it stays on top of (and clickable over) the detail panel
+      const back = backRect();
+      panel(g, back.x, back.y, back.w, back.h, E.hoverIn(back) ? 'gold' : 'dark');
+      text(g, 'X：もどる', back.x + back.w / 2, back.y + 5, { size: 8, align: 'center', color: E.hoverIn(back) ? '#2a1a24' : '#c9d6e6' });
     };
     return s;
   }
@@ -1045,7 +1046,7 @@
     s.update = (dt) => {
       s.t += dt; s.fx.update(dt);
       if (s.phase === 'pick') {
-        if (Input.hit('back')) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); return; }
+        if (Input.hit('back') || E.clickedIn({ x: 8, y: 232, w: 90, h: 16 })) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); return; }
         if (State.auto) { s.menu.sel = [4, 0, 4, 3, 1][State.season.week % 5]; Input.pressed.ok = s.t > 1; }
         const r = s.menu.update(dt);
         if (r) { s.pick = r.tr; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); }
@@ -1137,7 +1138,8 @@
         const sel = TRAININGS[s.menu.sel];
         panel(g, 250, 222, 214, 44, 'paper');
         wrap(g, sel.desc, 200, 8).slice(0, 3).forEach((l, i) => text(g, l, 258, 227 + i * 12, { size: 8, color: '#2a1a24' }));
-        text(g, 'X：もどる', 18, 240, { size: 8, color: '#ffffff', outline: OUT });
+        panel(g, 8, 232, 90, 16, E.hoverIn({ x: 8, y: 232, w: 90, h: 16 }) ? 'sky' : 'dark');
+        text(g, 'X：もどる', 18, 236, { size: 8, color: '#ffffff', outline: OUT });
         return;
       }
       // play scene per training
