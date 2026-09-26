@@ -46,6 +46,7 @@
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
       this.ace = [this.players.find((p) => p.team === 0 && p.id === 'leo') || null, this.players.find((p) => p.team === 1 && p.id === this.opp.captain) || null];
+      this.specialCD = {};
       this.score = [0, 0];
       this.half = 1; this.clock = 0; this.state = 'intro'; this.stateT = 0;
       this.order = [null, null]; this.kiai = [60, 60];
@@ -1038,12 +1039,17 @@
       let sigma = header ? (100 - headSk) * 0.26 + dGoal * 0.07 + 3 : (100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
       if (oneOnOne) sigma *= 0.9;
       const attackerQ = t === 0 ? q : null, defenderQ = t === 1 ? q : null;
+      const gk = this.gk(1 - t);
+      // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper
+      const special = t === 0 && attackerQ === 'just' && Data.SPECIALS[p.id] && Game.time - (this.specialCD[p.id] || -99) > 45 && Math.random() < 0.4 ? Data.SPECIALS[p.id] : null;
+      if (special) this.specialCD[p.id] = Game.time;
+      const gkSpecial = t === 1 && defenderQ === 'just' && Data.SPECIALS[gk.id] && Game.time - (this.specialCD[gk.id] || -99) > 45 && Math.random() < 0.4 ? Data.SPECIALS[gk.id] : null;
+      if (gkSpecial) this.specialCD[gk.id] = Game.time;
       if (attackerQ === 'just') sigma *= 0.3; else if (attackerQ === 'good') sigma *= 0.7; else if (attackerQ === 'bad') sigma *= 1.35;
       const aimY = CY + rand(-1, 1) * (GW / 2 - 4);
       const ty = aimY + (rand(-1, 1) + rand(-1, 1) + rand(-1, 1)) * 0.75 * sigma;
-      const power = (header ? 170 + sht * 0.8 + (p.id === 'mask' ? 50 : 0) : fk ? 225 + sht * 1.3 : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0);
+      const power = (header ? 170 + sht * 0.8 + (p.id === 'mask' ? 50 : 0) : fk ? 225 + sht * 1.3 : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0) + (special ? 40 : 0);
       const onTarget = Math.abs(ty - CY) < GW / 2 - 1;
-      const gk = this.gk(1 - t);
       let pSave = 0.44 + this.stat(gk, 'def') / 250 - (power - 300) / 700 + dGoal / 560 - (Math.abs(ty - CY) / (GW / 2)) * 0.24;
       if (header) pSave -= 0.06;
       if (oneOnOne) pSave -= 0.02;
@@ -1057,8 +1063,12 @@
       if (header && p.id === 'mask') pSave -= 0.1;
       if (attackerQ === 'just') pSave -= 0.34; else if (attackerQ === 'good') pSave -= 0.12; else if (attackerQ === 'bad') pSave += 0.12;
       if (defenderQ === 'just') pSave += 0.5; else if (defenderQ === 'good') pSave += 0.2; else if (defenderQ === 'bad') pSave -= 0.08;
+      if (special) pSave -= 0.15;
+      if (gkSpecial) pSave += 0.15;
       pSave = clamp(pSave, 0.05, 0.95);
       const save = onTarget && Math.random() < pSave;
+      if (special) this.fireSpecial(p, special);
+      if (gkSpecial && save) this.fireSpecial(gk, gkSpecial, true);
       const ang = Math.atan2(ty - (header ? b.y : p.y), gx - (header ? b.x : p.x));
       this.releaseBall(p);
       b.vx = Math.cos(ang) * power; b.vy = Math.sin(ang) * power;
@@ -1097,6 +1107,16 @@
       if (header) this.tick((t === 0 ? '' : '') + p.name + '、ヘディングシュート！', t === 0 ? '#9fdcff' : '#ff9a8a');
       else if (t === 0) this.tick(p.name + '、シュート！', '#9fdcff'); else this.tick(p.name + 'のシュート！', '#ff9a8a');
       this.crowdHype = 0.8;
+    }
+
+    fireSpecial(p, special, isSave) {
+      this.cutin = { id: p.id, expr: 'determined', t: 0, dur: 2.4, text: '必殺！「' + special.name + '」', nick: p.def.nick, color: special.color };
+      this.banner(special.name + '！！', 'big', 1.6);
+      Game.addShake(5, 0.35); Game.doFlash(0.5, special.color);
+      this.fx.burst(p.x, p.y, 30, { color: [special.color, '#ffffff'], speedMin: 50, speedMax: 170, lifeMin: 0.3, lifeMax: 0.7, size: 3, kind: 'star', drag: 0.05 });
+      Sound.play('levelup', { vol: 0.6 });
+      this.tick(p.name + (isSave ? '、必殺セーブ「' : '、必殺技「') + special.name + '」炸裂ッ！', special.color);
+      this.say(p, pick(special.lines || ['ここだッ！']), 1.8);
     }
 
     gkSmother(gk, c) {

@@ -178,6 +178,24 @@
     { id: 'shoot', key: '4', label: '打て！', sub: 'ミドル解禁', shout: 'どんどん打てぇ！', cost: 30, dur: 12 },
   ];
 
+  // each Hamakaze player's rare, flashy finishing move: fires occasionally on a JUST-timed shot (or JUST save for GKs)
+  const SPECIALS = {
+    gen: { name: '奇跡の網さばき', color: '#8a8a92', lines: ['まだ引退はできんっ！', '網にかかったな！'] },
+    tsubame: { name: '朝刊配達ダッシュシュート', color: '#4fb4e8', lines: ['配達完了ッス！', '今のがウチの全力です！'] },
+    morio: { name: '絹ごし渾身シュート', color: '#e8d6ae', lines: ['……いきます。', 'とうふ、決めます。'] },
+    mask: { name: '覆面ヘディング奥義', color: '#2a1a24', lines: ['正体は明かせんが、これは決める！', 'マスク・ド・シュートォ！'] },
+    kawataro: { name: 'かっぱの豪脚シュート', color: '#3f8a3e', lines: ['カッパじゃない、川田だ！', 'キュウリの力、見せてやる！'] },
+    shizuku: { name: '神託の一閃', color: '#9fdcff', lines: ['見えました……ここです！', '次、決まります。'] },
+    kazuha: { name: '行間を読むスルーシュート', color: '#2a2440', lines: ['ここしかない。', '読み通り。'] },
+    mame: { name: '枯れた技、一閃', color: '#f4f4f4', lines: ['まだまだ現役じゃよ。', '昭和の技、見せたる。'] },
+    ponta: { name: 'はらぺこ渾身の一撃', color: '#f08a3a', lines: ['たこ焼きのためにッ！', '腹が減っては決められんが、今は別ッス！'] },
+    leo: { name: '獅子乱舞シュート', color: '#f0c040', lines: ['見たか、これがエースだ！', 'オレのターンだ！'] },
+    haruki: { name: '全力少年シュート', color: '#6cc35a', lines: ['行きますッ！全力です！', 'まだまだ走れます！'] },
+    daifuku: { name: 'ぬりかべスーパーセーブ', color: '#ffd24a', lines: ['粉が舞う……止めた！', '壁は超えさせん！'] },
+    hikaru: { name: 'バズれ！必殺ドリブルシュート', color: '#ff5aa8', lines: ['これは伸びるってぇ！', '配信、盛り上がってきたァ！'] },
+    ume: { name: 'なぎなた一閃シュート', color: '#8a7a9a', lines: ['商店街の意地、見せたるわ！', 'ポン太、見とき！'] },
+  };
+
   // set-piece routines: the first of each kind is known from the start, the rest are learned in set-piece training (in UNLOCK order)
   const SETPLAYS = {
     ck: [
@@ -195,7 +213,7 @@
   };
   const SETPLAY_UNLOCK = ['ck_near', 'fk_wall', 'ck_far', 'fk_trick', 'ck_short', 'fk_lob'];
 
-  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
+  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
   HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();
