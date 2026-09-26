@@ -207,6 +207,13 @@
     }).filter(Boolean);
   }
   function avgStat(p) { return (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5; }
+  const SPECIAL_UNLOCK_AVG = 55;
+  // a player's finisher unlocks once they've grown into it, or (much more rarely) as a flash of insight during focused training
+  function checkSpecialUnlock(p, luckChance = 0) {
+    if (p.specialUnlocked || !Data.SPECIALS[p.id]) return false;
+    if (avgStat(p) >= SPECIAL_UNLOCK_AVG || (luckChance > 0 && Math.random() < luckChance)) { p.specialUnlocked = true; return true; }
+    return false;
+  }
   // an opponent's eleven for this season: signed players are replaced, and ex-Hamakaze players turn up in the rival's kit
   function oppRoster(club) {
     const taken = new Set(State.roster.map((p) => p.id).concat(State.bought || []));
@@ -1163,7 +1170,9 @@
           if (mult < 1 && Math.random() < 0.5) v = 0;
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
         }
-        s.results.push({ p, ups });
+        // focused, hands-on training gives a small extra shot at a breakthrough, on top of natural growth below
+        const special = checkSpecialUnlock(p, s.pick.focus.includes(p.id) ? 0.12 : 0);
+        s.results.push({ p, ups, special });
       }
     };
     s.draw = (g) => {
@@ -1329,6 +1338,7 @@
           const keys = Object.keys(r.ups);
           const line = keys.length ? keys.map((k) => (k === 'tac' ? '理解' : STAT_NAMES[k].slice(0, 3)) + '+' + r.ups[k]).join(' ') : '（身につかず）';
           text(g, line, x0 + 20, y + 12, { size: 8, color: keys.length ? '#2f86c4' : '#9a8e7a' });
+          if (r.special) text(g, '必殺技「' + Data.SPECIALS[r.p.id].name + '」を習得！', x0, y + 21, { size: 8, color: '#e0474c' });
         });
         if (s.rt > 1.2) text(g, 'Z / クリック：クラブハウスへ', W / 2, 236, { size: 9, align: 'center', color: '#6d4f3a', alpha: blink() });
       }
@@ -1797,7 +1807,8 @@
         }
       }
       const rating = clamp(5.5 + (rec.goal || 0) * 1.2 + (rec.assist || 0) * 0.7 + (rec.tackleOk || 0) * 0.25 + (rec.save || 0) * 0.35 + (rec.passOk || 0) * 0.06 + (rec.shot || 0) * 0.1 + (r.score[0] > r.score[1] ? 0.4 : r.score[0] < r.score[1] ? -0.3 : 0), 4.5, 9.8);
-      out.push({ p, rec, ups, before, total, tacUps, rating: Math.round(rating * 10) / 10 });
+      const special = checkSpecialUnlock(p);
+      out.push({ p, rec, ups, before, total, tacUps, rating: Math.round(rating * 10) / 10, special });
     }
     return out;
   }
@@ -1900,8 +1911,20 @@
           const tag = (c.good ? '強み：' : '伸ばしたい：') + cn + (c.who ? '　注目：' + c.who : '');
           text(g, tag, x + 14, y + 29, { size: 8, color: cc });
         });
-        if (A.memos && A.memos.length) text(g, '試合中のメモ ' + A.memos.length + '件　（最初：' + A.memos[0].min + "'「" + A.memos[0].text + '」）', 22, 248, { size: 8, color: '#6d4f3a' });
-        if (s.at > 1.2) text(g, 'Z / クリック：つぎへ', 456, 248, { size: 8, align: 'right', color: '#2f86c4', alpha: blink() });
+        // tie this week's training and any halftime tactical call back to a concrete result, so decisions feel like they mattered
+        if (s.at > 0.4) {
+          const homeRecs = r.recs.filter((x) => x.team === 0);
+          const S2 = (k) => homeRecs.reduce((a, x) => a + (x.rec[k] || 0), 0);
+          const tieIn = State.trained === 'shoot' ? 'シュート練習の成果か、今日はシュート' + S2('shot') + '本（枠内' + S2('onT') + '）でした。'
+            : State.trained === 'pass' ? 'パス練習の成果か、今日はパス成功' + S2('passOk') + '/' + S2('pass') + '本でした。'
+            : State.trained === 'run' ? '走り込みの成果か、総走行距離は' + (S2('dist') / 1000).toFixed(1) + 'kmでした。'
+            : State.trained === 'tactics' && r.tactic && r.tactic[0] ? '戦術練習の成果です。今日の「' + Data.TACTICS[r.tactic[0]].name + '」、活かせましたか？' : null;
+          if (tieIn) text(g, tieIn, 22, 240, { size: 8, color: '#2f86c4' });
+        }
+        const tacMemo = (A.memos || []).find((m) => m.key === 'htgood' || m.key === 'htbad' || m.key === 'oppswitch-ok' || m.key === 'oppswitch-bad');
+        if (tacMemo) text(g, '采配メモ：' + tacMemo.text, 22, 250, { size: 8, color: tacMemo.key.includes('bad') ? '#e0474c' : '#3f8a3e' });
+        else if (A.memos && A.memos.length) text(g, '試合中のメモ ' + A.memos.length + '件　（最初：' + A.memos[0].min + "'「" + A.memos[0].text + '」）', 22, 250, { size: 8, color: '#6d4f3a' });
+        if (s.at > 1.2) text(g, 'Z / クリック：つぎへ', 456, 250, { size: 8, align: 'right', color: '#2f86c4', alpha: blink() });
       } else {
         const cur = s.growth[s.gi];
         const p = cur.p;
@@ -1943,6 +1966,11 @@
         text(g, '能力アップ！', 150, 60, { size: 16, color: '#e0474c', alpha: s.gt > 0.4 ? 1 : 0 });
         const tu = Object.keys(cur.tacUps || {});
         if (tu.length && finished) text(g, '戦術理解度 ' + tu.map((k) => Data.TACTICS[k].name + ' +' + cur.tacUps[k]).join('　'), 150, 226, { size: 9, color: '#2f86c4' });
+        if (cur.special && finished) {
+          const k2 = Ease.outBack(clamp((s.gt - 0.5) / 0.3, 0, 1));
+          panel(g, 150 - 4 * k2, 202, 290 * k2, 14, 'gold');
+          if (k2 > 0.8) text(g, '必殺技「' + Data.SPECIALS[p.id].name + '」を習得！', 152, 204, { size: 9, color: '#4a2a10' });
+        }
         if (p.id === 'haruki' && finished) text(g, '伸び盛り！ 経験がぐんぐん身についた！', 150, 80, { size: 9, color: '#2f86c4' });
         else if (cur.total >= 5 && finished) text(g, 'すばらしい成長だ！', 150, 80, { size: 9, color: '#2f86c4' });
         if (finished) text(g, 'Z / クリック：つぎへ　X：まとめてスキップ', 456, 244, { size: 8, align: 'right', color: '#6d4f3a', alpha: blink() });
