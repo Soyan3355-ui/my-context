@@ -871,11 +871,13 @@
           }
         }
       }
-      // long ball: skip midfield and hit the most advanced forward
-      if (tac === 'long' && this.proj(t, p.x) < this.proj(t, CX) + 80 && best.k !== 'shoot') {
+      // long ball: skip midfield and hit the most advanced forward — any side will hoof it long when pressed deep,
+      // but a team actually built around it (tac === 'long') reaches for it far more readily
+      const longMinded = tac === 'long' || (this.role(p) === 'DF' && pressure > 24 && this.proj(t, p.x) < this.proj(t, CX) - 20);
+      if (longMinded && this.proj(t, p.x) < this.proj(t, CX) + 80 && best.k !== 'shoot') {
         const tgt = this.team(t).filter((m) => m !== p && !m.gk && this.role(m) === 'FW').sort((a, c) => this.proj(t, c.x) - this.proj(t, a.x))[0];
         if (tgt && dist(p.x, p.y, tgt.x, tgt.y) > 110) {
-          const s = 44 + 18 * this.realize(t) + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 22 ? 30 : 0);
+          const s = (tac === 'long' ? 44 : 26) + 18 * this.realize(t) + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 22 ? 30 : 0);
           if (s > best.s) best = { k: 'long', s, m: tgt };
         }
       }
@@ -888,7 +890,7 @@
         const slowest = oppDefs.filter((o) => this.role(o) === 'DF').sort((a2, c) => this.stat(a2, 'spd') - this.stat(c, 'spd'))[0];
         const behind = space > 90 && slowest && this.stat(fw, 'spd') > this.stat(slowest, 'spd') - 4;
         const ltx = behind ? this.offsideX(t) + dx * Math.min(60, space - 40) : fw.x - dx * 10;
-        if (behind) { fw.burst = 1.6; }
+        if (behind) { fw.burst = 1.6; } else { fw.holdUp = true; } // marked tight: control it, then look to lay it off first-time
         this.doPass(p, fw, true, ltx, fw.y);
         if (this.ball.pass) this.ball.pass.behind = behind; this.ball.vz = 150; this.tstats[t].long++; if (Math.random() < 0.35) this.tick((t === 0 ? 'ハマカゼ' : this.opp.short) + '、前線へロングボール！', t === 0 ? '#9fdcff' : '#ff9a8a'); }
       else if (best.k === 'pass') this.doPass(p, best.m);
@@ -1013,7 +1015,8 @@
       const rx = clamp(m.x + dirX(t) * 14, Math.min(gxT, gxT - dirX(t) * 90), Math.max(gxT, gxT - dirX(t) * 90)), ry = clamp(m.y, CY - 60, CY + 60);
       tx = lerp(tx, rx, aim); ty = lerp(ty, ry, aim);
       m.tx = tx; m.ty = ty;
-      this.deliver(p, tx, ty, far ? 180 : 158, m, null);
+      // a proper lofted arc rather than a flat rocket: more hangtime so the cross reads as a cross
+      this.deliver(p, tx, ty, far ? 215 : 195, m, null);
       if (t === 0) this.tick(p.name + '、' + (far ? 'ファーへ' : 'ゴール前へ') + 'クロス！', '#9fdcff');
     }
     releaseBall(p) {
@@ -1935,9 +1938,18 @@
       p.decT = p.gk ? 0.8 : rand(0.1, 0.35);
       Sound.play('kick', { vol: 0.3, pan: this.pan(p.x) });
       if (pass && pass.cutback && pass.from.team === p.team) p.decT = 0;
-      if (!p.gk && Math.abs(p.y - CY) > 90 && this.proj(p.team, p.x) > this.proj(p.team, CX) - 30 && (this.isFullback(p) || this.role(p) !== 'DF')) p.wingRun = this.isFullback(p) ? 3.6 : 2.0;
+      if (!p.gk && Math.abs(p.y - CY) > 90 && this.proj(p.team, p.x) > this.proj(p.team, CX) - 55 && (this.isFullback(p) || this.role(p) !== 'DF')) p.wingRun = this.isFullback(p) ? 4.2 : 2.6;
       // keeper picks up a loose ball in his own box with his hands (not from a teammate's pass)
       if (p.gk && this.inOwnBox(p.team, b.x, b.y) && !(pass && pass.from.team === p.team)) this.gkCatch(p);
+      // post play: a target man marked tight on a long ball lays it off first-time instead of trying to turn
+      if (p.holdUp) {
+        p.holdUp = false;
+        const mate = this.team(p.team).filter((q) => q !== p && !q.gk).sort((a, c) => dist(a.x, a.y, p.x, p.y) - dist(c.x, c.y, p.x, p.y))[0];
+        if (mate) {
+          this.tick((p.team === 0 ? p.name : this.opp.short) + '、ポストプレイでつなぐ！', p.team === 0 ? '#9fdcff' : '#ff9a8a');
+          this.doPass(p, mate);
+        }
+      }
     }
 
     onSave(gk) {
@@ -1999,7 +2011,17 @@
       Game.doHitstop(0.18); Game.addShake(6, 0.5); Game.doFlash(0.7, team === 0 ? '#ffffff' : '#ffb0a0');
       Sound.play('net'); Sound.duck(0.6, 2.5);
       setTimeout(() => Sound.play(team === 0 ? 'goal' : 'concede'), 120);
-      if (team === 0) { Sound.play('cheer'); this.banner('GOAL!!', 'goal', 3.0); }
+      if (team === 0) {
+        Sound.play('cheer'); this.banner('GOAL!!', 'goal', 3.0);
+        // a good build-up deserves a beat of its own, after the GOAL banner has had its moment
+        const chainLen = this.chain[0];
+        if (chainLen >= 4) {
+          const combo = this.combos.find((c) => scorer && this.lastPasser && c.ids.includes(scorer.id) && c.ids.includes(this.lastPasser.id));
+          const text = (combo ? 'コンビ「' + combo.name + '」！ ' : '') + chainLen + '本のパスで崩した！';
+          setTimeout(() => this.banner(text, 'special', 2.4, '#ffd24a'), 1500);
+          this.tick('見事な崩し！ ' + chainLen + '本のパスからのゴールでした。', '#ffd24a');
+        }
+      }
       else { Sound.play('cheer', { vol: 0.45 }); this.banner('失点…', 'concede', 2.4); }
       // confetti from the stands
       if (team === 0) {
