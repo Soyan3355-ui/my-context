@@ -1711,11 +1711,14 @@
     const fx = State.fixture(), opp = fx.opp;
     const mu = Data.MATCHUP[State.tactic][opp.tactic];
     const oppData = oppRoster(opp);
+    const aceP = oppData.roster.find((p) => p.id === opp.captain);
+    const aceStat = aceP ? STAT_KEYS.slice().sort((a, c) => aceP.stats[c] - aceP.stats[a])[0] : null;
     const lines = CAPTAIN_LINES[opp.id].concat(rivalryLines(fx, oppData.reunion)).concat([
       { who: 'leo', expr: 'determined', text: pick(['へぇ、言ってくれるじゃん。その鼻、へし折ってやるよ。', 'ま、今日もオレが決めるから。見てなって。', '誰が相手でも関係ねぇ。勝つのはウチだ。']) },
       { who: 'kazuha', expr: 'normal', text: opp.short + 'は「' + Data.TACTICS[opp.tactic].name + '」のチームです。' + opp.blurb },
+    ].concat(aceP ? [{ who: 'kazuha', expr: 'determined', text: '相手のエースは「' + aceP.nick + '」' + aceP.name + '。' + STAT_NAMES[aceStat] + 'が持ち味なので、要注意です。' }] : []).concat([
       { who: 'kazuha', expr: 'normal', text: 'うちの「' + Data.TACTICS[State.tactic].name + '」との相性は ' + mu[0] + '。' + mu[1] + '。' },
-    ]);
+    ]));
     if (State.season.week === 0) lines.push(
       { who: 'nagisa', expr: 'normal', text: '監督、試合中は画面下のボタンか 1〜4キーで指示、5キーでベンチ指示（戦術の変更・交代）ができます！' },
       { who: 'nagisa', expr: 'determined', text: 'シュートチャンスでは「CHANCE!!」、相手のシュートは「PINCH!!」。練習と同じ、JUST を狙ってください！' });

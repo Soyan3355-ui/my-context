@@ -74,6 +74,7 @@
       this.hover = -1;
       this.halftimeUI = null;
       this.moraleMul = [opts.morale || 1, 1];
+      this.momentum = 1; // 0.85..1.15, nudged by tactic changes paying off (or not) and big moments
       this.boost = opts.boost || {};
       this.setplay = Object.assign({ unlocked: [], ck: 'std', fk: 'std', lv: 0 }, opts.setplay || {});
       this.spMenu = null; this.spRun = null; this.fkShot = null; this.oneOnOne = null;
@@ -101,7 +102,7 @@
       let v = p.st[k];
       if (p.team === 1) v += this.opp.boost || 0;
       if (p.team === 0) {
-        v *= this.moraleMul[0];
+        v *= this.moraleMul[0] * this.momentum;
         if (this.boost[k]) v += this.boost[k];
         const id = p.id;
         if (this.combo('ayashii') && (id === 'kawataro' || id === 'mask') && k === 'def') v += 6;
@@ -1975,6 +1976,7 @@
       const b = this.ball;
       const scorer = b.shot ? b.shot.shooter : b.last;
       if (this.half === 2) { this.evalHtChange(team === 0); this.evalOppSwitch(team === 0); }
+      this.nudgeMomentum(team === 0 ? 0.05 : -0.05);
       this.score[team]++;
       this.sp = null;
       b.inNet = true; b.shot = null; b.pass = null; b.owner = null;
@@ -2168,6 +2170,8 @@
         if (snap.tac !== this.tac[0]) parts.push('戦術「' + Data.TACTICS[this.tac[0]].name + '」');
         if (snap.form !== this.form[0]) parts.push('フォーメーション「' + this.form[0].short + '」');
         this.htChange = { evaluated: false };
+        // a switch always costs a little adjustment time; how much depends on how well the team already knows the new setup
+        this.nudgeMomentum(-0.06 * (1 - this.realize(0)) * 2);
         setTimeout(() => this.banner(parts.join('・') + 'に変更！', 'big', 1.8), 900);
         this.tick('ハーフタイムで' + parts.join('・') + 'に変更しました。後半の出来を見てみましょう。', '#ffd24a');
       } else {
@@ -2179,18 +2183,19 @@
       if (this.combo('tofu')) setTimeout(() => this.comboFx('tofu'), 2500);
       this.chanceCD = 6; this.pinchCD = 10;
     }
+    nudgeMomentum(d) { this.momentum = clamp(this.momentum + d, 0.85, 1.15); }
     evalHtChange(won) {
       if (this.htChange && !this.htChange.evaluated) {
         this.htChange.evaluated = true;
-        if (won) this.memo('htgood', 'ハーフタイムの采配がハマりましたね！変更した狙いが機能してます');
-        else this.memo('htbad', '裏を突かれましたね…ハーフタイムの変更が仇になったかもしれません');
+        if (won) { this.memo('htgood', 'ハーフタイムの采配がハマりましたね！変更した狙いが機能してます'); this.nudgeMomentum(0.1); }
+        else { this.memo('htbad', '裏を突かれましたね…ハーフタイムの変更が仇になったかもしれません'); this.nudgeMomentum(-0.08); }
       }
     }
     evalOppSwitch(won) {
       if (this.oppSwitch && !this.oppSwitch.evaluated) {
         this.oppSwitch.evaluated = true;
-        if (won) this.memo('oppswitch-ok', '相手の戦術変更にも動じず、しっかり対応できてます！');
-        else this.memo('oppswitch-bad', '相手の戦術変更にやられてます…対応を考えたいところです');
+        if (won) { this.memo('oppswitch-ok', '相手の戦術変更にも動じず、しっかり対応できてます！'); this.nudgeMomentum(0.05); }
+        else { this.memo('oppswitch-bad', '相手の戦術変更にやられてます…対応を考えたいところです'); this.nudgeMomentum(-0.06); }
       }
     }
     minute() { return Math.min(45, Math.floor((this.clock / HALF_LEN) * 45)) + (this.half === 2 ? 45 : 0); }
@@ -2536,6 +2541,23 @@
       const tired = this.team(0).filter((p) => !p.gk && p.sta < 30);
       if (tired.length >= 2) add('tired', 'worry', ['スタミナが心配です…交代も考えましょうか', tired[0].name + 'たち、足が止まってきてますね']);
       if (this.tstats[1].counter >= 2) add('opcounter', 'worry', ['カウンターに気をつけてください！', '相手の速い攻撃、警戒しましょう']);
+      // more analysis-flavored color commentary, with real numbers behind it
+      const totP = this.poss[0] + this.poss[1];
+      if (totP > 22) {
+        const p0 = Math.round(this.poss[0] / totP * 100);
+        if (p0 >= 60) add('possup', 'happy', ['支配率' + p0 + '%、しっかりボールを握れてます！', 'ボールを持ててますね、' + p0 + '%です！']);
+        else if (p0 <= 40) add('possdown', 'worry', ['支配率' + p0 + '%…ボールを持たせてもらえてません', '相手にボールを握られてますね、' + p0 + '%です']);
+      }
+      if (this.shots[0] + this.shots[1] >= 4) {
+        if (this.shots[0] > this.shots[1] * 1.5) add('shotup', 'happy', ['シュート数' + this.shots[0] + '-' + this.shots[1] + '、押せてます！']);
+        else if (this.shots[1] > this.shots[0] * 1.5) add('shotdown', 'worry', ['シュート数' + this.shots[0] + '-' + this.shots[1] + '…打たれすぎです']);
+      }
+      const ace1 = this.ace[1];
+      if (ace1 && ace1.rec.shot >= 2 && !ace1.gk) add('acewarn', 'worry', ['「' + ace1.name + '」がもうシュート' + ace1.rec.shot + '本…警戒してください！', '相手のエース、仕事させすぎです']);
+      const star = this.team(0).filter((p) => !p.gk).sort((a, c) => (c.rec.passOk || 0) - (a.rec.passOk || 0))[0];
+      if (star && star.rec.passOk >= 8) add('star', 'happy', [star.name + 'のパス、' + star.rec.passOk + '本通ってます！好調です！']);
+      if (this.momentum >= 1.08) add('momup', 'happy', ['勢いに乗ってますね、この流れです！', 'チームの雰囲気、すごく良いです！']);
+      else if (this.momentum <= 0.92) add('momdown', 'worry', ['ちょっと空気が重いですね…変更の影響が出てるかもしれません', 'チームがまだ落ち着いていない感じです']);
       if (!cands.length) add('filler', 'normal', ['頑張ってください、監督！', 'いい雰囲気ですね！', 'サポーターも応援してますよ！']);
       const c = pick(cands.length ? cands : [{ key: 'filler', mood: 'normal', text: '頑張ってください、監督！' }]);
       this.nagisa.lastKey = c.key;
@@ -2926,6 +2948,13 @@
         const rz = (this.realize(t) - 0.5) * 2;
         g.fillStyle = '#3a4466'; g.fillRect(cx0 + 5, 15, cw - 6, 1);
         g.fillStyle = T.color; g.fillRect(cx0 + 5, 15, Math.round((cw - 6) * rz), 1);
+        if (t === 0) {
+          // momentum: a second thin bar under the tactic realize one, nudged by tactic changes paying off (or not)
+          const mv = clamp((this.momentum - 0.85) / 0.3, 0, 1);
+          g.fillStyle = '#3a4466'; g.fillRect(cx0 + 5, 17, cw - 6, 1);
+          g.fillStyle = this.momentum >= 1.03 ? '#6cc35a' : this.momentum <= 0.97 ? '#e0474c' : '#9a8e7a';
+          g.fillRect(cx0 + 5, 17, Math.round((cw - 6) * mv), 1);
+        }
       }
       // score
       panel(g, W / 2 - 50, 1, 100, 18, 'dark');
