@@ -6,7 +6,7 @@
   const CX = P.x + P.w / 2, CY = P.y + P.h / 2;
   const GW = Art.GOAL_W;
   const TOP_H = 20, BOT_H = 50, VIEW_H = H - TOP_H - BOT_H;
-  const HALF_LEN = 80; // real seconds per half
+  const HALF_LEN = 100; // real seconds per half
   // tactic tuning knobs (calibrated against docs/tactics_research.md by simulation)
   const TUNE = window.TACTIC_TUNE = Object.assign({ pressErr: 1.2, pressLine: 80, pressMark: 0, presser2: 1, longMF: 70, counterLine: 75, counterGoalSide: 5, possShort: 18 }, window.TACTIC_TUNE || {});
 
@@ -38,6 +38,7 @@
       this.subsLeft = 3; this.subQueue = []; this.subbedOut = []; this.panel = null;
       this.tacTime = {}; this.noShotT = [0, 0]; this.pressOn = [true, true]; this.pressRollT = 0;
       this.ana = { behind: [0, 0, 0], shotLane: [0, 0, 0] }; this.memos = []; this.memoKeys = {}; this.memoT = 3;
+      this.nagisa = { bubble: null, cd: rand(4, 7), idleT: rand(9, 13), lastKey: null };
       home.forEach((d, i) => this.players.push(this.mk(d, 0, i)));
       away.forEach((d, i) => this.players.push(this.mk(d, 1, i)));
       this.ball = { x: CX, y: CY, z: 0, vx: 0, vy: 0, vz: 0, owner: null, last: null, lastKick: null, kickImm: 0, pass: null, shot: null, roll: 0, tried: new Set(), inNet: false };
@@ -316,6 +317,10 @@
         // pressing needs everyone to understand the triggers: re-roll who joins every second
         this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
         this.memoT -= dt; if (this.memoT <= 0) { this.memoT = 2; this.liveMemo(); }
+        // Nagisa: a running feed of hype and quiet worry from the bench
+        if (this.nagisa.bubble) { this.nagisa.bubble.t -= dt; if (this.nagisa.bubble.t <= 0) this.nagisa.bubble = null; }
+        if (this.nagisa.cd > 0) this.nagisa.cd -= dt;
+        this.nagisa.idleT -= dt; if (this.nagisa.idleT <= 0) { this.nagisa.idleT = rand(12, 18); this.nagisaIdle(); }
         // a queued substitution goes on at a quiet moment if play has not stopped for a while
         if (this.subQueue.length && this.clock + (this.half - 1) * 1000 - this.subQueue[0].at > 8 && !b.shot && !this.sp && Math.abs(b.x - CX) < 200) this.applySubs();
         if (!this.opts.fixedTac && this.half === 2 && this.tac[1] !== this.opp.planB && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
@@ -1156,6 +1161,8 @@
         this.setupSetPlay(sp);
         const opts = this.spOptions(kind);
         if (team === 0 && !this.auto && opts.length > 1 && this.state === 'play') this.spMenu = { kind, opts, sel: Math.max(0, opts.findIndex((o) => o.id === sp.routine)), t: 0 };
+        if (team === 0) this.sayNagisa(pick(['チャンスです！', 'ここは決めたいですね！']), 2.2, 'happy');
+        else this.sayNagisa(pick(['気をつけてください！', 'しっかり守りましょう！']), 2.2, 'worry');
       }
       if (type === 'gk') { b.owner = taker; b.held = true; b.last = taker; }
       const label = { throw: 'スローイン', corner: 'コーナーキック', goalkick: 'ゴールキック', free: 'フリーキック' }[type];
@@ -1832,6 +1839,7 @@
           Game.doHitstop(0.05);
           this.popup(p.x, p.y - 50, '抜け出した！', p.team === 0 ? '#ffd24a' : '#ffb0a0', 10);
           this.tick(p.team === 0 ? '見事なスルーパス！ ' + p.name + '、キーパーと1対1だ！' : pass.from.name + 'のスルーパス！ ' + p.name + 'が抜け出した！', p.team === 0 ? '#ffd24a' : '#ff9a8a');
+          this.sayNagisa(p.team === 0 ? pick(['決めてください！', 'チャンスです、落ち着いて！']) : pick(['戻ってください、ピンチです！', '気をつけて…！']), 2.4, p.team === 0 ? 'happy' : 'worry');
           Sound.play('ooh', { vol: 0.6 });
           this.crowdHype = 0.9;
           if (p.team === 0 && this.chanceCD > 0) this.chanceCD = 0;
@@ -1854,7 +1862,7 @@
       this.popup(gk.x, gk.y - 50, gk.team === 0 ? 'ナイスセーブ！' : 'セーブ！', gk.team === 0 ? '#ffd24a' : '#ffb0a0', 10);
       Sound.play('ooh');
       this.crowdHype = 0.9;
-      if (gk.team === 0) { this.tick(gk.name + '、がっちり止めた！', '#9fdcff'); if (Math.random() < 0.3) this.say(gk, gk.id === 'gen' ? pick(['網にかかったな', 'ふんっ']) : pick(['もちっと止めた！', 'ふぅ…']), 1.1); if (gk.id === 'daifuku') this.fx.burst(gk.x, gk.y - 10, 14, { color: '#ffffff', speedMin: 10, speedMax: 40, lifeMax: 0.8, size: 2 }); }
+      if (gk.team === 0) { this.tick(gk.name + '、がっちり止めた！', '#9fdcff'); if (Math.random() < 0.3) this.say(gk, gk.id === 'gen' ? pick(['網にかかったな', 'ふんっ']) : pick(['もちっと止めた！', 'ふぅ…']), 1.1); if (gk.id === 'daifuku') this.fx.burst(gk.x, gk.y - 10, 14, { color: '#ffffff', speedMin: 10, speedMax: 40, lifeMax: 0.8, size: 2 }); if (Math.random() < 0.4) this.sayNagisa(pick(['ナイスセーブです！', 'ふぅ、助かりました…']), 2.2, 'happy'); }
       else this.tick(gk.name + '、ファインセーブ！ 惜しい！', '#ff9a8a');
       b.shot = null;
       if (Math.random() < 0.6) {
@@ -1878,6 +1886,8 @@
       Game.addShake(3, 0.25); Game.doHitstop(0.07);
       this.popup(b.x, b.y - 20, 'ポスト！', '#ffffff', 11);
       this.tick('ポストに当たった！ 惜しいっ！', '#ffd24a');
+      const postTeam = b.shot ? b.shot.team : (b.last ? b.last.team : 0);
+      this.sayNagisa(postTeam === 0 ? 'ああっ、惜しい…！' : '助かりました…！', 2.2, 'surprised');
       b.vx = -b.vx * 0.5; b.vy = b.vy + rand(-80, 80); b.x = side ? P.x + P.w - 2 : P.x + 2;
       b.shot = null; b.pass = null;
       this.fx.burst(b.x, b.y, 8, { color: '#ffffff', speedMin: 30, speedMax: 90, lifeMax: 0.3, size: 2, kind: 'star' });
@@ -1891,6 +1901,9 @@
       this.netShake[team === 0 ? 1 : 0] = 4;
       this.state = 'goal'; this.stateT = 0;
       this.kickoffTeam = 1 - team;
+      // a goal always breaks through Nagisa's usual pacing
+      this.nagisa.bubble = { text: team === 0 ? pick(['やりました！', '決めましたよ、監督！', 'ナイスゴールです！']) : pick(['大丈夫です、切り替えましょう！', 'まだこれからです！']), t: 2.6, dur: 2.6, mood: team === 0 ? 'happy' : 'worry' };
+      this.nagisa.cd = 3.8;
       if (scorer && scorer.team === team) {
         scorer.rec.goal++;
         if (this.lastPasser && this.lastPasser.team === team && this.lastPasser !== scorer) this.lastPasser.rec.assist++;
@@ -2338,7 +2351,32 @@
       this.memoKeys[key] = true;
       this.memos.push({ key, text: textStr, min: this.minute() });
       this.tick('ナギサのメモ：' + textStr, '#c8f08a');
+      this.sayNagisa(textStr, 3.4, 'worry');
       Sound.play('page', { vol: 0.4 });
+    }
+
+    // ---------------- Nagisa: sideline chatter, tension and quick tactical asides ----------------
+    sayNagisa(textStr, dur = 2.6, mood = 'normal') {
+      if (this.nagisa.cd > 0) return false;
+      this.nagisa.bubble = { text: textStr, t: dur, dur, mood };
+      this.nagisa.cd = dur + rand(1.4, 2.6);
+      return true;
+    }
+    nagisaIdle() {
+      const sd = this.scoreDiff(0), cands = [];
+      const add = (key, mood, arr) => { if (key === this.nagisa.lastKey) return; cands.push({ key, mood, text: pick(arr) }); };
+      if (sd > 0) add('lead', 'happy', ['このまま逃げ切りたいですね！', 'リードしてます、集中していきましょう！', 'いいペースです、監督！']);
+      else if (sd < 0) add('chase', 'sad', ['まだまだこれからです、切り替えましょう！', '焦らず、いつも通りいきましょう！', '追いつきたいところです…！']);
+      else if (this.half === 2 && this.clock > HALF_LEN * 0.55) add('tense', 'determined', ['そろそろ試合が動くはずです！', '残り時間、集中していきましょう！']);
+      if (this.chain[0] >= 6) add('chain', 'happy', ['パスがよくつながってますね！', 'いい形で崩せてます！']);
+      if (this.realize(0) < 0.74 && this.clock > 18) add('tacpoor', 'worry', ['戦術の実現度がまだ低いですね…練習が必要かもしれません', 'ちょっと戦術がハマってない気がします…']);
+      const tired = this.team(0).filter((p) => !p.gk && p.sta < 30);
+      if (tired.length >= 2) add('tired', 'worry', ['スタミナが心配です…交代も考えましょうか', tired[0].name + 'たち、足が止まってきてますね']);
+      if (this.tstats[1].counter >= 2) add('opcounter', 'worry', ['カウンターに気をつけてください！', '相手の速い攻撃、警戒しましょう']);
+      if (!cands.length) add('filler', 'normal', ['頑張ってください、監督！', 'いい雰囲気ですね！', 'サポーターも応援してますよ！']);
+      const c = pick(cands.length ? cands : [{ key: 'filler', mood: 'normal', text: '頑張ってください、監督！' }]);
+      this.nagisa.lastKey = c.key;
+      this.sayNagisa(c.text, 2.8, c.mood);
     }
     homeRecs() { return this.team(0).concat(this.subbedOut).map((p) => p.rec); }
     sumRec(k) { return this.homeRecs().reduce((a, r) => a + (r[k] || 0), 0); }
@@ -2597,6 +2635,7 @@
       if (this.halftimeUI) this.drawHalftime(g);
       if (this.state === 'intro' && this.half === 1 && this.stateT < 5.4) this.drawLineups(g);
       if (this.tacToast) this.drawToast(g);
+      if (this.nagisa.bubble) this.drawNagisaBubble(g);
       if (this.panel) this.drawPanel(g);
       if (this.state === 'fulltime' && this.stateT > 2.4) {
         const a = 0.6 + 0.4 * Math.sin(Game.time * 5);
@@ -2767,6 +2806,23 @@
       g.globalAlpha = a;
       panel(g, Math.round(W / 2 - w / 2), TOP_H + 4 - Math.round((1 - k) * 16), w, 17, 'dark');
       text(g, ts.text, W / 2, TOP_H + 7 - Math.round((1 - k) * 16), { size: 10, align: 'center', color: ts.color });
+      g.globalAlpha = 1;
+    }
+    drawNagisaBubble(g) {
+      const nb = this.nagisa.bubble;
+      const MOOD_COLOR = { happy: '#2f86c4', worry: '#b8323a', determined: '#6d4f3a', surprised: '#c07020', normal: '#2a1a24' };
+      const MOOD_EXPR = { happy: 'happy', worry: 'sad', determined: 'determined', surprised: 'surprised', normal: 'normal' };
+      const k = Ease.outBack(clamp((nb.dur - nb.t) / 0.22, 0, 1));
+      const fade = clamp(nb.t / 0.3, 0, 1);
+      g.globalAlpha = fade;
+      const px = 6, py = TOP_H + 4, ox = Math.round((1 - k) * -30);
+      const img = portrait('nagisa', MOOD_EXPR[nb.mood] || 'normal');
+      if (img) g.drawImage(img, px + ox, py, 24, 24);
+      const bx = px + 28, bw = 210;
+      const lines = E.wrap(g, nb.text, bw - 14, 9).slice(0, 3);
+      const bh = 8 + lines.length * 11;
+      panel(g, bx + ox, py, bw, bh, 'paper');
+      lines.forEach((l, i) => text(g, l, bx + 7 + ox, py + 5 + i * 11, { size: 9, color: MOOD_COLOR[nb.mood] || '#2a1a24' }));
       g.globalAlpha = 1;
     }
     drawCombo(g) {
