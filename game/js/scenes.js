@@ -1297,6 +1297,36 @@
     return Math.round(ps.reduce((a, p) => a + ((p.tacU && p.tacU[tac]) || 50), 0) / ps.length);
   }
   function activeCombos(ids) { return Data.COMBOS.filter((c) => c.ids.every((id) => ids.includes(id))); }
+  // stat-based (not trained) fit: how well the squad's raw abilities suit a tactic or formation, regardless of experience
+  function roleFit(p, role) {
+    const st = p.stats;
+    return role === 'DF' ? st.def * 1.3 + st.spd * 0.6 + st.pas * 0.3
+      : role === 'MF' ? st.pas * 1.1 + st.spd * 0.6 + st.def * 0.5 + st.sht * 0.3
+      : st.sht * 1.3 + st.spd * 0.7 + st.pas * 0.3;
+  }
+  function formationFit(key) {
+    const F = Data.FORMATIONS[key];
+    const ps = State.lineup.slice(1).map((id) => State.roster.find((p) => p.id === id)).filter(Boolean);
+    if (!ps.length) return 0;
+    const avg = ps.reduce((a, p, i) => a + roleFit(p, F.roles[i] || 'MF'), 0) / ps.length;
+    return Math.round(clamp(avg / 1.3, 0, 100));
+  }
+  function tacScore(tac, p) {
+    const st = p.stats;
+    if (tac === 'counter') return st.spd * 0.5 + st.def * 0.3 + st.sta * 0.2;
+    if (tac === 'press') return st.spd * 0.4 + st.def * 0.4 + st.sta * 0.2;
+    if (tac === 'long') return st.sht * 0.5 + st.def * 0.3 + st.spd * 0.2;
+    return st.pas * 0.6 + st.spd * 0.2 + st.sta * 0.2; // possession
+  }
+  function tacticFit(tac) {
+    const ps = State.lineup.map((id) => State.roster.find((p) => p.id === id)).filter(Boolean);
+    if (!ps.length) return 0;
+    return Math.round(clamp(ps.reduce((a, p) => a + tacScore(tac, p), 0) / ps.length, 0, 100));
+  }
+  function tacticBestPlayers(tac, n) {
+    return State.lineup.map((id) => State.roster.find((p) => p.id === id)).filter(Boolean)
+      .sort((a, c) => tacScore(tac, c) - tacScore(tac, a)).slice(0, n);
+  }
   function Tactics() {
     const s = { t: 0, keys: Object.keys(Data.FORMATIONS), pos: null, pick: null, cursor: 0, hover: null, flash: {} };
     const BX = 10, BY = 34, BW = 280, BH = 196;
@@ -1462,6 +1492,11 @@
         panel(g, r.x, r.y, r.w, r.h, cur ? 'gold' : hv ? 'sky' : 'paper');
         text(g, f.name.split(' ')[1], r.x + r.w / 2, r.y + 1, { size: 8, align: 'center', color: '#2a1a24' });
         text(g, f.short, r.x + r.w / 2, r.y + 10, { size: 8, align: 'center', color: '#6d4f3a' });
+        const ff = formationFit(k);
+        g.fillStyle = '#3a3050'; g.fillRect(r.x + 6, r.y + r.h - 4, r.w - 12, 2);
+        g.fillStyle = ff >= 70 ? '#6cc35a' : ff >= 45 ? '#ffd24a' : '#e0474c';
+        g.fillRect(r.x + 6, r.y + r.h - 4, Math.round((r.w - 12) * ff / 100), 2);
+        if (hv) s.formHover = k;
       });
       // team tactic
       Object.keys(Data.TACTICS).forEach((k, i) => {
@@ -1470,6 +1505,8 @@
         g.fillStyle = T.color; g.fillRect(r.x + 3, r.y + 4, 3, 8);
         text(g, T.short, r.x + 24, r.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
         g.fillStyle = '#3a3050'; g.fillRect(r.x + 8, r.y + 12, r.w - 12, 2); g.fillStyle = T.color; g.fillRect(r.x + 8, r.y + 12, Math.round((r.w - 12) * teamRealize(k) / 100), 2);
+        const pot = tacticFit(k), px = r.x + 8 + Math.round((r.w - 12) * pot / 100);
+        g.fillStyle = '#ffffff'; g.fillRect(clamp(px, r.x + 8, r.x + r.w - 5), r.y + 11, 1, 4);
         if (hv) s.tacHover = k;
       });
       // bench
@@ -1510,9 +1547,16 @@
         const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
         text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
       } else if (s.tacHover) {
-        const T = Data.TACTICS[s.tacHover], mu = Data.MATCHUP[s.tacHover].long;
-        text(g, '戦術「' + T.name + '」　チームの実現度 ' + teamRealize(s.tacHover) + '%　' + T.desc, 16, 239, { size: 8, color: '#2a1a24' });
-        text(g, '相手（ロングボール）との相性 ' + mu[0] + '：' + mu[1], 16, 252, { size: 8, color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
+        const T = Data.TACTICS[s.tacHover];
+        const cur = teamRealize(s.tacHover), pot = tacticFit(s.tacHover);
+        const best = tacticBestPlayers(s.tacHover, 2).map((p) => p.name).join('・');
+        text(g, '戦術「' + T.name + '」　理解度 ' + cur + '%（白線＝選手の潜在適性 ' + pot + '%）　' + T.desc, 16, 239, { size: 8, color: '#2a1a24' });
+        text(g, (pot > cur + 10 ? 'まだ慣れていませんが、伸びしろがあります。' : pot < cur - 10 ? '経験は積んでいますが、選手の適性はやや低めです。' : '経験と適性のバランスが取れています。') + '　活かせそうな選手：' + best, 16, 252, { size: 8, color: '#6d4f3a' });
+      }
+      else if (s.formHover) {
+        const F = Data.FORMATIONS[s.formHover], ff = formationFit(s.formHover);
+        text(g, 'フォーメーション「' + F.name + '」　今の選手層との適性 ' + ff + '%　' + F.desc, 16, 239, { size: 8, color: '#2a1a24' });
+        text(g, (ff >= 70 ? 'このフォーメーションは選手の特徴によく合っていそうです。' : ff >= 45 ? 'まずまず合っていますが、ハマる選手を選びたいところです。' : '今のメンバーにはやや合わないかもしれません。'), 16, 252, { size: 8, color: '#6d4f3a' });
       }
       else if (s.spHover) {
         const h = s.spHover;
@@ -1520,7 +1564,7 @@
         text(g, h.n > 1 ? 'クリックで切り替え。試合中もキックの前にサインを選べます。' : 'セットプレー練習で新しいサインを覚えると選べるようになります。', 16, 252, { size: 8, color: '#6d4f3a' });
       }
       else text(g, 'クリックで2人を選ぶと入れ替え。カーソルで特性と相性を確認。1〜3キーで陣形切り替え。', 16, 245, { size: 9, color: '#6d4f3a' });
-      s.tacHover = null; s.spHover = null;
+      s.tacHover = null; s.spHover = null; s.formHover = null;
       if (s.newCombo) {
         const k = Ease.outBack(clamp(s.newCombo.t / 0.3, 0, 1)), c = s.newCombo.c;
         const a = 1 - clamp((s.newCombo.t - 2.2) / 0.4, 0, 1);

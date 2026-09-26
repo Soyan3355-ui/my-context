@@ -10,6 +10,8 @@
   // tactic tuning knobs (calibrated against docs/tactics_research.md by simulation)
   const TUNE = window.TACTIC_TUNE = Object.assign({ pressErr: 1.2, pressLine: 80, pressMark: 0, presser2: 1, longMF: 70, counterLine: 75, counterGoalSide: 5, possShort: 18 }, window.TACTIC_TUNE || {});
 
+  const STAT_GRADES = [[80, 'S'], [70, 'A'], [60, 'B'], [50, 'C'], [40, 'D'], [30, 'E'], [0, 'F']];
+  const STAT_GRADE_COL = { S: '#ffd24a', A: '#e0474c', B: '#f08a3a', C: '#e8c83a', D: '#6cc35a', E: '#4fb4e8', F: '#8a8496' };
   const goalX = (t) => (t === 0 ? P.x + P.w : P.x);
   const ownGoalX = (t) => (t === 0 ? P.x : P.x + P.w);
   const dirX = (t) => (t === 0 ? 1 : -1);
@@ -327,8 +329,10 @@
           this.tac[1] = this.opp.planB;
           const TB = Data.TACTICS[this.opp.planB];
           this.benchBubble[1] = { text: TB.name + 'に切り替えじゃ！', t: 2.6 };
-          this.tick(this.opp.short + '、戦術を「' + TB.name + '」に切り替えた！', '#ff9a8a');
+          this.banner(this.opp.short + '、戦術変更！', 'big', 1.6);
+          this.tick(this.opp.short + '、戦術を「' + TB.name + '」に切り替えた！ ここからの対応が問われます。', '#ff9a8a');
           this.toast(this.opp.short + '：' + TB.name + 'に切り替え', '#ff9a8a');
+          this.oppSwitch = { evaluated: false };
         }
         this.aiCoachT -= dt;
         if (this.aiCoachT <= 0 && !this.order[1]) {
@@ -1920,6 +1924,7 @@
     onGoal(team) {
       const b = this.ball;
       const scorer = b.shot ? b.shot.shooter : b.last;
+      if (this.half === 2) { this.evalHtChange(team === 0); this.evalOppSwitch(team === 0); }
       this.score[team]++;
       this.sp = null;
       b.inNet = true; b.shot = null; b.pass = null; b.owner = null;
@@ -2011,6 +2016,7 @@
     }
     openHalftime() {
       Sound.bgm('halftime');
+      this.h1Snap = { tac: this.tac[0], form: this.form[0], score: this.score.slice(), shots: this.shots.slice(), onTarget: this.onTarget.slice() };
       this.halftimeUI = { t: 0, sel: 0, phase: 'talk', chosen: null };
     }
     updateHalftime(raw) {
@@ -2063,16 +2069,46 @@
       this.half = 2; this.clock = 0;
       this.placeKickoff(1, true);
       this.state = 'intro'; this.stateT = 0.6; this.introBanner = true;
+      const snap = this.h1Snap;
+      if (snap && (snap.tac !== this.tac[0] || snap.form !== this.form[0])) {
+        const parts = [];
+        if (snap.tac !== this.tac[0]) parts.push('戦術「' + Data.TACTICS[this.tac[0]].name + '」');
+        if (snap.form !== this.form[0]) parts.push('フォーメーション「' + this.form[0].short + '」');
+        this.htChange = { evaluated: false };
+        setTimeout(() => this.banner(parts.join('・') + 'に変更！', 'big', 1.8), 900);
+        this.tick('ハーフタイムで' + parts.join('・') + 'に変更しました。後半の出来を見てみましょう。', '#ffd24a');
+      } else {
+        this.htChange = null;
+      }
       this.banner('後半開始！', 'big', 1.6);
       Sound.bgm('match');
       this.tick('日も傾いてきました。後半キックオフ！', '#ffd24a');
       if (this.combo('tofu')) setTimeout(() => this.comboFx('tofu'), 2500);
       this.chanceCD = 6; this.pinchCD = 10;
     }
+    evalHtChange(won) {
+      if (this.htChange && !this.htChange.evaluated) {
+        this.htChange.evaluated = true;
+        if (won) this.memo('htgood', 'ハーフタイムの采配がハマりましたね！変更した狙いが機能してます');
+        else this.memo('htbad', '裏を突かれましたね…ハーフタイムの変更が仇になったかもしれません');
+      }
+    }
+    evalOppSwitch(won) {
+      if (this.oppSwitch && !this.oppSwitch.evaluated) {
+        this.oppSwitch.evaluated = true;
+        if (won) this.memo('oppswitch-ok', '相手の戦術変更にも動じず、しっかり対応できてます！');
+        else this.memo('oppswitch-bad', '相手の戦術変更にやられてます…対応を考えたいところです');
+      }
+    }
     minute() { return Math.min(45, Math.floor((this.clock / HALF_LEN) * 45)) + (this.half === 2 ? 45 : 0); }
 
     finish() {
       if (this.result) return; // a match ends exactly once
+      if (this.h1Snap) {
+        const shots2 = this.shots[0] - this.h1Snap.shots[0], against2 = this.shots[1] - this.h1Snap.shots[1];
+        this.evalHtChange(shots2 > against2);
+        this.evalOppSwitch(shots2 > against2);
+      }
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
       this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
@@ -2477,20 +2513,25 @@
     openPanel(fromHalftime) {
       if (this.meter || this.panel) return;
       Sound.play('select');
-      this.panel = { t: 0, out: -1, inn: -1, cursor: 0, benchOff: 0, fromHalftime: !!fromHalftime, msg: null };
+      this.panel = { t: 0, out: -1, inn: -1, cursor: 0, benchOff: 0, fromHalftime: !!fromHalftime, mode: 'tac', msg: null };
       Sound.setBgmRate(0.85);
     }
     closePanel() {
       Sound.play('cancel'); Sound.setBgmRate(1);
       const ht = this.panel.fromHalftime;
       this.panel = null;
-      if (ht && this.halftimeUI) { this.halftimeUI.phase = 'reply'; this.halftimeUI.t = 0; this.halftimeUI.reply = { who: 'kazuha', expr: 'normal', text: '了解です。後半は「' + Data.TACTICS[this.tac[0]].name + '」でいきましょう。' }; }
+      if (ht && this.halftimeUI) { this.halftimeUI.phase = 'reply'; this.halftimeUI.t = 0; this.halftimeUI.reply = { who: 'kazuha', expr: 'normal', text: '了解です。後半は「' + Data.TACTICS[this.tac[0]].name + '」・「' + this.form[0].short + '」でいきましょう。' }; }
     }
     panelField() { return this.team(0).slice().sort((a, c) => (a.gk ? -1 : c.gk ? 1 : a.slot - c.slot)); }
     panelBenchVis() { return 4; } // rows that fit between the header and the confirm/close buttons
     panelRects() {
-      const r = { tacs: [], field: [], bench: [] };
+      const r = { tacs: [], forms: [], field: [], bench: [] };
       Object.keys(Data.TACTICS).forEach((k, i) => r.tacs.push({ x: 26 + i * 108, y: 42, w: 104, h: 26, k }));
+      Object.keys(Data.FORMATIONS).forEach((k, i) => r.forms.push({ x: 26 + i * 108, y: 42, w: 104, h: 26, k }));
+      if (this.panel && this.panel.fromHalftime) {
+        r.tabTac = { x: 110, y: 24, w: 50, h: 14 };
+        r.tabForm = { x: 164, y: 24, w: 74, h: 14 };
+      }
       this.panelField().forEach((p, i) => r.field.push({ x: 24, y: 100 + i * 12, w: 206, h: 12, p }));
       const pn = this.panel, VIS = this.panelBenchVis();
       if (pn) pn.benchOff = clamp(pn.benchOff, 0, Math.max(0, this.bench.length - VIS));
@@ -2508,8 +2549,18 @@
       if (pn.msg) { pn.msg.t += raw; if (pn.msg.t > 2) pn.msg = null; }
       const r = this.panelRects();
       const keys = Object.keys(Data.TACTICS);
-      for (let i = 0; i < 4; i++) if (Input.hit('c' + (i + 1))) this.setTactic(keys[i]);
-      r.tacs.forEach((b) => { if (E.clickedIn(b)) this.setTactic(b.k); });
+      if (pn.fromHalftime) {
+        if (E.clickedIn(r.tabTac)) { pn.mode = 'tac'; Sound.play('cursor'); }
+        if (E.clickedIn(r.tabForm)) { pn.mode = 'form'; Sound.play('cursor'); }
+        if (pn.mode === 'tac') {
+          for (let i = 0; i < 4; i++) if (Input.hit('c' + (i + 1))) this.setTactic(keys[i]);
+          r.tacs.forEach((b) => { if (E.clickedIn(b)) this.setTactic(b.k); });
+        } else {
+          r.forms.forEach((b) => { if (E.clickedIn(b)) this.setFormation(b.k); });
+        }
+      } else {
+        r.tacs.forEach((b) => { if (E.clickedIn(b)) { pn.msg = { text: '戦術・フォーメーションの変更はハーフタイムのみ行えます', t: 0 }; Sound.play('cancel'); } });
+      }
       r.field.forEach((b, i) => { if (E.clickedIn(b)) { if (this.subQueue.some((q) => q.outId === b.p.id)) return; pn.out = pn.out === i ? -1 : i; Sound.play('cursor'); } });
       r.bench.forEach((b) => { if (E.clickedIn(b)) { pn.inn = pn.inn === b.idx ? -1 : b.idx; Sound.play('cursor'); } });
       if (r.benchTotal > r.benchVis) {
@@ -2539,6 +2590,13 @@
       const T = Data.TACTICS[k];
       this.benchBubble[0] = { text: { counter: '引いて守って速攻だ！', press: '前から奪いに行けぇ！', long: '前線に放り込め！', possession: 'つないで崩せ！' }[k], t: 2.4 };
       this.tick('ハマカゼ、戦術を「' + T.name + '」に変更。', '#ffd24a');
+    }
+    setFormation(k) {
+      if (this.form[0] === Data.FORMATIONS[k]) return;
+      this.form[0] = Data.FORMATIONS[k];
+      Sound.play('stamp', { vol: 0.6 });
+      this.benchBubble[0] = { text: 'フォーメーション「' + Data.FORMATIONS[k].short + '」に切り替え！', t: 2.4 };
+      this.tick('ハマカゼ、フォーメーションを「' + Data.FORMATIONS[k].name + '」に変更。', '#ffd24a');
     }
     confirmSub() {
       const pn = this.panel, r = this.panelRects();
@@ -2587,20 +2645,39 @@
       g.save(); g.translate(0, oy);
       panel(g, 16, 20, W - 32, 234, 'paper');
       text(g, 'ベンチ指示', 26, 25, { size: 12, color: '#10304f' });
-      text(g, '試合は一時停止中', 110, 28, { size: 8, color: '#9a8e7a' });
       text(g, '交代枠 残り ' + this.subsLeft, W - 28, 27, { size: 9, align: 'right', color: this.subsLeft ? '#2f86c4' : '#e0474c' });
-      const keys = Object.keys(Data.TACTICS);
-      r.tacs.forEach((b, i) => {
-        const T = Data.TACTICS[b.k], cur = this.tac[0] === b.k, hv = E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h });
-        panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
-        g.fillStyle = T.color; g.fillRect(b.x + 5, b.y + 5, 4, b.h - 10);
-        text(g, (i + 1) + ' ' + T.name, b.x + 13, b.y + 4, { size: 10, color: '#2a1a24' });
-        const mu = Data.MATCHUP[b.k][this.tac[1]];
-        text(g, '実現' + Math.round((this.realize(0, b.k) - 0.5) * 200) + '%', b.x + 13, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
-        text(g, mu[0], b.x + b.w - 6, b.y + 9, { size: 10, align: 'right', color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
-      });
-      const mu0 = Data.MATCHUP[this.tac[0]][this.tac[1]];
-      text(g, Data.TACTICS[this.tac[0]].desc + '　対' + Data.TACTICS[this.tac[1]].name + '：' + mu0[1], 26, 73, { size: 8, color: '#4a2a10' });
+      if (pn.fromHalftime) {
+        panel(g, r.tabTac.x, r.tabTac.y, r.tabTac.w, r.tabTac.h, pn.mode === 'tac' ? 'gold' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+        text(g, '戦術', r.tabTac.x + r.tabTac.w / 2, r.tabTac.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
+        panel(g, r.tabForm.x, r.tabForm.y, r.tabForm.w, r.tabForm.h, pn.mode === 'form' ? 'gold' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+        text(g, 'フォメ', r.tabForm.x + r.tabForm.w / 2, r.tabForm.y + 3, { size: 8, align: 'center', color: '#2a1a24' });
+      } else {
+        text(g, '試合は一時停止中（戦術変更はハーフタイムのみ）', 110, 28, { size: 8, color: '#9a8e7a' });
+      }
+      if (!pn.fromHalftime || pn.mode === 'tac') {
+        r.tacs.forEach((b, i) => {
+          const T = Data.TACTICS[b.k], cur = this.tac[0] === b.k, hv = pn.fromHalftime && E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h });
+          const dim = !pn.fromHalftime;
+          g.globalAlpha = dim ? 0.55 : 1;
+          panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+          g.fillStyle = T.color; g.fillRect(b.x + 5, b.y + 5, 4, b.h - 10);
+          text(g, (i + 1) + ' ' + T.name, b.x + 13, b.y + 4, { size: 10, color: '#2a1a24' });
+          const mu = Data.MATCHUP[b.k][this.tac[1]];
+          text(g, '実現' + Math.round((this.realize(0, b.k) - 0.5) * 200) + '%', b.x + 13, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
+          text(g, mu[0], b.x + b.w - 6, b.y + 9, { size: 10, align: 'right', color: mu[0].startsWith('○') ? '#2f86c4' : mu[0].startsWith('△−') ? '#e0474c' : '#6d4f3a' });
+          g.globalAlpha = 1;
+        });
+        const mu0 = Data.MATCHUP[this.tac[0]][this.tac[1]];
+        text(g, Data.TACTICS[this.tac[0]].desc + '　対' + Data.TACTICS[this.tac[1]].name + '：' + mu0[1], 26, 73, { size: 8, color: '#4a2a10' });
+      } else {
+        r.forms.forEach((b, i) => {
+          const F = Data.FORMATIONS[b.k], cur = this.form[0] === F, hv = E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h });
+          panel(g, b.x, b.y, b.w, b.h, cur ? 'gold' : hv ? 'sky' : ['#2a1a24', '#f2e3c2', '#d9c39a', '#fff6e0']);
+          text(g, (i + 1) + ' ' + F.name, b.x + 8, b.y + 4, { size: 10, color: '#2a1a24' });
+          text(g, F.short, b.x + 8, b.y + 15, { size: 8, color: cur ? '#e0474c' : '#6d4f3a' });
+        });
+        text(g, this.form[0].desc, 26, 73, { size: 8, color: '#4a2a10' });
+      }
       g.fillStyle = '#d9c39a'; g.fillRect(24, 84, W - 48, 1);
       text(g, 'ピッチ上（交代する選手）', 24, 88, { size: 8, color: '#6d4f3a' });
       text(g, 'ベンチ（入る選手）', 244, 88, { size: 8, color: '#6d4f3a' });
@@ -2621,6 +2698,16 @@
         g.drawImage(Art.sprite(d.look, 'down', 'walk1'), b.x + 3, b.y + 1);
         text(g, d.name + '　' + d.pos, b.x + 22, b.y + 2, { size: 9, color: '#2a1a24' });
         text(g, '「' + d.nick + '」' + d.trait, b.x + 22, b.y + 13, { size: 8, color: '#6d4f3a' });
+        if (d.stats) {
+          const keys = d.pos === 'GK' ? ['def', 'spd'] : d.pos === 'DF' ? ['def', 'spd'] : d.pos === 'MF' ? ['pas', 'sht'] : ['sht', 'spd'];
+          const names = { spd: '速', sht: '決', pas: 'パ', def: '守' };
+          keys.forEach((kk, ki) => {
+            const v = d.stats[kk], gr = STAT_GRADES.find((x) => v >= x[0])[1];
+            const gx = b.x + b.w - 44 + ki * 22;
+            text(g, names[kk], gx, b.y + 2, { size: 7, color: '#9a8e7a' });
+            text(g, gr, gx + 9, b.y + 1, { size: 9, color: STAT_GRADE_COL[gr] });
+          });
+        }
       });
       if (r.benchTotal > r.benchVis) {
         const upOn = r.benchOff > 0, dnOn = r.benchOff < r.benchTotal - r.benchVis;
