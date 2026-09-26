@@ -72,37 +72,54 @@
     try { localStorage.setItem('hamakaze_fc_autojust', State.autoJust ? '1' : '0'); } catch (e) { /* ignore */ }
   };
 
-  // ---------------- save data (this browser only) ----------------
-  const SAVE_KEY = 'hamakaze_fc_save_v1';
+  // ---------------- save data (this browser only, up to 3 slots) ----------------
+  const SAVE_SLOTS = 3;
+  const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
+  const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo'];
   const Save = {
+    _migrated: false,
+    migrateOld() {
+      if (Save._migrated) return;
+      Save._migrated = true;
+      try {
+        const raw = localStorage.getItem(OLD_SAVE_KEY);
+        if (raw && !localStorage.getItem(slotKey(0))) { localStorage.setItem(slotKey(0), raw); localStorage.removeItem(OLD_SAVE_KEY); }
+      } catch (e) { /* ignore */ }
+    },
     // where: the checkpoint to resume from ('hub' | 'seasonend' | 'market' | 'done')
     write(where) {
-      if (State.auto) return false;
+      if (State.auto || State.saveSlot == null) return false;
       try {
         const d = { v: 1, where, at: Date.now() };
         for (const k of SAVE_FIELDS) d[k] = State[k];
-        localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+        localStorage.setItem(slotKey(State.saveSlot), JSON.stringify(d));
         Save.lastT = Game.time;
         return true;
       } catch (e) { return false; }
     },
-    read() {
+    read(slot) {
+      Save.migrateOld();
       try {
-        const raw = localStorage.getItem(SAVE_KEY);
+        const raw = localStorage.getItem(slotKey(slot));
         if (!raw) return null;
         const d = JSON.parse(raw);
         return d && d.v === 1 && Array.isArray(d.roster) && d.season ? d : null;
       } catch (e) { return null; }
     },
-    load() {
-      const d = Save.read();
+    readAll() { return Array.from({ length: SAVE_SLOTS }, (_, i) => Save.read(i)); },
+    load(slot) {
+      const d = Save.read(slot);
       if (!d) return null;
       State.reset();
       for (const k of SAVE_FIELDS) if (d[k] !== undefined) State[k] = d[k];
       applyClubs();
+      State.saveSlot = slot;
       return d.where;
+    },
+    delete(slot) {
+      try { localStorage.removeItem(slotKey(slot)); } catch (e) { /* ignore */ }
     },
     describe(d) {
       const dt = new Date(d.at), pad = (n) => String(n).padStart(2, '0');
@@ -586,27 +603,44 @@
       s.t += dt;
       s.fx.update(dt);
       if (Math.random() < 0.3) s.fx.add({ x: rand(0, W), y: rand(120, 200), vx: rand(-4, 4), vy: rand(-8, -2), life: rand(1, 2.5), size: 1, color: 'rgba(255,255,255,0.8)' });
-      if (State.auto && s.t > 1.5 && !s.autoGone) { s.autoGone = true; State.reset(); Game.goto(Intro(), 'iris'); return; }
+      if (State.auto && s.t > 1.5 && !s.autoGone) { s.autoGone = true; State.reset(); State.saveSlot = 0; Game.goto(Intro(), 'iris'); return; }
       if (s.autoGone) return;
       if (!s.menu && s.t > 1.2 && (Input.anyPressed || Input.mouse.clicked)) {
         Sound.init(); Sound.bgm('title'); Sound.play('stamp');
-        const sv = Save.read();
-        const items = [
-          { id: 'new', label: 'はじめから', sub: sv ? '※セーブデータは上書きされます' : '体験版 第1話「港町の監督さん」' },
-          { id: 'howto', label: 'あそびかた', sub: '操作と遊びのコツ' },
-        ];
-        if (sv) items.unshift({ id: 'cont', label: 'つづきから', sub: Save.describe(sv) });
-        s.menu = new Menu(items, W / 2 - 100, sv ? 154 : 176, 200, 30, 3);
+        s.slots = Save.readAll();
+        const items = s.slots.map((sv, i) => ({ id: 'slot' + i, label: 'スロット' + (i + 1), sub: sv ? Save.describe(sv) : '（からっぽ）新しく始める' }));
+        items.push({ id: 'howto', label: 'あそびかた', sub: '操作と遊びのコツ' });
+        s.menu = new Menu(items, W / 2 - 120, 114, 240, 28, 4);
         s.menu.lock = 0.25;
         Game.addShake(2, 0.2);
         return;
       }
       if (s.howto) { if (okPressed() || Input.hit('back')) { s.howto = false; Sound.play('cancel'); } return; }
+      if (s.confirmMenu) {
+        if (Input.hit('back')) { s.confirmMenu = null; Sound.play('cancel'); return; }
+        const r = s.confirmMenu.update(dt);
+        if (!r) return;
+        if (r.id === 'cont') { const where = Save.load(s.pendingSlot); if (where) { Sound.stopBgm(0.8); Game.goto(resumeScene(where), 'iris'); } }
+        else if (r.id === 'restart') { Save.delete(s.pendingSlot); State.reset(); State.saveSlot = s.pendingSlot; Sound.stopBgm(0.8); Game.goto(Intro(), 'iris'); }
+        else { s.confirmMenu = null; }
+        return;
+      }
       if (s.menu) {
         const r = s.menu.update(dt);
-        if (r && r.id === 'new') { State.reset(); Sound.stopBgm(0.8); Game.goto(Intro(), 'iris'); }
-        if (r && r.id === 'cont') { const where = Save.load(); if (where) { Sound.stopBgm(0.8); Game.goto(resumeScene(where), 'iris'); } }
-        if (r && r.id === 'howto') s.howto = true;
+        if (!r) return;
+        if (r.id === 'howto') { s.howto = true; return; }
+        const i = Number(r.id.slice(4));
+        if (s.slots[i]) {
+          s.pendingSlot = i;
+          s.confirmMenu = new Menu([
+            { id: 'cont', label: 'つづきから', sub: Save.describe(s.slots[i]) },
+            { id: 'restart', label: 'このデータを消して、新しく始める', sub: '※元に戻せません' },
+            { id: 'back', label: 'もどる（X）', sub: '' },
+          ], W / 2 - 120, 114, 240, 28, 4);
+          s.confirmMenu.lock = 0.2;
+        } else {
+          State.reset(); State.saveSlot = i; Sound.stopBgm(0.8); Game.goto(Intro(), 'iris');
+        }
       }
     };
     s.draw = (g) => {
@@ -646,7 +680,8 @@
         panel(g, W / 2 - 80, 184, 160, 22, 'paper');
         text(g, 'PRESS ANY KEY / CLICK', W / 2, 190, { size: 10, align: 'center', color: '#2a1a24', alpha: blink(6) });
       }
-      if (s.menu) s.menu.draw(g);
+      if (s.confirmMenu) s.confirmMenu.draw(g);
+      else if (s.menu) s.menu.draw(g);
       text(g, '体験版 ver 0.9', 6, H - 12, { size: 8, color: '#ffffff', outline: '#10304f' });
       text(g, 'M: 音のON/OFF', W - 6, H - 12, { size: 8, align: 'right', color: '#ffffff', outline: '#10304f' });
       if (s.howto) drawHowto(g);
