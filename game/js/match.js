@@ -2454,7 +2454,7 @@
     openPanel(fromHalftime) {
       if (this.meter || this.panel) return;
       Sound.play('select');
-      this.panel = { t: 0, out: -1, inn: -1, cursor: 0, fromHalftime: !!fromHalftime, msg: null };
+      this.panel = { t: 0, out: -1, inn: -1, cursor: 0, benchOff: 0, fromHalftime: !!fromHalftime, msg: null };
       Sound.setBgmRate(0.85);
     }
     closePanel() {
@@ -2464,11 +2464,18 @@
       if (ht && this.halftimeUI) { this.halftimeUI.phase = 'reply'; this.halftimeUI.t = 0; this.halftimeUI.reply = { who: 'kazuha', expr: 'normal', text: '了解です。後半は「' + Data.TACTICS[this.tac[0]].name + '」でいきましょう。' }; }
     }
     panelField() { return this.team(0).slice().sort((a, c) => (a.gk ? -1 : c.gk ? 1 : a.slot - c.slot)); }
+    panelBenchVis() { return 4; } // rows that fit between the header and the confirm/close buttons
     panelRects() {
       const r = { tacs: [], field: [], bench: [] };
       Object.keys(Data.TACTICS).forEach((k, i) => r.tacs.push({ x: 26 + i * 108, y: 42, w: 104, h: 26, k }));
       this.panelField().forEach((p, i) => r.field.push({ x: 24, y: 100 + i * 12, w: 206, h: 12, p }));
-      this.bench.forEach((d, i) => r.bench.push({ x: 244, y: 100 + i * 26, w: 212, h: 24, d }));
+      const pn = this.panel, VIS = this.panelBenchVis();
+      if (pn) pn.benchOff = clamp(pn.benchOff, 0, Math.max(0, this.bench.length - VIS));
+      const off = pn ? pn.benchOff : 0;
+      this.bench.forEach((d, i) => { if (i < off || i >= off + VIS) return; r.bench.push({ x: 244, y: 100 + (i - off) * 26, w: 196, h: 24, d, idx: i }); });
+      r.benchTotal = this.bench.length; r.benchOff = off; r.benchVis = VIS;
+      r.benchUp = { x: 442, y: 100, w: 14, h: 14 };
+      r.benchDown = { x: 442, y: 100 + VIS * 26 - 14, w: 14, h: 14 };
       r.confirm = { x: 344, y: 204, w: 112, h: 20 };
       r.close = { x: 244, y: 204, w: 94, h: 20 };
       return r;
@@ -2481,11 +2488,20 @@
       for (let i = 0; i < 4; i++) if (Input.hit('c' + (i + 1))) this.setTactic(keys[i]);
       r.tacs.forEach((b) => { if (E.clickedIn(b)) this.setTactic(b.k); });
       r.field.forEach((b, i) => { if (E.clickedIn(b)) { if (this.subQueue.some((q) => q.outId === b.p.id)) return; pn.out = pn.out === i ? -1 : i; Sound.play('cursor'); } });
-      r.bench.forEach((b, i) => { if (E.clickedIn(b)) { pn.inn = pn.inn === i ? -1 : i; Sound.play('cursor'); } });
-      // keyboard: up/down moves through field then bench, ok toggles
-      const n = r.field.length + r.bench.length;
+      r.bench.forEach((b) => { if (E.clickedIn(b)) { pn.inn = pn.inn === b.idx ? -1 : b.idx; Sound.play('cursor'); } });
+      if (r.benchTotal > r.benchVis) {
+        if (E.clickedIn(r.benchUp) && pn.benchOff > 0) { pn.benchOff--; Sound.play('cursor'); }
+        if (E.clickedIn(r.benchDown) && pn.benchOff < r.benchTotal - r.benchVis) { pn.benchOff++; Sound.play('cursor'); }
+      }
+      // keyboard: up/down moves through field then bench, ok toggles; the bench window follows the cursor
+      const n = r.field.length + r.benchTotal;
       if (Input.hit('down')) { pn.cursor = (pn.cursor + 1) % n; Sound.play('cursor'); }
       if (Input.hit('up')) { pn.cursor = (pn.cursor + n - 1) % n; Sound.play('cursor'); }
+      if (pn.cursor >= r.field.length) {
+        const bi = pn.cursor - r.field.length;
+        if (bi < pn.benchOff) pn.benchOff = bi;
+        else if (bi >= pn.benchOff + r.benchVis) pn.benchOff = bi - r.benchVis + 1;
+      }
       if (Input.hit('ok')) {
         if (pn.out >= 0 && pn.inn >= 0) this.confirmSub();
         else if (pn.cursor < r.field.length) { if (!this.subQueue.some((q) => q.outId === r.field[pn.cursor].p.id)) pn.out = pn.cursor; Sound.play('cursor'); }
@@ -2505,7 +2521,7 @@
       const pn = this.panel, r = this.panelRects();
       if (pn.out < 0 || pn.inn < 0) { pn.msg = { text: '交代する2人を選んでください', t: 0 }; Sound.play('cancel'); return; }
       if (this.subsLeft <= 0) { pn.msg = { text: '交代枠はもう残っていません', t: 0 }; Sound.play('cancel'); return; }
-      const outP = r.field[pn.out].p, inD = r.bench[pn.inn].d;
+      const outP = r.field[pn.out].p, inD = this.bench[pn.inn];
       if (outP.gk !== (inD.pos === 'GK')) { pn.msg = { text: 'GKはGK同士でしか交代できません', t: 0 }; Sound.play('cancel'); return; }
       this.subsLeft--;
       this.subQueue.push({ outId: outP.id, inDef: inD, at: this.clock + (this.half - 1) * 1000 });
@@ -2574,21 +2590,29 @@
         g.fillStyle = p.sta > 50 ? '#6cc35a' : p.sta > 25 ? '#ffd24a' : '#e0474c';
         g.fillRect(b.x + 151, b.y + 4, Math.round(p.sta * 0.5), 4);
       });
-      if (!r.bench.length) text(g, 'ベンチに選手がいません', 250, 104, { size: 9, color: '#9a8e7a' });
-      r.bench.forEach((b, i) => {
-        const d = b.d, sel = pn.inn === i, cur = pn.cursor === r.field.length + i;
+      if (!r.benchTotal) text(g, 'ベンチに選手がいません', 250, 104, { size: 9, color: '#9a8e7a' });
+      if (r.benchTotal > r.benchVis) text(g, (r.benchOff + 1) + '-' + Math.min(r.benchTotal, r.benchOff + r.benchVis) + '/' + r.benchTotal, 340, 89, { size: 8, align: 'right', color: '#6d4f3a' });
+      r.bench.forEach((b) => {
+        const d = b.d, sel = pn.inn === b.idx, cur = pn.cursor === r.field.length + b.idx;
         panel(g, b.x, b.y, b.w, b.h, sel ? 'gold' : cur || E.hoverIn({ x: b.x, y: b.y + oy, w: b.w, h: b.h }) ? 'sky' : ['#2a1a24', '#fff6e0', '#e8d6ae', '#ffffff']);
         g.drawImage(Art.sprite(d.look, 'down', 'walk1'), b.x + 3, b.y + 1);
         text(g, d.name + '　' + d.pos, b.x + 22, b.y + 2, { size: 9, color: '#2a1a24' });
         text(g, '「' + d.nick + '」' + d.trait, b.x + 22, b.y + 13, { size: 8, color: '#6d4f3a' });
       });
+      if (r.benchTotal > r.benchVis) {
+        const upOn = r.benchOff > 0, dnOn = r.benchOff < r.benchTotal - r.benchVis;
+        panel(g, r.benchUp.x, r.benchUp.y, r.benchUp.w, r.benchUp.h, upOn && E.hoverIn({ x: r.benchUp.x, y: r.benchUp.y + oy, w: r.benchUp.w, h: r.benchUp.h }) ? 'sky' : 'dark');
+        text(g, '▲', r.benchUp.x + 7, r.benchUp.y + 3, { size: 8, align: 'center', color: upOn ? '#ffffff' : '#4a5480' });
+        panel(g, r.benchDown.x, r.benchDown.y, r.benchDown.w, r.benchDown.h, dnOn && E.hoverIn({ x: r.benchDown.x, y: r.benchDown.y + oy, w: r.benchDown.w, h: r.benchDown.h }) ? 'sky' : 'dark');
+        text(g, '▼', r.benchDown.x + 7, r.benchDown.y + 3, { size: 8, align: 'center', color: dnOn ? '#ffffff' : '#4a5480' });
+      }
       // preview combos gained/lost
       if (pn.out >= 0 && pn.inn >= 0) {
-        const outId = r.field[pn.out].p.id, inId = r.bench[pn.inn].d.id;
+        const outId = r.field[pn.out].p.id, inId = this.bench[pn.inn].id;
         const ids = this.team(0).map((p) => (p.id === outId ? inId : p.id));
         const after = Data.COMBOS.filter((c) => c.ids.every((id) => ids.includes(id)) && this.comboOk(c));
         const gained = after.filter((c) => !this.combos.some((x) => x.id === c.id)), lost = this.combos.filter((c) => !after.some((x) => x.id === c.id));
-        let y = 100 + r.bench.length * 26 + 2;
+        let y = 100 + Math.min(r.benchTotal, r.benchVis) * 26 + 2;
         gained.forEach((c) => { text(g, (c.kind === 'bad' ? '＋ケンカ「' : '＋コンビ「') + c.name + '」', 246, y, { size: 8, color: c.kind === 'bad' ? '#e0474c' : '#2f86c4' }); y += 11; });
         lost.forEach((c) => { text(g, '－「' + c.name + '」解消', 246, y, { size: 8, color: '#9a8e7a' }); y += 11; });
       }
