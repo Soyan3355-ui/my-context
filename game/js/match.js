@@ -989,8 +989,13 @@
     wantShoot(p, force) {
       const t = p.team;
       const dGoal = dist(p.x, p.y, goalX(t), CY);
-      if (t === 0 && this.chanceCD <= 0 && (dGoal < 230 || force)) { this.openMeter('chance', p); return; }
-      if (t === 1 && this.pinchCD <= 0 && (dGoal < 220 || force)) { this.openMeter('pinch', p); return; }
+      // a defender already standing right in the shooting lane means the shot is effectively smothered
+      // before it even starts — don't ask for JUST timing on a shot that has no real chance
+      const smothered = this.players.some((o) => o.team !== t && !o.gk && o.state !== 'down' && dist(o.x, o.y, p.x, p.y) < 15 && this.proj(t, o.x) > this.proj(t, p.x) - 8);
+      if (!smothered) {
+        if (t === 0 && this.chanceCD <= 0 && (dGoal < 230 || force)) { this.openMeter('chance', p); return; }
+        if (t === 1 && this.pinchCD <= 0 && (dGoal < 220 || force)) { this.openMeter('pinch', p); return; }
+      }
       this.doShoot(p, null);
     }
 
