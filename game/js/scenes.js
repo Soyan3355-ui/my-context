@@ -1300,13 +1300,15 @@
     const BX = 10, BY = 34, BW = 280, BH = 196;
     const byId = (id) => State.roster.find((p) => p.id === id);
     const bench = () => State.roster.filter((p) => !State.lineup.includes(p.id));
-    s.enter = () => { Sound.bgm('hub'); s.pos = Data.FORMATIONS[State.formation].slots.map((a) => a.slice()); };
+    s.enter = () => { Sound.bgm('hub'); s.pos = Data.FORMATIONS[State.formation].slots.map((a) => a.slice()); s.startLineup = State.lineup.slice(); };
     const boardXY = (i) => {
       if (i === 0) return [BX + 4 + 0.04 * (BW - 8), BY + 4 + 0.5 * (BH - 8)];
       const [nx, ny] = s.pos[i - 1];
       return [BX + 4 + nx * (BW - 8), BY + 4 + ny * (BH - 8)];
     };
     const benchRect = (i) => ({ x: 298, y: 92 + i * 19, w: 174, h: 18 });
+    const autoRect = () => ({ x: 344, y: 77, w: 62, h: 12 });
+    const revertRect = () => ({ x: 410, y: 77, w: 64, h: 12 });
     const tacRect = (i) => ({ x: 298 + i * 44, y: 58, w: 42, h: 16 });
     const formRect = (i) => ({ x: 298 + i * 59, y: 34, w: 56, h: 20 });
     // default set-play signals (cycle through the ones learned in training)
@@ -1318,7 +1320,7 @@
     const targetRect = (tg) => {
       if (tg.kind === 'bench') return benchRect(tg.i);
       const [x, y] = boardXY(tg.i);
-      return { x: x - 12, y: y - 12, w: 24, h: 26 };
+      return { x: x - 15, y: y - 14, w: 30, h: 32 };
     };
     const swap = (a, b) => {
       const pa = byId(a.id), pb = byId(b.id);
@@ -1326,14 +1328,47 @@
       if ((pa.pos === 'GK') !== (pb.pos === 'GK') && (a.kind === 'slot' && a.i === 0 || b.kind === 'slot' && b.i === 0 || pa.pos === 'GK' || pb.pos === 'GK')) {
         s.msg = { text: 'GKはGK同士でしか入れ替えられません', t: 0 }; Sound.play('cancel'); return false;
       }
-      const before = activeCombos(State.lineup).map((c) => c.id);
+      const before0 = activeCombos(State.lineup).map((c) => c.id);
       if (a.kind === 'slot' && b.kind === 'slot') { const tmp = State.lineup[a.i]; State.lineup[a.i] = State.lineup[b.i]; State.lineup[b.i] = tmp; }
       else { const slot = a.kind === 'slot' ? a : b, bn = a.kind === 'slot' ? b : a; State.lineup[slot.i] = bn.id; }
+      Sound.play('stamp', { vol: 0.6 }); Game.addShake(1.5, 0.12);
+      const after0 = activeCombos(State.lineup);
+      const born0 = after0.filter((c) => !before0.includes(c.id));
+      if (born0.length) { s.newCombo = { c: born0[0], t: 0 }; Sound.play('levelup', { vol: 0.5 }); }
+      return true;
+    };
+    // pick a reasonable starting XI automatically, by role fit + current form
+    const autoFill = () => {
+      const before = activeCombos(State.lineup).map((c) => c.id);
+      const roles = Data.FORMATIONS[State.formation].roles;
+      const fit = (p, role) => {
+        const st = p.stats;
+        const base = role === 'DF' ? st.def * 1.3 + st.spd * 0.6 + st.pas * 0.3
+          : role === 'MF' ? st.pas * 1.1 + st.spd * 0.6 + st.def * 0.5 + st.sht * 0.3
+          : st.sht * 1.3 + st.spd * 0.7 + st.pas * 0.3;
+        return base + (State.morale[p.id] ?? 60) * 0.15;
+      };
+      const used = new Set();
+      const gk = State.roster.filter((p) => p.pos === 'GK').sort((a, c) => (c.stats.def + c.stats.sta) - (a.stats.def + a.stats.sta))[0];
+      const lineup = [gk ? gk.id : State.lineup[0]];
+      if (gk) used.add(gk.id);
+      for (const role of roles) {
+        const pool = State.roster.filter((p) => !used.has(p.id) && p.pos !== 'GK');
+        const same = pool.filter((p) => p.pos === role).sort((a, c) => fit(c, role) - fit(a, role));
+        const next = same[0] || pool.sort((a, c) => fit(c, role) - fit(a, role))[0];
+        if (next) { used.add(next.id); lineup.push(next.id); }
+      }
+      State.lineup = lineup;
       Sound.play('stamp', { vol: 0.6 }); Game.addShake(1.5, 0.12);
       const after = activeCombos(State.lineup);
       const born = after.filter((c) => !before.includes(c.id));
       if (born.length) { s.newCombo = { c: born[0], t: 0 }; Sound.play('levelup', { vol: 0.5 }); }
-      return true;
+      s.msg = { text: 'おまかせでスタメンを組みました', t: 0 };
+    };
+    const revertLineup = () => {
+      State.lineup = s.startLineup.slice();
+      Sound.play('cancel');
+      s.msg = { text: 'この画面を開く前の並びに戻しました', t: 0 };
     };
     const click = (tg) => {
       if (!s.pick) { s.pick = tg; Sound.play('select'); return; }
@@ -1350,6 +1385,8 @@
       // formation tabs
       s.keys.forEach((k, i) => { if (E.clickedIn(formRect(i)) && State.formation !== k) { State.formation = k; Sound.play('select'); } });
       Object.keys(Data.TACTICS).forEach((k, i) => { if (E.clickedIn(tacRect(i)) && State.tactic !== k) { State.tactic = k; Sound.play('stamp', { vol: 0.5 }); } });
+      if (E.clickedIn(autoRect())) autoFill();
+      if (E.clickedIn(revertRect())) revertLineup();
       SPK.forEach((kind, i) => {
         if (!E.clickedIn(spRect(i))) return;
         const os = spOpts(kind);
@@ -1435,6 +1472,12 @@
       });
       // bench
       text(g, 'ベンチ', 300, 79, { size: 9, color: '#9fdcff' });
+      { const ar = autoRect(), rr = revertRect();
+        panel(g, ar.x, ar.y, ar.w, ar.h, E.hoverIn(ar) ? 'gold' : 'sky');
+        text(g, 'おまかせ', ar.x + ar.w / 2, ar.y + 2, { size: 7, align: 'center', color: '#10182e' });
+        panel(g, rr.x, rr.y, rr.w, rr.h, E.hoverIn(rr) ? 'gold' : 'dark');
+        text(g, '元に戻す', rr.x + rr.w / 2, rr.y + 2, { size: 7, align: 'center', color: '#ffffff' });
+      }
       bench().forEach((p, i) => {
         const r = benchRect(i), tg = tgs[11 + i];
         const hl = s.pick && s.pick.kind === 'bench' && s.pick.i === i, hv = s.hover === tg || (s.kb && s.cursor === 11 + i);
