@@ -59,6 +59,52 @@
   };
   State.reset();
 
+  // ---------------- save data (this browser only) ----------------
+  const SAVE_KEY = 'hamakaze_fc_save_v1';
+  const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk'];
+  const Save = {
+    // where: the checkpoint to resume from ('hub' | 'seasonend' | 'market' | 'done')
+    write(where) {
+      if (State.auto) return false;
+      try {
+        const d = { v: 1, where, at: Date.now() };
+        for (const k of SAVE_FIELDS) d[k] = State[k];
+        localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+        Save.lastT = Game.time;
+        return true;
+      } catch (e) { return false; }
+    },
+    read() {
+      try {
+        const raw = localStorage.getItem(SAVE_KEY);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        return d && d.v === 1 && Array.isArray(d.roster) && d.season ? d : null;
+      } catch (e) { return null; }
+    },
+    load() {
+      const d = Save.read();
+      if (!d) return null;
+      State.reset();
+      for (const k of SAVE_FIELDS) if (d[k] !== undefined) State[k] = d[k];
+      return d.where;
+    },
+    describe(d) {
+      const dt = new Date(d.at), pad = (n) => String(n).padStart(2, '0');
+      const when = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+      const T = d.season.table.hamakaze;
+      const where = d.where === 'hub' ? '第' + (d.season.week + 1) + '節の前' : d.where === 'done' ? 'シーズン1 完走' : 'シーズン終了後';
+      return where + '　' + T.w + '勝' + T.d + '分' + T.l + '敗　' + when;
+    },
+  };
+  function resumeScene(where) {
+    if (where === 'seasonend') return SeasonEnd();
+    if (where === 'market') return TransferMarket();
+    if (where === 'done') return Credits();
+    return Hub();
+  }
+
   function portrait(id, expr) { return window.Portraits ? Portraits.get(id, expr || 'normal') : null; }
   function drawPortrait(g, id, expr, x, y, scale, flip) {
     const img = portrait(id, expr);
@@ -75,8 +121,20 @@
     if (v > pv) { g.fillStyle = '#ffffff'; g.fillRect(x + 1 + Math.round((w * pv) / 100), y + 1, Math.max(1, Math.round((w * (v - pv)) / 100)), 5); }
     g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x + 1, y + 1, Math.round((w * Math.min(v, pv)) / 100), 1);
   }
-  function grade(v) { return v >= 80 ? 'S' : v >= 68 ? 'A' : v >= 56 ? 'B' : v >= 44 ? 'C' : v >= 32 ? 'D' : 'E'; }
-  const GRADE_COL = { S: '#ffd24a', A: '#e0474c', B: '#f08a3a', C: '#4fb4e8', D: '#6cc35a', E: '#9a8e7a' };
+  // ability ranks: S 80+ / A 70+ / B 60+ / C 50+ / D 40+ / E 30+ / F below
+  const GRADES = [[80, 'S'], [70, 'A'], [60, 'B'], [50, 'C'], [40, 'D'], [30, 'E'], [0, 'F']];
+  function grade(v) { return GRADES.find((gr) => v >= gr[0])[1]; }
+  function nextGradeAt(v) { const i = GRADES.findIndex((gr) => v >= gr[0]); return i > 0 ? GRADES[i - 1][0] : null; }
+  const GRADE_COL = { S: '#ffd24a', A: '#e0474c', B: '#f08a3a', C: '#e8c83a', D: '#6cc35a', E: '#4fb4e8', F: '#8a8496' };
+  // a rank badge: coloured tile with the letter, sized for lists (10) or detail views (13)
+  function drawGrade(g, x, y, v, size = 13) {
+    const gr = grade(v), c = GRADE_COL[gr];
+    g.fillStyle = OUT; g.fillRect(x, y, size, size);
+    g.fillStyle = c; g.fillRect(x + 1, y + 1, size - 2, size - 2);
+    g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(x + 1, y + 1, size - 2, 1);
+    if (gr === 'S') { g.fillStyle = '#ffffff'; g.fillRect(x + 1, y + 1, 2, 2); g.fillRect(x + size - 3, y + size - 3, 2, 2); }
+    text(g, gr, x + size / 2, y + (size >= 13 ? 0 : 0), { size: size >= 13 ? 11 : 8, align: 'center', color: '#ffffff', outline: OUT });
+  }
   function blink(sp = 5) { return 0.55 + 0.45 * Math.sin(Game.time * sp); }
   function okPressed() { return Input.hit('ok') || Input.mouse.clicked; }
 
@@ -320,10 +378,13 @@
       if (s.autoGone) return;
       if (!s.menu && s.t > 1.2 && (Input.anyPressed || Input.mouse.clicked)) {
         Sound.init(); Sound.bgm('title'); Sound.play('stamp');
-        s.menu = new Menu([
-          { id: 'new', label: 'はじめる', sub: '体験版 第1話「港町の監督さん」' },
+        const sv = Save.read();
+        const items = [
+          { id: 'new', label: 'はじめから', sub: sv ? '※セーブデータは上書きされます' : '体験版 第1話「港町の監督さん」' },
           { id: 'howto', label: 'あそびかた', sub: '操作と遊びのコツ' },
-        ], W / 2 - 90, 176, 180, 32);
+        ];
+        if (sv) items.unshift({ id: 'cont', label: 'つづきから', sub: Save.describe(sv) });
+        s.menu = new Menu(items, W / 2 - 100, sv ? 154 : 176, 200, 30, 3);
         s.menu.lock = 0.25;
         Game.addShake(2, 0.2);
         return;
@@ -332,6 +393,7 @@
       if (s.menu) {
         const r = s.menu.update(dt);
         if (r && r.id === 'new') { State.reset(); Sound.stopBgm(0.8); Game.goto(Intro(), 'iris'); }
+        if (r && r.id === 'cont') { const where = Save.load(); if (where) { Sound.stopBgm(0.8); Game.goto(resumeScene(where), 'iris'); } }
         if (r && r.id === 'howto') s.howto = true;
       }
     };
@@ -545,6 +607,7 @@
     ];
     s.enter = () => {
       Sound.bgm('hub'); Sound.crowd(0);
+      s.saved = Save.write('hub');
       s.menu = new Menu(items(), 316, 54, 154, 30, 4);
       if (first) s.say([['nagisa', 'happy', 'ここがクラブハウスです！ 選手のみんなに声をかけたり、右のメニューから準備を進めてください。'], ['nagisa', 'normal', '試合までに「練習」は1回できます。何をきたえるか、よーく考えてくださいね！']]);
       else if (State.pendingTalk) { s.say(State.pendingTalk); State.pendingTalk = null; }
@@ -635,6 +698,11 @@
       text(g, 'vs ' + fx.opp.name, 316, 37, { size: 8, color: fx.opp.light });
       s.menu.items = items();
       s.menu.draw(g);
+      if (s.saved && s.t < 2.6) {
+        const al = clamp((2.6 - s.t) / 0.5, 0, 1);
+        g.globalAlpha = al; panel(g, 6, H - 22, 104, 16, 'dark'); Icons.ball(g, 8, H - 22); g.globalAlpha = 1;
+        text(g, 'オートセーブしました', 26, H - 19, { size: 8, color: '#9fdcff', alpha: al });
+      }
       // mini team form strip
       panel(g, 308, 226, 166, 38, 'dark');
       text(g, 'チーム状態　やる気 ' + Math.round(State.avgMorale()), 316, 230, { size: 8, color: '#9fdcff' });
@@ -739,8 +807,7 @@
         const v = p.stats[key];
         const b = p.base ? p.base[key] : v;
         text(g, STAT_NAMES[key], 150 + dx, y, { size: 10, color: '#2a1a24' });
-        const gr = grade(v);
-        text(g, gr, 236 + dx, y - 1, { size: 12, color: GRADE_COL[gr], outline: OUT });
+        drawGrade(g, 234 + dx, y - 1, v);
         statBar(g, 254 + dx, y + 2, 170, v * Math.min(1, k * 1.3 + 0.1), STAT_COLORS[key]);
         text(g, String(v), 456 + dx, y, { size: 10, align: 'right', color: '#2a1a24' });
         if (v > b) text(g, '+' + (v - b), 466 + dx, y + 1, { size: 8, color: '#e0474c' });
@@ -1188,6 +1255,7 @@
         const p = byId(focus.id);
         drawPortrait(g, p.id, 'normal', 8, 237, 0.5);
         text(g, '「' + p.nick + '」' + p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
+        STAT_KEYS.forEach((k, i) => { const x = 330 + i * 28; text(g, STAT_NAMES[k].slice(0, 2), x, 240, { size: 7, color: '#6d4f3a' }); drawGrade(g, x + 15, 239, p.stats[k], 10); });
         const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
         text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
       } else if (s.tacHover) {
@@ -1473,6 +1541,11 @@
           const pk = up ? clamp((s.gt - tStart) / 0.25, 0, 1) : 0;
           const v = cur.before[k] + up * pk;
           text(g, STAT_NAMES[k], 150, y - 2, { size: 10, color: '#2a1a24' });
+          drawGrade(g, 216, y - 3, Math.round(v));
+          if (grade(Math.round(v)) !== grade(cur.before[k])) {
+            const rk = Ease.outBack(clamp((s.gt - tStart - 0.25) / 0.3, 0, 1));
+            text(g, 'ランクアップ ' + grade(cur.before[k]) + '→' + grade(Math.round(v)) + '！', 324, y - 11 - (1 - rk) * 4, { size: 8, align: 'center', color: '#e0474c', outline: '#fff6e0', alpha: rk });
+          }
           statBar(g, 234, y, 180, Math.round(v), STAT_COLORS[k], cur.before[k]);
           text(g, String(Math.round(v)), 434, y - 2, { size: 10, align: 'right', color: '#2a1a24' });
           if (up && pk > 0) {
@@ -1588,7 +1661,7 @@
       if (s.t > 1.5 && (okPressed() || (State.auto && s.t > 3))) {
         Sound.play('select');
         const nextWeek = () => {
-          if (State.season.week >= State.season.rounds.length) return SeasonEnd();
+          if (State.season.week >= State.season.rounds.length) { Save.write('seasonend'); return SeasonEnd(); }
           State.pendingTalk = s.notes.filter((n) => !n.startsWith('ホーム') && !n.startsWith('アウェイ')).slice(0, 2).map((n) => ['nagisa', n.includes('やる気') ? 'sad' : 'happy', n]);
           if (!State.pendingTalk.length) State.pendingTalk = null;
           return Hub();
@@ -1693,6 +1766,7 @@
       STAT_KEYS.forEach((k, i) => {
         const y = 124 + i * 14;
         text(g, STAT_NAMES[k], 22, y, { size: 8, color: '#2a1a24' });
+        drawGrade(g, 75, y - 1, def.stats[k], 11);
         statBar(g, 88, y + 1, 110, def.stats[k], STAT_COLORS[k]);
         text(g, String(def.stats[k]), 226, y, { size: 8, align: 'right', color: '#2a1a24' });
       });
@@ -1789,7 +1863,7 @@
       if (avg >= 44) { const c = pick(League.CLUBS); return { kind: 'rival', club: c.id, text: p.name + 'は' + c.name + 'へ移籍した。来季、敵として再会する…。' }; }
       return { kind: 'away', text: p.name + 'は町を出た。「いつか、もっとうまくなって戻ってくるよ」' };
     };
-    s.enter = () => { Sound.bgm('hub'); if (!reqs.length) s.phase = 'sign'; };
+    s.enter = () => { Sound.bgm('hub'); Save.write('market'); if (!reqs.length) s.phase = 'sign'; };
     const cardRect = (i) => ({ x: 10, y: 60 + i * 30, w: 200, h: 28 });
     s.update = (dt) => {
       s.t += dt;
@@ -1887,6 +1961,7 @@
           STAT_KEYS.forEach((k, i) => {
             const y = 122 + i * 12;
             text(g, STAT_NAMES[k], 228, y, { size: 8, color: '#2a1a24' });
+            drawGrade(g, 280, y, d.stats[k], 11);
             statBar(g, 294, y + 1, 140, d.stats[k], STAT_COLORS[k]);
             text(g, String(d.stats[k]), 466, y, { size: 8, align: 'right', color: '#2a1a24' });
           });
@@ -1917,7 +1992,7 @@
     const T = State.season.table.hamakaze, rank = State.rank();
     const top = Object.entries(State.goals || {}).sort((a, b) => b[1] - a[1])[0];
     const nm = (id) => (State.roster.find((q) => q.id === id) || Data.HOME.concat(Data.FREE_AGENTS).find((q) => q.id === id) || { name: id }).name;
-    s.enter = () => { Sound.bgm('ending'); };
+    s.enter = () => { Sound.bgm('ending'); Save.write('done'); };
     s.update = (dt) => {
       s.t += dt; s.fx.update(dt);
       if (Math.random() < 0.2) s.fx.add({ x: rand(0, W), y: H + 4, vx: rand(-5, 5), vy: rand(-25, -12), life: rand(4, 8), size: rand(1, 2), color: pick(['#ffd24a', '#ffffff', '#9fdcff']), kind: 'star', shrink: false });
