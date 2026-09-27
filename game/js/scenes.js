@@ -1250,8 +1250,8 @@
   }
   // tally which stats a match actually exercised, and hand out cards for those — the same
   // "the match teaches you what to train" idea as the source game's card system
-  // the concrete match number that actually earned each card, so "獲得カード" reads as a
-  // specific verdict on what happened rather than an unexplained reward
+  // the concrete match number that actually earned each card, used only when the stat wasn't
+  // already called out as a specific issue or highlight in this match's analysis
   function cardReason(k, r) {
     const homeRecs = r.recs.filter((x) => x.team === 0);
     const S = (kk) => homeRecs.reduce((a, x) => a + (x.rec[kk] || 0), 0);
@@ -1261,17 +1261,30 @@
     if (k === 'def') return '球際の対応' + S('tackleOk') + '回、粘り強さが出ていました。';
     return '最後まで運動量が落ちなかったのが光りました。';
   }
+  // a card should read as either "課題" (a weakness this match exposed, worth training away) or
+  // "収穫" (a strength that showed up, worth building on) — never an unexplained reward
+  function cardFraming(k, A, r) {
+    const issue = A && A.issues.find((c) => c.cat === k);
+    if (issue) return { type: 'issue', cat: k, reason: '課題：「' + issue.title + '」が見つかりました。ここを鍛えましょう。' };
+    const good = A && A.good.find((c) => c.cat === k);
+    if (good) return { type: 'harvest', cat: k, reason: '収穫：「' + good.title + '」ができたのは収穫ですね。もっと伸ばしましょう。' };
+    return { type: 'harvest', cat: k, reason: cardReason(k, r) };
+  }
   function awardCards(r, growth) {
     State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
     const totals = {};
     for (const gr of growth) for (const k in gr.ups) if (STAT_KEYS.includes(k)) totals[k] = (totals[k] || 0) + gr.ups[k];
     const ranked = STAT_KEYS.slice().sort((a, c) => (totals[c] || 0) - (totals[a] || 0));
     const earned = [];
-    for (const k of ranked.slice(0, 2)) if (totals[k] > 0) { State.cards[k] = (State.cards[k] || 0) + 1; earned.push({ name: CARD_INFO[k].name, reason: cardReason(k, r) }); }
+    for (const k of ranked.slice(0, 2)) if (totals[k] > 0) {
+      State.cards[k] = (State.cards[k] || 0) + 1;
+      const f = cardFraming(k, r.analysis, r);
+      earned.push({ name: CARD_INFO[k].name, reason: f.reason, type: f.type, cat: f.cat });
+    }
     if (IDENTITIES[State.identity] && r.tacTime) {
       const tot = Object.values(r.tacTime).reduce((a, v) => a + v, 0) || 1;
       const share = (r.tacTime[IDENTITIES[State.identity].tactic] || 0) / tot;
-      if (share > 0.5) { State.policyCards = (State.policyCards || 0) + 1; earned.push({ name: '「' + IDENTITIES[State.identity].name + '」方針カード', reason: '今日の試合の' + Math.round(share * 100) + '%を「' + IDENTITIES[State.identity].name + '」で戦い抜きました。' }); }
+      if (share > 0.5) { State.policyCards = (State.policyCards || 0) + 1; earned.push({ name: '「' + IDENTITIES[State.identity].name + '」方針カード', reason: '収穫：今日の試合の' + Math.round(share * 100) + '%を「' + IDENTITIES[State.identity].name + '」で戦い抜きました。', type: 'harvest', cat: null }); }
     }
     return earned;
   }
@@ -2093,7 +2106,7 @@
     if (r.analysis) {
       s.verdict = analystVerdict(r.analysis, win, lose);
       // earned cards and specific praise always make the cut; issues fill whatever room is left
-      const cardCards = s.cardsEarned.map((c) => ({ kind: 'card', title: c.name + 'カード獲得！', tip: c.reason }));
+      const cardCards = s.cardsEarned.map((c) => ({ kind: 'card', ctype: c.type, cat: c.cat, title: (c.type === 'issue' ? '課題カード' : '収穫カード') + '「' + c.name + '」獲得！', tip: c.reason }));
       const goodCards = r.analysis.good.map((c) => Object.assign({ kind: 'good' }, c));
       const budget = 6;
       s.shownAnalysis = cardCards.concat(goodCards).concat(r.analysis.issues.map((c) => Object.assign({ kind: 'issue' }, c)).slice(0, Math.max(1, budget - cardCards.length - goodCards.length)));
@@ -2190,12 +2203,15 @@
             if (s.at - 0.3 < i * 0.22) return;
             const y = 60 + i * step, k = Ease.outBack(clamp((s.at - 0.3 - i * 0.22) / 0.22, 0, 1));
             const x = 22 + Math.round((1 - k) * 30);
-            const style = c.kind === 'card' ? ['#2a1a24', '#fff6d0', '#e8c86a', '#ffffff'] : c.kind === 'good' ? ['#2a1a24', '#e8f8d8', '#c8e0b0', '#ffffff'] : ['#2a1a24', '#fff6e0', '#e8d6ae', '#ffffff'];
+            // cards mirror the issue (amber) / good (green) palette of what earned them, so the
+            // whole report reads as one consistent "課題 vs 収穫" visual language
+            const good = c.kind === 'good' || (c.kind === 'card' && c.ctype === 'harvest');
+            const style = good ? ['#2a1a24', '#e8f8d8', '#c8e0b0', '#ffffff'] : ['#2a1a24', '#fff6e0', '#e8d6ae', '#ffffff'];
             panel(g, x, y, 436, ch, style);
-            const barColor = c.kind === 'card' ? '#e0a91e' : c.kind === 'good' ? (CAT[c.cat] || ['', '#3f8a3e'])[1] : (CAT[c.cat] || ['', '#888'])[1];
+            const barColor = c.kind === 'card' ? (good ? '#3f8a3e' : '#d48a1e') : good ? (CAT[c.cat] || ['', '#3f8a3e'])[1] : (CAT[c.cat] || ['', '#888'])[1];
             g.fillStyle = barColor; g.fillRect(x + 4, y + 4, 4, ch - 8);
-            const icon = c.kind === 'card' ? '★ ' : c.kind === 'good' ? '◎ ' : '▲ ';
-            text(g, icon + c.title, x + 14, y + 4, { size: ch < 34 ? 9 : 10, color: c.kind === 'card' ? '#8a5a10' : c.kind === 'good' ? '#3f8a3e' : '#2a1a24' });
+            const icon = c.kind === 'card' ? '★ ' : good ? '◎ ' : '▲ ';
+            text(g, icon + c.title, x + 14, y + 4, { size: ch < 34 ? 9 : 10, color: c.kind === 'card' ? (good ? '#3f8a3e' : '#8a5a10') : good ? '#3f8a3e' : '#2a1a24' });
             if (c.value) text(g, c.value, x + 426, y + 5, { size: 10, align: 'right', color: c.kind === 'good' ? '#3f8a3e' : '#e0474c' });
             if (ch >= 30 || c.kind === 'card') text(g, c.tip, x + 14, y + 18, { size: 8, color: '#6d4f3a' });
             if (ch >= 42 && c.kind !== 'card') {
