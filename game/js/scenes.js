@@ -22,6 +22,8 @@
       this.lineup = Data.DEFAULT_LINEUP.slice();
       this.tactic = 'counter';
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
+      this.cards = { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 }; this.policyCards = 0; this.growthLog = [];
+      this.charEventWeek = null; this.charEventPick = null;
       this.tier = 'district';
       // league season
       const table = {};
@@ -79,7 +81,8 @@
   const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
-    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen'];
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
+    'cards', 'policyCards', 'growthLog'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -1208,13 +1211,61 @@
   }
 
   // ---------------- TRAINING ----------------
+  // utility menus that don't consume cards and are always on the board
   const TRAININGS = [
-    { id: 'shoot', label: 'シュート練習', sub: 'シュート↑ パス↑少し', desc: 'ゲンさんを相手にPK特訓。前線の選手がよく伸びる。', gains: { sht: 3, pas: 1 }, focus: ['leo', 'haruki', 'ponta'] },
-    { id: 'pass', label: '鳥かごパス回し', sub: 'パス↑ ディフェンス↑少し', desc: '輪になってパスを回す。中盤と守備がよく伸びる。', gains: { pas: 3, def: 1 }, focus: ['kazuha', 'morio', 'ponta'] },
-    { id: 'run', label: '砂浜ダッシュ', sub: 'スピード↑ スタミナ↑', desc: '夕暮れの砂浜を走り込む。全員の足腰がきたえられる。', gains: { spd: 2, sta: 2 }, focus: ['tsubame', 'haruki', 'gen'] },
     { id: 'tactics', label: '戦術練習', sub: '採用中の戦術の理解度↑', desc: '作戦ボードで選んだ戦術を、紅白戦で体に覚えさせる。能力は上がらないが、戦術の実現度が上がる。', gains: {}, focus: [] },
     { id: 'setplay', label: 'セットプレー練習', sub: '', desc: 'コーナーキックとフリーキックのサインプレーを練習する。成功すると新しいサインを覚え、試合で選べるようになる。', gains: {}, focus: [] },
   ];
+  // basic training cards: earned from match performance (see awardCards), one per stat
+  const CARD_INFO = {
+    sht: { name: 'シュート', visual: 'shoot', label: 'シュート練習', sub: 'シュート↑ パス↑少し', desc: 'ゲンさんを相手にPK特訓。前線の選手がよく伸びる。', gains: { sht: 3, pas: 1 }, focus: ['leo', 'haruki', 'ponta'] },
+    pas: { name: 'パス', visual: 'pass', label: '鳥かごパス回し', sub: 'パス↑ ディフェンス↑少し', desc: '輪になってパスを回す。中盤と守備がよく伸びる。', gains: { pas: 3, def: 1 }, focus: ['kazuha', 'morio', 'ponta'] },
+    spd: { name: 'ドリブル', visual: 'run', label: '砂浜ダッシュ', sub: 'スピード↑', desc: '夕暮れの砂浜を走り込む。切れのある足腰がきたえられる。', gains: { spd: 3 }, focus: ['tsubame', 'haruki', 'gen'] },
+    def: { name: 'フィジカル', visual: 'run', label: '当たり負けしない体づくり', sub: 'ディフェンス↑', desc: '体をぶつけ合う地味な基礎練習。守備陣がよく伸びる。', gains: { def: 3 }, focus: ['morio', 'mask', 'kawataro'] },
+    sta: { name: 'スタミナ', visual: 'run', label: '走り込み', sub: 'スタミナ↑', desc: '最後まで走り切る体力をつける。', gains: { sta: 3 }, focus: ['ponta', 'gen'] },
+  };
+  // combining two card types unlocks a bigger, named menu — reuse the source game's own idea
+  // that a well-stocked, well-matched pair of drills teaches more than either alone
+  const SPECIAL_MENUS = [
+    { id: 'sp_dribbleshoot', need: ['sht', 'spd'], visual: 'shoot', label: 'ドリブルシュート特訓', sub: 'シュート↑↑ スピード↑', desc: 'レオとヒカルが張り合う、切り込んでからの一撃。息は合わないが、火花は散る。', gains: { sht: 4, spd: 2 }, focus: ['leo', 'hikaru'] },
+    { id: 'sp_torikago', need: ['pas', 'sta'], visual: 'pass', label: '鳥かご強化合宿', sub: 'パス↑↑ スタミナ↑', desc: 'カズハ主導の鳥かご地獄。休む暇がない分、しっかり身につく。', gains: { pas: 4, sta: 2 }, focus: ['kazuha', 'mame'] },
+    { id: 'sp_aerial', need: ['def', 'sta'], visual: 'setplay', label: '空中戦特訓', sub: 'ディフェンス↑↑ スタミナ↑', desc: 'マスク張りの、体を張った競り合い。跳び続けるから息が上がる。', gains: { def: 4, sta: 1 }, focus: ['mask'] },
+    { id: 'sp_speedball', need: ['spd', 'pas'], visual: 'run', label: 'ワンツー速攻特訓', sub: 'スピード↑↑ パス↑', desc: 'ツバメとシズクの息が合った駆け引き。抜けた瞬間にパスが来る。', gains: { spd: 4, pas: 2 }, focus: ['tsubame', 'shizuku'] },
+    { id: 'sp_grit', need: ['sht', 'def'], visual: 'shoot', label: '根性シュート対決', sub: 'シュート↑↑ ディフェンス↑', desc: 'ゲン相手の意地の張り合い。決めるまで、止めるまで終わらない。', gains: { sht: 4, def: 2 }, focus: ['gen'] },
+  ];
+  // one-off character flavor events: a free bonus session, no cards spent, just a bit of story
+  const CHAR_EVENTS = [
+    { id: 'char_mame', visual: 'pass', label: '豆じいの手ほどき', sub: 'パス↑（伝授ボーナス）', desc: '豆じいが、昭和の技を若手に伝授する。渋いが、確かな技術。', gains: { pas: 4 }, focus: ['mame'] },
+    { id: 'char_ponta', visual: 'run', label: 'ポン太のたこ焼き合宿', sub: 'スタミナ↑（腹ごしらえボーナス）', desc: '練習の合間にたこ焼きを挟む。理屈は分からないが、なぜか動ける。', gains: { sta: 4 }, focus: ['ponta'] },
+    { id: 'char_haruki', visual: 'run', label: 'ハルキの自主練', sub: 'スピード↑ スタミナ↑（伸び盛り）', desc: '誰よりも早く来て、誰よりも遅くまで走る高校一年生。', gains: { spd: 3, sta: 2 }, focus: ['haruki'] },
+    { id: 'char_kazuha', visual: 'pass', label: 'カズハの読書特訓', sub: 'パス↑（研究ボーナス）', desc: '相手の試合映像を読み込んでから、パス回しに落とし込む。', gains: { pas: 4 }, focus: ['kazuha'] },
+  ];
+  function policyTraining() {
+    const I = IDENTITIES[State.identity];
+    return { id: 'policy', visual: 'run', label: '「' + I.name + '」特訓', sub: STAT_NAMES[I.stat] + '↑↑（方針ボーナス）', desc: I.trainHint + '。チームの方針にぴったりの特訓で、伸びが良い。', gains: { [I.stat]: 4 }, focus: [] };
+  }
+  // tally which stats a match actually exercised, and hand out cards for those — the same
+  // "the match teaches you what to train" idea as the source game's card system
+  function awardCards(r, growth, rOpp) {
+    State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
+    const totals = {};
+    for (const gr of growth) for (const k in gr.ups) if (STAT_KEYS.includes(k)) totals[k] = (totals[k] || 0) + gr.ups[k];
+    const ranked = STAT_KEYS.slice().sort((a, c) => (totals[c] || 0) - (totals[a] || 0));
+    const earned = [];
+    for (const k of ranked.slice(0, 2)) if (totals[k] > 0) { State.cards[k] = (State.cards[k] || 0) + 1; earned.push(CARD_INFO[k].name); }
+    const ourAvg = State.lineup.reduce((a, id) => { const p = State.roster.find((q) => q.id === id); return a + (p ? avgStat(p) : 0); }, 0) / Math.max(1, State.lineup.length);
+    const margin = Math.abs(r.score[0] - r.score[1]);
+    if (rOpp.rating - ourAvg > 8 && margin <= 1) {
+      const k = pick(ranked.slice(0, 3).filter((x) => totals[x] > 0)) || pick(STAT_KEYS);
+      State.cards[k] = (State.cards[k] || 0) + 1; earned.push(CARD_INFO[k].name + '（格上健闘ボーナス）');
+    }
+    if (IDENTITIES[State.identity] && r.tacTime) {
+      const tot = Object.values(r.tacTime).reduce((a, v) => a + v, 0) || 1;
+      const share = (r.tacTime[IDENTITIES[State.identity].tactic] || 0) / tot;
+      if (share > 0.5) { State.policyCards = (State.policyCards || 0) + 1; earned.push('「' + IDENTITIES[State.identity].name + '」方針カード'); }
+    }
+    return earned;
+  }
   function setplaySub() {
     const nx = State.nextSetplay();
     return nx ? '新サイン「' + State.setplayName(nx) + '」を習得' : 'セットプレーの精度↑（Lv' + State.setplay.lv + '）';
@@ -1223,13 +1274,32 @@
     const s = { t: 0, phase: 'pick', menu: null, tries: [], meter: null, fx: new Particles(), results: [], rt: 0, pick: null, reveal: 0, statAnim: 0 };
     s.enter = () => {
       Sound.bgm('hub');
+      State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
       const onPolicy = (tr) => IDENTITIES[State.identity] && tr.gains[IDENTITIES[State.identity].stat] && Object.keys(tr.gains).sort((a, c) => tr.gains[c] - tr.gains[a])[0] === IDENTITIES[State.identity].stat;
       const list = TRAININGS.slice();
+      // basic cards: each stat with stock earns its own menu, tagged with how many are left
+      for (const k of STAT_KEYS) {
+        if ((State.cards[k] || 0) > 0) list.push(Object.assign({ id: 'card_' + k, cost: { [k]: 1 } }, CARD_INFO[k], { sub: CARD_INFO[k].sub + '　カード×' + State.cards[k] }));
+      }
+      // special menus: unlocked when both required cards are in stock, trained together
+      for (const sp of SPECIAL_MENUS) {
+        if (sp.need.every((k) => (State.cards[k] || 0) > 0)) list.push(Object.assign({ cost: Object.fromEntries(sp.need.map((k) => [k, 1])), special: true }, sp));
+      }
+      // policy card: banked by playing matches under the team's own chosen philosophy
+      if (IDENTITIES[State.identity] && (State.policyCards || 0) > 0) {
+        list.push(Object.assign({ cost: { policy: 1 } }, policyTraining(), { sub: policyTraining().sub + '　カード×' + State.policyCards }));
+      }
       // a one-off option, seeded by a rival's special move or combo the squad just witnessed —
       // "we want to do that too", made concrete for exactly one week
       if (State.rivalTechSeen) {
         list.push({ id: 'study', label: '「' + State.rivalTechSeen.name + '」を研究する', sub: '守備力↑ 習得のひらめきも少し起きやすく', desc: '見せつけられた技を、みんなで研究する。次の試合に向けて守備意識が上がる。', gains: { def: 2 }, focus: [] });
       }
+      // once in a while, a free character-flavored session shows up alongside the usual board
+      if (!State.charEventWeek || State.charEventWeek !== State.season.week) {
+        State.charEventWeek = State.season.week;
+        State.charEventPick = Math.random() < 0.3 ? pick(CHAR_EVENTS) : null;
+      }
+      if (State.charEventPick) list.push(State.charEventPick);
       s.menu = new Menu(list.map((tr) => ({ id: tr.id, label: tr.label + (onPolicy(tr) ? '★' : ''), sub: (tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub) + (onPolicy(tr) ? '（方針に合う）' : ''), tr })), 250, 54, 214, 30, 3);
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
@@ -1237,7 +1307,7 @@
       s.t += dt; s.fx.update(dt);
       if (s.phase === 'pick') {
         if (Input.hit('back') || E.clickedIn({ x: 8, y: 232, w: 90, h: 16 })) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); return; }
-        if (State.auto) { s.menu.sel = [4, 0, 4, 3, 1][State.season.week % 5]; Input.pressed.ok = s.t > 1; }
+        if (State.auto) { s.menu.sel = s.menu.items.length > 2 ? 2 : 0; Input.pressed.ok = s.t > 1; }
         const r = s.menu.update(dt);
         if (r) { s.pick = r.tr; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); }
       } else if (s.phase === 'intro') {
@@ -1263,10 +1333,11 @@
           else if (m.res === 'good') Sound.play('select');
           else Sound.play('miss_timing');
           s.kick = 0;
-          if (s.pick.id === 'shoot') Sound.play(m.res === 'just' ? 'power_shot' : 'shoot');
-          if (s.pick.id === 'pass') Sound.play('pass');
-          if (s.pick.id === 'setplay') Sound.play('kick');
-          if (s.pick.id === 'run') Sound.play('command', { pitch: 1.2 });
+          const pv = s.pick.visual || s.pick.id;
+          if (pv === 'shoot') Sound.play(m.res === 'just' ? 'power_shot' : 'shoot');
+          if (pv === 'pass') Sound.play('pass');
+          if (pv === 'setplay') Sound.play('kick');
+          if (pv === 'run') Sound.play('command', { pitch: 1.2 });
         }
       } else if (s.phase === 'result') {
         s.rt += dt;
@@ -1275,6 +1346,9 @@
         if (shown >= 0 && shown < nStats && shown !== s.lastShown) { s.lastShown = shown; Sound.play('statup', { pitch: 1 + shown * 0.04 }); }
         if (s.rt > 1.2 && (okPressed() || (State.auto && s.rt > 3))) {
           State.trained = s.pick.id;
+          State.trainedLabel = s.pick.label;
+          // dominant stat this session targeted, for the post-match "did it help?" tie-in
+          State.trainedStat = Object.keys(s.pick.gains || {}).sort((a, c) => s.pick.gains[c] - s.pick.gains[a])[0] || null;
           Sound.play('select');
           Game.goto(Hub(), 'stripe');
         }
@@ -1312,15 +1386,23 @@
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
         }
         // focused, hands-on training gives a small extra shot at a breakthrough, on top of natural growth below
-        const luck = s.pick.focus.includes(p.id) ? 0.12 : s.pick.id === 'study' ? 0.08 : 0;
+        const luck = s.pick.focus.includes(p.id) ? 0.12 : s.pick.special ? 0.1 : s.pick.id === 'study' ? 0.08 : 0;
         const special = checkSpecialUnlock(p, luck);
         s.results.push({ p, ups, special });
       }
       if (s.pick.id === 'study') State.rivalTechSeen = null;
+      // spend the card(s) that paid for this session
+      if (s.pick.cost) {
+        for (const k in s.pick.cost) {
+          if (k === 'policy') State.policyCards = Math.max(0, (State.policyCards || 0) - s.pick.cost[k]);
+          else State.cards[k] = Math.max(0, (State.cards[k] || 0) - s.pick.cost[k]);
+        }
+      }
+      if (State.charEventPick && s.pick.id === State.charEventPick.id) State.charEventPick = null;
     };
     s.draw = (g) => {
       const tr = s.pick;
-      const dusk = tr && tr.id === 'run';
+      const dusk = tr && (tr.visual || tr.id) === 'run';
       drawBeach(g, s.t, dusk);
       if (s.phase === 'pick') {
         // idle team on the beach
@@ -1332,7 +1414,7 @@
         text(g, '練習メニューを選ぼう', 18, 14, { size: 12, color: '#ffd24a' });
         text(g, '結果はタイミング勝負！ 3回チャレンジ', 18, 34, { size: 9, color: '#c9d6e6' });
         s.menu.draw(g);
-        const sel = TRAININGS[s.menu.sel];
+        const sel = s.menu.items[s.menu.sel].tr;
         panel(g, 250, 222, 214, 44, 'paper');
         wrap(g, sel.desc, 200, 8).slice(0, 3).forEach((l, i) => text(g, l, 258, 227 + i * 12, { size: 8, color: '#2a1a24' }));
         panel(g, 8, 232, 90, 16, E.hoverIn({ x: 8, y: 232, w: 90, h: 16 }) ? 'sky' : 'dark');
@@ -1342,7 +1424,8 @@
       // play scene per training
       const m = s.meter;
       const kickT = m && m.res ? m.rt : 0;
-      if (tr.id === 'shoot') {
+      const trVisual = tr.visual || tr.id;
+      if (trVisual === 'shoot') {
         // goal & gen
         const gx = 330, gy = 150;
         g.fillStyle = OUT; g.fillRect(gx, gy, 3, 56); g.fillRect(gx + 100, gy, 3, 56); g.fillRect(gx, gy - 2, 103, 4);
@@ -1365,7 +1448,7 @@
           if (k >= 1 && res === 'bad' && !m.netFx) { m.netFx = true; Sound.play('save'); }
         }
         g.drawImage(Art.ballFrames[Math.floor(s.t * 10) & 3], Math.round(bx), Math.round(by), 10, 10);
-      } else if (tr.id === 'setplay') {
+      } else if (trVisual === 'setplay') {
         // corner drill: delivery from the flag, a runner attacks it at the far post
         const gx = 360, gy = 150;
         g.fillStyle = OUT; g.fillRect(gx, gy, 3, 56); g.fillRect(gx + 100, gy, 3, 56); g.fillRect(gx, gy - 2, 103, 4);
@@ -1389,7 +1472,7 @@
           if (k1 >= 1 && res === 'bad') { bx = px + (kickT - 0.45) * 120; by = py - (kickT - 0.45) * 20; if (!m.netFx) { m.netFx = true; Sound.play('miss_timing', { vol: 0.5 }); } }
         }
         g.drawImage(Art.ballFrames[Math.floor(s.t * 10) & 3], Math.round(bx), Math.round(by), 10, 10);
-      } else if (tr.id === 'pass') {
+      } else if (trVisual === 'pass') {
         const cx = 240, cy = 214, R = 56;
         const ring = State.roster.slice(1);
         const passer = s.tries.length % ring.length;
@@ -1963,6 +2046,14 @@
     const rOpp = State.fixture().opp;
     s.growth = State.growth = computeGrowth(r);
     s.mvp = s.growth.slice().sort((a, b) => b.rating - a.rating)[0];
+    s.cardsEarned = awardCards(r, s.growth, rOpp);
+    State.growthLog = State.growthLog || [];
+    State.growthLog.push({
+      seasonNo: State.seasonNo, week: State.season.week + 1, opp: rOpp.name, score: r.score.slice(),
+      top: s.growth.slice().sort((a, b) => b.total - a.total).slice(0, 3).map((gr) => ({ name: gr.p.name, total: gr.total })),
+      cards: s.cardsEarned, teamAvg: Math.round((State.roster.reduce((a, p) => a + avgStat(p), 0) / State.roster.length) * 10) / 10,
+    });
+    if (State.growthLog.length > 40) State.growthLog.shift();
     s.enter = () => {
       Sound.crowd(win ? 0.4 : 0.15);
       Sound.bgm(win ? 'victory' : lose ? 'defeat' : 'hub');
@@ -2059,14 +2150,15 @@
         if (s.at > 0.4) {
           const homeRecs = r.recs.filter((x) => x.team === 0);
           const S2 = (k) => homeRecs.reduce((a, x) => a + (x.rec[k] || 0), 0);
-          const tieIn = State.trained === 'shoot' ? 'シュート練習の成果か、今日はシュート' + S2('shot') + '本（枠内' + S2('onT') + '）でした。'
-            : State.trained === 'pass' ? 'パス練習の成果か、今日はパス成功' + S2('passOk') + '/' + S2('pass') + '本でした。'
-            : State.trained === 'run' ? '走り込みの成果か、総走行距離は' + (S2('dist') / 1000).toFixed(1) + 'kmでした。'
+          const tieIn = State.trainedStat === 'sht' ? (State.trainedLabel || '練習') + 'の成果か、今日はシュート' + S2('shot') + '本（枠内' + S2('onT') + '）でした。'
+            : State.trainedStat === 'pas' ? (State.trainedLabel || '練習') + 'の成果か、今日はパス成功' + S2('passOk') + '/' + S2('pass') + '本でした。'
+            : (State.trainedStat === 'spd' || State.trainedStat === 'sta') ? (State.trainedLabel || '練習') + 'の成果か、総走行距離は' + (S2('dist') / 1000).toFixed(1) + 'kmでした。'
             : State.trained === 'tactics' && r.tactic && r.tactic[0] ? '戦術練習の成果です。今日の「' + Data.TACTICS[r.tactic[0]].name + '」、活かせましたか？' : null;
           if (tieIn) text(g, tieIn, 22, 240, { size: 8, color: '#2f86c4' });
         }
         const tacMemo = (A.memos || []).find((m) => m.key === 'htgood' || m.key === 'htbad' || m.key === 'oppswitch-ok' || m.key === 'oppswitch-bad');
-        if (tacMemo) text(g, '采配メモ：' + tacMemo.text, 22, 250, { size: 8, color: tacMemo.key.includes('bad') ? '#e0474c' : '#3f8a3e' });
+        if (s.cardsEarned && s.cardsEarned.length) text(g, '獲得カード：' + s.cardsEarned.join('、'), 22, 250, { size: 8, color: '#e0474c' });
+        else if (tacMemo) text(g, '采配メモ：' + tacMemo.text, 22, 250, { size: 8, color: tacMemo.key.includes('bad') ? '#e0474c' : '#3f8a3e' });
         else if (A.memos && A.memos.length) text(g, '試合中のメモ ' + A.memos.length + '件　（最初：' + A.memos[0].min + "'「" + A.memos[0].text + '」）', 22, 250, { size: 8, color: '#6d4f3a' });
         if (s.at > 1.2) text(g, 'Z / クリック：つぎへ', 456, 250, { size: 8, align: 'right', color: '#2f86c4', alpha: blink() });
       } else {
@@ -2146,21 +2238,45 @@
     });
   }
   function LeagueTable(next) {
-    const s = { t: 0 };
-    s.update = (dt) => { s.t += dt; if (s.t > 0.4 && (okPressed() || Input.hit('back') || (State.auto && s.t > 1.5))) { Sound.play('cancel'); Game.goto(next(), 'stripe'); } };
+    const s = { t: 0, tab: 'table' };
+    const tabR = (i) => ({ x: 300 + i * 84, y: 6, w: 80, h: 20 });
+    s.update = (dt) => {
+      s.t += dt;
+      if (E.clickedIn(tabR(0))) { s.tab = 'table'; Sound.play('cursor'); return; }
+      if (E.clickedIn(tabR(1))) { s.tab = 'growth'; Sound.play('cursor'); return; }
+      if (s.t > 0.4 && (okPressed() || Input.hit('back') || (State.auto && s.t > 1.5))) { Sound.play('cancel'); Game.goto(next(), 'stripe'); }
+    };
     s.draw = (g) => {
       g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);
       g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
       panel(g, 6, 4, 220, 24, 'dark');
-      text(g, leagueName() + '　順位表', 16, 9, { size: 12, color: '#ffd24a' });
-      drawTable(g, 40, 38, 400, s.t * 3);
-      // fixtures still to play
-      const wk = State.season.week, rounds = State.season.rounds;
-      panel(g, 40, 170, 400, 76, 'paper');
-      text(g, wk < rounds.length ? '今後の日程' : '全日程終了', 50, 175, { size: 9, color: '#10304f' });
-      for (let i = wk; i < Math.min(rounds.length, wk + 4); i++) {
-        const pr = rounds[i].find((p) => p.includes('hamakaze')), home = pr[0] === 'hamakaze';
-        text(g, '第' + (i + 1) + '節　' + (home ? 'ホーム' : 'アウェイ') + '　vs ' + League.TEAM_NAME(home ? pr[1] : pr[0]), 60, 190 + (i - wk) * 13, { size: 9, color: i === wk ? '#e0474c' : '#2a1a24' });
+      text(g, leagueName() + (s.tab === 'table' ? '　順位表' : '　成長記録'), 16, 9, { size: 12, color: '#ffd24a' });
+      [['順位表', 0], ['成長記録', 1]].forEach(([lbl, i]) => {
+        const r = tabR(i), on = (i === 0) === (s.tab === 'table');
+        panel(g, r.x, r.y, r.w, r.h, on ? 'gold' : 'dark');
+        text(g, lbl, r.x + r.w / 2, r.y + 5, { size: 9, align: 'center', color: on ? '#2a1a24' : '#c9d6e6' });
+      });
+      if (s.tab === 'table') {
+        drawTable(g, 40, 38, 400, s.t * 3);
+        // fixtures still to play
+        const wk = State.season.week, rounds = State.season.rounds;
+        panel(g, 40, 170, 400, 76, 'paper');
+        text(g, wk < rounds.length ? '今後の日程' : '全日程終了', 50, 175, { size: 9, color: '#10304f' });
+        for (let i = wk; i < Math.min(rounds.length, wk + 4); i++) {
+          const pr = rounds[i].find((p) => p.includes('hamakaze')), home = pr[0] === 'hamakaze';
+          text(g, '第' + (i + 1) + '節　' + (home ? 'ホーム' : 'アウェイ') + '　vs ' + League.TEAM_NAME(home ? pr[1] : pr[0]), 60, 190 + (i - wk) * 13, { size: 9, color: i === wk ? '#e0474c' : '#2a1a24' });
+        }
+      } else {
+        panel(g, 40, 38, 400, 208, 'paper');
+        const log = (State.growthLog || []).slice(-8).reverse();
+        if (!log.length) text(g, 'まだ記録がありません。試合をこなすと、ここに成長の歩みが残ります。', 50, 46, { size: 9, color: '#6d4f3a' });
+        log.forEach((e, i) => {
+          const y = 44 + i * 25;
+          text(g, 'S' + e.seasonNo + ' 第' + e.week + '節　vs ' + e.opp + '　' + e.score[0] + '-' + e.score[1], 50, y, { size: 9, color: '#2a1a24' });
+          const movers = e.top.map((t) => t.name + '+' + t.total).join('　');
+          text(g, movers + (e.cards && e.cards.length ? '　カード：' + e.cards.join('、') : ''), 50, y + 11, { size: 8, color: '#2f86c4' });
+        });
+        text(g, 'チーム平均：' + (log[0] ? log[0].teamAvg : '―'), 50, 232, { size: 9, color: '#6d4f3a' });
       }
       text(g, 'Z / X / クリック：もどる', W / 2, 252, { size: 8, align: 'center', color: '#c9d6e6', alpha: blink() });
     };

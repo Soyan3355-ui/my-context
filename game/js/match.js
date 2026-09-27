@@ -1835,8 +1835,9 @@
           if (b.tried.has(p)) continue;
           b.tried.add(p);
           const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0) + (b.pass.central ? 0.12 : 0);
-          // a slow ball arriving at a defender's feet is almost always cut out
-          const icf = sp < 140 ? Math.max(ic, 0.85) : ic;
+          // a slow ball arriving right at a defender's feet is often cut out, but a keeper's own
+          // build-up pass shouldn't be an easy free turnover just because a presser closed in mid-flight
+          const icf = (sp < 140 ? Math.max(ic, 0.55) : ic) * (b.pass.from.gk ? 0.5 : 1);
           if (Math.random() > icf) continue;
           if (p.id === 'shizuku') this.traitPop(p, '神託');
         }
