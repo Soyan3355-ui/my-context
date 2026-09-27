@@ -114,7 +114,7 @@
         if (this.combo('ace') && (id === 'leo' || id === 'hikaru') && k === 'sht') v += 8;
         if (this.combo('bonsai') && (id === 'kazuha' || id === 'mame') && k === 'pas') v += 8;
         if (id === 'ponta' && this.pontaAwake) v += 10;
-        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 10);
+        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 6);
       }
       return v;
     }
@@ -871,7 +871,7 @@
         if (tac === 'long') s -= 8;
         if (countering) { if (prog > 20) s += 30; if (prog < 0) s -= 40; }
         if (ord === 'pass') s += 18;
-        if (p.id === 'leo') s -= 14;
+        if (p.id === 'leo') s -= 6;
         if (p.id === 'kazuha') s += 8;
         s += rand(0, 16);
         if (s > best.s) best = { k: 'pass', s, m };
@@ -2301,7 +2301,7 @@
     // ---------------- chance / pinch timing meter ----------------
     openMeter(kind, p) {
       const b = this.ball;
-      const just = kind === 'chance' ? (p.id === 'leo' ? (this.combo('bunkei') && Game.time - (this.bunkeiT || -99) < 4 ? 0.09 : 0.07) : p.id === 'hikaru' && this.crowdHype > 0.55 ? 0.08 : 0.05) : 0.05;
+      const just = kind === 'chance' ? (p.id === 'leo' ? (this.combo('bunkei') && Game.time - (this.bunkeiT || -99) < 4 ? 0.075 : 0.06) : p.id === 'hikaru' && this.crowdHype > 0.55 ? 0.065 : 0.05) : 0.05;
       if (kind === 'chance' && just > 0.05) this.traitPop(p, p.id === 'leo' ? '目立ちたがり' : '映え');
       this.meter = { just, kind, p, t: 0, pos: 0, dir: 1, speed: kind === 'chance' ? 1.9 : 2.2, result: null, rt: 0, autoAim: clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) };
       if (kind === 'chance') this.chanceCD = rand(9, 13); else this.pinchCD = rand(10, 15);
