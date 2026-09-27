@@ -670,6 +670,13 @@
           if (d < md) { md = d; mark = o; }
         }
         if (mark) hy = lerp(hy, mark.y, 0.6);
+        // a runner who's already beaten the line is a live threat: the nearest defender breaks off
+        // the flat shape to actually track and close him down, instead of just sliding sideways on the line
+        if (mark && this.proj(t, mark.x) > this.proj(t, line) + 10 && dist(p.x, p.y, mark.x, mark.y) < 90) {
+          hx = lerp(line, mark.x - dx * 8, 0.7);
+          hy = lerp(hy, mark.y, 0.7);
+          p.run = true;
+        }
         // "守れ！" doubles down on shutting out the other side's ace, at the cost of the rest of the line's shape
         if (t === 0 && ord === 'defend' && this.ace[1] && !this.ace[1].gk) {
           const ad = dist(p.x, p.y, this.ace[1].x, this.ace[1].y);
