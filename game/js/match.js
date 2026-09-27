@@ -2762,7 +2762,24 @@
       const tk = all.slice().sort((a, c) => c.rec.tackleOk - a.rec.tackleOk)[0];
       if (tk && tk.rec.tackleOk >= 3) good.push({ cat: 'def', title: 'ボール奪取', value: tk.name + 'が ' + tk.rec.tackleOk + '回奪取', who: tk.name, tip: '守備の要になっている。' });
       if (this.tstats[0].chainMax >= 8) good.push({ cat: 'pas', title: 'パスワーク', value: '最長 ' + this.tstats[0].chainMax + '本連続', who: null, tip: 'つなぐ力はある。' });
-      return { issues: out.slice(0, 3), good: good[0] || null, memos: this.memos.slice() };
+      // a rough scoreline hides more than it shows: a loss should surface more concrete issues,
+      // not fewer of them, so the team never feels like it's fighting blind while it's behind
+      const lose = this.score[0] < this.score[1], win = this.score[0] > this.score[1];
+      const cap = lose ? 5 : win ? 3 : 4;
+      return { issues: out.slice(0, cap), good: good.slice(0, lose ? 2 : 1), memos: this.memos.slice(), detail: this.matchDetail() };
+    }
+    // the raw numbers behind the issue cards, for a fuller "for those who want to see everything" view
+    matchDetail() {
+      const S = (k) => this.sumRec(k);
+      const all = this.team(0).concat(this.subbedOut);
+      const early = all.reduce((a, p) => a + p.rec.distEarly, 0), late = all.reduce((a, p) => a + p.rec.distLate, 0);
+      const totP = (this.poss[0] + this.poss[1]) || 1;
+      return {
+        poss: [this.poss[0] / totP, this.poss[1] / totP], shots: this.shots.slice(), onTarget: this.onTarget.slice(),
+        pass: [S('passOk'), S('pass')], long: [S('longOk'), S('longAtt')], press: [S('prOk'), S('prAtt')],
+        aerial: [S('airW'), S('airL')], tackle: [S('tackleOk'), S('tackle')], thr: S('thrOk'),
+        lost: S('lost'), chainMax: this.tstats[0].chainMax, distEarly: early, distLate: late,
+      };
     }
 
     // ---------------- bench panel: team tactic + substitutions ----------------

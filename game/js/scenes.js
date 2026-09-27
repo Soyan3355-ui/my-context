@@ -2034,8 +2034,35 @@
     return out;
   }
 
+  // Nagisa's quiet gift: turning raw match numbers into a verdict that judges the process,
+  // not just the scoreline, so a losing streak still reads as visible, measurable progress.
+  function analystVerdict(A, win, lose) {
+    const d = A.detail;
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+    const passAcc = pct(d.pass[0], d.pass[1]), pressAcc = pct(d.press[0], d.press[1]);
+    const tackleAcc = pct(d.tackle[0], d.tackle[1]), aerialAcc = pct(d.aerial[0], d.aerial[0] + d.aerial[1]);
+    const possPct = Math.round(d.poss[0] * 100);
+    const score = (passAcc - 55) * 0.3 + (tackleAcc - 40) * 0.3 + (possPct - 50) * 0.15 + (aerialAcc - 50) * 0.15 - d.lost * 1.2 + (win ? 6 : lose ? -3 : 0);
+    const grade = score > 22 ? 'S' : score > 10 ? 'A' : score > -3 ? 'B' : score > -15 ? 'C' : 'D';
+    const log = State.growthLog || [];
+    const back = log[Math.max(0, log.length - 6)], now = log[log.length - 1];
+    const trendDelta = back && now ? Math.round((now.teamAvg - back.teamAvg) * 10) / 10 : null;
+    const lines = [];
+    lines.push('総合評価：' + grade + '　（パス' + passAcc + '%　球際' + tackleAcc + '%　支配率' + possPct + '%）');
+    if (lose) lines.push(A.issues.length ? '負けは負けですが、直す場所がこれだけ具体的に見えたのは収穫です。' : 'データ上は悪くありません。次はこの精度を結果につなげましょう。');
+    else if (win) lines.push('勝てた要因も、しっかりデータに残っています。');
+    else lines.push('内容は五分。数字の伸びを見れば、次は取れます。');
+    if (trendDelta != null) {
+      lines.push(trendDelta > 0
+        ? '直近' + Math.min(6, log.length) + '試合でチーム平均は+' + trendDelta.toFixed(1) + '。スコアに関係なく、中身は確実に強くなっています。'
+        : '数字の伸びはまだ緩やかですが、個々の成長は止まっていません。焦らず積み上げましょう。');
+    }
+    return { grade, lines, passAcc, pressAcc, tackleAcc, aerialAcc, possPct };
+  }
+
+  const atabR = (i) => ({ x: 340 + i * 62, y: 10, w: 58, h: 16 });
   function Result(r) {
-    const s = { t: 0, phase: 'score', gi: -1, gt: 0, fx: new Particles() };
+    const s = { t: 0, phase: 'score', gi: -1, gt: 0, fx: new Particles(), atab: 'issues' };
     const win = r.score[0] > r.score[1], lose = r.score[0] < r.score[1];
     const rOpp = State.fixture().opp;
     s.growth = State.growth = computeGrowth(r);
@@ -2048,6 +2075,7 @@
       cards: s.cardsEarned, teamAvg: Math.round((State.roster.reduce((a, p) => a + avgStat(p), 0) / State.roster.length) * 10) / 10,
     });
     if (State.growthLog.length > 40) State.growthLog.shift();
+    if (r.analysis) s.verdict = analystVerdict(r.analysis, win, lose);
     s.enter = () => {
       Sound.crowd(win ? 0.4 : 0.15);
       Sound.bgm(win ? 'victory' : lose ? 'defeat' : 'hub');
@@ -2059,9 +2087,11 @@
         if (s.t > 1.5 && (okPressed() || (State.auto && s.t > 3))) { s.phase = r.analysis ? 'analysis' : 'growth'; s.at = 0; s.gi = 0; s.gt = 0; Sound.play('swoosh'); }
       } else if (s.phase === 'analysis') {
         s.at += dt;
-        const n = r.analysis.issues.length + (r.analysis.good ? 1 : 0);
+        const n = r.analysis.issues.length + r.analysis.good.length;
         const shown = Math.floor((s.at - 0.3) / 0.25);
         if (shown >= 0 && shown < n && shown !== s.lastCard) { s.lastCard = shown; Sound.play('stamp', { vol: 0.4 }); }
+        if (s.at > 0.3 && E.clickedIn(atabR(0))) { s.atab = 'issues'; Sound.play('cursor'); return; }
+        if (s.at > 0.3 && E.clickedIn(atabR(1))) { s.atab = 'detail'; State.talked.analystDetail = true; Sound.play('cursor'); return; }
         if (s.at > 1.2 && (okPressed() || (State.auto && s.at > 3))) { s.phase = 'growth'; s.gi = 0; s.gt = 0; Sound.play('swoosh'); }
       } else if (s.phase === 'growth') {
         s.gt += dt;
@@ -2124,36 +2154,73 @@
         panel(g, 12, 8, 456, 254, 'paper');
         drawPortrait(g, 'nagisa', A.issues.length ? 'determined' : 'happy', 20, 12, 1);
         text(g, '試合分析レポート', 74, 16, { size: 14, color: '#10304f' });
-        text(g, A.issues.length ? '監督、試合を見ていて気になったところをまとめました。' : '監督、今日はチーム全体がよく機能していました！', 74, 36, { size: 9, color: '#6d4f3a' });
-        const CAT = { pas: ['パス', '#4fb4e8'], sht: ['シュート', '#e0474c'], spd: ['スピード', '#6cc35a'], def: ['ディフェンス', '#d48a1e'], sta: ['スタミナ', '#b06ad8'] };
-        const cards = A.issues.map((c) => Object.assign({ good: false }, c)).concat(A.good ? [Object.assign({ good: true }, A.good)] : []);
-        cards.forEach((c, i) => {
-          if (s.at - 0.3 < i * 0.25) return;
-          const y = 62 + i * 46, k = Ease.outBack(clamp((s.at - 0.3 - i * 0.25) / 0.25, 0, 1));
-          const x = 22 + Math.round((1 - k) * 30);
-          panel(g, x, y, 436, 42, c.good ? ['#2a1a24', '#e8f8d8', '#c8e0b0', '#ffffff'] : ['#2a1a24', '#fff6e0', '#e8d6ae', '#ffffff']);
-          const [cn, cc] = CAT[c.cat] || ['', '#888'];
-          g.fillStyle = cc; g.fillRect(x + 4, y + 4, 4, 34);
-          text(g, (c.good ? '◎ ' : '▲ ') + c.title, x + 14, y + 4, { size: 10, color: c.good ? '#3f8a3e' : '#2a1a24' });
-          text(g, c.value, x + 426, y + 5, { size: 10, align: 'right', color: c.good ? '#3f8a3e' : '#e0474c' });
-          text(g, c.tip, x + 14, y + 18, { size: 8, color: '#6d4f3a' });
-          const tag = (c.good ? '強み：' : '伸ばしたい：') + cn + (c.who ? '　注目：' + c.who : '');
-          text(g, tag, x + 14, y + 29, { size: 8, color: cc });
+        text(g, s.atab === 'detail' ? '実はナギサ、データを読むのが得意なんです……。' : A.issues.length ? '監督、試合を見ていて気になったところをまとめました。' : '監督、今日はチーム全体がよく機能していました！', 74, 36, { size: 9, color: '#6d4f3a' });
+        [['課題', 0], ['詳細データ', 1]].forEach(([lbl, i]) => {
+          const rct = atabR(i), on = (i === 0) === (s.atab === 'issues');
+          panel(g, rct.x, rct.y, rct.w, rct.h, on ? 'gold' : 'dark');
+          text(g, lbl, rct.x + rct.w / 2, rct.y + 4, { size: 8, align: 'center', color: on ? '#2a1a24' : '#c9d6e6' });
         });
-        // tie this week's training and any halftime tactical call back to a concrete result, so decisions feel like they mattered
-        if (s.at > 0.4) {
-          const homeRecs = r.recs.filter((x) => x.team === 0);
-          const S2 = (k) => homeRecs.reduce((a, x) => a + (x.rec[k] || 0), 0);
-          const tieIn = State.trainedStat === 'sht' ? (State.trainedLabel || '練習') + 'の成果か、今日はシュート' + S2('shot') + '本（枠内' + S2('onT') + '）でした。'
-            : State.trainedStat === 'pas' ? (State.trainedLabel || '練習') + 'の成果か、今日はパス成功' + S2('passOk') + '/' + S2('pass') + '本でした。'
-            : (State.trainedStat === 'spd' || State.trainedStat === 'sta') ? (State.trainedLabel || '練習') + 'の成果か、総走行距離は' + (S2('dist') / 1000).toFixed(1) + 'kmでした。'
-            : State.trained === 'tactics' && r.tactic && r.tactic[0] ? '戦術練習の成果です。今日の「' + Data.TACTICS[r.tactic[0]].name + '」、活かせましたか？' : null;
-          if (tieIn) text(g, tieIn, 22, 240, { size: 8, color: '#2f86c4' });
+        const CAT = { pas: ['パス', '#4fb4e8'], sht: ['シュート', '#e0474c'], spd: ['スピード', '#6cc35a'], def: ['ディフェンス', '#d48a1e'], sta: ['スタミナ', '#b06ad8'] };
+        if (s.atab === 'issues') {
+          const cards = A.issues.map((c) => Object.assign({ good: false }, c)).concat(A.good.map((c) => Object.assign({ good: true }, c)));
+          cards.forEach((c, i) => {
+            if (s.at - 0.3 < i * 0.25) return;
+            const y = 62 + i * 46, k = Ease.outBack(clamp((s.at - 0.3 - i * 0.25) / 0.25, 0, 1));
+            const x = 22 + Math.round((1 - k) * 30);
+            panel(g, x, y, 436, 42, c.good ? ['#2a1a24', '#e8f8d8', '#c8e0b0', '#ffffff'] : ['#2a1a24', '#fff6e0', '#e8d6ae', '#ffffff']);
+            const [cn, cc] = CAT[c.cat] || ['', '#888'];
+            g.fillStyle = cc; g.fillRect(x + 4, y + 4, 4, 34);
+            text(g, (c.good ? '◎ ' : '▲ ') + c.title, x + 14, y + 4, { size: 10, color: c.good ? '#3f8a3e' : '#2a1a24' });
+            text(g, c.value, x + 426, y + 5, { size: 10, align: 'right', color: c.good ? '#3f8a3e' : '#e0474c' });
+            text(g, c.tip, x + 14, y + 18, { size: 8, color: '#6d4f3a' });
+            const tag = (c.good ? '強み：' : '伸ばしたい：') + cn + (c.who ? '　注目：' + c.who : '');
+            text(g, tag, x + 14, y + 29, { size: 8, color: cc });
+          });
+          // tie this week's training and any halftime tactical call back to a concrete result, so decisions feel like they mattered
+          if (s.at > 0.4) {
+            const homeRecs = r.recs.filter((x) => x.team === 0);
+            const S2 = (k) => homeRecs.reduce((a, x) => a + (x.rec[k] || 0), 0);
+            const tieIn = State.trainedStat === 'sht' ? (State.trainedLabel || '練習') + 'の成果か、今日はシュート' + S2('shot') + '本（枠内' + S2('onT') + '）でした。'
+              : State.trainedStat === 'pas' ? (State.trainedLabel || '練習') + 'の成果か、今日はパス成功' + S2('passOk') + '/' + S2('pass') + '本でした。'
+              : (State.trainedStat === 'spd' || State.trainedStat === 'sta') ? (State.trainedLabel || '練習') + 'の成果か、総走行距離は' + (S2('dist') / 1000).toFixed(1) + 'kmでした。'
+              : State.trained === 'tactics' && r.tactic && r.tactic[0] ? '戦術練習の成果です。今日の「' + Data.TACTICS[r.tactic[0]].name + '」、活かせましたか？' : null;
+            if (tieIn) text(g, tieIn, 22, 240, { size: 8, color: '#2f86c4' });
+          }
+          const tacMemo = (A.memos || []).find((m) => m.key === 'htgood' || m.key === 'htbad' || m.key === 'oppswitch-ok' || m.key === 'oppswitch-bad');
+          if (s.cardsEarned && s.cardsEarned.length) text(g, '獲得カード：' + s.cardsEarned.join('、'), 22, 250, { size: 8, color: '#e0474c' });
+          else if (tacMemo) text(g, '采配メモ：' + tacMemo.text, 22, 250, { size: 8, color: tacMemo.key.includes('bad') ? '#e0474c' : '#3f8a3e' });
+          else if (A.memos && A.memos.length) text(g, '試合中のメモ ' + A.memos.length + '件　（最初：' + A.memos[0].min + "'「" + A.memos[0].text + '」）', 22, 250, { size: 8, color: '#6d4f3a' });
+        } else {
+          const d = A.detail, V = s.verdict;
+          const pctS = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '―');
+          // possession/shots compare both sides; the rest are our own numbers, shown at full detail
+          const dual = [
+            ['支配率', Math.round(d.poss[0] * 100) + '%', Math.round(d.poss[1] * 100) + '%'],
+            ['シュート（枠内）', d.shots[0] + '（' + d.onTarget[0] + '）', d.shots[1] + '（' + d.onTarget[1] + '）'],
+          ];
+          dual.forEach((row, i) => {
+            const y = 58 + i * 15;
+            text(g, row[0], 24, y, { size: 9, color: '#2a1a24' });
+            text(g, row[1], 260, y, { size: 9, align: 'right', color: '#2f86c4' });
+            text(g, row[2], 420, y, { size: 9, align: 'right', color: '#e0474c' });
+          });
+          const solo = [
+            ['パス成功率', pctS(d.pass[0], d.pass[1]) + '（' + d.pass[0] + '/' + d.pass[1] + '）'],
+            ['プレス下パス', pctS(d.press[0], d.press[1]) + '（' + d.press[0] + '/' + d.press[1] + '）'],
+            ['ロングパス', pctS(d.long[0], d.long[1]) + '（' + d.long[0] + '/' + d.long[1] + '）'],
+            ['球際（タックル）', pctS(d.tackle[0], d.tackle[1]) + '（' + d.tackle[0] + '/' + d.tackle[1] + '）'],
+            ['空中戦', d.aerial[0] + '勝' + d.aerial[1] + '敗'],
+            ['スルーパス成功', d.thr + '本'],
+            ['ボールロスト', d.lost + '回'],
+            ['最長連続パス', d.chainMax + '本'],
+          ];
+          solo.forEach((row, i) => {
+            const y = 96 + i * 14;
+            text(g, row[0], 24, y, { size: 9, color: '#2a1a24' });
+            text(g, row[1], 420, y, { size: 9, align: 'right', color: '#2f86c4' });
+          });
+          if (V) V.lines.forEach((ln, i) => text(g, ln, 22, 214 + i * 12, { size: 8, color: i === 0 ? '#10304f' : '#6d4f3a' }));
         }
-        const tacMemo = (A.memos || []).find((m) => m.key === 'htgood' || m.key === 'htbad' || m.key === 'oppswitch-ok' || m.key === 'oppswitch-bad');
-        if (s.cardsEarned && s.cardsEarned.length) text(g, '獲得カード：' + s.cardsEarned.join('、'), 22, 250, { size: 8, color: '#e0474c' });
-        else if (tacMemo) text(g, '采配メモ：' + tacMemo.text, 22, 250, { size: 8, color: tacMemo.key.includes('bad') ? '#e0474c' : '#3f8a3e' });
-        else if (A.memos && A.memos.length) text(g, '試合中のメモ ' + A.memos.length + '件　（最初：' + A.memos[0].min + "'「" + A.memos[0].text + '」）', 22, 250, { size: 8, color: '#6d4f3a' });
         if (s.at > 1.2) text(g, 'Z / クリック：つぎへ', 456, 250, { size: 8, align: 'right', color: '#2f86c4', alpha: blink() });
       } else {
         const cur = s.growth[s.gi];
