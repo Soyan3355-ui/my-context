@@ -875,7 +875,8 @@
           if (this.proj(t, m.x) <= this.proj(t, off) + 1) {
             const tl = this.laneBlock(p.x, p.y, tx, ty, t);
             let open2 = 99; for (const o of this.players) if (o.team !== t && !o.gk) open2 = Math.min(open2, dist(o.x, o.y, tx, ty));
-            let s2 = 8 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.6 - (tl < 10 ? 70 : tl < 16 ? 25 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16);
+            // a defense that's actually tracking the run should shut most of these down before they're clean
+            let s2 = 2 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.55 - (tl < 14 ? 80 : tl < 22 ? 35 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16);
             if (p.id === 'kazuha') s2 += 12;
             if (countering) s2 += 35;
             if (tac === 'possession') s2 -= 6;
@@ -900,7 +901,8 @@
         const boxEdge = goalX(t) - dx * (Art.BOX_W + 6);
         const space = (this.proj(t, boxEdge) - this.proj(t, this.offsideX(t)));
         const slowest = oppDefs.filter((o) => this.role(o) === 'DF').sort((a2, c) => this.stat(a2, 'spd') - this.stat(c, 'spd'))[0];
-        const behind = space > 90 && slowest && this.stat(fw, 'spd') > this.stat(slowest, 'spd') - 4;
+        // a clean run in behind needs real space AND a real pace advantage — not just "not much slower"
+        const behind = space > 130 && slowest && this.stat(fw, 'spd') > this.stat(slowest, 'spd') + 6;
         const ltx = behind ? this.offsideX(t) + dx * Math.min(60, space - 40) : fw.x - dx * 10;
         if (behind) { fw.burst = 1.6; } else { fw.holdUp = true; } // marked tight: control it, then look to lay it off first-time
         this.doPass(p, fw, true, ltx, fw.y);
@@ -1062,7 +1064,7 @@
       // heading: timing, size and neck strength rather than shooting technique
       const headSk = this.stat(p, 'sht') * 0.45 + this.aerial(p) * 0.55;
       let sigma = header ? (100 - headSk) * 0.26 + dGoal * 0.07 + 3 : (100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
-      if (oneOnOne) sigma *= 0.9;
+      if (oneOnOne) sigma *= 0.97;
       const attackerQ = t === 0 ? q : null, defenderQ = t === 1 ? q : null;
       const gk = this.gk(1 - t);
       // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper
@@ -1077,7 +1079,6 @@
       const onTarget = Math.abs(ty - CY) < GW / 2 - 1;
       let pSave = 0.44 + this.stat(gk, 'def') / 250 - (power - 300) / 700 + dGoal / 560 - (Math.abs(ty - CY) / (GW / 2)) * 0.24;
       if (header) pSave -= 0.06;
-      if (oneOnOne) pSave -= 0.02;
       if (fk && fk.bend) pSave -= 0.06;
       if (fk && fk.trick) pSave -= 0.08;
       if (this.cutbackShot === p) pSave -= 0.06;
@@ -1934,7 +1935,8 @@
       if (pass && pass.cutback && pass.from.team === p.team) this.cutbackShot = p;
       // through ball in behind: nobody left between the runner and the keeper
       if (pass && pass.through && pass.from.team === p.team && !p.gk) {
-        const goalSide = this.players.some((o) => o.team !== p.team && !o.gk && !o.state && this.proj(p.team, o.x) > this.proj(p.team, p.x) - 4 && Math.abs(o.y - p.y) < 60);
+        // a defender still roughly goal-side and in the same channel counts as covering the run, even if trailing slightly
+        const goalSide = this.players.some((o) => o.team !== p.team && !o.gk && !o.state && this.proj(p.team, o.x) > this.proj(p.team, p.x) - 22 && Math.abs(o.y - p.y) < 85);
         if (!goalSide && dist(p.x, p.y, goalX(p.team), CY) < 360) {
           this.oneOnOne = { p, t: 4 };
           p.burst = 2.0;

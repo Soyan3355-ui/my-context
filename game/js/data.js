@@ -78,7 +78,7 @@
     { id: 'fuigo', nick: 'ふいご係', name: 'フイゴ', pos: 'DF', stats: { spd: 50, sht: 32, pas: 42, def: 52, sta: 62 }, look: look(AWAY_KIT, 'light', '#6a4020', '#4a2a14', 'short') },
     { id: 'tetsuyama', nick: '鉄工団の溶接番長', name: '鉄山', pos: 'DF', stats: { spd: 50, sht: 52, pas: 48, def: 70, sta: 72 }, look: look(AWAY_KIT, 'tan', '#2a1a24', '#140c12', 'short', 'goggles', 'big'),
       full: '鉄山 剛', trait: '鋼の壁', traitDesc: 'タックルの成功率が高い。', bio: 'ヤマオロシ鉄工団の主将。溶接の腕も一流。', age: 29, job: '溶接工' },
-    { id: 'kotaro', nick: '素顔を知らぬ鋼鉄', name: '鋼太郎', pos: 'DF', stats: { spd: 34, sht: 36, pas: 36, def: 66, sta: 70 }, look: look(AWAY_KIT, 'mid', '#2a1a24', '#140c12', 'helmet', null, 'big'),
+    { id: 'kotaro', nick: '素顔を知らぬ鋼鉄', name: '鋼太郎', pos: 'DF', stats: { spd: 44, sht: 36, pas: 36, def: 66, sta: 70 }, look: look(AWAY_KIT, 'mid', '#2a1a24', '#140c12', 'helmet', null, 'big'),
       full: '鉄尾 鋼太郎', trait: '鋼鉄ボディ', traitDesc: '当たり負けしない。溶接マスクは絶対に外さない。', bio: '素顔を見た者はいない。工場ではロボットだと思われている。', age: '??', job: '溶接工' },
     { id: 'hagane', nick: '定時退社の壁', name: 'ハガネ', pos: 'DF', stats: { spd: 44, sht: 30, pas: 40, def: 58, sta: 60 }, look: look(AWAY_KIT, 'light', '#4a3020', '#2a1a14', 'bald') },
     { id: 'rinko', nick: '火花散る看板娘', name: '燐子', pos: 'MF', stats: { spd: 56, sht: 44, pas: 54, def: 44, sta: 58 }, look: look(AWAY_KIT, 'light', '#ff8a3a', '#c05a1a', 'ponytail') },
