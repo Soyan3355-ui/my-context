@@ -1246,19 +1246,13 @@
   }
   // tally which stats a match actually exercised, and hand out cards for those — the same
   // "the match teaches you what to train" idea as the source game's card system
-  function awardCards(r, growth, rOpp) {
+  function awardCards(r, growth) {
     State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
     const totals = {};
     for (const gr of growth) for (const k in gr.ups) if (STAT_KEYS.includes(k)) totals[k] = (totals[k] || 0) + gr.ups[k];
     const ranked = STAT_KEYS.slice().sort((a, c) => (totals[c] || 0) - (totals[a] || 0));
     const earned = [];
     for (const k of ranked.slice(0, 2)) if (totals[k] > 0) { State.cards[k] = (State.cards[k] || 0) + 1; earned.push(CARD_INFO[k].name); }
-    const ourAvg = State.lineup.reduce((a, id) => { const p = State.roster.find((q) => q.id === id); return a + (p ? avgStat(p) : 0); }, 0) / Math.max(1, State.lineup.length);
-    const margin = Math.abs(r.score[0] - r.score[1]);
-    if (rOpp.rating - ourAvg > 8 && margin <= 1) {
-      const k = pick(ranked.slice(0, 3).filter((x) => totals[x] > 0)) || pick(STAT_KEYS);
-      State.cards[k] = (State.cards[k] || 0) + 1; earned.push(CARD_INFO[k].name + '（格上健闘ボーナス）');
-    }
     if (IDENTITIES[State.identity] && r.tacTime) {
       const tot = Object.values(r.tacTime).reduce((a, v) => a + v, 0) || 1;
       const share = (r.tacTime[IDENTITIES[State.identity].tactic] || 0) / tot;
@@ -2046,7 +2040,7 @@
     const rOpp = State.fixture().opp;
     s.growth = State.growth = computeGrowth(r);
     s.mvp = s.growth.slice().sort((a, b) => b.rating - a.rating)[0];
-    s.cardsEarned = awardCards(r, s.growth, rOpp);
+    s.cardsEarned = awardCards(r, s.growth);
     State.growthLog = State.growthLog || [];
     State.growthLog.push({
       seasonNo: State.seasonNo, week: State.season.week + 1, opp: rOpp.name, score: r.score.slice(),
