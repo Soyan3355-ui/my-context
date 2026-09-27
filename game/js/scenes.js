@@ -18,6 +18,7 @@
     roster: [], formation: 'balance', trained: null, recruit: null, result: null, growth: null, auto: false, talked: {},
     reset() {
       this.roster = Data.HOME.map((p) => Object.assign({}, p, { stats: Object.assign({}, p.stats), base: Object.assign({}, p.stats) }));
+      for (const p of this.roster) p.potential = initPotential(p);
       this.lineup = Data.DEFAULT_LINEUP.slice();
       this.tactic = 'counter';
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
@@ -214,7 +215,24 @@
   // growth slows down the closer a stat gets to its ceiling, so a season of play doesn't push everyone to S rank
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
   // level, then eases off hard past it, so a season closes the gap instead of blowing past it forever
-  function growthTaper(cur) { return cur < 48 ? 1 : clamp((78 - cur) / 38, 0.12, 1); }
+  function growthTaper(cur) { return cur < 52 ? 1 : clamp((82 - cur) / 38, 0.12, 1); }
+  // potential (0-10): how much a player is "in form to grow" right now, independent of how close
+  // their stats already are to the ceiling. Early bloomers (high base growth) start hot and fade
+  // sooner; late bloomers start modest but hold their form longer — same idea as the classic
+  // "早熟型/晩成型" archetypes, just compressed to this game's shorter season clock.
+  function initPotential(p) {
+    const g = p.growth || 1;
+    return clamp(Math.round(5 + (g - 1) * 5 + rand(-1, 1)), 1, 10);
+  }
+  function tickPotential(p) {
+    if (p.potential == null) p.potential = initPotential(p);
+    const age = typeof p.age === 'number' ? p.age : 24;
+    const bias = age < 22 ? 0.35 : age < 27 ? 0.05 : age < 33 ? -0.15 : -0.35;
+    p.potential = clamp(p.potential + bias + rand(-0.6, 0.6), 0, 10);
+  }
+  // pot 10 trains noticeably faster than average, pot 0 barely holds on to what it's got —
+  // softer than the source game's literal x3.0/x0.0, since a whole career here is a few seasons
+  function potMult(p) { return clamp(0.15 + ((p.potential == null ? 5 : p.potential) / 10) * 1.0, 0.15, 1.15); }
   const SPECIAL_UNLOCK_AVG = 55;
   // a player's finisher unlocks once they've grown into it, or (much more rarely) as a flash of insight during focused training
   function checkSpecialUnlock(p, luckChance = 0) {
@@ -1155,6 +1173,14 @@
       panel(g, 254 + dx, 100, 210, 36, 'gold');
       text(g, '特性：' + (p.trait || '―'), 262 + dx, 104, { size: 10, color: '#4a2a10' });
       text(g, p.traitDesc || '', 262 + dx, 120, { size: 8, color: '#6d4f3a' });
+      if (p.potential != null) {
+        const pot = Math.round(p.potential);
+        text(g, '伸び盛り度', 400 + dx, 104, { size: 7, color: '#4a2a10' });
+        for (let i = 0; i < 10; i++) {
+          g.fillStyle = i < pot ? (pot >= 7 ? '#e0474c' : pot <= 3 ? '#8a8496' : '#3f8a3e') : 'rgba(74,42,16,0.25)';
+          g.fillRect(400 + dx + i * 6, 112, 5, 5);
+        }
+      }
       // tactic understanding
       if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
         const x = 254 + dx + i * 54, T = Data.TACTICS[k];
@@ -1279,7 +1305,7 @@
         for (const k in s.pick.gains) {
           const onPolicy = IDENTITIES[State.identity] && IDENTITIES[State.identity].stat === k;
           const tp = growthTaper(p.stats[k]);
-          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp;
+          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p);
           v = Math.round(v + rand(-0.3, 0.3));
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
@@ -1906,7 +1932,7 @@
       const ups = {};
       let total = 0;
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 10) * (p.growth || 1) * growthTaper(p.stats[k]) + Math.random() * 0.5);
+        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * growthTaper(p.stats[k]) * potMult(p) + Math.random() * 0.5);
         v = Math.min(v, 3);
         if (v > 0) { ups[k] = v; total += v; }
       }
@@ -2194,6 +2220,7 @@
     } else { State.budget += 3; s.notes.unshift('アウェイ遠征　分配金 +3万円'); }
     State.trained = null;
     State.season.week++;
+    for (const p of State.roster) tickPotential(p);
     };
     s.enter = () => { s.process(); Sound.bgm('hub'); Sound.crowd(0); };
     s.update = (dt) => {
@@ -2240,6 +2267,7 @@
     const kitLook = Object.assign({}, Data.HOME_KIT, { skin: def.look.skin, skinD: def.look.skinD, hair: def.look.hair, hairD: def.look.hairD, style: def.look.style, extra: def.look.extra, body: def.look.body, key: 'signed_' + def.id });
     const p = Object.assign({}, def, { stats: Object.assign({}, def.stats), base: Object.assign({}, def.stats), tacU: Object.assign({}, def.tacU || { counter: 45, press: 45, long: 45, possession: 45 }), look: def.pos === 'GK' ? Object.assign({}, Data.HOME[0].look, kitLook, { shirt: '#8fd14f', shirtD: '#5a9e2e', shirtL: '#c8f08a', key: 'signed_' + def.id }) : kitLook, bench: true, joined: from || 'free' });
     p.local = !!def.local; p.growth = def.growth || 1; p.sal = def.sal || 15;
+    p.potential = initPotential(p);
     State.roster.push(p);
     State.morale[p.id] = 70; State.benchWeeks[p.id] = 0;
     for (const q of State.roster) if (q.id !== p.id) State.addBond(p.id, q.id, 0);

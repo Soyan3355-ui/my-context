@@ -41,16 +41,16 @@
     blurb: '去年2位の強豪。前線の大きい選手へ放り込み、こぼれ球を拾って押し込む。', shouts: ['押し込めぇ！', '鉄の意地を見せろ！', '踏ん張れぇ！'],
     roster: () => Data.AWAY });
   club({ id: 'shiomi', boost: 4, name: '潮見商店街FC', short: '商店街FC', en: 'SHIOMI', color: '#e8b83a', dark: '#b08420', light: '#ffe08a', ink: '#27305a',
-    tactic: 'possession', planB: 'long', coach: '会長', captain: 'kaoru', rating: 54, ground: '潮見アーケード裏グラウンド',
+    tactic: 'possession', planB: 'long', coach: '会長', captain: 'kaoru', rating: 58, ground: '潮見アーケード裏グラウンド',
     blurb: '商店街の店主たち。ボールを大事につなぐ、渋いパスワークが持ち味。', shouts: ['いらっしゃい、いらっしゃい！', 'つないで崩しなさい！', '商売は信用第一！'] });
   club({ id: 'chikurin', boost: 3, name: '竹林大学OB', short: '竹林OB', en: 'CHIKURIN', color: '#5aa84a', dark: '#3a7a30', light: '#a8e08a', ink: '#1a3a14',
-    tactic: 'press', planB: 'press', coach: '竹中監督', captain: 'tatsumi', rating: 52, ground: '竹林大学グラウンド',
+    tactic: 'press', planB: 'press', coach: '竹中監督', captain: 'tatsumi', rating: 56, ground: '竹林大学グラウンド',
     blurb: '体育会の卒業生たち。90分走り続ける前線からのハイプレス。', shouts: ['走れ走れぇ！', '竹のようにしなれ！', '前から行けぇ！'] });
   club({ id: 'yukemuri', boost: 3, name: '湯けむり旅館組合', short: '旅館組合', en: 'YUKEMURI', color: '#8a3a6a', dark: '#5e2448', light: '#c87aa8', ink: '#2a0e20',
-    tactic: 'counter', planB: 'possession', coach: '大女将', captain: 'oyuki', rating: 50, ground: '湯けむり温泉グラウンド',
+    tactic: 'counter', planB: 'possession', coach: '大女将', captain: 'oyuki', rating: 54, ground: '湯けむり温泉グラウンド',
     blurb: '温泉街の旅館の人たち。しっかり引いて守り、若女将の一撃で仕留める。', shouts: ['おもてなしの守備を！', '慌てず、じっくりと。', '湯冷めしますよ！'] });
   club({ id: 'minori', boost: 4, name: '実り農協', short: '農協', en: 'MINORI', color: '#c8702a', dark: '#8a4a18', light: '#f0a868', ink: '#3a1a08',
-    tactic: 'long', planB: 'counter', coach: '組合長', captain: 'gonzo', rating: 51, ground: 'あぜ道グラウンド',
+    tactic: 'long', planB: 'counter', coach: '組合長', captain: 'gonzo', rating: 55, ground: 'あぜ道グラウンド',
     blurb: '畑仕事で鍛えた大男ぞろい。空中戦とセカンドボールにめっぽう強い。', shouts: ['耕せぇ！', '米俵を運ぶ気持ちで！', '豊作じゃあ！'] });
 
   const NAMES = {
@@ -76,19 +76,19 @@
 
   // ---------------- prefecture league: what awaits after promotion ----------------
   club2({ id: 'kaiyou', boost: 6, name: '海陽学園FC', short: '海陽学園', en: 'KAIYOU', color: '#2f86c4', dark: '#1c5a8e', light: '#9fdcff', ink: '#0e2a44',
-    tactic: 'possession', planB: 'press', coach: '白石監督', captain: 'reon', rating: 58, ground: '海陽学園グラウンド',
+    tactic: 'possession', planB: 'press', coach: '白石監督', captain: 'reon', rating: 61, ground: '海陽学園グラウンド',
     blurb: 'サッカー強豪校のOBチーム。基礎からのパスワークで格上を苦しめてきた古豪。', shouts: ['丁寧に、崩せ！', '海陽の誇りを見せろ！', '慌てるな、繋げ！'] });
   club2({ id: 'tekkyo', boost: 6, name: '鉄橋重工業FC', short: '鉄橋重工', en: 'TEKKYO', color: '#5a5a68', dark: '#33333c', light: '#f0a030', ink: '#1a1a20',
-    tactic: 'press', planB: 'long', coach: '現場監督', captain: 'daigo', rating: 59, ground: '鉄橋グラウンド',
+    tactic: 'press', planB: 'long', coach: '現場監督', captain: 'daigo', rating: 62, ground: '鉄橋グラウンド',
     blurb: '大手工場の実業団チーム。就業後も休まず走り込む、県内屈指のプレス集団。', shouts: ['稼働率を上げろ！', '止めるな、圧をかけろ！', '定時までに決めるぞ！'] });
   club2({ id: 'shirasagi', boost: 8, name: '白鷺実業団', short: '白鷺', en: 'SHIRASAGI', color: '#eef0f4', dark: '#b8c0cc', light: '#ffffff', ink: '#1c2a44',
-    tactic: 'counter', planB: 'possession', coach: '鷺沼監督', captain: 'shirou', rating: 63, ground: '白鷺スタジアム', gatekeeper: true,
+    tactic: 'counter', planB: 'possession', coach: '鷺沼監督', captain: 'shirou', rating: 66, ground: '白鷺スタジアム', gatekeeper: true,
     blurb: '県リーグを長年支配してきた名門。無駄のない堅守速攻で、格下を寄せ付けない。', shouts: ['乱れるな、白鷺は静かに勝つ。', '一撃で仕留めろ。', '格の違いを見せてやれ。'] });
   club2({ id: 'kurogane', boost: 5, name: '黒鉄機関区FC', short: '黒鉄', en: 'KUROGANE', color: '#2a2a30', dark: '#161618', light: '#e8c020', ink: '#0a0a0c',
-    tactic: 'long', planB: 'counter', coach: '区長', captain: 'kurou', rating: 55, ground: '機関区グラウンド',
+    tactic: 'long', planB: 'counter', coach: '区長', captain: 'kurou', rating: 58, ground: '機関区グラウンド',
     blurb: '鉄道の保線区チーム。線路のように長く速いボールで、一気に前線まで運ぶ。', shouts: ['レールを敷け！', '一直線に行くぞ！', '脱線するな！'] });
   club2({ id: 'minatomirai', boost: 6, name: 'みなと未来FC', short: 'みなと未来', en: 'MINATOMIRAI', color: '#d8367a', dark: '#a01c58', light: '#ff8ab8', ink: '#3a0e28',
-    tactic: 'press', planB: 'possession', coach: 'GM', captain: 'kai', rating: 57, ground: 'みなと未来アリーナ',
+    tactic: 'press', planB: 'possession', coach: 'GM', captain: 'kai', rating: 60, ground: 'みなと未来アリーナ',
     blurb: '元プロ選手も在籍する新興クラブ。派手な個人技と前線からの守備が武器。', shouts: ['魅せてやれ！', '取りに行くぞ！', 'ここが勝負どころだ！'] });
   const NAMES2 = {
     kaiyou: ['経理部の鷺沼', '広報の一ノ瀬', '海江田', '波多', '沖見', 'レオン', '汀', '磯谷', '渚本', '湊', '灯台'],
@@ -127,7 +127,8 @@
       rounds.push(pairs);
       t.splice(1, 0, t.pop());
     }
-    return rounds;
+    // a double round-robin (home and away each), matching the real-world's own season length
+    return rounds.concat(rounds.map((r) => r.map((pr) => [pr[1], pr[0]])));
   }
   const clubById = (id) => CLUBS.find((c) => c.id === id) || CLUBS2.find((c) => c.id === id);
   const TEAM_NAME = (id) => (id === 'hamakaze' ? 'ハマカゼFC' : clubById(id).name);
