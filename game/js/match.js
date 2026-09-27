@@ -272,13 +272,14 @@
         case 'play': this.simulate(dt); break;
         case 'goal':
           this.simulate(dt, true);
-          if (this.stateT > 3.4) { this.state = 'reset'; this.stateT = 0; this.placeKickoff(this.kickoffTeam, false); }
+          if (this.stateT > 2.3) { this.state = 'reset'; this.stateT = 0; this.placeKickoff(this.kickoffTeam, false); }
           break;
         case 'reset':
           this.moveAll(dt, true);
           // real kickoffs wait for the restart, not a fixed clock: don't blow the whistle
-          // until everyone's back onside (with a generous cap so a stuck player can't stall it forever)
-          if (this.stateT > 1.6 && (this.playersHome() || this.stateT > 7)) this.startPlay();
+          // until everyone's back onside (with a cap so a stuck player can't stall it forever —
+          // the hustle-back speed boost in moveAll means this is rarely the one that fires)
+          if (this.stateT > 0.9 && (this.playersHome() || this.stateT > 4.5)) this.startPlay();
           break;
         case 'halfend':
           this.moveAll(dt * 0.4, false);
@@ -1617,7 +1618,9 @@
         let tx = p.tx, ty = p.ty;
         if (toHome) { tx = p.homeX; ty = p.homeY; }
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy);
-        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6) * (p.hurry && this.sp && this.sp.taker === p ? 1.5 : 1) * (p.burst > 0 ? 1.15 : 1) * (p.spHurry && this.sp ? 2.2 : 1);
+        // hustling back to a kickoff spot after a goal shouldn't cost real seconds of dead time —
+        // everyone jogs it out at a clearly faster clip than normal positional play
+        let sp = this.speedOf(p) * (p.run || toHome ? 1 : 0.6) * (p.hurry && this.sp && this.sp.taker === p ? 1.5 : 1) * (p.burst > 0 ? 1.15 : 1) * (p.spHurry && this.sp ? 2.2 : 1) * (toHome ? 1.9 : 1);
         if (p.burst > 0) p.burst -= dt;
         if (!this.sp) p.hurry = false;
         if (this.ball.owner === p) sp *= 0.86;
