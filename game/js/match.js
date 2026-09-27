@@ -178,6 +178,9 @@
       let s = 48 + this.stat(p, 'spd') * 0.62;
       s *= 0.72 + 0.28 * (p.sta / 100);
       if (p.team === 0 && this.order[0] && this.order[0].id === 'attack') s *= 1.05;
+      // it's harder to sprint flat-out with the ball at your feet than to chase without it —
+      // without this, a covering defender with equal or lesser pace can never close the gap at all
+      if (this.ball.owner === p) s *= 0.9;
       return s;
     }
     say(p, txt, t = 1.3) { p.bubble = { text: txt, t, max: t }; }
@@ -273,7 +276,9 @@
           break;
         case 'reset':
           this.moveAll(dt, true);
-          if (this.stateT > 1.6) this.startPlay();
+          // real kickoffs wait for the restart, not a fixed clock: don't blow the whistle
+          // until everyone's back onside (with a generous cap so a stuck player can't stall it forever)
+          if (this.stateT > 1.6 && (this.playersHome() || this.stateT > 7)) this.startPlay();
           break;
         case 'halfend':
           this.moveAll(dt * 0.4, false);
@@ -1075,7 +1080,11 @@
       const headSk = this.stat(p, 'sht') * 0.45 + this.aerial(p) * 0.55;
       let sigma = header ? (100 - headSk) * 0.26 + dGoal * 0.07 + 3 : (100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
       if (oneOnOne) sigma *= 0.97;
-      const attackerQ = t === 0 ? q : null, defenderQ = t === 1 ? q : null;
+      // the human (or auto-mode's approximation) only ever gets a timing-quality roll on team 0's own
+      // shots and team 0's own keeper's saves — the rival attacker and rival keeper never got an
+      // equivalent roll at all, meaning skill only ever cut one way regardless of stats. Give them
+      // the same statistical roll the meter gives the human, just without needing an input to drive it.
+      const attackerQ = t === 0 ? q : this.aiQuality(), defenderQ = t === 1 ? q : this.aiQuality();
       const gk = this.gk(1 - t);
       // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper.
       // the rival captain has no JUST-timing input to key off (the AI just shoots), so theirs rolls
@@ -1343,7 +1352,10 @@
       const t = gk.team;
       const mates = this.team(t).filter((m) => m !== gk && !m.gk && !m.state);
       const openness = (m) => { let o = 99; for (const q of this.players) if (q.team !== t) o = Math.min(o, dist(q.x, q.y, m.x, m.y)); return o; };
-      const short = mates.filter((m) => dist(m.x, m.y, gk.x, gk.y) < 170 && openness(m) > 34).sort((a, c) => openness(c) - openness(a))[0];
+      // a teammate can look open at their own spot and still have a presser standing in the passing
+      // lane back near the keeper — check the whole lane, not just the landing point, or the keeper
+      // ends up handing possession straight to whoever's pressing highest
+      const short = mates.filter((m) => dist(m.x, m.y, gk.x, gk.y) < 170 && openness(m) > 34 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 22).sort((a, c) => openness(c) - openness(a))[0];
       const gtac = this.tacOf(t);
       const pShort = gtac === 'long' ? 0.1 : gtac === 'possession' ? 0.9 : gtac === 'counter' ? 0.4 : 0.65;
       if (short && Math.random() < pShort) {
@@ -1583,6 +1595,9 @@
       g.fillStyle = '#ffd24a'; g.fillRect(r0.x, 96, Math.round((r1.x + r1.w - r0.x) * clamp(1 - m.t / 4.5, 0, 1)), 2);
     }
 
+    playersHome() {
+      return this.players.every((p) => p.gk || dist(p.x, p.y, p.homeX, p.homeY) < 30);
+    }
     moveAll(dt, toHome) {
       for (const p of this.players) {
         if (p.tackCD > 0) p.tackCD -= dt;
@@ -2372,6 +2387,13 @@
         this.fxTop.burst(W / 2, H / 2 + 36, 26, { color: ['#ffd24a', '#ffffff', '#9fdcff'], speedMin: 60, speedMax: 180, lifeMin: 0.3, lifeMax: 0.6, size: 3, kind: 'star', drag: 0.05 });
       } else if (d < 0.17) { m.result = 'good'; Sound.play('select'); this.popupMeter('GOOD!', '#9fdcff'); }
       else { m.result = 'bad'; Sound.play('miss_timing'); this.popupMeter('あっ…！', '#c9d6e6'); }
+    }
+    // the rival has no timing meter of its own to drive a quality roll, but it deserves the same
+    // statistical shot at a well-taken finish or a well-judged save that auto-mode's meter gives the
+    // human — same distribution as resolveMeter's default 0.05/0.17 thresholds, just unconditional.
+    aiQuality() {
+      const d = Math.abs(clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) - 0.5);
+      return d < 0.05 ? 'just' : d < 0.17 ? 'good' : 'bad';
     }
     popupMeter(t, c) { this.meter.msg = { text: t, color: c }; }
 
