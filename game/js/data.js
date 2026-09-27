@@ -196,6 +196,24 @@
     ume: { name: 'なぎなた一閃シュート', color: '#8a7a9a', lines: ['商店街の意地、見せたるわ！', 'ポン太、見とき！'] },
   };
 
+  // signature dribble flourish when a player beats a defender 1-on-1 (see match.js tryTackle)
+  const DRIBBLE_MOVES = {
+    gen: { name: '地引き網フェイント', color: '#8a8a92' },
+    tsubame: { name: '朝刊配達ステップ', color: '#4fb4e8' },
+    morio: { name: '絹ごしターン', color: '#e8d6ae' },
+    mask: { name: '覆面ロール', color: '#2a1a24' },
+    kawataro: { name: 'かっぱの水かき', color: '#3f8a3e' },
+    shizuku: { name: '巫女のステップ', color: '#9fdcff' },
+    kazuha: { name: '行間のターン', color: '#2a2440' },
+    mame: { name: '枯れた一歩', color: '#f4f4f4' },
+    ponta: { name: 'はらぺこシミー', color: '#f08a3a' },
+    leo: { name: '獅子の切り返し', color: '#f0c040' },
+    haruki: { name: '全力ダッシュ抜け', color: '#6cc35a' },
+    daifuku: { name: 'ぬりかべロール', color: '#ffd24a' },
+    hikaru: { name: 'バズれ！シャッセロール', color: '#ff5aa8' },
+    ume: { name: 'なぎなたフェイント', color: '#8a7a9a' },
+  };
+
   // set-piece routines: the first of each kind is known from the start, the rest are learned in set-piece training (in UNLOCK order)
   const SETPLAYS = {
     ck: [
@@ -213,7 +231,7 @@
   };
   const SETPLAY_UNLOCK = ['ck_near', 'fk_wall', 'ck_far', 'fk_trick', 'ck_short', 'fk_lob'];
 
-  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
+  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, DRIBBLE_MOVES, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
   HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();

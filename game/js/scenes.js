@@ -115,6 +115,9 @@
       if (!d) return null;
       State.reset();
       for (const k of SAVE_FIELDS) if (d[k] !== undefined) State[k] = d[k];
+      // older saves used a simpler stat-only identity system; remap to the closest philosophy, or clear it
+      const LEGACY_IDENTITY = { speed: 'counter', power: 'long', technique: 'possession', finish: 'press' };
+      if (State.identity && !IDENTITIES[State.identity]) State.identity = LEGACY_IDENTITY[State.identity] || null;
       applyClubs();
       State.saveSlot = slot;
       return d.where;
@@ -838,11 +841,21 @@
   }
 
   // ---------------- TEAM POLICY: the manager decides what kind of club this is ----------------
+  // football philosophies: each pairs a preferred TACTIC and FORMATION with a stat focus,
+  // so picking one is a real tactical commitment, not just a training multiplier.
   const IDENTITIES = {
-    speed: { name: 'スピード重視', stat: 'spd', desc: '走力とスピードで圧倒する。運動量で試合を支配する。', trainHint: '砂浜ダッシュ', signHint: '足の速い選手' },
-    power: { name: 'フィジカル重視', stat: 'def', desc: '当たり負けしない、堅い守備を土台にする。', trainHint: '鳥かごパス回し', signHint: '守備の堅い選手' },
-    technique: { name: 'テクニック重視', stat: 'pas', desc: 'パスをつないで崩す、技巧派を目指す。', trainHint: '鳥かごパス回し', signHint: 'パス精度の高い選手' },
-    finish: { name: '得点力重視', stat: 'sht', desc: '決定力で勝ち切る、一撃必殺のチームにする。', trainHint: 'シュート練習', signHint: 'シュート力のある選手' },
+    possession: { name: 'ポジショナルプレー', tactic: 'possession', formation: 'balance', stat: 'pas',
+      desc: '短いパスをつなぎ、選手の立ち位置で数的優位を作って崩す。無理に急がない保持志向。',
+      trainHint: '鳥かごパス回し', signHint: 'パス精度の高い選手' },
+    press: { name: 'ハイプレス（ゲーゲンプレッシング）', tactic: 'press', formation: 'attack', stat: 'sta',
+      desc: '高い位置から複数人で囲んで即時奪回。奪ったら畳み掛ける。運動量が生命線。',
+      trainHint: 'プレッシング走', signHint: '運動量豊富な選手' },
+    counter: { name: '堅守速攻カウンター', tactic: 'counter', formation: 'defense', stat: 'spd',
+      desc: '深く引いて陣形を締め、奪った瞬間に一気に前へ。スピードで勝負を決める。',
+      trainHint: '砂浜ダッシュ', signHint: '足の速い選手' },
+    long: { name: 'ダイレクトフットボール', tactic: 'long', formation: 'attack', stat: 'def',
+      desc: '中盤を飛ばして前線へ放り込み、空中戦とセカンドボールで押し込む。フィジカル勝負。',
+      trainHint: 'ヘディング＆フィジカル', signHint: '体の強い選手' },
   };
   function TeamPolicy(first) {
     const s = { t: 0, menu: null, confirmed: null };
@@ -870,7 +883,10 @@
       if (!r) return;
       const changed = State.identity !== r.id;
       State.identity = r.id;
-      s.confirmed = { changed, I: IDENTITIES[r.id] };
+      const I = IDENTITIES[r.id];
+      const tacChanged = State.tactic !== I.tactic, formChanged = State.formation !== I.formation;
+      State.tactic = I.tactic; State.formation = I.formation;
+      s.confirmed = { changed, I, tacChanged, formChanged };
       Sound.play('levelup');
     };
     s.draw = (g) => {
@@ -882,12 +898,12 @@
       if (!s.confirmed) s.menu.draw(g);
       else {
         const I = s.confirmed.I;
-        panel(g, W / 2 - 160, 90, 320, 130, 'gold');
+        panel(g, W / 2 - 160, 90, 320, 150, 'gold');
         text(g, '方針：' + I.name + 'に決定！', W / 2, 100, { size: 13, align: 'center', color: '#2a1a24' });
         wrap(g, I.desc, 280, 9).forEach((l, i) => text(g, l, W / 2, 122 + i * 12, { size: 9, align: 'center', color: '#4a2a10' }));
-        text(g, '練習：「' + I.trainHint + '」がおすすめです', W / 2, 160, { size: 9, align: 'center', color: '#10304f' });
-        text(g, '移籍市場：「' + I.signHint + '」を優先的に紹介します', W / 2, 174, { size: 9, align: 'center', color: '#10304f' });
-        text(g, '（練習の成長が少し伸びやすくなります）', W / 2, 196, { size: 8, align: 'center', color: '#6d4f3a' });
+        text(g, '戦術：「' + Data.TACTICS[I.tactic].name + '」／フォーメーション：「' + Data.FORMATIONS[I.formation].name + '」に変更', W / 2, 158, { size: 9, align: 'center', color: '#10304f' });
+        text(g, '練習：「' + I.trainHint + '」がおすすめです／移籍市場：「' + I.signHint + '」を優先紹介', W / 2, 172, { size: 8, align: 'center', color: '#10304f' });
+        text(g, '（練習の成長が少し伸びやすくなります。ハーフタイムや作戦ボードでいつでも変更可）', W / 2, 210, { size: 7.5, align: 'center', color: '#6d4f3a' });
         if (s.t2 > 0.6) text(g, 'Z / クリック：すすむ', W / 2, 240, { size: 9, align: 'center', color: '#2f86c4', alpha: blink() });
       }
     };

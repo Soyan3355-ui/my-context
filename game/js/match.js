@@ -53,6 +53,7 @@
       this.ace = [this.players.find((p) => p.team === 0 && p.id === 'leo') || null, this.players.find((p) => p.team === 1 && p.id === this.opp.captain) || null];
       this.specialCD = {};
       this.specialSlowmoId = 0;
+      this.duelCD = {}; this.breakawaySlowmoId = 0;
       this.lineBias = [0, 0]; // -1 deep/risk-averse .. 0 balanced .. 1 high/compact (team 0 only, set via the halftime bench panel)
       this.score = [0, 0];
       this.half = 1; this.clock = 0; this.state = 'intro'; this.stateT = 0;
@@ -140,6 +141,17 @@
       this.traitCD[p.id] = now;
       this.popups.push({ x: p.x, y: p.y - 40, text: '★' + name, color: '#ffd24a', t: 0, size: 8, tag: true });
       Sound.play('coin', { vol: 0.35, pitch: 1.4 });
+    }
+    dribbleFlourish(p, d) {
+      const move = p.team === 0 && Data.DRIBBLE_MOVES[p.id];
+      if (!move) return;
+      const now = Game.time;
+      if (this.duelCD[p.id] && now - this.duelCD[p.id] < 5) return;
+      this.duelCD[p.id] = now;
+      this.fx.burst(p.x, p.y, 12, { color: [move.color, '#ffffff'], speedMin: 30, speedMax: 90, lifeMin: 0.25, lifeMax: 0.5, size: 2, drag: 0.08 });
+      this.popup(p.x, p.y - 40, '★' + move.name + '！', move.color, 9);
+      Game.addShake(1.5, 0.12);
+      Sound.play('coin', { vol: 0.4, pitch: 1.2 });
     }
     comboFx(id) {
       const c = this.combos.find((x) => x.id === id);
@@ -1198,6 +1210,7 @@
         d.rec.beaten++;
         c.rec.dribble++;
         if (c.team === 0 && Math.random() < 0.4) this.say(c, pick(['ほいっと！', 'かわした！']), 0.9);
+        if (c.team === 0) this.dribbleFlourish(c, d);
       }
     }
     foul(d, c) {
@@ -1928,6 +1941,14 @@
           Game.doHitstop(0.05);
           this.popup(p.x, p.y - 50, '抜け出した！', p.team === 0 ? '#ffd24a' : '#ffb0a0', 10);
           this.tick(p.team === 0 ? '見事なスルーパス！ ' + p.name + '、キーパーと1対1だ！' : pass.from.name + 'のスルーパス！ ' + p.name + 'が抜け出した！', p.team === 0 ? '#ffd24a' : '#ff9a8a');
+          if (p.team === 0) {
+            // a beat of slow-motion for the run in, so the breakaway actually reads as a big moment
+            Game.timeScale = 0.55;
+            const resumeAt = ++this.breakawaySlowmoId;
+            setTimeout(() => { if (this.breakawaySlowmoId === resumeAt) Game.timeScale = 1; }, 550);
+            const move = Data.DRIBBLE_MOVES[p.id];
+            if (move) this.popup(p.x, p.y - 62, move.name, move.color, 8);
+          }
           this.sayNagisa(p.team === 0 ? pick(['決めてください！', 'チャンスです、落ち着いて！']) : pick(['戻ってください、ピンチです！', '気をつけて…！']), 2.4, p.team === 0 ? 'happy' : 'worry');
           Sound.play('ooh', { vol: 0.6 });
           this.crowdHype = 0.9;
@@ -2114,10 +2135,14 @@
       if (sd < 0) cands.push({ issue: 'losing', sev: 3 + Math.abs(sd), headline: 'リードを許しています', detail: (-sd) + '点のビハインドです。' });
       if (sd > 0) cands.push({ issue: 'winning', sev: 2, headline: 'リードして折り返しました', detail: 'このまま逃げ切りたいところです。' });
       cands.sort((a, c) => c.sev - a.sev);
-      return cands[0] || { issue: 'neutral', headline: '拮抗した展開です', detail: '大きな綻びは見えません。' };
+      const top = cands[0] || { issue: 'neutral', headline: '拮抗した展開です', detail: '大きな綻びは見えません。' };
+      top.all = cands;
+      return top;
     }
     htBuildOptions(a) {
       const T = Data.TACTICS, opts = [];
+      // tactics the squad has genuinely drilled well enough to switch into with confidence
+      const understood = Object.keys(T).filter((k) => this.realize(0, k) >= 0.72);
       if (a.issue === 'press') {
         opts.push({ id: 'tac', tac: 'possession', label: 'ポゼッションで剥がす', desc: '短くつないで、プレスの矢印をずらしましょう。' });
         opts.push({ id: 'tac', tac: 'long', label: 'ロングボールで裏へ', desc: '無理につながず、素早く前線へ送りましょう。' });
@@ -2128,8 +2153,13 @@
         opts.push({ id: 'tac', tac: 'possession', label: 'つないで崩す', desc: '崩してから、質の高い一本を狙います。' });
         opts.push({ id: 'form', form: 'attack', label: '全員攻撃（4-3-3）に', desc: '前線の人数を増やし、こぼれ球も狙います。' });
       } else if (a.issue === 'tacpoor') {
-        const best = Object.keys(T).filter((k) => k !== this.tac[0]).sort((x, y) => this.realize(0, y) - this.realize(0, x))[0];
-        opts.push({ id: 'tac', tac: best, label: '「' + T[best].name + '」に変更', desc: '選手たちが慣れている戦術です。' });
+        const alts = understood.filter((k) => k !== this.tac[0]).sort((x, y) => this.realize(0, y) - this.realize(0, x));
+        if (alts.length) {
+          const best = alts[0];
+          opts.push({ id: 'tac', tac: best, label: '「' + T[best].name + '」に変更', desc: '選手たちが慣れている戦術です。' });
+        } else {
+          opts.push({ id: 'tac', tac: this.tac[0], label: 'このまま浸透を待つ', desc: '今は他の戦術も練度不足です。使い続けて慣れましょう。' });
+        }
         opts.push({ id: 'keep', label: 'このまま貫く', desc: '今の戦術を信じて続けます。' });
       } else if (a.issue === 'losing') {
         opts.push({ id: 'form', form: 'attack', label: '全員攻撃（4-3-3）に', desc: '前がかりに人数をかけます。' });
@@ -2140,6 +2170,21 @@
       } else {
         opts.push({ id: 'keep', label: 'このまま貫く', desc: '大きな問題はなさそうです。' });
         opts.push({ id: 'form', form: 'balance', label: 'バランス（4-4-2）を保つ', desc: '無理に変えず、様子を見ます。' });
+      }
+      // switching into a tactic the squad hasn't drilled is still offered, but flagged honestly
+      for (const o of opts) {
+        if (o.id === 'tac' && o.tac !== this.tac[0] && !understood.includes(o.tac)) o.desc += '（まだ練度不足。最初は苦戦するかも）';
+      }
+      // a broadly-drilled squad (several tactics understood, not just the one in use) earns an extra option:
+      // the manager can confidently offer a second alternative pulled from the next-biggest issue.
+      const ISSUE_TAC = { press: 'possession', behind: 'counter', shots: 'possession', losing: 'press', winning: 'counter' };
+      if (understood.length >= 3 && a.all) {
+        const used = new Set(opts.filter((o) => o.id === 'tac').map((o) => o.tac));
+        const second = (a.all || []).find((c) => c.issue !== a.issue && ISSUE_TAC[c.issue] && understood.includes(ISSUE_TAC[c.issue]) && !used.has(ISSUE_TAC[c.issue]));
+        if (second) {
+          const tac = ISSUE_TAC[second.issue];
+          opts.push({ id: 'tac', tac, label: '「' + T[tac].name + '」も選べます', desc: second.headline + '。複数の戦術を鍛えてきた成果です。' });
+        }
       }
       opts.push({ id: 'bench', label: 'ベンチ指示（自分で選ぶ）', desc: '戦術・フォーメーション・選手交代（残り' + this.subsLeft + '）' });
       return opts;
