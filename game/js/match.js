@@ -37,7 +37,9 @@
       const home = opts.home || Data.DEFAULT_LINEUP.map(byId), away = opts.away || this.opp.roster();
       const homeIds = home.map((d) => d.id);
       this.comboOk = opts.comboOk || (() => true);
-      this.combos = Data.COMBOS.filter((c) => c.ids.every((id) => homeIds.includes(id)) && this.comboOk(c));
+      const awayIds = away.map((d) => d.id);
+      this.combos = Data.COMBOS.filter((c) => c.ids.every((id) => homeIds.includes(id)) && this.comboOk(c))
+        .concat(Data.RIVAL_COMBOS.filter((c) => c.ids.every((id) => awayIds.includes(id))));
       this.comboCD = {}; this.traitCD = {}; this.comboShow = null;
       this.tac = [opts.tactic || 'possession', opts.awayTactic || this.opp.tactic];
       this.counterT = [0, 0]; this.chain = [0, 0]; this.tacToast = null;
@@ -54,6 +56,7 @@
       this.specialCD = {};
       this.specialSlowmoId = 0;
       this.duelCD = {}; this.breakawaySlowmoId = 0;
+      this.rivalTechWitnessed = null;
       this.lineBias = [0, 0]; // -1 deep/risk-averse .. 0 balanced .. 1 high/compact (team 0 only, set via the halftime bench panel)
       this.score = [0, 0];
       this.half = 1; this.clock = 0; this.state = 'intro'; this.stateT = 0;
@@ -1074,8 +1077,13 @@
       if (oneOnOne) sigma *= 0.97;
       const attackerQ = t === 0 ? q : null, defenderQ = t === 1 ? q : null;
       const gk = this.gk(1 - t);
-      // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper
-      const special = t === 0 && attackerQ === 'just' && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.65 ? Data.SPECIALS[p.id] : null;
+      // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper.
+      // the rival captain has no JUST-timing input to key off (the AI just shoots), so theirs rolls
+      // independently instead — a signature move the manager will have to scout and answer.
+      const special = t === 0 && attackerQ === 'just' && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.65
+        ? Data.SPECIALS[p.id]
+        : t === 1 && p.id === this.opp.captain && !header && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.22
+          ? this.specialFor(p) : null;
       if (special) this.specialCD[p.id] = Game.time;
       const gkSpecial = t === 1 && defenderQ === 'just' && Data.SPECIALS[gk.id] && gk.def.specialUnlocked && Game.time - (this.specialCD[gk.id] || -99) > 25 && Math.random() < 0.65 ? Data.SPECIALS[gk.id] : null;
       if (gkSpecial) this.specialCD[gk.id] = Game.time;
@@ -1100,7 +1108,7 @@
       if (gkSpecial) pSave += 0.15;
       pSave = clamp(pSave, 0.05, 0.95);
       const save = onTarget && Math.random() < pSave;
-      if (special) this.fireSpecial(p, special);
+      if (special) { this.fireSpecial(p, special); if (t === 1) this.rivalTechWitnessed = { name: special.name, color: special.color }; }
       if (gkSpecial && save) this.fireSpecial(gk, gkSpecial, true);
       const ang = Math.atan2(ty - (header ? b.y : p.y), gx - (header ? b.x : p.x));
       this.releaseBall(p);
@@ -1142,6 +1150,13 @@
       this.crowdHype = 0.8;
     }
 
+    // rivals level up between seasons too: from season 2 on their signature move gets an upgraded name/color
+    specialFor(p) {
+      const sp = Data.SPECIALS[p.id];
+      const seasonNo = window.Scenes && Scenes.State ? Scenes.State.seasonNo : 1;
+      if (sp && sp.evolvedName && seasonNo >= 2) return Object.assign({}, sp, { name: sp.evolvedName, color: sp.evolvedColor || sp.color });
+      return sp;
+    }
     fireSpecial(p, special, isSave) {
       // a hard freeze-frame punch before the slow-mo, so the trigger itself has weight
       Game.doHitstop(0.12);
@@ -2055,7 +2070,19 @@
           this.tick('見事な崩し！ ' + chainLen + '本のパスからのゴールでした。', '#ffd24a');
         }
       }
-      else { Sound.play('cheer', { vol: 0.45 }); this.banner('失点…', 'concede', 2.4); }
+      else {
+        Sound.play('cheer', { vol: 0.45 }); this.banner('失点…', 'concede', 2.4);
+        // the rival's own good build-up deserves the same beat — admiration and frustration in one
+        const chainLen = this.chain[1];
+        if (chainLen >= 4) {
+          const combo = this.combos.find((c) => scorer && this.lastPasser && c.ids.includes(scorer.id) && c.ids.includes(this.lastPasser.id));
+          const text = (combo ? 'コンビ「' + combo.name + '」！ ' : '') + chainLen + '本のパスで崩された！';
+          setTimeout(() => this.banner(text, 'special', 2.4, this.opp.light || '#ff9a8a'), 1500);
+          this.tick('見事な崩し…' + this.opp.short + '、' + chainLen + '本のパスからのゴールでした。', '#ff9a8a');
+          this.sayNagisa(pick(['悔しいですが……見事です。', 'あの連携、うちも欲しいです……！']), 2.6, 'worry');
+          if (combo) this.rivalTechWitnessed = { name: combo.name, color: this.opp.light || '#ff9a8a' };
+        }
+      }
       // confetti from the stands
       if (team === 0) {
         for (let i = 0; i < 90; i++) this.fxTop.add({ x: rand(0, W), y: rand(-40, -5), vx: rand(-20, 20), vy: rand(40, 90), g: 30, drag: 0.02, life: rand(2, 3.4), size: rand(2, 4), color: pick(['#4fb4e8', '#ffffff', '#ffd24a', '#e0474c', '#9fdcff']), kind: 'confetti', spin: rand(4, 10), shrink: false });
@@ -2294,7 +2321,7 @@
       }
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
-      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [] };
+      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [], rivalTech: this.rivalTechWitnessed };
       if (this.opts.onEnd) this.opts.onEnd(this.result);
     }
 

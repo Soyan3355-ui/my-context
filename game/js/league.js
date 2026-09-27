@@ -60,10 +60,10 @@
     minori: ['案山子', 'ゴンゾウ', '田畑', '稲本', '大根', '牛島', '畔上', '籾井', '麦田', '芋川', '苗代'],
   };
   const CAPTAINS = {
-    shiomi: { slot: 5, def: { id: 'kaoru', nick: 'アーケードの司令塔', full: '潮見 カオル', trait: '商人の目', traitDesc: 'パスの精度が高い。', age: 35, job: '洋品店店主', bio: '商店街の若手のまとめ役。値札とパスコースは一瞬で読む。' }, stats: { pas: 72, spd: 50, sht: 50, def: 48, sta: 58 }, look: { style: 'pomp', hair: '#2a1a24', hairD: '#140c12' } },
-    chikurin: { slot: 6, def: { id: 'tatsumi', nick: '竹やり特攻隊長', full: '竹宮 タツミ', trait: '無尽蔵', traitDesc: 'スタミナが尽きない。', age: 22, job: '大学院生', bio: '竹林大学OBチームの主将。試合中ずっと叫んでいる。' }, stats: { sta: 80, spd: 64, def: 58, pas: 44, sht: 48 }, look: { style: 'spiky', hair: '#2a1a24', hairD: '#140c12', extra: 'band' } },
-    yukemuri: { slot: 8, def: { id: 'oyuki', nick: '若女将ストライカー', full: '白湯 オユキ', trait: 'おもてなしの一撃', traitDesc: 'カウンターの決定力が高い。', age: 28, job: '旅館の若女将', bio: '老舗旅館の若女将。普段は穏やかだが、ゴール前では容赦がない。' }, stats: { sht: 72, spd: 62, pas: 52, def: 30, sta: 54 }, look: { style: 'ponytail', hair: '#1a1a2a', hairD: '#0a0a14' } },
-    minori: { slot: 1, def: { id: 'gonzo', nick: '歩く米俵', full: '田吾作 ゴンゾウ', trait: '米俵', traitDesc: '空中戦で絶対に負けない。', age: 45, job: '米農家', bio: '村いちばんの力持ち。米俵を両肩に担いで走れる。' }, stats: { def: 72, sht: 50, spd: 34, pas: 38, sta: 66 }, look: { style: 'bald', body: 'big' } },
+    shiomi: { slot: 5, def: { id: 'kaoru', nick: 'アーケードの司令塔', full: '潮見 カオル', trait: '商人の目', traitDesc: 'パスの精度が高い。', age: 35, job: '洋品店店主', bio: '商店街の若手のまとめ役。値札とパスコースは一瞬で読む。', specialUnlocked: true }, stats: { pas: 72, spd: 50, sht: 50, def: 48, sta: 58 }, look: { style: 'pomp', hair: '#2a1a24', hairD: '#140c12' } },
+    chikurin: { slot: 6, def: { id: 'tatsumi', nick: '竹やり特攻隊長', full: '竹宮 タツミ', trait: '無尽蔵', traitDesc: 'スタミナが尽きない。', age: 22, job: '大学院生', bio: '竹林大学OBチームの主将。試合中ずっと叫んでいる。', specialUnlocked: true }, stats: { sta: 80, spd: 64, def: 58, pas: 44, sht: 48 }, look: { style: 'spiky', hair: '#2a1a24', hairD: '#140c12', extra: 'band' } },
+    yukemuri: { slot: 8, def: { id: 'oyuki', nick: '若女将ストライカー', full: '白湯 オユキ', trait: 'おもてなしの一撃', traitDesc: 'カウンターの決定力が高い。', age: 28, job: '旅館の若女将', bio: '老舗旅館の若女将。普段は穏やかだが、ゴール前では容赦がない。', specialUnlocked: true }, stats: { sht: 72, spd: 62, pas: 52, def: 30, sta: 54 }, look: { style: 'ponytail', hair: '#1a1a2a', hairD: '#0a0a14' } },
+    minori: { slot: 1, def: { id: 'gonzo', nick: '歩く米俵', full: '田吾作 ゴンゾウ', trait: '米俵', traitDesc: '空中戦で絶対に負けない。', age: 45, job: '米農家', bio: '村いちばんの力持ち。米俵を両肩に担いで走れる。', specialUnlocked: true }, stats: { def: 72, sht: 50, spd: 34, pas: 38, sta: 66 }, look: { style: 'bald', body: 'big' } },
   };
   for (const c of CLUBS) {
     c.kit = kit(c.color, c.dark, c.light, c.ink, c.ink);
@@ -98,11 +98,11 @@
     minatomirai: ['元プロの界', '広報大使の煌', 'スカウトの燦', '新加入の閃', '契約選手の耀', '育成の煌翔', 'マーケの汐里', 'サポーターの陽', '移籍組の蓮', '若手の颯', 'カイ'],
   };
   const CAPTAINS2 = {
-    kaiyou: { slot: 5, def: { id: 'reon', nick: '海陽の頭脳', full: '海江田 レオン', trait: '展開力', traitDesc: 'サイドチェンジの精度が高い。', age: 24, job: '学習塾講師', bio: '海陽学園OBの司令塔。試合の展開を俯瞰で読む。' }, stats: { pas: 78, spd: 54, sht: 52, def: 46, sta: 56 }, look: { style: 'perm', hair: '#2a1a24', hairD: '#140c12' } },
-    tekkyo: { slot: 9, def: { id: 'daigo', nick: '鉄橋のクレーン', full: '重田 ダイゴ', trait: '規格外の一撃', traitDesc: 'シュートの威力が桁違い。', age: 29, job: '重機オペレーター', bio: '工場のエース。溶接と同じ集中力でゴールを狙う。' }, stats: { sht: 78, spd: 52, pas: 44, def: 34, sta: 60 }, look: { style: 'bald', body: 'big' } },
-    shirasagi: { slot: 6, def: { id: 'shirou', nick: '無敗の白', full: '鷺坂 シロウ', trait: '完璧主義', traitDesc: 'あらゆる能力が高水準でまとまっている。', age: 27, job: '実業団専属選手', bio: '県リーグ屈指の万能型キャプテン。弱点がほとんどない。' }, stats: { pas: 68, spd: 64, sht: 62, def: 60, sta: 66 }, look: { style: 'pomp', hair: '#e8e8ee', hairD: '#c0c0ca' } },
-    kurogane: { slot: 1, def: { id: 'kurou', nick: '始発から終電まで', full: '黒崎 クロウ', trait: '不屈の脚', traitDesc: 'スタミナと粘り強さで最後まで走り切る。', age: 34, job: '保線区員', bio: '線路を守り続けてきた男。守備の要にして精神的支柱。' }, stats: { def: 74, spd: 46, sta: 78, pas: 40, sht: 36 }, look: { style: 'short', hair: '#1a1a1a', hairD: '#0a0a0a', extra: 'band' } },
-    minatomirai: { slot: 10, def: { id: 'kai', nick: '元プロの意地', full: '汐見 カイ', trait: '一瞬の輝き', traitDesc: '一対一の突破力が抜群。', age: 26, job: 'クラブ専属', bio: 'かつて上のリーグにいた男。今はこの街で輝き直そうとしている。' }, stats: { spd: 72, sht: 70, pas: 50, def: 24, sta: 52 }, look: { style: 'spiky', hair: '#c0a060', hairD: '#907040' } },
+    kaiyou: { slot: 5, def: { id: 'reon', nick: '海陽の頭脳', full: '海江田 レオン', trait: '展開力', traitDesc: 'サイドチェンジの精度が高い。', age: 24, job: '学習塾講師', bio: '海陽学園OBの司令塔。試合の展開を俯瞰で読む。', specialUnlocked: true }, stats: { pas: 78, spd: 54, sht: 52, def: 46, sta: 56 }, look: { style: 'perm', hair: '#2a1a24', hairD: '#140c12' } },
+    tekkyo: { slot: 9, def: { id: 'daigo', nick: '鉄橋のクレーン', full: '重田 ダイゴ', trait: '規格外の一撃', traitDesc: 'シュートの威力が桁違い。', age: 29, job: '重機オペレーター', bio: '工場のエース。溶接と同じ集中力でゴールを狙う。', specialUnlocked: true }, stats: { sht: 78, spd: 52, pas: 44, def: 34, sta: 60 }, look: { style: 'bald', body: 'big' } },
+    shirasagi: { slot: 6, def: { id: 'shirou', nick: '無敗の白', full: '鷺坂 シロウ', trait: '完璧主義', traitDesc: 'あらゆる能力が高水準でまとまっている。', age: 27, job: '実業団専属選手', bio: '県リーグ屈指の万能型キャプテン。弱点がほとんどない。', specialUnlocked: true }, stats: { pas: 68, spd: 64, sht: 62, def: 60, sta: 66 }, look: { style: 'pomp', hair: '#e8e8ee', hairD: '#c0c0ca' } },
+    kurogane: { slot: 1, def: { id: 'kurou', nick: '始発から終電まで', full: '黒崎 クロウ', trait: '不屈の脚', traitDesc: 'スタミナと粘り強さで最後まで走り切る。', age: 34, job: '保線区員', bio: '線路を守り続けてきた男。守備の要にして精神的支柱。', specialUnlocked: true }, stats: { def: 74, spd: 46, sta: 78, pas: 40, sht: 36 }, look: { style: 'short', hair: '#1a1a1a', hairD: '#0a0a0a', extra: 'band' } },
+    minatomirai: { slot: 10, def: { id: 'kai', nick: '元プロの意地', full: '汐見 カイ', trait: '一瞬の輝き', traitDesc: '一対一の突破力が抜群。', age: 26, job: 'クラブ専属', bio: 'かつて上のリーグにいた男。今はこの街で輝き直そうとしている。', specialUnlocked: true }, stats: { spd: 72, sht: 70, pas: 50, def: 24, sta: 52 }, look: { style: 'spiky', hair: '#c0a060', hairD: '#907040' } },
   };
   for (const c of CLUBS2) {
     c.kit = kit(c.color, c.dark, c.light, c.ink, c.ink);

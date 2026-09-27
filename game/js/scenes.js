@@ -78,7 +78,7 @@
   const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
-    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity'];
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -898,7 +898,7 @@
       g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
       panel(g, W / 2 - 160, 8, 320, 30, 'dark');
       text(g, 'チームの方針', W / 2, 14, { size: 14, align: 'center', color: '#ffd24a' });
-      text(g, first ? '監督、どんなチームを目指しますか？' : '方針を見直しますか？（今は「' + (State.identity ? IDENTITIES[State.identity].name : '未定') + '」）', W / 2, 46, { size: 9, align: 'center', color: '#c9d6e6' });
+      text(g, first ? '監督、どんなチームを目指しますか？' : '方針を見直しますか？（今は「' + (IDENTITIES[State.identity] ? IDENTITIES[State.identity].name : '未定') + '」）', W / 2, 46, { size: 9, align: 'center', color: '#c9d6e6' });
       if (!s.confirmed) s.menu.draw(g);
       else {
         const I = s.confirmed.I;
@@ -1197,8 +1197,14 @@
     const s = { t: 0, phase: 'pick', menu: null, tries: [], meter: null, fx: new Particles(), results: [], rt: 0, pick: null, reveal: 0, statAnim: 0 };
     s.enter = () => {
       Sound.bgm('hub');
-      const onPolicy = (tr) => State.identity && tr.gains[IDENTITIES[State.identity].stat] && Object.keys(tr.gains).sort((a, c) => tr.gains[c] - tr.gains[a])[0] === IDENTITIES[State.identity].stat;
-      s.menu = new Menu(TRAININGS.map((tr) => ({ id: tr.id, label: tr.label + (onPolicy(tr) ? '★' : ''), sub: (tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub) + (onPolicy(tr) ? '（方針に合う）' : ''), tr })), 250, 54, 214, 30, 3);
+      const onPolicy = (tr) => IDENTITIES[State.identity] && tr.gains[IDENTITIES[State.identity].stat] && Object.keys(tr.gains).sort((a, c) => tr.gains[c] - tr.gains[a])[0] === IDENTITIES[State.identity].stat;
+      const list = TRAININGS.slice();
+      // a one-off option, seeded by a rival's special move or combo the squad just witnessed —
+      // "we want to do that too", made concrete for exactly one week
+      if (State.rivalTechSeen) {
+        list.push({ id: 'study', label: '「' + State.rivalTechSeen.name + '」を研究する', sub: '守備力↑ 習得のひらめきも少し起きやすく', desc: '見せつけられた技を、みんなで研究する。次の試合に向けて守備意識が上がる。', gains: { def: 2 }, focus: [] });
+      }
+      s.menu = new Menu(list.map((tr) => ({ id: tr.id, label: tr.label + (onPolicy(tr) ? '★' : ''), sub: (tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub) + (onPolicy(tr) ? '（方針に合う）' : ''), tr })), 250, 54, 214, 30, 3);
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
     s.update = (dt) => {
@@ -1271,7 +1277,7 @@
           ups.tac = v;
         }
         for (const k in s.pick.gains) {
-          const onPolicy = State.identity && IDENTITIES[State.identity].stat === k;
+          const onPolicy = IDENTITIES[State.identity] && IDENTITIES[State.identity].stat === k;
           const tp = growthTaper(p.stats[k]);
           let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp;
           v = Math.round(v + rand(-0.3, 0.3));
@@ -1280,9 +1286,11 @@
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
         }
         // focused, hands-on training gives a small extra shot at a breakthrough, on top of natural growth below
-        const special = checkSpecialUnlock(p, s.pick.focus.includes(p.id) ? 0.12 : 0);
+        const luck = s.pick.focus.includes(p.id) ? 0.12 : s.pick.id === 'study' ? 0.08 : 0;
+        const special = checkSpecialUnlock(p, luck);
         s.results.push({ p, ups, special });
       }
+      if (s.pick.id === 'study') State.rivalTechSeen = null;
     };
     s.draw = (g) => {
       const tr = s.pick;
@@ -1835,7 +1843,8 @@
     const lines = CAPTAIN_LINES[opp.id].concat(rivalryLines(fx, oppData.reunion)).concat([
       { who: 'leo', expr: 'determined', text: pick(['へぇ、言ってくれるじゃん。その鼻、へし折ってやるよ。', 'ま、今日もオレが決めるから。見てなって。', '誰が相手でも関係ねぇ。勝つのはウチだ。']) },
       { who: 'kazuha', expr: 'normal', text: opp.short + 'は「' + Data.TACTICS[opp.tactic].name + '」のチームです。' + opp.blurb },
-    ].concat(aceP ? [{ who: 'kazuha', expr: 'determined', text: '相手のエースは「' + aceP.nick + '」' + aceP.name + '。' + STAT_NAMES[aceStat] + 'が持ち味なので、要注意です。' }] : []).concat([
+    ].concat(aceP ? [{ who: 'kazuha', expr: 'determined', text: '相手のエースは「' + aceP.nick + '」' + aceP.name + '。' + STAT_NAMES[aceStat] + 'が持ち味なので、要注意です。' }] : [])
+    .concat(aceP && Data.SPECIALS[aceP.id] ? [{ who: 'kazuha', expr: 'worry', text: '噂では「' + (State.seasonNo >= 2 && Data.SPECIALS[aceP.id].evolvedName ? Data.SPECIALS[aceP.id].evolvedName : Data.SPECIALS[aceP.id].name) + '」という技を持っているとか……油断しないでください。' }] : []).concat([
       { who: 'kazuha', expr: 'normal', text: 'うちの「' + Data.TACTICS[State.tactic].name + '」との相性は ' + mu[0] + '。' + mu[1] + '。' },
     ]));
     if (State.season.week === 0) lines.push(
@@ -1876,7 +1885,7 @@
       opp: fx.opp, away: opp.roster, reunion: opp.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
       formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
       bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
-      onEnd: (r) => { State.result = r; Game.goto(Result(r), 'iris'); },
+      onEnd: (r) => { State.result = r; if (r.rivalTech) State.rivalTechSeen = r.rivalTech; Game.goto(Result(r), 'iris'); },
     });
   }
 
@@ -2598,7 +2607,7 @@
     const s = { t: 0, phase: 'leave', idx: 0, tab: 'sign', sel: 0, log: [], rejected: {} };
     // players asking to leave: benched too long, or ready to hang up the boots
     const reqs = State.roster.filter((p) => (State.morale[p.id] ?? 60) < 40 || (p.age && p.age >= 80)).map((p) => ({ p, why: p.age >= 80 ? '「そろそろ、引退を考えとる」' : '「もっと試合に出たい。移籍させてほしい」' }));
-    const policyStat = () => State.identity ? IDENTITIES[State.identity].stat : null;
+    const policyStat = () => IDENTITIES[State.identity] ? IDENTITIES[State.identity].stat : null;
     const bestStat = (d) => STAT_KEYS.slice().sort((a, c) => d.stats[c] - d.stats[a])[0];
     const onPolicy = (d) => !!policyStat() && bestStat(d) === policyStat();
     const cands = () => State.freeAgents.filter((id) => faDef(id)).map((id) => ({ def: faDef(id), fee: 0, sal: faDef(id).sal, from: null, reason: (State.departed.some((d) => d.id === id) ? '古巣に戻りたがっている' : 'フリー。入団を希望している') }))
@@ -2739,7 +2748,7 @@
         text(g, '獲得候補', tabSignR.x + 50, tabSignR.y + 5, { size: 9, align: 'center', color: s.tab === 'sign' ? '#2a1a24' : '#ffffff' });
         panel(g, tabRelR.x, tabRelR.y, tabRelR.w, tabRelR.h, s.tab === 'release' ? 'gold' : 'dark');
         text(g, '自チーム（放出）', tabRelR.x + 50, tabRelR.y + 5, { size: 9, align: 'center', color: s.tab === 'release' ? '#2a1a24' : '#ffffff' });
-        text(g, State.identity ? 'チーム方針：' + IDENTITIES[State.identity].name : 'チーム方針：未定', 226, 39, { size: 8, color: '#ffd24a' });
+        text(g, IDENTITIES[State.identity] ? 'チーム方針：' + IDENTITIES[State.identity].name : 'チーム方針：未定', 226, 39, { size: 8, color: '#ffd24a' });
         if (s.off > 0) text(g, '▲', 204, 54, { size: 8, color: '#9fdcff' });
         if (s.off + VIS < list.length) text(g, '▼ ほか' + (list.length - s.off - VIS) + '人', 206, 46, { size: 8, align: 'right', color: '#9fdcff' });
         list.forEach((c, i) => {

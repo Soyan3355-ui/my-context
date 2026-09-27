@@ -77,7 +77,7 @@
     { id: 'iwai', nick: '岩の門番', name: '岩井', pos: 'GK', stats: { spd: 38, sht: 30, pas: 40, def: 60, sta: 60 }, look: look(AWAY_GK, 'mid', '#2a1a24', '#140c12', 'short') },
     { id: 'fuigo', nick: 'ふいご係', name: 'フイゴ', pos: 'DF', stats: { spd: 50, sht: 32, pas: 42, def: 52, sta: 62 }, look: look(AWAY_KIT, 'light', '#6a4020', '#4a2a14', 'short') },
     { id: 'tetsuyama', nick: '鉄工団の溶接番長', name: '鉄山', pos: 'DF', stats: { spd: 50, sht: 52, pas: 48, def: 70, sta: 72 }, look: look(AWAY_KIT, 'tan', '#2a1a24', '#140c12', 'short', 'goggles', 'big'),
-      full: '鉄山 剛', trait: '鋼の壁', traitDesc: 'タックルの成功率が高い。', bio: 'ヤマオロシ鉄工団の主将。溶接の腕も一流。', age: 29, job: '溶接工' },
+      full: '鉄山 剛', trait: '鋼の壁', traitDesc: 'タックルの成功率が高い。', bio: 'ヤマオロシ鉄工団の主将。溶接の腕も一流。', age: 29, job: '溶接工', specialUnlocked: true },
     { id: 'kotaro', nick: '素顔を知らぬ鋼鉄', name: '鋼太郎', pos: 'DF', stats: { spd: 44, sht: 36, pas: 36, def: 66, sta: 70 }, look: look(AWAY_KIT, 'mid', '#2a1a24', '#140c12', 'helmet', null, 'big'),
       full: '鉄尾 鋼太郎', trait: '鋼鉄ボディ', traitDesc: '当たり負けしない。溶接マスクは絶対に外さない。', bio: '素顔を見た者はいない。工場ではロボットだと思われている。', age: '??', job: '溶接工' },
     { id: 'hagane', nick: '定時退社の壁', name: 'ハガネ', pos: 'DF', stats: { spd: 44, sht: 30, pas: 40, def: 58, sta: 60 }, look: look(AWAY_KIT, 'light', '#4a3020', '#2a1a14', 'bald') },
@@ -194,7 +194,34 @@
     daifuku: { name: 'ぬりかべスーパーセーブ', color: '#ffd24a', lines: ['粉が舞う……止めた！', '壁は超えさせん！'] },
     hikaru: { name: 'バズれ！必殺ドリブルシュート', color: '#ff5aa8', lines: ['これは伸びるってぇ！', '配信、盛り上がってきたァ！'] },
     ume: { name: 'なぎなた一閃シュート', color: '#8a7a9a', lines: ['商店街の意地、見せたるわ！', 'ポン太、見とき！'] },
+    // rival captains: fires against Hamakaze (see match.js doShoot's rival-special roll).
+    // evolvedName/evolvedColor kick in from season 2 on, so a returning rival visibly leveled up too.
+    tetsuyama: { name: '鋼鉄要塞シュート', color: '#b8323a', lines: ['鉄工団の意地だ！', '溶接の集中力、見せてやる！'], evolvedName: '鋼鉄要塞シュート・改', evolvedColor: '#7c1e2c' },
+    kaoru: { name: 'アーケード一閃', color: '#e8b83a', lines: ['商売と一緒、狙いは外しません。', 'いらっしゃい、ここで決めます。'], evolvedName: '老舗の一閃', evolvedColor: '#b08420' },
+    tatsumi: { name: '竹やり乱れ撃ち', color: '#5aa84a', lines: ['体育会の意地、見せたる！', '走り抜いた先に、これがある！'], evolvedName: '竹林乱舞', evolvedColor: '#3a7a30' },
+    oyuki: { name: '若女将おもてなしシュート', color: '#8a3a6a', lines: ['おもてなしの後は、容赦しません。', 'ここで決めさせていただきます。'], evolvedName: '若女将、本気のおもてなし', evolvedColor: '#5e2448' },
+    gonzo: { name: '米俵頭突きシュート', color: '#c8702a', lines: ['豊作、いただきます！', '米俵の重み、見せてやる！'], evolvedName: '大豊作の一撃', evolvedColor: '#8a4a18' },
+    reon: { name: '海陽ロングレンジ弾', color: '#2f86c4', lines: ['展開の先を、読んでいます。', 'これが海陽の実力です。'], evolvedName: '海陽の頭脳、極', evolvedColor: '#1c5a8e' },
+    daigo: { name: '鉄橋クレーンショット', color: '#f0a030', lines: ['規格外の一撃、見せます。', '重機のパワー、舐めるなよ。'], evolvedName: '鉄橋重工・全稼働', evolvedColor: '#b8701e' },
+    shirou: { name: '無敗の一撃', color: '#eef0f4', lines: ['白鷺は静かに勝つ。', '格の違いを、見せよう。'], evolvedName: '完全無欠の一撃', evolvedColor: '#b8c0cc' },
+    kurou: { name: '始発から終電シュート', color: '#e8c020', lines: ['最後まで走り抜く。', '不屈の脚、見せてやる。'], evolvedName: '不屈、極限の一撃', evolvedColor: '#a8901a' },
+    kai: { name: 'みなと未来ドリブルシュート', color: '#ff8ab8', lines: ['もう一度、輝いてみせる。', '元プロの意地だ！'], evolvedName: '一瞬の輝き、再び', evolvedColor: '#a01c58' },
   };
+
+  // rival signature combos: same shape as COMBOS, matched against the AWAY roster instead of HOME.
+  // ids use each club's stable slot ids (captain id + club.id + '_' + slot index from league.js's squad()).
+  const RIVAL_COMBOS = [
+    { id: 'r_yamaoroshi', ids: ['tetsuyama', 'kotaro'], name: '鋼鉄兄弟', kind: 'good', desc: '鉄工団の守備陣が、鉄山と鋼太郎を軸に一枚岩になる。' },
+    { id: 'r_shiomi', ids: ['kaoru', 'shiomi_6'], name: 'アーケード信頼のワンツー', kind: 'good', desc: '商店街の呼吸で崩す、息の合ったワンツー。' },
+    { id: 'r_chikurin', ids: ['tatsumi', 'chikurin_5'], name: '竹林コンビ', kind: 'good', desc: '走力自慢の2人が、運動量で押し込む。' },
+    { id: 'r_yukemuri', ids: ['oyuki', 'yukemuri_7'], name: '若女将と参謀', kind: 'good', desc: '若女将の一撃を、参謀役が丁寧にお膳立てする。' },
+    { id: 'r_minori', ids: ['gonzo', 'minori_2'], name: '米俵タッグ', kind: 'good', desc: '空中戦担当の2人が、セットプレーで牙を剥く。' },
+    { id: 'r_kaiyou', ids: ['reon', 'kaiyou_6'], name: '海陽の連携', kind: 'good', desc: '基礎からのパスワークで、丁寧に崩す。' },
+    { id: 'r_tekkyo', ids: ['daigo', 'tekkyo_8'], name: '鉄橋クレーンコンビ', kind: 'good', desc: '規格外のパワーを、稼働率でお膳立てする。' },
+    { id: 'r_shirasagi', ids: ['shirou', 'shirasagi_5'], name: '白鷺の呼吸', kind: 'good', desc: '県リーグ王者の、無駄のない連携。' },
+    { id: 'r_kurogane', ids: ['kurou', 'kurogane_2'], name: '保線コンビ', kind: 'good', desc: '線路のように一直線に繋ぐ、鉄壁のコンビ。' },
+    { id: 'r_minatomirai', ids: ['kai', 'minatomirai_9'], name: 'みなと未来タッグ', kind: 'good', desc: '元プロの個人技を、若手が引き立てる。' },
+  ];
 
   // signature dribble flourish when a player beats a defender 1-on-1 (see match.js tryTackle)
   const DRIBBLE_MOVES = {
@@ -231,7 +258,7 @@
   };
   const SETPLAY_UNLOCK = ['ck_near', 'fk_wall', 'ck_far', 'fk_trick', 'ck_short', 'fk_lob'];
 
-  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, DRIBBLE_MOVES, HOME_KIT, AWAY_KIT, COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
+  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, DRIBBLE_MOVES, HOME_KIT, AWAY_KIT, COMBOS, RIVAL_COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
   HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();
