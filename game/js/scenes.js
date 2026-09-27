@@ -937,6 +937,7 @@
       { id: 'table', label: '順位表', sub: '現在 ' + State.rank() + '位　' + State.season.table.hamakaze.pts + '点', icon: Icons.book },
       { id: 'match', label: '試合へ！', sub: 'vs ' + fx.opp.name, icon: Icons.ball },
     ];
+    const titleBtnR = { x: 246, y: 246, w: 46, h: 14 };
     s.enter = () => {
       Sound.bgm('hub'); Sound.crowd(0);
       s.saved = Save.write('hub');
@@ -948,6 +949,14 @@
     s.say = (lines) => { s.talk = { lines, i: 0, n: 0 }; };
     s.update = (dt) => {
       s.t += dt; s.fx.update(dt);
+      if (s.confirmTitle) {
+        if (Input.hit('back')) { s.confirmTitle = null; Sound.play('cancel'); return; }
+        const r2 = s.confirmTitle.update(dt);
+        if (!r2) return;
+        if (r2.id === 'yes') { Sound.stopBgm(0.6); Game.goto(Title(), 'iris'); }
+        else s.confirmTitle = null;
+        return;
+      }
       if (s.talk) {
         const tk = s.talk, L = tk.lines[tk.i];
         const txt = L[2].replace('{form}', Data.FORMATIONS[State.formation].short);
@@ -959,6 +968,15 @@
           else if (tk.i + 1 < tk.lines.length) { tk.i++; tk.n = 0; Sound.play('page', { vol: 0.5 }); }
           else { s.talk = null; if (s.menu) s.menu.lock = 0.15; }
         }
+        return;
+      }
+      if (E.clickedIn(titleBtnR)) {
+        Sound.play('select');
+        s.confirmTitle = new Menu([
+          { id: 'yes', label: 'タイトルへ戻る', sub: '今の進行は保存されています' },
+          { id: 'no', label: 'もどる（X）', sub: '' },
+        ], W / 2 - 110, H / 2 - 18, 220, 28, 4);
+        s.confirmTitle.lock = 0.2;
         return;
       }
       // hotspots & people
@@ -1056,7 +1074,15 @@
       if (s.talk) drawTalkBox(g, s.talk, s.t);
       else {
         panel(g, 6, 244, 288, 20, 'dark');
-        text(g, 'クリックで選手と話せるよ ／ 右のメニューで準備', 150, 249, { size: 8, align: 'center', color: '#c9d6e6' });
+        text(g, 'クリックで選手と話せるよ ／ 右のメニューで準備', 128, 249, { size: 8, align: 'center', color: '#c9d6e6' });
+        const overBtn = E.hoverIn(titleBtnR);
+        text(g, (overBtn ? '▶ ' : '') + 'タイトルへ', titleBtnR.x + titleBtnR.w / 2, titleBtnR.y + 3, { size: 8, align: 'center', color: overBtn ? '#ffd24a' : '#9fdcff' });
+      }
+      if (s.confirmTitle) {
+        g.fillStyle = 'rgba(10,14,28,0.7)'; g.fillRect(0, 0, W, H);
+        panel(g, W / 2 - 130, H / 2 - 46, 260, 22, 'dark');
+        text(g, 'タイトル画面に戻りますか？', W / 2, H / 2 - 40, { size: 10, align: 'center', color: '#ffd24a' });
+        s.confirmTitle.draw(g);
       }
     };
     return s;
