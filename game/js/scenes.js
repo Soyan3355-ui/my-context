@@ -82,7 +82,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
-    'cards', 'policyCards', 'growthLog'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -291,6 +291,10 @@
       const n = State.seasonNo + 1;
       State.seasonNo = n;
       s.aged = ageSquad();
+      // snapshot everyone's stats right as this season begins, so its end can show a real
+      // before/after instead of just the final numbers
+      State.seasonStartStats = {};
+      for (const p of State.roster) State.seasonStartStats[p.id] = Object.assign({}, p.stats);
       // the league: last season's order sets the tone, everyone strengthens a little
       const order = State.standings().map((r) => r.id);
       State.lastSeasonRanks = State.lastSeasonRanks || {};
@@ -3069,7 +3073,7 @@
     s.update = (dt) => {
       s.t += dt; s.fx.update(dt);
       if (Math.random() < 0.2) s.fx.add({ x: rand(0, W), y: H + 4, vx: rand(-5, 5), vy: rand(-25, -12), life: rand(4, 8), size: rand(1, 2), color: pick(['#ffd24a', '#ffffff', '#9fdcff']), kind: 'star', shrink: false });
-      if (s.t > 4 && (okPressed() || (State.auto && s.t > 6))) { Sound.play('select'); Game.goto(NewSeason(), 'iris'); }
+      if (s.t > 4 && (okPressed() || (State.auto && s.t > 6))) { Sound.play('select'); Game.goto(SeasonReview(), 'iris'); }
       else if (s.t > 4 && Input.hit('back')) { Sound.stopBgm(1); Game.goto(Title(), 'iris'); }
     };
     s.draw = (g) => {
@@ -3096,7 +3100,61 @@
       text(g, 'これまでの歩み：' + hist, W / 2, 210, { size: 9, align: 'center', color: '#ffffff', outline: '#10304f' });
       text(g, '次はシーズン' + (State.seasonNo + 1) + '。ライバルも強くなってくる！', W / 2, 228, { size: 10, align: 'center', color: '#ffd24a', outline: '#10304f' });
       g.globalAlpha = 1;
-      if (s.t > 4) text(g, 'Z / クリック：次のシーズンへ　X：タイトルへ（セーブ済み）', W / 2, H - 12, { size: 8, align: 'center', color: '#ffffff', alpha: blink() });
+      if (s.t > 4) text(g, 'Z / クリック：シーズンの振り返りへ　X：タイトルへ（セーブ済み）', W / 2, H - 12, { size: 8, align: 'center', color: '#ffffff', alpha: blink() });
+    };
+    return s;
+  }
+
+  // ---------------- season review: a real before/after, not just the final standings ----------------
+  function SeasonReview() {
+    const s = { t: 0 };
+    const snap = State.seasonStartStats || {};
+    const rows = State.roster.map((p) => {
+      const before = snap[p.id];
+      const beforeAvg = before ? (before.spd + before.sht + before.pas + before.def + before.sta) / 5 : avgStat(p);
+      const afterAvg = avgStat(p);
+      const delta = before ? STAT_KEYS.reduce((a, k) => a + (p.stats[k] - before[k]), 0) : 0;
+      return { p, beforeAvg, afterAvg, delta, hasSnap: !!before };
+    }).sort((a, b) => b.delta - a.delta);
+    const withSnap = rows.filter((r) => r.hasSnap);
+    const teamBeforeAvg = withSnap.length ? withSnap.reduce((a, r) => a + r.beforeAvg, 0) / withSnap.length : null;
+    const teamAfterAvg = withSnap.length ? withSnap.reduce((a, r) => a + r.afterAvg, 0) / withSnap.length : null;
+    // which single stat grew the most across the whole squad this season
+    const statTotals = {};
+    for (const r of withSnap) { const before = snap[r.p.id]; for (const k of STAT_KEYS) statTotals[k] = (statTotals[k] || 0) + (r.p.stats[k] - before[k]); }
+    const topStat = Object.entries(statTotals).sort((a, b) => b[1] - a[1])[0];
+    const top = rows.filter((r) => r.hasSnap).slice(0, 8);
+    s.enter = () => { Sound.bgm('hub'); };
+    s.update = (dt) => {
+      s.t += dt;
+      if (s.t > 0.6 && (okPressed() || (State.auto && s.t > 3.5))) { Sound.play('select'); Game.goto(NewSeason(), 'iris'); }
+    };
+    s.draw = (g) => {
+      g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#222b4e'; for (let y = 0; y < H; y += 8) for (let x = (y / 8) % 2 * 8; x < W; x += 16) g.fillRect(x, y, 8, 8);
+      panel(g, 12, 8, 456, 254, 'paper');
+      text(g, 'シーズン' + State.seasonNo + '　成長レポート', 24, 14, { size: 14, color: '#10304f' });
+      if (teamBeforeAvg != null) {
+        text(g, 'チーム平均：' + teamBeforeAvg.toFixed(1) + ' → ' + teamAfterAvg.toFixed(1) + '（+' + (teamAfterAvg - teamBeforeAvg).toFixed(1) + '）', 24, 34, { size: 10, color: '#2f86c4' });
+        if (topStat && topStat[1] > 0) text(g, '特に伸びたのは「' + STAT_NAMES[topStat[0]] + '」（チーム合計 +' + topStat[1] + '）', 24, 48, { size: 9, color: '#6d4f3a' });
+      } else {
+        text(g, '（このシーズンの開始データがなく、平均の変化は表示できません）', 24, 34, { size: 9, color: '#6d4f3a' });
+      }
+      text(g, '個人の成長　TOP' + top.length, 24, 64, { size: 10, color: '#10304f' });
+      top.forEach((r, i) => {
+        const y = 80 + i * 21;
+        const reveal = clamp((s.t - 0.3 - i * 0.08) / 0.2, 0, 1);
+        if (reveal <= 0) return;
+        g.globalAlpha = reveal;
+        text(g, r.p.name, 30, y, { size: 9, color: '#2a1a24' });
+        drawGrade(g, 150, y - 1, Math.round(r.beforeAvg), 10);
+        text(g, '→', 174, y, { size: 9, color: '#6d4f3a' });
+        drawGrade(g, 188, y - 1, Math.round(r.afterAvg), 10);
+        text(g, (r.delta >= 0 ? '+' : '') + r.delta, 440, y, { size: 10, align: 'right', color: r.delta > 0 ? '#e0474c' : '#6d4f3a' });
+        g.globalAlpha = 1;
+      });
+      if (!top.length) text(g, 'まだデータがありません。来シーズンから記録されます。', 30, 80, { size: 9, color: '#6d4f3a' });
+      if (s.t > 0.6) text(g, 'Z / クリック：次のシーズンへ', W / 2, H - 11, { size: 8, align: 'center', color: '#2f86c4', alpha: blink() });
     };
     return s;
   }
@@ -3107,7 +3165,7 @@
     start(name, o) {
       State.auto = !!(o && o.auto);
       const map = { title: Title, intro: Intro, hub: () => Hub(true), roster: Roster, train: Training, tactics: Tactics, vs: Versus, pre: PreMatch,
-        result: () => Result(fakeResult()), table: () => LeagueTable(() => Hub()), market: TransferMarket, seasonend: SeasonEnd, credits: Credits };
+        result: () => Result(fakeResult()), table: () => LeagueTable(() => Hub()), market: TransferMarket, seasonend: SeasonEnd, credits: Credits, seasonreview: SeasonReview };
       return (map[name] || Title)();
     },
     result(r) { State.result = r; return Result(r); },
