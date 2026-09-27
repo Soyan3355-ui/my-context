@@ -211,6 +211,8 @@
     }).filter(Boolean);
   }
   function avgStat(p) { return (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5; }
+  // growth slows down the closer a stat gets to its ceiling, so a season of play doesn't push everyone to S rank
+  function growthTaper(cur) { return clamp((92 - cur) / 45, 0.12, 1); }
   const SPECIAL_UNLOCK_AVG = 55;
   // a player's finisher unlocks once they've grown into it, or (much more rarely) as a flash of insight during focused training
   function checkSpecialUnlock(p, luckChance = 0) {
@@ -1268,8 +1270,10 @@
         }
         for (const k in s.pick.gains) {
           const onPolicy = State.identity && IDENTITIES[State.identity].stat === k;
-          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 0.5 * (onPolicy ? 1.2 : 1);
-          v = Math.max(1, Math.round(v + rand(-0.3, 0.3)));
+          const tp = growthTaper(p.stats[k]);
+          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 0.4 * (onPolicy ? 1.2 : 1) * tp;
+          v = Math.round(v + rand(-0.3, 0.3));
+          if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
         }
@@ -1891,7 +1895,7 @@
       const ups = {};
       let total = 0;
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 26) * (p.growth || 1) + Math.random() * 0.5);
+        let v = Math.floor((exp[k] / 32) * (p.growth || 1) * growthTaper(p.stats[k]) + Math.random() * 0.5);
         v = Math.min(v, 3);
         if (v > 0) { ups[k] = v; total += v; }
       }

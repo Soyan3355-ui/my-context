@@ -1136,18 +1136,21 @@
     }
 
     fireSpecial(p, special, isSave) {
-      this.cutin = { id: p.id, expr: 'determined', t: 0, dur: 2.0, text: '必殺！「' + special.name + '」', nick: p.def.nick, color: special.color };
-      this.banner(special.name + '！！', 'special', 1.7, special.color);
-      Game.addShake(5, 0.35); Game.doFlash(0.5, special.color);
-      this.fx.burst(p.x, p.y, 34, { color: [special.color, '#ffffff'], speedMin: 50, speedMax: 170, lifeMin: 0.4, lifeMax: 0.9, size: 3, kind: 'star', drag: 0.04 });
-      Sound.play('levelup', { vol: 0.6 });
+      // a hard freeze-frame punch before the slow-mo, so the trigger itself has weight
+      Game.doHitstop(0.12);
+      this.cutin = { id: p.id, expr: 'determined', t: 0, dur: 1.6, text: '必殺！「' + special.name + '」', nick: p.def.nick, color: special.color, big: true };
+      this.banner(special.name + '！！', 'special', 2.0, special.color);
+      Game.addShake(7, 0.4); Game.doFlash(0.68, special.color);
+      this.fx.burst(p.x, p.y, 60, { color: [special.color, '#ffffff', '#ffd24a'], speedMin: 60, speedMax: 210, lifeMin: 0.45, lifeMax: 1.0, size: 3, kind: 'star', drag: 0.035 });
+      setTimeout(() => this.fx.burst(p.x, p.y, 26, { color: ['#ffffff', special.color], speedMin: 90, speedMax: 160, lifeMin: 0.3, lifeMax: 0.55, size: 2, kind: 'star', drag: 0.05 }), 90);
+      Sound.play('levelup', { vol: 0.7 });
       this.tick(p.name + (isSave ? '、必殺セーブ「' : '、必殺技「') + special.name + '」炸裂ッ！', special.color);
       this.say(p, pick(special.lines || ['ここだッ！']), 1.8);
-      // a brief slow-motion window so the flourish actually reads as something special
-      Game.timeScale = 0.22;
-      Sound.setBgmRate(0.6);
+      // a longer, deeper slow-motion window so the flourish actually reads as something special
+      Game.timeScale = 0.16;
+      Sound.setBgmRate(0.55);
       const resumeAt = ++this.specialSlowmoId;
-      setTimeout(() => { if (this.specialSlowmoId === resumeAt) { Game.timeScale = 1; Sound.setBgmRate(1); } }, 700);
+      setTimeout(() => { if (this.specialSlowmoId === resumeAt) { Game.timeScale = 1; Sound.setBgmRate(1); } }, 950);
     }
 
     gkSmother(gk, c) {
@@ -3221,6 +3224,7 @@
       text(g, c.name, x + 62, y + 16, { size: 11, color: c.kind === 'bad' || c.kind === 'mixed' ? '#ffffff' : '#2a1a24', outline: c.kind === 'bad' || c.kind === 'mixed' ? '#2a0e14' : undefined });
     }
     drawCutin(g, c) {
+      if (c.big) { this.drawBigCutin(g, c); return; }
       const t = c.t, d = c.dur;
       const inK = Ease.outCubic(clamp(t / 0.3, 0, 1));
       const out = clamp((t - (d - 0.3)) / 0.3, 0, 1);
@@ -3234,6 +3238,38 @@
       if (img) g.drawImage(img, Math.round(x + 6), y + 6, 48, 48);
       if (c.nick) text(g, '「' + c.nick + '」', Math.round(x + 60), y + 12, { size: 8, color: '#fff6e0', outline: '#10182e' });
       text(g, c.text, Math.round(x + 60), y + 24, { size: 10, color: '#ffffff', outline: '#10182e' });
+      g.restore();
+    }
+
+    drawBigCutin(g, c) {
+      const t = c.t, d = c.dur;
+      const inK = Ease.outCubic(clamp(t / 0.22, 0, 1));
+      const outK = clamp((t - (d - 0.32)) / 0.32, 0, 1);
+      const alpha = 1 - outK;
+      const bandY = 58, bandH = 76;
+      // radial speed lines behind the band, kept above/around the action rather than over the whole pitch
+      g.save(); g.globalAlpha = alpha * 0.7;
+      g.fillStyle = c.color;
+      for (let i = 0; i < 20; i++) {
+        const a = (i / 20) * Math.PI * 2 + Game.time * 2.4;
+        const r0 = 20 + ((Game.time * 260 + i * 41) % 130);
+        const x0 = W / 2 + Math.cos(a) * r0, y0 = bandY + bandH / 2 + Math.sin(a) * r0 * 0.5;
+        g.fillRect(Math.round(x0), Math.round(y0), 3, 3);
+      }
+      g.restore();
+      const bx = -W + inK * (W + 40) + outK * (W + 60);
+      g.save(); g.globalAlpha = alpha;
+      g.fillStyle = c.color;
+      g.beginPath(); g.moveTo(bx, bandY); g.lineTo(bx + W, bandY - 8); g.lineTo(bx + W, bandY + bandH); g.lineTo(bx, bandY + bandH + 8); g.fill();
+      g.fillStyle = '#10182e'; g.fillRect(bx, bandY + bandH + 8, W, 3);
+      g.fillStyle = '#ffffff'; g.globalAlpha = alpha * (0.5 + 0.5 * Math.sin(Game.time * 16));
+      g.fillRect(bx, bandY, W, 2);
+      g.globalAlpha = alpha;
+      const img = portrait(c.id, c.expr);
+      if (img) g.drawImage(img, Math.round(bx + 14), bandY + 6, 64, 64);
+      if (c.nick) text(g, '「' + c.nick + '」', Math.round(bx + 90), bandY + 10, { size: 9, color: '#fff6e0', outline: '#10182e' });
+      text(g, '必殺技', Math.round(bx + 90), bandY + 22, { size: 12, color: '#ffd24a', outline: '#10182e' });
+      text(g, c.text.replace('必殺！', ''), Math.round(bx + 90), bandY + 40, { size: 13, color: '#ffffff', outline: '#10182e' });
       g.restore();
     }
 
