@@ -44,6 +44,9 @@
       this.tac = [opts.tactic || 'possession', opts.awayTactic || this.opp.tactic];
       this.counterT = [0, 0]; this.chain = [0, 0]; this.tacToast = null;
       this.tstats = [{ counter: 0, pressWin: 0, long: 0, chainMax: 0 }, { counter: 0, pressWin: 0, long: 0, chainMax: 0 }];
+      // who's linking up with whom in advanced areas, so the post-match report can call out a
+      // specific working combination ("the front two breaking teams down") instead of a stat line
+      this.linkPlay = [{}, {}];
       this.bench = (opts.bench || Data.HOME.filter((d) => d.bench)).slice();
       this.subsLeft = 3; this.subQueue = []; this.subbedOut = []; this.panel = null;
       this.tacTime = {}; this.noShotT = [0, 0]; this.pressOn = [true, true]; this.pressRollT = 0;
@@ -1968,6 +1971,12 @@
         if (pass.pressured) pass.from.rec.prOk++;
         if (pass.through) { pass.from.rec.thrOk++; if (p.team === 1) this.ana.behind[this.lane(p.y)]++; }
         this.lastPasser = pass.from;
+        // two attacking players finding each other in advanced areas is a specific, nameable
+        // combination, not just a pass count — track it per pair so analyze() can call it out
+        if (!pass.from.gk && !p.gk && this.role(pass.from) !== 'DF' && this.role(p) !== 'DF' && this.proj(p.team, p.x) > this.proj(p.team, CX) - 30) {
+          const key = [pass.from.id, p.id].sort().join('|');
+          this.linkPlay[p.team][key] = (this.linkPlay[p.team][key] || 0) + 1;
+        }
       } else if (pass && pass.from.team !== p.team) {
         if (p.team === 0 && !p.gk) this.tick(p.name + '、パスカット！', '#9fdcff');
         this.lastPasser = null;
@@ -2765,6 +2774,14 @@
       const tk = all.slice().sort((a, c) => c.rec.tackleOk - a.rec.tackleOk)[0];
       if (tk && tk.rec.tackleOk >= 3) good.push({ cat: 'def', title: 'ボール奪取', value: tk.name + 'が ' + tk.rec.tackleOk + '回奪取', who: tk.name, tip: '守備の要になっている。' });
       if (this.tstats[0].chainMax >= 8) good.push({ cat: 'pas', title: 'パスワーク', value: '最長 ' + this.tstats[0].chainMax + '本連続', who: null, tip: 'つなぐ力はある。' });
+      // the single most useful kind of praise: naming a specific pair who kept finding each other
+      // in advanced areas, not just "good passing" in the abstract
+      const linkEntries = Object.entries(this.linkPlay[0]).sort((a2, c) => c[1] - a2[1]);
+      if (linkEntries.length && linkEntries[0][1] >= 4) {
+        const [idA, idB] = linkEntries[0][0].split('|');
+        const pa = all.find((q) => q.id === idA), pb = all.find((q) => q.id === idB);
+        if (pa && pb) good.unshift({ cat: 'pas', title: '前線の連係', value: pa.name + '×' + pb.name + ' ' + linkEntries[0][1] + '本', who: pa.name + '・' + pb.name, tip: pa.name + 'と' + pb.name + 'の呼吸が合っていた。崩しの形として、これは狙っていける。' });
+      }
       // a rough scoreline hides more than it shows: a loss should surface more concrete issues,
       // not fewer of them, so the team never feels like it's fighting blind while it's behind
       const lose = this.score[0] < this.score[1], win = this.score[0] > this.score[1];
