@@ -239,6 +239,7 @@
   }
   function tickPotential(p) {
     if (p.potential == null) p.potential = initPotential(p);
+    p.potentialLast = p.potential;
     const age = typeof p.age === 'number' ? p.age : 24;
     const bias = age < 22 ? 0.35 : age < 27 ? 0.05 : age < 33 ? -0.15 : -0.35;
     p.potential = clamp(p.potential + bias + rand(-0.6, 0.6), 0, 10);
@@ -1195,7 +1196,11 @@
       text(g, p.traitDesc || '', 262 + dx, 120, { size: 8, color: '#6d4f3a' });
       if (p.potential != null) {
         const pot = Math.round(p.potential);
+        const trend = p.potential - (p.potentialLast ?? p.potential);
+        const trendMark = trend > 0.4 ? '↑' : trend < -0.4 ? '↓' : '―';
+        const trendCol = trend > 0.4 ? '#e0474c' : trend < -0.4 ? '#4f7fb4' : '#8a7e6a';
         text(g, '伸び盛り度', 400 + dx, 104, { size: 7, color: '#4a2a10' });
+        text(g, trendMark, 440 + dx, 103, { size: 9, color: trendCol });
         for (let i = 0; i < 10; i++) {
           g.fillStyle = i < pot ? (pot >= 7 ? '#e0474c' : pot <= 3 ? '#8a8496' : '#3f8a3e') : 'rgba(74,42,16,0.25)';
           g.fillRect(400 + dx + i * 6, 112, 5, 5);
