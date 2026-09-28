@@ -24,6 +24,7 @@
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
       this.cards = { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 }; this.policyCards = 0; this.growthLog = [];
       this.charEventWeek = null; this.charEventPick = null;
+      this.trainHistory = []; this.trainMenuWeek = null; this.trainMenuPick = null;
       this.tier = 'district';
       // league season
       const table = {};
@@ -82,7 +83,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -1229,13 +1230,16 @@
     sta: { name: 'スタミナ', visual: 'run', label: '走り込み', sub: 'スタミナ↑', desc: '最後まで走り切る体力をつける。', gains: { sta: 3 }, focus: ['ponta', 'gen'] },
   };
   // combining two card types unlocks a bigger, named menu — reuse the source game's own idea
-  // that a well-stocked, well-matched pair of drills teaches more than either alone
+  // that a well-stocked, well-matched pair of drills teaches more than either alone.
+  // the raw stat total is deliberately no higher than a basic card (it costs two cards, not one) —
+  // the real premium is the extra shot at a special-move breakthrough (see the "special" luck
+  // bonus in applyGains) and the flavor, not a strictly bigger number
   const SPECIAL_MENUS = [
-    { id: 'sp_dribbleshoot', need: ['sht', 'spd'], visual: 'shoot', label: 'ドリブルシュート特訓', sub: 'シュート↑↑ スピード↑', desc: 'レオとヒカルが張り合う、切り込んでからの一撃。息は合わないが、火花は散る。', gains: { sht: 4, spd: 2 }, focus: ['leo', 'hikaru'] },
-    { id: 'sp_torikago', need: ['pas', 'sta'], visual: 'pass', label: '鳥かご強化合宿', sub: 'パス↑↑ スタミナ↑', desc: 'カズハ主導の鳥かご地獄。休む暇がない分、しっかり身につく。', gains: { pas: 4, sta: 2 }, focus: ['kazuha', 'mame'] },
-    { id: 'sp_aerial', need: ['def', 'sta'], visual: 'setplay', label: '空中戦特訓', sub: 'ディフェンス↑↑ スタミナ↑', desc: 'マスク張りの、体を張った競り合い。跳び続けるから息が上がる。', gains: { def: 4, sta: 1 }, focus: ['mask'] },
-    { id: 'sp_speedball', need: ['spd', 'pas'], visual: 'run', label: 'ワンツー速攻特訓', sub: 'スピード↑↑ パス↑', desc: 'ツバメとシズクの息が合った駆け引き。抜けた瞬間にパスが来る。', gains: { spd: 4, pas: 2 }, focus: ['tsubame', 'shizuku'] },
-    { id: 'sp_grit', need: ['sht', 'def'], visual: 'shoot', label: '根性シュート対決', sub: 'シュート↑↑ ディフェンス↑', desc: 'ゲン相手の意地の張り合い。決めるまで、止めるまで終わらない。', gains: { sht: 4, def: 2 }, focus: ['gen'] },
+    { id: 'sp_dribbleshoot', need: ['sht', 'spd'], visual: 'shoot', label: 'ドリブルシュート特訓', sub: 'シュート↑↑ スピード↑', desc: 'レオとヒカルが張り合う、切り込んでからの一撃。息は合わないが、火花は散る。', gains: { sht: 3, spd: 1 }, focus: ['leo', 'hikaru'] },
+    { id: 'sp_torikago', need: ['pas', 'sta'], visual: 'pass', label: '鳥かご強化合宿', sub: 'パス↑↑ スタミナ↑', desc: 'カズハ主導の鳥かご地獄。休む暇がない分、しっかり身につく。', gains: { pas: 3, sta: 1 }, focus: ['kazuha', 'mame'] },
+    { id: 'sp_aerial', need: ['def', 'sta'], visual: 'setplay', label: '空中戦特訓', sub: 'ディフェンス↑↑ スタミナ↑', desc: 'マスク張りの、体を張った競り合い。跳び続けるから息が上がる。', gains: { def: 3, sta: 1 }, focus: ['mask'] },
+    { id: 'sp_speedball', need: ['spd', 'pas'], visual: 'run', label: 'ワンツー速攻特訓', sub: 'スピード↑↑ パス↑', desc: 'ツバメとシズクの息が合った駆け引き。抜けた瞬間にパスが来る。', gains: { spd: 3, pas: 1 }, focus: ['tsubame', 'shizuku'] },
+    { id: 'sp_grit', need: ['sht', 'def'], visual: 'shoot', label: '根性シュート対決', sub: 'シュート↑↑ ディフェンス↑', desc: 'ゲン相手の意地の張り合い。決めるまで、止めるまで終わらない。', gains: { sht: 3, def: 1 }, focus: ['gen'] },
   ];
   // one-off character flavor events: a free bonus session, no cards spent, just a bit of story
   const CHAR_EVENTS = [
@@ -1299,13 +1303,22 @@
       State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
       const onPolicy = (tr) => IDENTITIES[State.identity] && tr.gains[IDENTITIES[State.identity].stat] && Object.keys(tr.gains).sort((a, c) => tr.gains[c] - tr.gains[a])[0] === IDENTITIES[State.identity].stat;
       const list = TRAININGS.slice();
+      // this week's board: a random subset of whatever's currently in stock, so a well-stocked
+      // pantry can't just always run its single best combo — you work with what's on offer
+      const eligible = STAT_KEYS.filter((k) => (State.cards[k] || 0) > 0).map((k) => 'card_' + k)
+        .concat(SPECIAL_MENUS.filter((sp) => sp.need.every((k) => (State.cards[k] || 0) > 0)).map((sp) => sp.id));
+      if (State.trainMenuWeek !== State.season.week) {
+        State.trainMenuWeek = State.season.week;
+        State.trainMenuPick = eligible.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+      }
+      const onBoard = new Set(State.trainMenuPick || []);
       // basic cards: each stat with stock earns its own menu, tagged with how many are left
       for (const k of STAT_KEYS) {
-        if ((State.cards[k] || 0) > 0) list.push(Object.assign({ id: 'card_' + k, cost: { [k]: 1 } }, CARD_INFO[k], { sub: CARD_INFO[k].sub + '　カード×' + State.cards[k] }));
+        if ((State.cards[k] || 0) > 0 && onBoard.has('card_' + k)) list.push(Object.assign({ id: 'card_' + k, cost: { [k]: 1 } }, CARD_INFO[k], { sub: CARD_INFO[k].sub + '　カード×' + State.cards[k] }));
       }
       // special menus: unlocked when both required cards are in stock, trained together
       for (const sp of SPECIAL_MENUS) {
-        if (sp.need.every((k) => (State.cards[k] || 0) > 0)) list.push(Object.assign({ cost: Object.fromEntries(sp.need.map((k) => [k, 1])), special: true }, sp));
+        if (sp.need.every((k) => (State.cards[k] || 0) > 0) && onBoard.has(sp.id)) list.push(Object.assign({ cost: Object.fromEntries(sp.need.map((k) => [k, 1])), special: true }, sp));
       }
       // policy card: banked by playing matches under the team's own chosen philosophy
       if (IDENTITIES[State.identity] && (State.policyCards || 0) > 0) {
@@ -1390,6 +1403,13 @@
         if ((score >= 5 || !nx) && sp.lv < 3) { sp.lv++; s.lvUp = true; }
         return;
       }
+      // running the same drill week after week gets stale: three weeks straight on the same
+      // stat starts to show diminishing returns, so a well-stocked bench still has a reason to rotate
+      const dom = Object.keys(s.pick.gains || {}).sort((a, c) => s.pick.gains[c] - s.pick.gains[a])[0] || null;
+      const hist = State.trainHistory || [];
+      const streak = dom && hist[hist.length - 1] === dom ? (hist[hist.length - 2] === dom ? 2 : 1) : 0;
+      const fatigueMult = streak >= 2 ? 0.5 : streak === 1 ? 0.8 : 1;
+      s.fatigueMult = fatigueMult;
       for (const p of State.roster) {
         const ups = {};
         if (s.pick.id === 'tactics' && p.tacU) {
@@ -1401,7 +1421,11 @@
         for (const k in s.pick.gains) {
           const onPolicy = IDENTITIES[State.identity] && IDENTITIES[State.identity].stat === k;
           const tp = growthTaper(p.stats[k]);
-          let v = s.pick.gains[k] * mult * (s.pick.focus.includes(p.id) ? 1.5 : 1) * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p);
+          // a drill without a specific focus (policy/tactics-style, team-wide) benefits everyone
+          // equally; one with named focus players is a real specialization — others still pick
+          // something up, but noticeably less, so training the whole squad evenly needs variety
+          const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
+          let v = s.pick.gains[k] * mult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p);
           v = Math.round(v + rand(-0.3, 0.3));
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
@@ -1412,6 +1436,7 @@
         const special = checkSpecialUnlock(p, luck);
         s.results.push({ p, ups, special });
       }
+      if (dom) { State.trainHistory = hist.concat([dom]).slice(-5); }
       if (s.pick.id === 'study') State.rivalTechSeen = null;
       // spend the card(s) that paid for this session
       if (s.pick.cost) {
@@ -1558,6 +1583,7 @@
         g.globalAlpha = 0.7; g.fillStyle = '#0a0e1c'; g.fillRect(0, 0, W, H); g.globalAlpha = 1;
         panel(g, 40, 18, 400, 234, 'paper');
         text(g, tr.label + '　' + s.rank, W / 2, 26, { size: 16, align: 'center', color: s.rank === '大成功！' ? '#e0474c' : '#10304f' });
+        if (s.fatigueMult < 1) text(g, '同じ練習が続いて、伸びがやや鈍っている…（' + Math.round(s.fatigueMult * 100) + '%）', W / 2, 44, { size: 8, align: 'center', color: '#b06ad8' });
         if (tr.id === 'setplay') {
           const vis = s.rt > 0.5;
           if (vis && s.learned) {
