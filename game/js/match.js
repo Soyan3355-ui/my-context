@@ -49,6 +49,8 @@
       this.linkPlay = [{}, {}];
       this.bench = (opts.bench || Data.HOME.filter((d) => d.bench)).slice();
       this.subsLeft = 3; this.subQueue = []; this.subbedOut = []; this.panel = null;
+      // the rival bench now matters too: fatigue is real, so their manager rotates in fresh legs
+      this.oppSubsLeft = 3; this.oppBench = null; this.oppSubT = rand(20, 40);
       this.tacTime = {}; this.noShotT = [0, 0]; this.pressOn = [true, true]; this.pressRollT = 0;
       this.ana = { behind: [0, 0, 0], shotLane: [0, 0, 0] }; this.memos = []; this.memoKeys = {}; this.memoT = 3;
       this.nagisa = { bubble: null, cd: rand(4, 7), idleT: rand(9, 13), lastKey: null };
@@ -365,6 +367,7 @@
         // pressing needs everyone to understand the triggers: re-roll who joins every second
         this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
         this.memoT -= dt; if (this.memoT <= 0) { this.memoT = 2; this.liveMemo(); }
+        this.oppSubT -= dt; if (this.oppSubT <= 0) { this.oppSubT = rand(8, 14); this.maybeOppSub(); }
         // Nagisa: a running feed of hype and quiet worry from the bench
         if (this.nagisa.bubble) { this.nagisa.bubble.t -= dt; if (this.nagisa.bubble.t <= 0) this.nagisa.bubble = null; }
         if (this.nagisa.cd > 0) this.nagisa.cd -= dt;
@@ -962,6 +965,7 @@
       else { tx = m.x + m.vx * 0.3; ty = m.y + m.vy * 0.3; }
       const acc = this.stat(p, 'pas') + (this.order[p.team] && this.order[p.team].id === 'pass' ? 10 : 0);
       let err = ((100 - acc) / 100) * 0.26 * rand(-1, 1) * (this.tacOf(p.team) === 'possession' && dist(p.x, p.y, m.x, m.y) < 130 ? 0.75 : 1);
+      if (this.badge(p, 'longpass') && dist(p.x, p.y, m.x, m.y) > 190) err *= 0.65;
       // pressure from nearby opponents vs the carrier's press resistance (StatsBomb-style)
       let pressure = 0, pSk = 0, pn = 0;
       for (const o of this.players) {
@@ -1084,6 +1088,7 @@
       const headSk = this.stat(p, 'sht') * 0.45 + this.aerial(p) * 0.55;
       let sigma = header ? (100 - headSk) * 0.26 + dGoal * 0.07 + 3 : (100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
       if (oneOnOne) sigma *= 0.97;
+      if (this.badge(p, 'finisher')) sigma *= 0.85;
       // the human (or auto-mode's approximation) only ever gets a timing-quality roll on team 0's own
       // shots and team 0's own keeper's saves — the rival attacker and rival keeper never got an
       // equivalent roll at all, meaning skill only ever cut one way regardless of stats. Give them
@@ -1211,6 +1216,7 @@
       if (this.order[d.team] && this.order[d.team].id === 'defend') pr += 0.1;
       if (d.id === 'tetsuyama' || d.id === 'kotaro') pr += 0.08;
       if (d.id === 'ume') pr += 0.08;
+      if (this.badge(d, 'tackle')) pr += 0.06;
       const slide = range > 10;
       if (slide) { d.x = lerp(d.x, c.x, 0.6); d.y = lerp(d.y, c.y, 0.6); }
       if (d.id === 'kawataro' && slide && Math.random() < 0.12) {
@@ -1375,7 +1381,10 @@
     }
 
     // ---------------- set plays: corners and free kicks around the box ----------------
-    aerial(p) { return this.stat(p, 'def') * 0.35 + this.stat(p, 'sht') * 0.15 + this.bodyScore(p) * 0.4 + (p.id === 'mask' ? 30 : 0) + (p.id === 'gonzo' ? 25 : 0); }
+    // a permanent, quietly-earned specialty (see tryAwakenBadge in scenes.js) — found in play,
+    // not trained for, and deliberately modest so it never rivals a real stat difference
+    badge(p, id) { return !!(p.def && p.def.badges && p.def.badges.includes(id)); }
+    aerial(p) { return this.stat(p, 'def') * 0.35 + this.stat(p, 'sht') * 0.15 + this.bodyScore(p) * 0.4 + (p.id === 'mask' ? 30 : 0) + (p.id === 'gonzo' ? 25 : 0) + (this.badge(p, 'aerial') ? 16 : 0); }
     spOptions(kind) { const un = this.setplay.unlocked || []; return Data.SETPLAYS[kind].filter((r) => r.id === 'std' || un.includes(kind + '_' + r.id)); }
     routineName(kind, id) { const r = Data.SETPLAYS[kind].find((q) => q.id === id); return r ? r.name : ''; }
     dangerousFK(t, x, y) { return Math.abs(goalX(t) - x) < 290 && Math.abs(y - CY) < 190; }
@@ -1649,7 +1658,9 @@
           if (p.gk) drain *= 0.3;
           else if (p === this.presser2 || p === this.pressMark || (this.tacOf(p.team) === 'press' && p.run && this.carrierTeam() !== p.team)) drain *= 2.2;
           else if (this.tacOf(p.team) === 'press') drain *= 1.4;
-          p.sta = Math.max(0, p.sta - drain * 1.15);
+          // stamina burns faster across the board than it used to, so fatigue is a real factor by
+          // full time and a substitution (for either side) actually changes something on the pitch
+          p.sta = Math.max(0, p.sta - drain * 1.4);
           // fatigue tells: a breathless line the first time it gets bad, then sweat while it stays low
           if (p.sta < 32 && p.tiredSaid < 1) { p.tiredSaid = 1; this.say(p, pick(['ハァ…ハァ…', 'きつい…', '足が…重い…']), 1.3); }
           else if (p.sta < 14 && p.tiredSaid < 2) { p.tiredSaid = 2; this.say(p, pick(['もう限界…', 'まだ…いける…！']), 1.3); }
@@ -2942,6 +2953,38 @@
       this.combos = Data.COMBOS.filter((c) => c.ids.every((id) => ids.includes(id)) && this.comboOk(c));
       const born = this.combos.find((c) => !before.includes(c.id));
       if (born) setTimeout(() => this.comboFx(born.id), 1200);
+    }
+    // a rival club has no named reserves in the data, so improvise a few plausible substitutes
+    // around the same strength as their own squad, built once per match and spent as needed
+    benchFor(club) {
+      const rating = (club.rating || 50) - 6;
+      const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[club.tactic] = 70;
+      const templates = club.roster().filter((p) => p.pos !== 'GK');
+      return ['DF', 'MF', 'FW'].map((pos, i) => {
+        const v = () => Math.round(rating + rand(-8, 8));
+        const st = { spd: v(), sht: v(), pas: v(), def: v(), sta: v() };
+        if (pos === 'DF') { st.def += 6; st.sht -= 8; }
+        if (pos === 'FW') { st.sht += 8; st.def -= 10; }
+        for (const k in st) st[k] = Math.max(18, Math.min(80, st[k]));
+        return { id: club.id + '_sub' + i, name: '途中出場の選手', pos, stats: st, look: pick(templates).look, tacU: Object.assign({}, tacU) };
+      });
+    }
+    // the rival manager rotates in fresh legs too, once fatigue is real — checked periodically
+    // rather than every frame, and capped at the same 3 changes the human gets
+    maybeOppSub() {
+      if (this.oppSubsLeft <= 0 || this.state !== 'play') return;
+      if (!this.oppBench) this.oppBench = this.benchFor(this.opp);
+      if (!this.oppBench.length) return;
+      const tired = this.team(1).filter((p) => !p.gk && p.sta < 30).sort((a, c) => a.sta - c.sta)[0];
+      if (!tired) return;
+      const idx = this.players.indexOf(tired);
+      const inDef = this.oppBench.shift();
+      const np = this.mk(inDef, 1, tired.slot + 1);
+      np.x = tired.x; np.y = tired.y; np.face = tired.face;
+      this.players[idx] = np;
+      if (this.ball.owner === tired) this.ball.owner = null;
+      this.oppSubsLeft--;
+      this.toast(this.opp.short + '、交代　' + tired.name + ' → ' + np.name, '#ff9a8a');
     }
     drawPanel(g) {
       const pn = this.panel, r = this.panelRects();

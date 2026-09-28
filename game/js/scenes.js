@@ -1252,43 +1252,23 @@
     const I = IDENTITIES[State.identity];
     return { id: 'policy', visual: 'run', label: '「' + I.name + '」特訓', sub: STAT_NAMES[I.stat] + '↑↑（方針ボーナス）', desc: I.trainHint + '。チームの方針にぴったりの特訓で、伸びが良い。', gains: { [I.stat]: 4 }, focus: [] };
   }
-  // tally which stats a match actually exercised, and hand out cards for those — the same
-  // "the match teaches you what to train" idea as the source game's card system
-  // the concrete match number that actually earned each card, used only when the stat wasn't
-  // already called out as a specific issue or highlight in this match's analysis
-  function cardReason(k, r) {
-    const homeRecs = r.recs.filter((x) => x.team === 0);
-    const S = (kk) => homeRecs.reduce((a, x) => a + (x.rec[kk] || 0), 0);
-    if (k === 'sht') return 'シュート' + S('shot') + '本（枠内' + S('onT') + '）を放った動きが評価されました。';
-    if (k === 'pas') return 'パス成功' + S('passOk') + '/' + S('pass') + '、つなぐ意識が出ていました。';
-    if (k === 'spd') return '仕掛けや裏への飛び出しが目立ちました。';
-    if (k === 'def') return '球際の対応' + S('tackleOk') + '回、粘り強さが出ていました。';
-    return '最後まで運動量が落ちなかったのが光りました。';
-  }
-  // a card should read as either "課題" (a weakness this match exposed, worth training away) or
-  // "収穫" (a strength that showed up, worth building on) — never an unexplained reward
-  function cardFraming(k, A, r) {
-    const issue = A && A.issues.find((c) => c.cat === k);
-    if (issue) return { type: 'issue', cat: k, reason: '課題：「' + issue.title + '」が見つかりました。ここを鍛えましょう。' };
-    const good = A && A.good.find((c) => c.cat === k);
-    if (good) return { type: 'harvest', cat: k, reason: '収穫：「' + good.title + '」ができたのは収穫ですね。もっと伸ばしましょう。' };
-    return { type: 'harvest', cat: k, reason: cardReason(k, r) };
-  }
-  function awardCards(r, growth) {
+  // a card is earned only from a genuine 課題 — a weakness this match's analysis actually flagged —
+  // never from a strength; a good performance already gets its own reward (the "good" highlight),
+  // so it doesn't need to also be another route to the single most efficient training pick
+  function awardCards(r) {
     State.cards = State.cards || { sht: 1, pas: 0, spd: 0, def: 0, sta: 1 };
-    const totals = {};
-    for (const gr of growth) for (const k in gr.ups) if (STAT_KEYS.includes(k)) totals[k] = (totals[k] || 0) + gr.ups[k];
-    const ranked = STAT_KEYS.slice().sort((a, c) => (totals[c] || 0) - (totals[a] || 0));
+    const A = r.analysis || { issues: [] };
     const earned = [];
-    for (const k of ranked.slice(0, 2)) if (totals[k] > 0) {
+    for (const issue of A.issues.slice(0, 2)) {
+      const k = issue.cat;
+      if (!STAT_KEYS.includes(k)) continue;
       State.cards[k] = (State.cards[k] || 0) + 1;
-      const f = cardFraming(k, r.analysis, r);
-      earned.push({ name: CARD_INFO[k].name, reason: f.reason, type: f.type, cat: f.cat });
+      earned.push({ name: CARD_INFO[k].name, reason: '課題：「' + issue.title + '」が見つかりました。ここを鍛えましょう。', type: 'issue', cat: k });
     }
     if (IDENTITIES[State.identity] && r.tacTime) {
       const tot = Object.values(r.tacTime).reduce((a, v) => a + v, 0) || 1;
       const share = (r.tacTime[IDENTITIES[State.identity].tactic] || 0) / tot;
-      if (share > 0.5) { State.policyCards = (State.policyCards || 0) + 1; earned.push({ name: '「' + IDENTITIES[State.identity].name + '」方針カード', reason: '収穫：今日の試合の' + Math.round(share * 100) + '%を「' + IDENTITIES[State.identity].name + '」で戦い抜きました。', type: 'harvest', cat: null }); }
+      if (share > 0.5) { State.policyCards = (State.policyCards || 0) + 1; earned.push({ name: '「' + IDENTITIES[State.identity].name + '」方針カード', reason: '今日の試合の' + Math.round(share * 100) + '%を「' + IDENTITIES[State.identity].name + '」で戦い抜きました。', type: 'issue', cat: null }); }
     }
     return earned;
   }
@@ -2047,6 +2027,27 @@
   }
 
   // ---------------- RESULT & GROWTH ----------------
+  // a player can stumble onto a specialty just by playing — found in the match, not trained for.
+  // kept modest (see the small bonuses in match.js) and capped at 2 per player so nobody just
+  // becomes a generic all-rounder superstar through accumulation
+  const BADGES = {
+    aerial: { name: '空中戦', statKey: 'airW', threshold: 18 },
+    tackle: { name: '球際', statKey: 'tackleOk', threshold: 22 },
+    longpass: { name: 'ロングパス', statKey: 'longOk', threshold: 16 },
+    finisher: { name: '決定力', statKey: 'goal', threshold: 5 },
+  };
+  function tryAwakenBadge(p, rec) {
+    p.badges = p.badges || [];
+    p.badgeProgress = p.badgeProgress || {};
+    if (p.badges.length >= 2) return null;
+    for (const bid in BADGES) {
+      if (p.badges.includes(bid)) continue;
+      const b = BADGES[bid];
+      p.badgeProgress[bid] = (p.badgeProgress[bid] || 0) + (rec[b.statKey] || 0);
+      if (p.badgeProgress[bid] >= b.threshold) { p.badges.push(bid); return { id: bid, name: b.name }; }
+    }
+    return null;
+  }
   function computeGrowth(r) {
     const out = [];
     for (const p of State.roster) {
@@ -2083,7 +2084,8 @@
       }
       const rating = clamp(5.5 + (rec.goal || 0) * 1.2 + (rec.assist || 0) * 0.7 + (rec.tackleOk || 0) * 0.25 + (rec.save || 0) * 0.35 + (rec.passOk || 0) * 0.06 + (rec.shot || 0) * 0.1 + (r.score[0] > r.score[1] ? 0.4 : r.score[0] < r.score[1] ? -0.3 : 0), 4.5, 9.8);
       const special = checkSpecialUnlock(p);
-      out.push({ p, rec, ups, before, total, tacUps, rating: Math.round(rating * 10) / 10, special });
+      const badge = tryAwakenBadge(p, rec);
+      out.push({ p, rec, ups, before, total, tacUps, rating: Math.round(rating * 10) / 10, special, badge });
     }
     return out;
   }
@@ -2121,7 +2123,7 @@
     const rOpp = State.fixture().opp;
     s.growth = State.growth = computeGrowth(r);
     s.mvp = s.growth.slice().sort((a, b) => b.rating - a.rating)[0];
-    s.cardsEarned = awardCards(r, s.growth);
+    s.cardsEarned = awardCards(r);
     State.growthLog = State.growthLog || [];
     State.growthLog.push({
       seasonNo: State.seasonNo, week: State.season.week + 1, opp: rOpp.name, score: r.score.slice(),
@@ -2332,10 +2334,17 @@
         text(g, '能力アップ！', 150, 60, { size: 16, color: '#e0474c', alpha: s.gt > 0.4 ? 1 : 0 });
         const tu = Object.keys(cur.tacUps || {});
         if (tu.length && finished) text(g, '戦術理解度 ' + tu.map((k) => Data.TACTICS[k].name + ' +' + cur.tacUps[k]).join('　'), 150, 226, { size: 9, color: '#2f86c4' });
+        let badgeY = 202;
         if (cur.special && finished) {
           const k2 = Ease.outBack(clamp((s.gt - 0.5) / 0.3, 0, 1));
           panel(g, 150 - 4 * k2, 202, 290 * k2, 14, 'gold');
           if (k2 > 0.8) text(g, '必殺技「' + Data.SPECIALS[p.id].name + '」を習得！', 152, 204, { size: 9, color: '#4a2a10' });
+          badgeY = 218;
+        }
+        if (cur.badge && finished) {
+          const k3 = Ease.outBack(clamp((s.gt - 0.5) / 0.3, 0, 1));
+          panel(g, 150 - 4 * k3, badgeY, 290 * k3, 14, 'sky');
+          if (k3 > 0.8) text(g, '特殊能力「' + cur.badge.name + '◯」に覚醒！', 152, badgeY + 2, { size: 9, color: '#10182e' });
         }
         if (p.id === 'haruki' && finished) text(g, '伸び盛り！ 経験がぐんぐん身についた！', 150, 80, { size: 9, color: '#2f86c4' });
         else if (cur.total >= 5 && finished) text(g, 'すばらしい成長だ！', 150, 80, { size: 9, color: '#2f86c4' });
