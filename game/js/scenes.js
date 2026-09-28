@@ -220,6 +220,13 @@
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
   // level, then eases off hard past it, so a season closes the gap instead of blowing past it forever
   function growthTaper(cur) { return cur < 52 ? 1 : clamp((82 - cur) / 38, 0.12, 1); }
+  // the squad starts well below the rivals' level by design, but it shouldn't still feel like that
+  // past the halfway point of the very first season: a fading catch-up bonus, gone by week 5 of
+  // ~10, gets year one close to competitive without touching pace in any season after
+  function earlyCatchup() {
+    if (State.seasonNo !== 1) return 1;
+    return clamp(3.2 - (State.season.week || 0) * 0.44, 1, 3.2);
+  }
   // potential (0-10): how much a player is "in form to grow" right now, independent of how close
   // their stats already are to the ceiling. Early bloomers (high base growth) start hot and fade
   // sooner; late bloomers start modest but hold their form longer — same idea as the classic
@@ -1405,7 +1412,7 @@
           // equally; one with named focus players is a real specialization — others still pick
           // something up, but noticeably less, so training the whole squad evenly needs variety
           const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
-          let v = s.pick.gains[k] * mult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p);
+          let v = s.pick.gains[k] * mult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
           v = Math.round(v + rand(-0.3, 0.3));
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
@@ -2063,9 +2070,10 @@
       };
       const ups = {};
       let total = 0;
+      const catchup = earlyCatchup();
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * growthTaper(p.stats[k]) * potMult(p) + Math.random() * 0.5);
-        v = Math.min(v, 3);
+        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
+        v = Math.min(v, catchup > 1 ? 6 : 3);
         if (v > 0) { ups[k] = v; total += v; }
       }
       if (r.score[0] > r.score[1]) { const k = pick(STAT_KEYS); ups[k] = (ups[k] || 0) + 1; total++; }
