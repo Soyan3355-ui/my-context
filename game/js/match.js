@@ -856,7 +856,7 @@
         const pool = inBox.length ? inBox : (toLine < 90 ? mates : []);
         if (pool.length) {
           const m = pool.sort((a, c) => (inBox.length ? this.aerial(c) - this.aerial(a) : this.proj(t, c.x) - this.proj(t, a.x)))[0];
-          const s = (inBox.length ? 70 : 40) + (130 - Math.min(130, toLine)) * 0.5 + (toLine > 130 ? -10 : 0) + (this.isFullback(p) ? 18 : 0) + inBox.length * 10 + rand(0, 20) + (tac === 'possession' && this.noShotT[t] > 20 ? 15 : 0);
+          const s = (inBox.length ? 70 : 40) + (130 - Math.min(130, toLine)) * 0.5 + (toLine > 130 ? -10 : 0) + (this.isFullback(p) ? 18 : 0) + inBox.length * 10 + rand(0, 20) + (tac === 'possession' && this.noShotT[t] > 20 ? 15 : 0) + (this.badge(p, 'crossing') ? 22 : 0);
           if (s > best.s) best = { k: 'cross', s, m };
         }
       }
