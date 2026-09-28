@@ -981,7 +981,7 @@
     s.enter = () => {
       Sound.bgm('hub'); Sound.crowd(0);
       s.saved = Save.write('hub');
-      s.menu = new Menu(items(), 316, 54, 154, 30, 4);
+      s.menu = new Menu(items(), 316, 54, 154, 27, 3);
       if (first) s.say([['nagisa', 'happy', 'ここがクラブハウスです！ 選手のみんなに声をかけたり、右のメニューから準備を進めてください。'], ['nagisa', 'normal', '試合までに「練習」は1回できます。何をきたえるか、よーく考えてくださいね！']]);
       else if (State.pendingTalk) { s.say(State.pendingTalk); State.pendingTalk = null; }
       else if (State.trained && !State.talked.afterTrain) { State.talked.afterTrain = true; s.say([['nagisa', 'happy', 'おつかれさまでした！ 準備ができたら「試合へ！」を選んでください。']]); }
@@ -1096,14 +1096,14 @@
         text(g, 'オートセーブしました', 26, H - 19, { size: 8, color: '#9fdcff', alpha: al });
       }
       // mini team form strip
-      panel(g, 308, 226, 166, 38, 'dark');
-      text(g, 'チーム状態　やる気 ' + Math.round(State.avgMorale()), 316, 230, { size: 8, color: '#9fdcff' });
+      panel(g, 308, 235, 166, 33, 'dark');
+      text(g, 'チーム状態　やる気 ' + Math.round(State.avgMorale()), 316, 238, { size: 8, color: '#9fdcff' });
       const avg = (k) => Math.round(State.roster.reduce((a, p) => a + p.stats[k], 0) / State.roster.length);
       STAT_KEYS.forEach((k, i) => {
         const x = 316 + i * 31;
-        text(g, STAT_NAMES[k].slice(0, 2), x, 242, { size: 8, color: '#c9d6e6' });
+        text(g, STAT_NAMES[k].slice(0, 2), x, 253, { size: 8, color: '#c9d6e6' });
         const gr = grade(avg(k));
-        text(g, gr, x + 20, 241, { size: 10, color: GRADE_COL[gr], outline: OUT });
+        text(g, gr, x + 20, 252, { size: 10, color: GRADE_COL[gr], outline: OUT });
       });
       if (!s.talk && Input.mouse.active && s.hover) {
         const lbl = s.hover.r ? 'しらべる' : 'はなす';
