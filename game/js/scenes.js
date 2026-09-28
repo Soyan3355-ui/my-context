@@ -1191,9 +1191,13 @@
       const bio = wrap(g, p.bio || '', 204, 9);
       bio.forEach((l, i) => text(g, l, 256 + dx, 56 + i * 13, { size: 9, color: '#2a1a24' }));
       // trait
-      panel(g, 254 + dx, 100, 210, 36, 'gold');
+      const hasBadges = p.badges && p.badges.length > 0;
+      panel(g, 254 + dx, 100, 210, hasBadges ? 46 : 36, 'gold');
       text(g, '特性：' + (p.trait || '―'), 262 + dx, 104, { size: 10, color: '#4a2a10' });
-      text(g, p.traitDesc || '', 262 + dx, 120, { size: 8, color: '#6d4f3a' });
+      text(g, p.traitDesc || '', 262 + dx, 117, { size: 8, color: '#6d4f3a' });
+      if (hasBadges) {
+        text(g, '個性：' + p.badges.map((id) => (BADGES[id] ? BADGES[id].name : id) + '◯').join('　'), 262 + dx, 130, { size: 8, color: '#b4471f' });
+      }
       if (p.potential != null) {
         const pot = Math.round(p.potential);
         const trend = p.potential - (p.potentialLast ?? p.potential);
@@ -1207,14 +1211,15 @@
         }
       }
       // tactic understanding
+      const rowShift = hasBadges ? 10 : 0;
       if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
         const x = 254 + dx + i * 54, T = Data.TACTICS[k];
-        text(g, T.short, x, 139, { size: 8, color: '#6d4f3a' });
-        g.fillStyle = '#3a3050'; g.fillRect(x + 28, 142, 22, 3); g.fillStyle = T.color; g.fillRect(x + 28, 142, Math.round(22 * p.tacU[k] / 100), 3);
+        text(g, T.short, x, 139 + rowShift, { size: 8, color: '#6d4f3a' });
+        g.fillStyle = '#3a3050'; g.fillRect(x + 28, 142 + rowShift, 22, 3); g.fillStyle = T.color; g.fillRect(x + 28, 142 + rowShift, Math.round(22 * p.tacU[k] / 100), 3);
       });
       // stats
       STAT_KEYS.forEach((key, i) => {
-        const y = 152 + i * 21;
+        const y = 152 + rowShift + i * 21;
         const v = p.stats[key];
         const b = p.base ? p.base[key] : v;
         text(g, STAT_NAMES[key], 150 + dx, y, { size: 10, color: '#2a1a24' });
@@ -2060,11 +2065,16 @@
     tackle: { name: '球際', statKey: 'tackleOk', threshold: 22 },
     longpass: { name: 'ロングパス', statKey: 'longOk', threshold: 16 },
     finisher: { name: '決定力', statKey: 'goal', threshold: 5 },
+    crossing: { name: 'クロス', statKey: 'crossOk', threshold: 8 },
+    recovery: { name: 'ボール回収', statKey: 'recover', threshold: 24 },
+    postplay: { name: 'ポストプレー', statKey: 'knockOn', threshold: 8 },
+    offball: { name: '飛び出し', statKey: 'runIn', threshold: 6 },
+    placekick: { name: 'プレースキック', statKey: 'spGoal', threshold: 3 },
   };
   function tryAwakenBadge(p, rec) {
     p.badges = p.badges || [];
     p.badgeProgress = p.badgeProgress || {};
-    if (p.badges.length >= 2) return null;
+    if (p.badges.length >= 3) return null;
     for (const bid in BADGES) {
       if (p.badges.includes(bid)) continue;
       const b = BADGES[bid];

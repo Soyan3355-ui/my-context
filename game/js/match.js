@@ -101,7 +101,8 @@
         st, x: CX, y: CY, vx: 0, vy: 0, tx: CX, ty: CY, face: team === 0 ? 'right' : 'left', animT: Math.random() * 4,
         sta: 100, state: '', stT: 0, decT: 0, tackCD: 0, bubble: null, cheer: 0, runTarget: null, tiredFxT: rand(1, 3), tiredSaid: 0,
         rec: { pass: 0, passOk: 0, shot: 0, goal: 0, tackle: 0, tackleOk: 0, save: 0, dist: 0, touch: 0, assist: 0, dribble: 0,
-          longAtt: 0, longOk: 0, prAtt: 0, prOk: 0, thrAtt: 0, thrOk: 0, airW: 0, airL: 0, lost: 0, beaten: 0, onT: 0, faced: 0, distEarly: 0, distLate: 0, shotNear: 0 },
+          longAtt: 0, longOk: 0, prAtt: 0, prOk: 0, thrAtt: 0, thrOk: 0, airW: 0, airL: 0, lost: 0, beaten: 0, onT: 0, faced: 0, distEarly: 0, distLate: 0, shotNear: 0,
+          crossOk: 0, recover: 0, knockOn: 0, runIn: 0, spGoal: 0 },
       };
     }
 
@@ -1050,7 +1051,7 @@
       const side = p.y < CY ? -1 : 1;
       let tx = gxT - dirX(t) * (far ? rand(30, 46) : rand(36, 64)), ty = CY + (far ? -side * rand(10, 26) : side * rand(-4, 16));
       // good crossers hit the runner, not a zone: the ball is put where he is arriving
-      const aim = clamp((this.stat(p, 'pas') - 25) / 50, 0.5, 0.95);
+      const aim = clamp((this.stat(p, 'pas') - 25) / 50 + (this.badge(p, 'crossing') ? 0.15 : 0), 0.5, 0.97);
       const rx = clamp(m.x + dirX(t) * 14, Math.min(gxT, gxT - dirX(t) * 90), Math.max(gxT, gxT - dirX(t) * 90)), ry = clamp(m.y, CY - 60, CY + 60);
       tx = lerp(tx, rx, aim); ty = lerp(ty, ry, aim);
       m.tx = tx; m.ty = ty;
@@ -1514,7 +1515,8 @@
     // a driven/lofted delivery that arrives at head height on the spot
     deliver(p, tx, ty, vz, tgt, routine) {
       const b = this.ball;
-      const acc = this.stat(p, 'pas') + (p.team === 0 ? (this.setplay.lv || 0) * 4 : 6) + (routine ? 6 : 0);
+      const acc = this.stat(p, 'pas') + (p.team === 0 ? (this.setplay.lv || 0) * 4 : 6) + (routine ? 6 : 0)
+        + (this.badge(p, 'crossing') ? 10 : 0) + (routine && this.badge(p, 'placekick') ? 10 : 0);
       const e = Math.max(2, (100 - acc) * 0.22);
       tx += rand(-1, 1) * e; ty += rand(-1, 1) * e;
       const zh = 13, T = (vz + Math.sqrt(Math.max(1, vz * vz - 2 * 420 * zh))) / 420;
@@ -1528,7 +1530,7 @@
     }
     execCorner(sp, tk) {
       const r = sp.routine, T = sp.targets;
-      this.spRun = { plan: sp.plan, t: 1.8 };
+      this.spRun = { plan: sp.plan, t: 1.8, taker: tk };
       this.announceSetPlay(sp);
       if (r === 'short' && T.SHORT) {
         this.doPass(tk, T.SHORT, false);
@@ -1544,7 +1546,7 @@
     }
     execFK(sp, tk) {
       const r = sp.routine, T = sp.targets, t = sp.team;
-      this.spRun = { plan: sp.plan, t: 2.0 };
+      this.spRun = { plan: sp.plan, t: 2.0, taker: tk };
       this.announceSetPlay(sp);
       if (r === 'trick' && T.STRIKE) {
         const q = T.STRIKE;
@@ -1557,6 +1559,7 @@
         const lv = t === 0 ? (this.setplay.lv || 0) : 1;
         let block = 0.42 - (sp.wall.n <= 2 ? 0.12 : 0);
         if (r === 'wall') block -= (this.stat(tk, 'sht') - 50) / 150 + lv * 0.03;
+        if (this.badge(tk, 'placekick')) block -= 0.08;
         this.fkShot = { sp, block: clamp(block, 0.08, 0.55), bend: r === 'wall' };
         if (t === 0 && !this.auto) this.chanceCD = 0; else if (t === 1) this.pinchCD = Math.min(this.pinchCD, 0);
         this.wantShoot(tk, true);
@@ -1787,7 +1790,7 @@
         if (att || df) {
           b.pass.duel = true;
           if (att && df) {
-            const sc = (q) => this.stat(q, 'def') * 0.5 + this.bodyScore(q) * 0.3 + this.stat(q, 'spd') * 0.1 + (q.id === 'mask' ? 25 : 0);
+            const sc = (q) => this.stat(q, 'def') * 0.5 + this.bodyScore(q) * 0.3 + this.stat(q, 'spd') * 0.1 + (q.id === 'mask' ? 25 : 0) + (this.badge(q, 'postplay') ? 14 : 0);
             // a forward running onto a ball in behind beats a defender who has to turn
             const pw = 1 / (1 + Math.exp(-(sc(att) - sc(df) + (b.pass.behind ? 12 : 0)) / 8));
             const winner = Math.random() < pw ? att : df, loser = winner === att ? df : att;
@@ -1827,6 +1830,7 @@
           if (w.id === 'mask' && cands.some((q) => q.team !== w.team)) this.traitPop(w, '空中戦の鬼');
           else if (w.id === 'mask' && Math.random() < 0.3) this.traitPop(w, '空中戦の鬼');
           w.rec.airW++;
+          if (ps && ps.cross && w.team === ps.from.team && ps.from !== w) ps.from.rec.crossOk++;
           for (const q of cands.slice(1)) if (q.team !== w.team) { q.state = 'header'; q.stT = 0.4; q.rec.airL++; }
           this.header(w);
           return;
@@ -1862,7 +1866,7 @@
         if (b.pass && b.pass.to !== p && p.team !== b.pass.from.team) {
           if (b.tried.has(p)) continue;
           b.tried.add(p);
-          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0) + (b.pass.central ? 0.12 : 0);
+          const ic = 0.28 + this.stat(p, 'def') / 220 - sp / 900 + (p.id === 'shizuku' ? 0.25 : 0) + (b.pass.central ? 0.12 : 0) + (this.badge(p, 'recovery') ? 0.1 : 0);
           // a slow ball arriving right at a defender's feet is often cut out, but a keeper's own
           // build-up pass shouldn't be an easy free turnover just because a presser closed in mid-flight
           const icf = (sp < 140 ? Math.max(ic, 0.55) : ic) * (b.pass.from.gk ? 0.5 : 1);
@@ -1887,7 +1891,7 @@
       const support = mates.filter((q) => dist(q.x, q.y, att.x, att.y) < 80).sort((a2, c) => dist(a2.x, a2.y, att.x, att.y) - dist(c.x, c.y, att.x, att.y))[0];
       const pick2 = runner && Math.random() < 0.55 ? runner : support;
       if (!pick2) { this.gainBall(att); att.state = ''; return; }
-      att.state = 'header'; att.stT = 0.4; att.rec.touch++;
+      att.state = 'header'; att.stT = 0.4; att.rec.touch++; att.rec.knockOn++;
       this.releaseBall(att);
       const tx = pick2 === runner ? pick2.x + dx * 30 : pick2.x, ty = pick2.y;
       const a = Math.atan2(ty - b.y, tx - b.x), d = dist(b.x, b.y, tx, ty);
@@ -2001,8 +2005,12 @@
         }
       } else if (pass && pass.from.team !== p.team) {
         if (p.team === 0 && !p.gk) this.tick(p.name + '、パスカット！', '#9fdcff');
+        if (!p.gk) p.rec.recover++;
         this.lastPasser = null;
-      } else if (!pass) this.lastPasser = b.last && b.last.team === p.team ? this.lastPasser : null;
+      } else if (!pass) {
+        if (!p.gk && prevTeam !== -1 && prevTeam !== p.team) p.rec.recover++;
+        this.lastPasser = b.last && b.last.team === p.team ? this.lastPasser : null;
+      }
       b.owner = p; b.last = p; b.pass = null; b.shot = null; b.vz = 0; b.z = 0; b.grav = null;
       p.rec.touch++;
       if (!(pass && pass.from.team === p.team)) { p.fkStrike = null; p.spFollow = null; }
@@ -2011,9 +2019,11 @@
       // through ball in behind: nobody left between the runner and the keeper
       if (pass && pass.through && pass.from.team === p.team && !p.gk) {
         // a defender still roughly goal-side and in the same channel counts as covering the run, even if trailing slightly
-        const goalSide = this.players.some((o) => o.team !== p.team && !o.gk && !o.state && this.proj(p.team, o.x) > this.proj(p.team, p.x) - 22 && Math.abs(o.y - p.y) < 85);
+        const runBonus = this.badge(p, 'offball') ? 14 : 0;
+        const goalSide = this.players.some((o) => o.team !== p.team && !o.gk && !o.state && this.proj(p.team, o.x) > this.proj(p.team, p.x) - 22 - runBonus && Math.abs(o.y - p.y) < 85);
         if (!goalSide && dist(p.x, p.y, goalX(p.team), CY) < 360) {
           this.oneOnOne = { p, t: 4 };
+          p.rec.runIn++;
           p.burst = 2.0;
           Game.doHitstop(0.05);
           this.popup(p.x, p.y - 50, '抜け出した！', p.team === 0 ? '#ffd24a' : '#ffb0a0', 10);
@@ -2105,6 +2115,7 @@
       if (scorer && scorer.team === team) {
         scorer.rec.goal++;
         if (this.lastPasser && this.lastPasser.team === team && this.lastPasser !== scorer) this.lastPasser.rec.assist++;
+        if (this.spRun && this.spRun.taker && this.spRun.taker.team === team) this.spRun.taker.rec.spGoal++;
       }
       Game.doHitstop(0.18); Game.addShake(6, 0.5); Game.doFlash(0.7, team === 0 ? '#ffffff' : '#ffb0a0');
       Sound.play('net'); Sound.duck(0.6, 2.5);
