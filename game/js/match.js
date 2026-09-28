@@ -110,7 +110,9 @@
     gk(t) { return this.players.find((p) => p.team === t && p.gk); }
     stat(p, k) {
       let v = p.st[k];
-      if (p.team === 1) v += this.opp.boost || 0;
+      // the flat difficulty boost is meant to season the whole team, not hand the rival a
+      // finishing touch out of proportion to how rarely they actually get a shot away
+      if (p.team === 1) v += k === 'sht' ? Math.round((this.opp.boost || 0) * 0.5) : (this.opp.boost || 0);
       if (p.team === 0) {
         v *= this.moraleMul[0] * this.momentum;
         if (this.boost[k]) v += this.boost[k];
@@ -119,10 +121,10 @@
         if (this.combo('kaze') && (id === 'tsubame' || id === 'shizuku') && (k === 'spd' || k === 'pas')) v += 5;
         if (this.combo('shitei') && id === 'haruki' && k === 'spd') v += 5;
         if (this.combo('okan') && id === 'ponta' && k === 'def') v += 10;
-        if (this.combo('ace') && (id === 'leo' || id === 'hikaru') && k === 'sht') v += 8;
+        if (this.combo('ace') && (id === 'leo' || id === 'hikaru') && k === 'sht') v += 5;
         if (this.combo('bonsai') && (id === 'kazuha' || id === 'mame') && k === 'pas') v += 8;
         if (id === 'ponta' && this.pontaAwake) v += 10;
-        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 6);
+        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 4);
       }
       return v;
     }
@@ -1365,7 +1367,7 @@
       // a teammate can look open at their own spot and still have a presser standing in the passing
       // lane back near the keeper — check the whole lane, not just the landing point, or the keeper
       // ends up handing possession straight to whoever's pressing highest
-      const short = mates.filter((m) => dist(m.x, m.y, gk.x, gk.y) < 170 && openness(m) > 34 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 22).sort((a, c) => openness(c) - openness(a))[0];
+      const short = mates.filter((m) => dist(m.x, m.y, gk.x, gk.y) < 170 && openness(m) > 34 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 32).sort((a, c) => openness(c) - openness(a))[0];
       const gtac = this.tacOf(t);
       const pShort = gtac === 'long' ? 0.1 : gtac === 'possession' ? 0.9 : gtac === 'counter' ? 0.4 : 0.65;
       if (short && Math.random() < pShort) {
