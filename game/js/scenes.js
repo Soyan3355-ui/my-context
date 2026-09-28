@@ -83,7 +83,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -2496,6 +2496,17 @@
       s.notes.unshift(p.name + 'が負傷…全治' + inj.weeks + '週間の見込みです');
     }
     if ((r.injuries || []).some((inj) => inj.team === 0)) fillLineup();
+    // a transfer negotiation started before this match resolves now - the outcome was already
+    // decided when it began, this is just when the club hears back
+    for (const neg of (State.pendingNegotiations || [])) {
+      if (!neg.success) { s.notes.push(neg.def.name + 'との交渉は不調に終わりました…'); continue; }
+      if (State.roster.length >= SQUAD_MAX) { s.notes.push(neg.def.name + 'との交渉はまとまったが、選手枠が足りず破談に…'); continue; }
+      const cost = neg.fee + neg.sal;
+      if (State.budget < cost) { s.notes.push(neg.def.name + 'との交渉はまとまったが、予算が足りず破談に…'); continue; }
+      State.budget -= cost; signPlayer(neg.def, neg.from);
+      s.notes.unshift(neg.def.name + 'との交渉が成立！加入しました（' + cost + '万円）');
+    }
+    State.pendingNegotiations = [];
     for (const c of Data.COMBOS) if (State.comboReady(c) && !readyBefore.includes(c.id) && c.ids.every((id) => State.roster.some((q) => q.id === id)))
       s.notes.push(NAMES[c.ids[0]] + 'と' + NAMES[c.ids[1]] + 'の息が合ってきた！ コンビ「' + c.name + '」が使えます');
     // gate receipts at home: locals bring the town out
@@ -2924,17 +2935,19 @@
     const midSeason = !!next;
     next = next || (() => Credits());
     const s = { t: 0, phase: 'leave', idx: 0, tab: 'sign', sel: 0, log: [], rejected: {} };
-    // players asking to leave: benched too long, or ready to hang up the boots
-    const reqs = State.roster.filter((p) => (State.morale[p.id] ?? 60) < 40 || (p.age && p.age >= 80)).map((p) => ({ p, why: p.age >= 80 ? '「そろそろ、引退を考えとる」' : '「もっと試合に出たい。移籍させてほしい」' }));
+    // players asking to leave (or retire) only comes up at the end-of-season market - a mid-season
+    // visit shouldn't cost a keep-fee just for opening the menu
+    const reqs = midSeason ? [] : State.roster.filter((p) => (State.morale[p.id] ?? 60) < 40 || (p.age && p.age >= 80)).map((p) => ({ p, why: p.age >= 80 ? '「そろそろ、引退を考えとる」' : '「もっと試合に出たい。移籍させてほしい」' }));
     const policyStat = () => IDENTITIES[State.identity] ? IDENTITIES[State.identity].stat : null;
     const bestStat = (d) => STAT_KEYS.slice().sort((a, c) => d.stats[c] - d.stats[a])[0];
     const onPolicy = (d) => !!policyStat() && bestStat(d) === policyStat();
+    // mid-season, only genuinely free agents are up for grabs - poaching a rival's listed player
+    // is an off-season-only move
     const cands = () => State.freeAgents.filter((id) => faDef(id)).map((id) => ({ def: faDef(id), fee: 0, sal: faDef(id).sal, from: null, reason: (State.departed.some((d) => d.id === id) ? '古巣に戻りたがっている' : 'フリー。入団を希望している') }))
-      .concat((State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })))
-      .filter((c) => !s.rejected[c.def.id])
+      .concat(midSeason ? [] : (State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })))
+      .filter((c) => !s.rejected[c.def.id] && !(State.pendingNegotiations || []).some((n) => n.id === c.def.id))
       .sort((a, c) => (onPolicy(c.def) ? 1 : 0) - (onPolicy(a.def) ? 1 : 0));
     // a negotiation can fall through: free agents already want in, but poaching from a rival is a real gamble
-    const negFee = 4;
     const signChance = (c) => {
       const avg = avgStat(c.def);
       if (!c.from) return clamp(0.92 - Math.max(0, avg - 45) / 300, 0.55, 0.92);
@@ -2998,21 +3011,15 @@
         if (State.auto && s.t > 1) { s.phase = 'summary'; s.t = 0; return; }
         if (s.tab === 'sign') {
           const c = list[s.sel];
+          // negotiating costs nothing up front - you find out whether it worked after the next
+          // match, like a real transfer saga playing out in the background
           const attempt = () => {
             if (State.roster.length >= SQUAD_MAX) { s.flash = { text: '選手枠がいっぱい（' + SQUAD_MAX + '人）', t: 0 }; Sound.play('cancel'); return; }
-            if (State.budget < negFee) { s.flash = { text: '予算が足りない（交渉費用）', t: 0 }; Sound.play('cancel'); return; }
-            State.budget -= negFee;
-            const chance = signChance(c);
-            if (Math.random() < chance) {
-              const cost = c.fee + c.sal;
-              if (State.budget < cost) { s.rejected[c.def.id] = true; s.log.push(c.def.name + 'との交渉はまとまったが、予算が足りず破談に…'); s.flash = { text: '交渉成立も、予算不足で破談…', t: 0 }; Sound.play('cancel'); return; }
-              State.budget -= cost; signPlayer(c.def, c.from);
-              s.log.push(c.def.name + 'の獲得に成功！（交渉費+移籍金 計' + (cost + negFee) + '万円）'); Sound.play('levelup'); Game.doFlash(0.3);
-            } else {
-              s.rejected[c.def.id] = true;
-              s.log.push(pick([c.def.name + 'との交渉は決裂した…', c.def.name + 'は他クラブへの加入を決めた', c.def.name + 'から「今回は見送りたい」と返事が来た']));
-              Sound.play('cancel');
-            }
+            State.pendingNegotiations = State.pendingNegotiations || [];
+            State.pendingNegotiations.push({ id: c.def.id, def: JSON.parse(JSON.stringify(c.def)), fee: c.fee, sal: c.sal, from: c.from, success: Math.random() < signChance(c) });
+            s.rejected[c.def.id] = true;
+            s.log.push(c.def.name + 'との交渉を開始した。結果は次の試合のあとにわかる。');
+            s.flash = { text: '交渉を開始しました', t: 0 }; Sound.play('page');
             s.sel = 0;
           };
           if (c && (Input.hit('ok') || E.clickedIn({ x: 250, y: 238, w: 214, h: 24 }))) attempt();
@@ -3108,7 +3115,7 @@
             text(g, String(d.stats[k]), 466, y, { size: 8, align: 'right', color: '#2a1a24' });
           });
           if (onPolicy(d)) text(g, '★このチームの方針（' + IDENTITIES[State.identity].name + '）に合う選手です', 228, 214, { size: 8, color: '#e0474c' });
-          text(g, '交渉費用 ' + negFee + '万円（結果に関わらず消費）＋成立時 ' + (c.fee + c.sal) + '万円', 228, 224, { size: 8, color: '#6d4f3a' });
+          text(g, '成立時のみ ' + (c.fee + c.sal) + '万円。結果は次の試合のあとにわかります', 228, 224, { size: 8, color: '#6d4f3a' });
           panel(g, 250, 238, 214, 24, E.hoverIn({ x: 250, y: 238, w: 214, h: 24 }) ? 'gold' : 'sky');
           text(g, 'Z / クリック：交渉する', 357, 244, { size: 9, align: 'center', color: '#10304f' });
         } else if (c && s.tab === 'release') {
