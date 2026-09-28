@@ -1314,7 +1314,9 @@
         State.trainMenuPick = eligible.slice().sort(() => Math.random() - 0.5).slice(0, 3);
       }
       const onBoard = new Set(State.trainMenuPick || []);
-      // basic cards: each stat with stock earns its own menu, tagged with how many are left
+      // basic cards: each stat with stock earns its own menu, tagged with how many are left.
+      // stock over 1 is offered as a "まとめ消化" quantity choice after picking (see the 'qty'
+      // phase below) rather than as separate menu rows, so a deep pile doesn't blow up this list
       for (const k of STAT_KEYS) {
         if ((State.cards[k] || 0) > 0 && onBoard.has('card_' + k)) list.push(Object.assign({ id: 'card_' + k, cost: { [k]: 1 } }, CARD_INFO[k], { sub: CARD_INFO[k].sub + '　カード×' + State.cards[k] }));
       }
@@ -1346,7 +1348,30 @@
         if (Input.hit('back') || E.clickedIn({ x: 8, y: 232, w: 90, h: 16 })) { Sound.play('cancel'); Game.goto(Hub(), 'stripe'); return; }
         if (State.auto) { s.menu.sel = s.menu.items.length > 2 ? 2 : 0; Input.pressed.ok = s.t > 1; }
         const r = s.menu.update(dt);
-        if (r) { s.pick = r.tr; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); }
+        if (r) {
+          const tr = r.tr;
+          const costKeys = tr.cost ? Object.keys(tr.cost) : [];
+          const bulkKey = costKeys.length === 1 && costKeys[0] !== 'policy' ? costKeys[0] : null;
+          const bulkStock = bulkKey ? (State.cards[bulkKey] || 0) : 0;
+          if (bulkKey && bulkStock > 1) { s.pick = tr; s.qtyKey = bulkKey; s.qtyMax = Math.min(3, bulkStock); s.phase = 'qty'; s.rt = 0; Sound.play('cursor'); }
+          else { s.pick = tr; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); }
+        }
+      } else if (s.phase === 'qty') {
+        s.rt += dt;
+        const n3 = s.qtyMax >= 3, opts = n3 ? [1, 2, 3] : [1, 2];
+        const rects = opts.map((n, i) => ({ x: 190 + i * 70, y: 150, w: 60, h: 40, n }));
+        if (State.auto && s.rt > 1) { s.qtyPick = s.qtyMax; }
+        for (const rc of rects) if (E.clickedIn(rc)) s.qtyPick = rc.n;
+        if (Input.hit('back')) { s.phase = 'pick'; s.pick = null; return; }
+        if (s.qtyPick) {
+          const n = s.qtyPick, base = s.pick, k = s.qtyKey;
+          s.pick = n === 1 ? base : Object.assign({}, base, {
+            id: base.id + '_x' + n, cost: { [k]: n }, bulkN: n,
+            label: base.label + '（まとめて' + n + '枚）',
+            desc: base.desc + '　カードを' + n + '枚まとめて使い、一度の練習でがっつり詰め込む。',
+          });
+          s.qtyPick = null; s.phase = 'intro'; s.rt = 0; Sound.bgm('match'); Sound.play('select');
+        }
       } else if (s.phase === 'intro') {
         s.rt += dt;
         if (s.rt > 1.6 || (s.rt > 0.4 && okPressed())) { s.phase = 'play'; startMeter(); }
@@ -1412,6 +1437,12 @@
       const streak = dom && hist[hist.length - 1] === dom ? (hist[hist.length - 2] === dom ? 2 : 1) : 0;
       const fatigueMult = streak >= 2 ? 0.5 : streak === 1 ? 0.8 : 1;
       s.fatigueMult = fatigueMult;
+      // spending several stacked cards at once (まとめ消化): more total growth than a single
+      // card, but each card in the stack pulls its own weight a little less, and the per-stat
+      // ceiling opens up a bit to match the bigger, deliberate investment
+      const bulkN = s.pick.bulkN || 1;
+      const bulkMult = 1 + (bulkN - 1) * 0.5;
+      const bulkCap = 2 + (bulkN - 1);
       for (const p of State.roster) {
         const ups = {};
         if (s.pick.id === 'tactics' && p.tacU) {
@@ -1427,11 +1458,12 @@
           // equally; one with named focus players is a real specialization — others still pick
           // something up, but noticeably less, so training the whole squad evenly needs variety
           const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
-          let v = s.pick.gains[k] * mult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
+          let v = s.pick.gains[k] * mult * bulkMult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
           v = Math.round(v + rand(-0.3, 0.3));
           // same +2-per-stat ceiling as match growth - a great training session should still feel
-          // capped, not like a single session can leapfrog several ranks
-          v = Math.min(v, 2);
+          // capped, not like a single session can leapfrog several ranks (a bit higher when several
+          // cards were deliberately burned at once)
+          v = Math.min(v, bulkCap);
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
@@ -1471,6 +1503,22 @@
         wrap(g, sel.desc, 200, 8).slice(0, 3).forEach((l, i) => text(g, l, 258, 227 + i * 12, { size: 8, color: '#2a1a24' }));
         panel(g, 8, 232, 90, 16, E.hoverIn({ x: 8, y: 232, w: 90, h: 16 }) ? 'sky' : 'dark');
         text(g, 'X：もどる', 18, 236, { size: 8, color: '#ffffff', outline: OUT });
+        return;
+      }
+      if (s.phase === 'qty') {
+        panel(g, 60, 70, 360, 140, 'paper');
+        text(g, '何枚まとめて使う？', 240, 84, { size: 13, align: 'center', color: '#2a1a24' });
+        text(g, 'カードは' + (tr.label || '').replace(/（まとめて.枚）/, ''), 240, 102, { size: 9, align: 'center', color: '#6d4f3a' });
+        text(g, '枚数が多いほど伸びは大きいが、1枚あたりの効率は下がる', 240, 118, { size: 8, align: 'center', color: '#6d4f3a' });
+        const n3 = s.qtyMax >= 3, opts = n3 ? [1, 2, 3] : [1, 2];
+        const rects = opts.map((n, i) => ({ x: 190 + i * 70, y: 150, w: 60, h: 40, n }));
+        rects.forEach((rc) => {
+          const hov = E.hoverIn(rc);
+          panel(g, rc.x, rc.y, rc.w, rc.h, hov ? 'gold' : 'sky');
+          text(g, rc.n + '枚', rc.x + rc.w / 2, rc.y + 10, { size: 14, align: 'center', color: hov ? '#4a2a10' : '#ffffff', outline: hov ? null : OUT });
+          text(g, rc.n === 1 ? 'ふつう' : rc.n === s.qtyMax ? 'がっつり' : 'まとめて', rc.x + rc.w / 2, rc.y + 26, { size: 7, align: 'center', color: hov ? '#4a2a10' : '#e8eef7' });
+        });
+        text(g, 'X：もどる', 240, 202, { size: 8, align: 'center', color: '#6d4f3a' });
         return;
       }
       // play scene per training
