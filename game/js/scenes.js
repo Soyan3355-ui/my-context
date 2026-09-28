@@ -220,6 +220,8 @@
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
   // level, then eases off hard past it, so a season closes the gap instead of blowing past it forever
   function growthTaper(cur) { return cur < 52 ? 1 : clamp((82 - cur) / 38, 0.12, 1); }
+  // tactic understanding eases off near full mastery too, same idea as growthTaper but for the 0-100 scale
+  function tacTaper(cur) { return cur < 65 ? 1 : clamp((100 - cur) / 35, 0.1, 1); }
   // the squad starts well below the rivals' level by design, but it shouldn't still feel like that
   // past the halfway point of the very first season: a fading catch-up bonus, gone by week 5 of
   // ~10, gets year one close to competitive without touching pace in any season after
@@ -972,6 +974,7 @@
       { id: 'train', label: '練習する', sub: State.trained ? '今週の練習は終わりました' : '週1回。能力や戦術理解がアップ', icon: Icons.shoe, disabled: !!State.trained },
       { id: 'tactics', label: '作戦ボード', sub: Data.FORMATIONS[State.formation].short + '・' + Data.TACTICS[State.tactic].name, icon: Icons.board },
       { id: 'table', label: '順位表', sub: '現在 ' + State.rank() + '位　' + State.season.table.hamakaze.pts + '点', icon: Icons.book },
+      { id: 'market', label: '移籍市場', sub: 'フリーの選手と獲得交渉（予算 ' + State.budget + '万円）', icon: Icons.book },
       { id: 'match', label: '試合へ！', sub: 'vs ' + fx.opp.name, icon: Icons.ball },
     ];
     const titleBtnR = { x: 246, y: 246, w: 46, h: 14 };
@@ -1030,13 +1033,14 @@
         s.say([h.lines[idx]]);
         return;
       }
-      if (State.auto) { s.menu.sel = State.trained ? 4 : 1; Input.pressed.ok = s.t > 1; }
+      if (State.auto) { s.menu.sel = State.trained ? items().length - 1 : 1; Input.pressed.ok = s.t > 1; }
       const r = s.menu.update(dt);
       if (!r) return;
       if (r.id === 'roster') Game.goto(Roster(), 'stripe');
       if (r.id === 'train') Game.goto(Training(), 'stripe');
       if (r.id === 'tactics') Game.goto(Tactics(), 'stripe');
       if (r.id === 'table') Game.goto(LeagueTable(() => Hub()), 'stripe');
+      if (r.id === 'market') Game.goto(TransferMarket(() => Hub()), 'stripe');
       if (r.id === 'match') {
         if (!State.trained && !s.warned) { s.warned = true; s.say([['nagisa', 'surprised', '監督、まだ今日の練習をしてませんよ！ …本当にこのまま試合に行きます？'], ['nagisa', 'normal', 'もう一度「試合へ！」を選ぶと出発します。']]); return; }
         Sound.stopBgm(0.6);
@@ -1181,6 +1185,7 @@
       text(g, p.pos, 196 + dx, 122, { size: 10, align: 'center', color: '#ffffff', outline: '#10304f' });
       if (p.nick) text(g, '「' + p.nick + '」', 254 + dx, 12, { size: 9, color: '#e0474c' });
       text(g, p.full || p.name, 254 + dx, 22, { size: 16, color: '#2a1a24' });
+      if (p.injuredWeeks > 0) { panel(g, 388 + dx, 14, 76, 16, 'crimson'); text(g, '負傷中（全治' + p.injuredWeeks + '週）', 426 + dx, 18, { size: 8, align: 'center', color: '#ffffff' }); }
       text(g, (p.age ? p.age + '歳　' : '') + (p.job || '') + '　' + (p.local ? '地元' : 'よそ者') + '　やる気' + (State.morale[p.id] ?? 60) + '　給料' + (p.sal || 0) + '万', 256 + dx, 42, { size: 9, color: '#6d4f3a' });
       const bio = wrap(g, p.bio || '', 204, 9);
       bio.forEach((l, i) => text(g, l, 256 + dx, 56 + i * 13, { size: 9, color: '#2a1a24' }));
@@ -1401,7 +1406,7 @@
         const ups = {};
         if (s.pick.id === 'tactics' && p.tacU) {
           const inXI = State.lineup.includes(p.id);
-          const v = Math.max(1, Math.round((inXI ? 5 : 3) * mult * (p.age && p.age < 25 ? 1.2 : 1)));
+          const v = Math.min(3, Math.max(1, Math.round((inXI ? 3 : 2) * mult * (p.age && p.age < 25 ? 1.2 : 1) * tacTaper(p.tacU[State.tactic]))));
           p.tacU[State.tactic] = Math.min(100, p.tacU[State.tactic] + v);
           ups.tac = v;
         }
@@ -1414,6 +1419,9 @@
           const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
           let v = s.pick.gains[k] * mult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
           v = Math.round(v + rand(-0.3, 0.3));
+          // same +2-per-stat ceiling as match growth - a great training session should still feel
+          // capped, not like a single session can leapfrog several ranks
+          v = Math.min(v, 2);
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
           if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
@@ -1676,6 +1684,10 @@
       if ((pa.pos === 'GK') !== (pb.pos === 'GK') && (a.kind === 'slot' && a.i === 0 || b.kind === 'slot' && b.i === 0 || pa.pos === 'GK' || pb.pos === 'GK')) {
         s.msg = { text: 'GKはGK同士でしか入れ替えられません', t: 0 }; Sound.play('cancel'); return false;
       }
+      const incoming = a.kind === 'bench' ? pa : b.kind === 'bench' ? pb : null;
+      if (incoming && incoming.injuredWeeks > 0) {
+        s.msg = { text: incoming.name + 'は負傷中で出場できません（全治あと' + incoming.injuredWeeks + '週）', t: 0 }; Sound.play('cancel'); return false;
+      }
       const before0 = activeCombos(State.lineup).map((c) => c.id);
       if (a.kind === 'slot' && b.kind === 'slot') { const tmp = State.lineup[a.i]; State.lineup[a.i] = State.lineup[b.i]; State.lineup[b.i] = tmp; }
       else { const slot = a.kind === 'slot' ? a : b, bn = a.kind === 'slot' ? b : a; State.lineup[slot.i] = bn.id; }
@@ -1838,7 +1850,8 @@
         const hl = s.pick && s.pick.kind === 'bench' && s.pick.i === i, hv = s.hover === tg || (s.kb && s.cursor === 11 + i);
         panel(g, r.x + (hl ? 4 : 0), r.y, r.w, r.h, hl ? 'gold' : hv ? 'sky' : 'paper');
         g.drawImage(Art.sprite(p.look, 'down', 'walk1'), r.x + 3 + (hl ? 4 : 0), r.y - 3);
-        text(g, p.name + '　' + p.pos + '　「' + p.nick + '」', r.x + 22 + (hl ? 4 : 0), r.y + 3, { size: 8, color: '#2a1a24' });
+        const hurt = p.injuredWeeks > 0;
+        text(g, p.name + '　' + p.pos + '　' + (hurt ? '負傷中（全治' + p.injuredWeeks + '週）' : '「' + p.nick + '」'), r.x + 22 + (hl ? 4 : 0), r.y + 3, { size: 8, color: hurt ? '#e0474c' : '#2a1a24' });
       });
       // combos
       const cy0 = 92 + bench().length * 19 + 4;
@@ -2073,7 +2086,9 @@
       const catchup = earlyCatchup();
       for (const k of STAT_KEYS) {
         let v = Math.floor((exp[k] / 9) * (p.growth || 1) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
-        v = Math.min(v, catchup > 1 ? 6 : 3);
+        // the early catch-up bonus should mean more stats clear the bar in a given match, not any
+        // single stat leaping by a huge amount - a +2 ceiling holds regardless of the multiplier
+        v = Math.min(v, 2);
         if (v > 0) { ups[k] = v; total += v; }
       }
       if (r.score[0] > r.score[1]) { const k = pick(STAT_KEYS); ups[k] = (ups[k] || 0) + 1; total++; }
@@ -2086,7 +2101,7 @@
         const played = (rec.dist || 0) > 0 ? 1 : 0;
         for (const k in r.tacTime) {
           const share = r.tacTime[k] / Math.max(1, Object.values(r.tacTime).reduce((a, v) => a + v, 0));
-          const v = Math.round((2 + 4 * share) * played * (p.age && p.age < 25 ? 1.25 : p.age > 50 ? 0.7 : 1));
+          const v = Math.round((1 + 2 * share) * played * (p.age && p.age < 25 ? 1.25 : p.age > 50 ? 0.7 : 1) * tacTaper(p.tacU[k]));
           if (v > 0 && share > 0.15) { p.tacU[k] = Math.min(100, p.tacU[k] + v); tacUps[k] = v; }
         }
       }
@@ -2472,6 +2487,15 @@
       State.morale[p.id] = clamp(Math.round(m), 0, 100);
     }
     for (const a of played) for (const b of played) if (a < b) State.addBond(a, b, 8);
+    // an injury from this match sidelines the player for real, past this week's bookkeeping
+    for (const inj of (r.injuries || [])) {
+      if (inj.team !== 0) continue;
+      const p = State.roster.find((q) => q.id === inj.id);
+      if (!p) continue;
+      p.injuredWeeks = Math.max(p.injuredWeeks || 0, inj.weeks);
+      s.notes.unshift(p.name + 'が負傷…全治' + inj.weeks + '週間の見込みです');
+    }
+    if ((r.injuries || []).some((inj) => inj.team === 0)) fillLineup();
     for (const c of Data.COMBOS) if (State.comboReady(c) && !readyBefore.includes(c.id) && c.ids.every((id) => State.roster.some((q) => q.id === id)))
       s.notes.push(NAMES[c.ids[0]] + 'と' + NAMES[c.ids[1]] + 'の息が合ってきた！ コンビ「' + c.name + '」が使えます');
     // gate receipts at home: locals bring the town out
@@ -2483,7 +2507,7 @@
     } else { State.budget += 3; s.notes.unshift('アウェイ遠征　分配金 +3万円'); }
     State.trained = null;
     State.season.week++;
-    for (const p of State.roster) tickPotential(p);
+    for (const p of State.roster) { tickPotential(p); if (p.injuredWeeks > 0) p.injuredWeeks--; }
     };
     s.enter = () => { s.process(); Sound.bgm('hub'); Sound.crowd(0); };
     s.update = (dt) => {
@@ -2539,13 +2563,15 @@
     State.freeAgents = State.freeAgents.filter((id) => id !== def.id);
     return p;
   }
-  // after someone leaves, the best available player of the same position steps into the eleven
+  // after someone leaves (or gets injured), the best available fit player steps into the eleven
   function fillLineup() {
     for (let i = 0; i < State.lineup.length; i++) {
       const id = State.lineup[i];
-      if (id && State.roster.some((q) => q.id === id)) continue;
-      const bench = State.roster.filter((q) => !State.lineup.includes(q.id) && (i === 0 ? q.pos === 'GK' : q.pos !== 'GK'));
-      const best = bench.sort((a, b) => (b.stats.def + b.stats.pas + b.stats.spd) - (a.stats.def + a.stats.pas + a.stats.spd))[0] || State.roster.find((q) => !State.lineup.includes(q.id));
+      const cur = id && State.roster.find((q) => q.id === id);
+      if (cur && !(cur.injuredWeeks > 0)) continue;
+      const fit = (q) => !State.lineup.includes(q.id) && !(q.injuredWeeks > 0) && (i === 0 ? q.pos === 'GK' : q.pos !== 'GK');
+      const bench = State.roster.filter(fit);
+      const best = bench.sort((a, b) => (b.stats.def + b.stats.pas + b.stats.spd) - (a.stats.def + a.stats.pas + a.stats.spd))[0] || State.roster.find((q) => !State.lineup.includes(q.id) && !(q.injuredWeeks > 0));
       State.lineup[i] = best ? best.id : null;
     }
   }
@@ -2894,7 +2920,9 @@
     { from: 'yamaoroshi', id: 'yukimaru', fee: 40, sal: 20, reason: '契約満了。「もっとボールに触れるチームへ」' },
     { from: 'shiomi', id: 'kaoru', fee: 30, sal: 15, reason: '店を息子に任せ、上を目指したい' },
   ];
-  function TransferMarket() {
+  function TransferMarket(next) {
+    const midSeason = !!next;
+    next = next || (() => Credits());
     const s = { t: 0, phase: 'leave', idx: 0, tab: 'sign', sel: 0, log: [], rejected: {} };
     // players asking to leave: benched too long, or ready to hang up the boots
     const reqs = State.roster.filter((p) => (State.morale[p.id] ?? 60) < 40 || (p.age && p.age >= 80)).map((p) => ({ p, why: p.age >= 80 ? '「そろそろ、引退を考えとる」' : '「もっと試合に出たい。移籍させてほしい」' }));
@@ -2924,7 +2952,7 @@
       if (avg >= 44) { const c = pick(League.clubsForTier(State.tier)); return { kind: 'rival', club: c.id, text: p.name + 'は' + c.name + 'へ移籍した。来季、敵として再会する…。' }; }
       return { kind: 'away', text: p.name + 'は町を出た。「いつか、もっとうまくなって戻ってくるよ」' };
     };
-    s.enter = () => { Sound.bgm('hub'); Save.write('market'); if (!reqs.length) s.phase = 'market'; };
+    s.enter = () => { Sound.bgm('hub'); Save.write(midSeason ? 'hub' : 'market'); if (!reqs.length) s.phase = 'market'; };
     const cardRect = (i) => ({ x: 10, y: 60 + (i - s.off) * 30, w: 200, h: 28 });
     s.off = 0;
     const VIS = 6;
@@ -3008,7 +3036,7 @@
         }
         return;
       }
-      if (s.phase === 'summary' && s.t > 1 && (okPressed() || (State.auto && s.t > 2))) Game.goto(Credits(), 'iris');
+      if (s.phase === 'summary' && s.t > 1 && (okPressed() || (State.auto && s.t > 2))) Game.goto(next(), 'iris');
     };
     s.draw = (g) => {
       g.fillStyle = '#1c2340'; g.fillRect(0, 0, W, H);

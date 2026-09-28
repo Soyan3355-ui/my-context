@@ -1267,6 +1267,15 @@
       this.popup(c.x, c.y - 58, 'ファウル！', '#ffd24a', 10);
       this.tick(d.name + 'のファウル。' + (c.team === 0 ? 'ハマカゼ' : this.opp.short) + 'のフリーキック。', '#fff6e0');
       if (d.team === 0) this.say(d, pick(['あっ、ごめん！', 'しまった…']), 1.2);
+      // a hard foul occasionally leaves a real injury that outlasts this match, not just a knock
+      if (Math.random() < 0.035) {
+        const weeks = randi(1, 3);
+        c.stT = 2.4;
+        this.injuries = this.injuries || [];
+        this.injuries.push({ id: c.id, team: c.team, weeks });
+        this.popup(c.x, c.y - 74, '負傷…！', '#e0474c', 11);
+        this.tick(c.name + 'が痛めた様子…全治' + weeks + '週間の見込みです。', '#ffb0a0');
+      }
       let x = c.x, y = c.y;
       // keep free kicks outside the penalty area for this demo's rules
       const gx = goalX(c.team);
@@ -2362,7 +2371,7 @@
       }
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
-      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [], rivalTech: this.rivalTechWitnessed };
+      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [], rivalTech: this.rivalTechWitnessed, injuries: this.injuries || [] };
       if (this.opts.onEnd) this.opts.onEnd(this.result);
     }
 
