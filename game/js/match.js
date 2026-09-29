@@ -69,6 +69,11 @@
       this.cam = { x: CX - W / 2, y: CY - VIEW_H / 2 - 30 };
       this.banners = []; this.popups = []; this.ticker = { lines: [], shown: 0 };
       this.meter = null; this.chanceCD = 8; this.pinchCD = 10;
+      // the rival's "no meter needed" quality roll (see aiQuality) used to fire on every single
+      // shot and every save against us with no cooldown at all, while our own equivalent roll only
+      // ever came around every 9-15s through chanceCD/pinchCD - so the rival was effectively never
+      // "off form" while we usually were. these mirror chanceCD/pinchCD to close that gap.
+      this.aiShotCD = 8; this.aiSaveCD = 10;
       this.netShake = [0, 0];
       this.evening = 0; // 0 day .. 1 evening
       this.pitch = Art.buildPitch();
@@ -365,7 +370,7 @@
           this.kiai[t] = Math.min(100, this.kiai[t] + dt * 5.5);
           if (this.order[t]) { this.order[t].t -= dt; if (this.order[t].t <= 0) this.order[t] = null; }
         }
-        this.chanceCD -= dt; this.pinchCD -= dt;
+        this.chanceCD -= dt; this.pinchCD -= dt; this.aiShotCD -= dt; this.aiSaveCD -= dt;
         for (let t = 0; t < 2; t++) if (this.counterT[t] > 0) this.counterT[t] -= dt;
         // pressing needs everyone to understand the triggers: re-roll who joins every second
         this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
@@ -1096,7 +1101,7 @@
       // shots and team 0's own keeper's saves — the rival attacker and rival keeper never got an
       // equivalent roll at all, meaning skill only ever cut one way regardless of stats. Give them
       // the same statistical roll the meter gives the human, just without needing an input to drive it.
-      const attackerQ = t === 0 ? q : this.aiQuality(), defenderQ = t === 1 ? q : this.aiQuality();
+      const attackerQ = t === 0 ? q : this.aiQuality('shot'), defenderQ = t === 1 ? q : this.aiQuality('save');
       const gk = this.gk(1 - t);
       // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper.
       // the rival captain has no JUST-timing input to key off (the AI just shoots), so theirs rolls
@@ -2436,8 +2441,13 @@
     }
     // the rival has no timing meter of its own to drive a quality roll, but it deserves the same
     // statistical shot at a well-taken finish or a well-judged save that auto-mode's meter gives the
-    // human — same distribution as resolveMeter's default 0.05/0.17 thresholds, just unconditional.
-    aiQuality() {
+    // human — same distribution as resolveMeter's default 0.05/0.17 thresholds. Gated by its own
+    // cooldown (mirroring chanceCD/pinchCD) so the rival isn't rolling for a lucky "JUST" on every
+    // single shot while our own roll only comes around once every 9-15s.
+    aiQuality(kind) {
+      const cd = kind === 'shot' ? 'aiShotCD' : 'aiSaveCD';
+      if (this[cd] > 0) return null;
+      this[cd] = rand(9, 14);
       const d = Math.abs(clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) - 0.5);
       return d < 0.05 ? 'just' : d < 0.17 ? 'good' : 'bad';
     }
