@@ -105,6 +105,21 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .dec{padding:7px 0;border-top:1px dashed var(--line)}
 .dec .t{font-size:13.5px}
 .dec p{margin:2px 0 0;font-family:var(--body);font-size:12px;color:var(--sub);line-height:1.55}
+.trial{margin-top:10px;border:2px dashed var(--line);border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.6}
+.trial small{display:block;color:var(--sub);font-family:var(--body);font-size:12px}
+.ci-q{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;padding:8px 0;border-top:1px dashed var(--line)}
+.ci-q:first-of-type{border-top:0}
+.ci-q .lb{font-size:14px}
+.ci-scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ci-scale button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 0;cursor:pointer}
+.ci-scale button[aria-pressed="true"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--bg));font-weight:700}
+.ci-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);font-family:var(--body)}
+.ci-note{width:100%;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-top:6px}
+.ci-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.ci-hist{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--body);font-size:12.5px;font-variant-numeric:tabular-nums}
+.ci-hist th,.ci-hist td{border-top:1px dashed var(--line);padding:4px 2px;text-align:center}
+.ci-hist th{color:var(--sub);font-weight:400}
+.ci-hist td.n{text-align:left;color:var(--sub);font-size:11.5px}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 </style>
@@ -124,7 +139,13 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <span class="more" id="more" hidden>▼</span>
   </div>
 
-  <section class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div></section>
+  <section class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
+  <section class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
+    <div id="ciForm"></div>
+    <input class="ci-note" id="ciNote" placeholder="ひとこと（書きたいときだけ）" aria-label="ひとこと" autocomplete="off">
+    <div class="ci-row"><button type="button" class="bt" id="ciSave" style="padding:6px 14px">記録する</button><small id="ciMsg" style="color:var(--sub);font-family:var(--body)"></small></div>
+    <table class="ci-hist" id="ciHist" hidden></table>
+  </section>
   <section class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
   <section class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
   <section class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
@@ -256,7 +277,7 @@ const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事'
 const SPEAK={x:140,y:116};
 const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi'];
 const $=id=>document.getElementById(id);
-let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],db=null,canWrite=true;
+let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
 function homeOf(id){if(agentState(id)==='bench'){const i=['usagi','momonga','kuri','rakko'].indexOf(id);const b=BENCH[Math.max(0,i)];return {x:b[0],y:b[1],face:1}}
@@ -441,8 +462,26 @@ function renderDecs(){const list=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.cr
   $('decs').innerHTML=list.length?list.map(d=>`<div class="dec"><div class="t">${esc(d.title)}</div><p>${esc(d.decided||'')}${d.by?`（${esc(d.by)}・${esc(d.date||'')}）`:''}</p></div>`).join(''):'<p class="empty">決まったことがここに残ります。</p>'}
 function renderStatus(){const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;$('phase').textContent='フェーズ'+(STATUS.phase??0);
   const nu=safeUrl(STATUS.notionUrl);$('note').innerHTML=(STATUS.note?esc(STATUS.note)+'　':'')+(STATUS.updatedAt?'最終更新 '+fmt(STATUS.updatedAt)+'　':'')+(nu?`<a href="${esc(nu)}" target="_blank" rel="noopener">Notion のAIなかまの部屋 ↗</a>`:'');
-  renderDigest();renderRoster()}
-renderStatus();renderMine();renderNotes();renderDecs();idle();
+  renderDigest();renderRoster();if(typeof renderTrial==='function')renderTrial()}
+// ---------- きょうのふりかえり ----------
+const CIQ=[['easy','😌 仕事が楽になった？','しんどい','楽'],['helped','🙏 助かったと思えた？','いまいち','とても'],['fun','🎵 楽しく仕事できた？','つまらない','楽しい']];
+const todayKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+let ciDraft={};
+function renderCheckinForm(){const k=todayKey();const cur=CHECKINS.find(c=>c.id===k)||{};$('ciDate').textContent=k.slice(5).replace('-','/')+(cur.savedAt?' 記録済み':'');
+  CIQ.forEach(([q])=>{if(ciDraft[q]==null&&cur[q]!=null)ciDraft[q]=cur[q]});if(!$('ciNote').value&&cur.note&&!ciDraft._noteTouched)$('ciNote').value=cur.note;
+  $('ciForm').innerHTML=CIQ.map(([q,label,lo,hi])=>`<div class="ci-q"><div class="lb">${label}</div><div class="ci-scale" role="group" aria-label="${esc(label)}">${[1,2,3,4,5].map(n=>`<button type="button" data-q="${q}" data-n="${n}" aria-pressed="${ciDraft[q]===n}">${n}</button>`).join('')}</div><div class="ci-ends"><span>${lo}</span><span>${hi}</span></div></div>`).join('');
+  const hist=CHECKINS.slice().sort((a,b)=>a.id<b.id?1:-1).slice(0,7);
+  if(hist.length){$('ciHist').hidden=false;$('ciHist').innerHTML='<tr><th>日付</th><th>楽</th><th>助かった</th><th>楽しい</th><th style="text-align:left">ひとこと</th></tr>'+hist.map(c=>`<tr><td>${esc(c.id.slice(5).replace('-','/'))}</td><td>${c.easy??'-'}</td><td>${c.helped??'-'}</td><td>${c.fun??'-'}</td><td class="n">${esc(c.note||'')}</td></tr>`).join('')}}
+$('ciForm').addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(!b)return;ciDraft[b.dataset.q]=+b.dataset.n;renderCheckinForm()});
+$('ciNote').addEventListener('input',()=>{ciDraft._noteTouched=true});
+$('ciSave').addEventListener('click',async()=>{const k=todayKey();const data={date:k,note:$('ciNote').value.trim().slice(0,500),savedAt:Date.now()};CIQ.forEach(([q])=>{if(ciDraft[q]!=null)data[q]=ciDraft[q]});
+  if(CIQ.every(([q])=>data[q]==null)&&!data.note){$('ciMsg').textContent='どれか1つ選んでね';return}
+  const i=CHECKINS.findIndex(c=>c.id===k);if(i>=0)CHECKINS[i]={...CHECKINS[i],...data};else CHECKINS.push({id:k,...data});renderCheckinForm();
+  $('ciMsg').textContent='記録しました。ハチワレが次の見回りで読みます';ORDER.slice(0,3).forEach(id=>ent[id].jump=1);floater('🌱',ent.soyan);
+  if(db&&canWrite){try{await db.collection('checkins').doc(k).set(data)}catch(err){$('ciMsg').textContent='この画面では保存できませんでした'}}});
+function renderTrial(){const t=STATUS.trial;const el=$('trial');if(!t){el.hidden=true;return}el.hidden=false;
+  el.innerHTML=`🎯 <b>${esc(t.title||'')}</b><small>${esc(t.period||'')}${t.note?'　'+esc(t.note):''}</small>`}
+renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle();
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
@@ -464,6 +503,7 @@ renderStatus();renderMine();renderNotes();renderDecs();idle();
   db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
   db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},()=>{});
   db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine()},()=>{});
+  db.collection('checkins').onSnapshot(s=>{CHECKINS=s.docs.map(d=>({id:d.id,...d.data()}));renderCheckinForm()},()=>{});
   setTimeout(()=>{ready.status=ready.ex=true;boot()},6000);
 })();
 </script>
