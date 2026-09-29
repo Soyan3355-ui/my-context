@@ -182,6 +182,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .bx-sum .due{font-style:normal;font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 5px;margin-left:3px;white-space:nowrap}
 .bx-body[hidden],.bx-sum[hidden]{display:none!important}
 .idea{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px}
+.idea.big{border-color:var(--info);background:color-mix(in srgb,var(--info) 5%,var(--panel))}.idea.big p b{color:var(--ink);font-weight:600}
 .idea.done{opacity:.8;padding:6px 10px}
 .idea .hd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px}.idea .hd img{width:22px;height:22px;image-rendering:pixelated}
 .idea .ti{font-size:15px;margin:4px 0 2px;overflow-wrap:anywhere}
@@ -192,6 +193,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .idea .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
+.wk-big{font-size:28px;font-weight:700}.wk-bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:6px 0}.wk-bar i{display:block;height:100%;background:#4f8f4a}.wk table{width:100%;border-collapse:collapse;font-size:12px}.wk td,.wk th{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left}.wk .num{text-align:right;white-space:nowrap}.wk .warn{font-size:12px;color:#b7791f}
 </style>
 
 <div class="app">
@@ -215,6 +217,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   </div>
   <div class="cols">
     <div class="colA">
+  <section style="order:3" class="box" aria-labelledby="h-work"><h2 id="h-work">📈 そーやんの仕事、どこまで代替できた？ <small id="workCnt"></small></h2><div id="work"><p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p></div></section>
   <section style="order:3" class="box" aria-labelledby="h-idea"><h2 id="h-idea">💡 ちいかわからの提案 <small id="ideaCnt"></small></h2><div id="ideas"><p class="empty">「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p></div></section>
   <section style="order:4" class="box chat" aria-labelledby="h-chat">
     <h2 id="h-chat">💬 ちいかわに相談 <small id="chatSt"></small></h2>
@@ -367,8 +370,8 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 // ---------- 役割 ----------
 IMG.scoutA=IMG.yoroi;IMG.scoutB=IMG.yoroi;ICON.scoutA=ICON.yoroi;ICON.scoutB=ICON.yoroi;
 const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん（検収）',scoutA:'鎧さん（見回りA）',scoutB:'鎧さん（見回りB）',soyan:'そーやん'};
-const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['リスク担当','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
-const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion のプロジェクト管理・議事録・freee・YouTube ネタを見回って、いま動かすとよいタスクの候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
+const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['参謀（仕組み設計）','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
+const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion のプロジェクト管理・議事録・freee・YouTube ネタを見回って、いま動かすとよいタスクの候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'仕事全体の構造を見て、AI で自動化できる大きな流れを提案する（読むだけ）',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
 const JOIN={usagi:'フェーズ1で加入',momonga:'フェーズ1で加入',kuri:'フェーズ2で加入',rakko:'必要なときだけ招集'};
 const ORDER=['hachiware','scoutA','scoutB','yoroi','shisa','kuri','chiikawa','usagi','momonga','rakko'];
 const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:58,face:1,label:'🎬 撮影小屋'},kouza:{x:164,y:136,face:-1,label:'🌱 青空教室'},
@@ -677,7 +680,7 @@ renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle(
 
 // ---------- ちいかわに相談（画面の中のチャット） ----------
 let SAMPLE=null;const CHAT_CHARS=['hachiware','usagi','momonga','kuri','rakko','shisa'];
-const CHAT_TONE={hachiware:'落ち着いた司令塔。全体の段取りと優先順位が得意。',usagi:'元気な調査役。調べものと選択肢の洗い出しが得意。',momonga:'ていねいな制作担当。文章や下書きの進め方が得意。',kuri:'まじめな会計担当。お金や数字の整理が得意。',rakko:'慎重なリスク担当。落とし穴や確認すべき点を見つけるのが得意。',shisa:'記録係。決まったことや抜け漏れの確認が得意。'};
+const CHAT_TONE={hachiware:'落ち着いた司令塔。全体の段取りと優先順位が得意。',usagi:'元気な調査役。調べものと選択肢の洗い出しが得意。',momonga:'ていねいな制作担当。文章や下書きの進め方が得意。',kuri:'まじめな会計担当。お金や数字の整理が得意。',rakko:'落ち着いた参謀。仕事全体の流れを見て、自動化できる構造を見つけるのが得意。',shisa:'記録係。決まったことや抜け漏れの確認が得意。'};
 let chatChar='hachiware',chatBusy=false,chatCtl=null;const LOGS={};
 const chatKey=()=>chatChar+'|'+($('chatTask').value||'');
 const clip=(s,n)=>{s=String(s??'');return s.length>n?s.slice(0,n)+'…':s};
@@ -798,13 +801,15 @@ renderRounds();setInterval(renderRounds,60000);
 
 
 // ---------- ちいかわからの提案 ----------
-function ideaCard(x,decided){const r=ROLES[x.who]||['',''];const st={approved:'承認ずみ（次の見回りで着手）',doing:'作業中',done:'できた',declined:'見送り',later:'あとで'}[x.status]||'';
+function ideaCard(x,decided){const r=ROLES[x.who]||['',''];const st={approved:x.kind==='structure'?'承認ずみ（第一歩を次の見回りで）':'承認ずみ（次の見回りで着手）',doing:'作業中',done:'できた',declined:'見送り',later:'あとで'}[x.status]||'';const big=x.kind==='structure';
   const mt=`<div class="mt">${x.effort?`<span class="chip">手間 ${esc(x.effort)}</span>`:''}${x.autonomy?`<span class="chip">${esc(x.autonomy)}</span>`:''}${x.needsApproval?'<span class="chip appr">送信・お金の操作はしません</span>':''}</div>`;
-  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
-  return `<div class="idea"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="ti">${esc(x.title)}</div>
-    ${x.what?`<p>やること：${esc(x.what)}</p>`:''}${x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:''}${x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:''}${mt}
-    <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">やってもらう</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div></div>`}
-function renderIdeas(){const o=IDEAS.filter(x=>x.status==='open').sort(byTime);const dl=IDEAS.filter(x=>['approved','doing','done','declined'].includes(x.status)).sort((a,b)=>(b.decidedAt||b.createdAt||0)-(a.decidedAt||a.createdAt||0)).slice(0,6);
+  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b>${big?'<span class="chip so">仕組み</span>':''}<span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
+  const P=(l,v)=>v?`<p><b>${l}</b>${esc(v)}</p>`:'';
+  const body=big?P('いまの流れ：',x.current)+P('自動化するとどうなる：',x.after)+P('見込み：',x.saving)+P('必要なもの：',x.needs)+P('リスクと歯止め：',x.risks)+P('小さく試す第一歩：',x.firstStep)+P('担当・承認が要る操作：',x.owners)
+    :(x.what?`<p>やること：${esc(x.what)}</p>`:'')+(x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:'')+(x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:'')+mt;
+  return `<div class="idea${big?' big':''}"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span>${big?'<span class="chip so">🏗 仕組みの提案</span>':''}</div><div class="ti">${esc(x.title)}</div>${body}${big&&safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">くわしい資料（Notion）↗</a></p>`:''}
+    <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">${big?'第一歩を始める':'やってもらう'}</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div></div>`}
+function renderIdeas(){const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const dl=IDEAS.filter(x=>['approved','doing','done','declined'].includes(x.status)).sort((a,b)=>(b.decidedAt||b.createdAt||0)-(a.decidedAt||a.createdAt||0)).slice(0,6);
   $('ideaCnt').textContent=o.length?`${o.length}件`:'';const keep=$('ideas').querySelector('details.xdone')?.open;
   $('ideas').innerHTML=(o.length?o.map(x=>ideaCard(x,false)).join(''):'<p class="empty">いまの提案はありません。「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p>')
    +(dl.length?`<details class="xdone"${keep?' open':''}><summary>これまでの提案（${dl.length}件）を見る</summary>${dl.map(x=>ideaCard(x,true)).join('')}</details>`:'');if(typeof renderSums==='function')renderSums()}
@@ -812,8 +817,23 @@ $('ideas').addEventListener('click',async e=>{const b=e.target.closest('button[d
   const k=b.dataset.k;const patch={status:k==='go'?'approved':k==='no'?'declined':'later',decidedAt:Date.now()};Object.assign(x,patch);
   if(k==='go'){if(ent[x.who])ent[x.who].jump=1;floater('✨',ent[x.who]||ent.hachiware)}renderIdeas();await write('ideas',x.id,patch)});
 
+
+// ---------- 代替率 ----------
+let WORK=[];
+function workCalc(){const mine=WORK.filter(w=>w.from==='そーやん');const H=mine.reduce((a,w)=>a+(+w.hours||0),0),S=mine.reduce((a,w)=>a+(+w.hours||0)*(+w.rate||0)/100,0);
+  const share=WORK.filter(w=>w.from==='舞さん'||w.from==='さやさん');return{H,S,pct:H?Math.round(S/H*100):0,mine,share,guess:WORK.filter(w=>w.sure!=='confirmed').length}}
+function renderWork(){const c=workCalc();$('workCnt').textContent=WORK.length?`${c.pct}%`:'';
+  const area={};c.mine.forEach(w=>{const a=area[w.area]||(area[w.area]={h:0,s:0});a.h+=+w.hours||0;a.s+=(+w.hours||0)*(+w.rate||0)/100});
+  const rows=c.mine.slice().sort((a,b)=>(b.hours*b.rate)-(a.hours*a.rate)).map(w=>`<tr><td>${esc(w.title)}</td><td class="num">${esc(w.hours)}h</td><td class="num">${esc(w.rate)}%</td><td>${esc(w.now||'')}</td></tr>`).join('');
+  const sh=c.share.map(w=>`<tr><td>${esc(w.title)}</td><td>${esc(w.from)}</td><td class="num">${esc(w.hours)}h</td></tr>`).join('');
+  $('work').innerHTML=WORK.length?`<div class="wk"><div><span class="wk-big">${c.pct}%</span> <small>（月${c.H}時間のうち、およそ${Math.round(c.S*10)/10}時間ぶん）</small></div><div class="wk-bar"><i style="width:${c.pct}%"></i></div>
+   <p class="warn">⚠ 時間と代替度は${c.guess}件が「推測」です。そーやんが直すと正確になります。</p>
+   <details><summary>領域ごと・仕事ごとの内訳</summary><p>${Object.entries(area).map(([k,v])=>`${esc(k)} ${v.h?Math.round(v.s/v.h*100):0}%`).join(' ／ ')}</p><table><tr><th>仕事</th><th class="num">月</th><th class="num">代替</th><th>いま</th></tr>${rows}</table></details>
+   <details><summary>舞さん・さやさんと分担している仕事（${c.share.length}件）</summary><table><tr><th>仕事</th><th>担当</th><th class="num">月</th></tr>${sh}</table><p class="warn">代替率の計算には入れていません。範囲は要確認です。</p></details></div>`:'<p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p>';
+  if(typeof renderSums==='function')renderSums()}
+
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-xc','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-xc','h-work','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -823,7 +843,8 @@ const SUMS={
    const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
    return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
- 'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> の提案：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,40))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
+ 'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
+ 'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
  'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
  'h-nt':()=>{const w=NOTES.filter(n=>!(n.replies||[]).length&&!n.fromChat).length;const l=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${NOTES.length}件・返事待ち <b>${w}</b>件${l?'<br>最新：'+esc(clip(l.text.replace(/\n+/g,' '),40)):''}</div>`},
@@ -864,6 +885,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(
   db.collection('exceptions').onSnapshot(s=>{XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();renderDigest();
     if(!ready.ex){if(!s.metadata.fromCache||XCS.length){ready.ex=true;boot()}return}
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
+  db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
   db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
   db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
   db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
