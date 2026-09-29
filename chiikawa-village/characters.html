@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ドットなかま試作</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fdf6e9;--panel:#fffdf7;--ink:#3a3330;--sub:#8a7f76;--line:#eadfcd;--accent:#f19bb0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1b19;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#40372f}}
+:root[data-theme="dark"]{--bg:#1f1b19;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#40372f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"DotGothic16",system-ui,sans-serif}
+.app{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:20px;margin:4px 0 2px}
+.lead{color:var(--sub);font-size:13px;margin:0 0 14px}
+.scene{border:3px solid #3b3533;border-radius:6px;overflow:hidden;background:#a6d37f}
+.scene canvas{display:block;width:100%;image-rendering:pixelated}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+@media (max-width:420px){.cards{gap:6px}}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.card canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;background:#fff7ea;border-radius:6px;display:block}
+.name{font-size:16px;margin-top:6px}
+.role{font-size:12px;color:var(--sub);min-height:2.4em}
+.poses{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.poses button{font:inherit;font-size:11px;padding:3px 6px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;cursor:pointer}
+.poses button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>ドットなかま 試作</h1>
+  <p class="lead">ちいかわ・ハチワレ・うさぎ（20×21ドット）。ポーズを切り替えて確認できます。</p>
+  <div class="scene"><canvas id="scene" width="160" height="64"></canvas></div>
+  <div class="cards" id="cards"></div>
+</div>
+<script>
+const PAL={k:'#3b3533',w:'#ffffff',o:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a0',r:'#e36d72',g:'#4f9a45',G:'#7cc36a',n:'#a8743f',B:'#6d8fd6',c:'#fff4dc',s:'#c9b27a'};
+
+const BASE={
+chiikawa:[
+"....kkk......kkk....",
+"...kwwwk....kwwwk...",
+"...kwwwwkkkkwwwwk...",
+"..kwwwwwwwwwwwwwwk..",
+".kwwwwwwwwwwwwwwwwk.",
+"kwwwwwwwwwwwwwwwwwwk",
+"kwwwwwwwwwwwwwwwwwwk",
+"kwwwwweewwwweewwwwwk",
+"kwwwwweewwwweewwwwwk",
+"kwwwwweewwwweewwwwwk",
+"kwwppwwwwwwwwwwppwwk",
+"kwwwwwwwwkkwwwwwwwwk",
+".kwwwwwwwwwwwwwwwwk.",
+"..kwwwwwwwwwwwwwwk..",
+"...kkwwwwwwwwwwkk...",
+"....kwwwwwwwwwwk....",
+"...kwwkwwwwwwkwwk...",
+"....kwwwwwwwwwwk....",
+"....kwwwwwwwwwwk....",
+".....kwwwkkwwwk.....",
+"......kkk..kkk......"],
+hachiware:[
+"...k............k...",
+"...kk..........kk...",
+"...kbk........kbk...",
+"..kbbbkkkkkkkkbbbk..",
+".kbbbbbbbwwbbbbbbbk.",
+"kbbbbbbbwwwwbbbbbbbk",
+"kbbbbbbwwwwwwbbbbbbk",
+"kwbbbbwwwwwwwwbbbbwk",
+"kwwwwweewwwweewwwwwk",
+"kwwwwweewwwweewwwwwk",
+"kwwppweewwwweewppwwk",
+"kwwwwwwwkwwkwwwwwwwk",
+".kwwwwwwwkkwwwwwwwk.",
+"..kwwwwwwwwwwwwwwk..",
+"...kkwwwwwwwwwwkk...",
+"....kwwwwwwwwwwk....",
+"...kwwkwwwwwwkwwk...",
+"....kwwwwwwwwwwk....",
+"....kwwwwwwwwwwk....",
+".....kwwwkkwwwk.....",
+"......kkk..kkk......"],
+usagi:[
+".....kkk....kkk.....",
+".....kyk....kyk.....",
+".....kyk....kyk.....",
+".....kyk....kyk.....",
+".....kyk....kyk.....",
+"....kkyykkkkyykk....",
+"...kyyyyyyyyyyyyk...",
+"..kyyyyyyyyyyyyyyk..",
+".kyyyyyyyyyyyyyyyyk.",
+".kyyyyeyyyyyyeyyyyk.",
+".kyyyyeyyyyyyeyyyyk.",
+".kyppyyykkkkyyyppyk.",
+".kyyyyykrrrrkyyyyyk.",
+"..kyyyyykkkkyyyyyk..",
+"...kkyyyyyyyyyykk...",
+"....kyyyyyyyyyyk....",
+"...kyykyyyyyykyyk...",
+"....kyyyyyyyyyyk....",
+"....kyyyyyyyyyyk....",
+".....kyyykkyyyk.....",
+"......kkk..kkk......"]};
+
+// ポーズ差分（行番号→行）
+const HAPPY={
+chiikawa:{7:"kwwwwwwwwwwwwwwwwwwk",8:"kwwwwweewwwweewwwwwk",9:"kwwwwewwewwewwewwwwk",11:"kwwwwwwwkrrkwwwwwwwk",16:"..kwwkwwwwwwwwkwwk.."},
+hachiware:{8:"kwwwwwwwwwwwwwwwwwwk",9:"kwwwwweewwwweewwwwwk",10:"kwwppewwewwewwewppwk",11:"kwwwwwwwkrrkwwwwwwwk",16:"..kwwkwwwwwwwwkwwk.."},
+usagi:{9:".kyyyyeyyyyyyeyyyyk.",10:".kyyyeyeyyyyeyeyyyk.",12:".kyyyyykrrrrkyyyyyk.",13:".kyyyyykrrrrkyyyyyk.",14:"..kyyyyykkkkyyyyyk..",16:"..kyykyyyyyyyykyyk.."}};
+function apply(rows,diff){return rows.map((r,i)=>diff&&diff[i]!==undefined?diff[i]:r)}
+function crouch(rows){const r=rows.slice();r.splice(17,1);r.unshift("....................");return r}
+
+function toCanvas(rows){const h=rows.length,w=rows[0].length;const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');
+  rows.forEach((row,y)=>{[...row].forEach((ch,x)=>{if(ch!=='.'){g.fillStyle=PAL[ch];g.fillRect(x,y,1,1)}})});return c}
+const SPR={};
+for(const id in BASE){SPR[id]={idle:toCanvas(BASE[id]),happy:toCanvas(apply(BASE[id],HAPPY[id])),work:toCanvas(crouch(BASE[id]))}}
+
+// 小道具
+const PROPS={
+weed:toCanvas(["..g.g..",".gGgGg.","..gGg..","...g...","..nnn.."]),
+book:toCanvas(["kkkkkkkkk","kcccBccck","kcccBccck","kcccBccck","kkkkkkkkk"]),
+stick:toCanvas(["......n","....nn.","...nn..","..nn...",".nn....","nn....."]),
+spark:toCanvas(["..y..","..y..","yyyyy","..y..","..y.."])};
+
+const INFO={
+chiikawa:{name:'ちいかわ',role:'草むしり担当\n（整理・雑務）',prop:'weed'},
+hachiware:{name:'ハチワレ',role:'検定の勉強担当\n（リサーチ）',prop:'book'},
+usagi:{name:'うさぎ',role:'討伐担当\n（バグ・トラブル対応）',prop:'stick'}};
+const POSES=[['idle','たいき'],['work','しごと'],['happy','よろこび']];
+const state={chiikawa:'idle',hachiware:'work',usagi:'happy'};
+
+const cards=document.getElementById('cards');
+for(const id in INFO){
+  const d=document.createElement('div');d.className='card';
+  d.innerHTML=`<canvas width="40" height="40" data-id="${id}"></canvas><div class="name">${INFO[id].name}</div><div class="role">${INFO[id].role.replace('\n','<br>')}</div><div class="poses">${POSES.map(([k,l])=>`<button data-id="${id}" data-p="${k}">${l}</button>`).join('')}</div>`;
+  cards.appendChild(d)}
+function syncBtns(){document.querySelectorAll('.poses button').forEach(b=>b.classList.toggle('on',state[b.dataset.id]===b.dataset.p))}
+cards.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state[b.dataset.id]=b.dataset.p;syncBtns()});syncBtns();
+
+// 1キャラ描画（x,yは足元中央）
+function drawChar(g,id,pose,cx,by,t,flip){
+  let spr=SPR[id][pose],dy=0,dx=0;
+  if(pose==='idle')dy=Math.floor(t*2)%2;               // ふわふわ
+  if(pose==='happy')dy=-Math.round(Math.abs(Math.sin(t*5))*6); // ぴょんぴょん
+  if(pose==='work'&&id==='usagi')dx=Math.floor(t*3)%2?2:0;     // 突撃
+  const x=Math.round(cx-spr.width/2+dx),y=by-spr.height+dy;
+  g.save();if(flip){g.translate(cx*2,0);g.scale(-1,1)}
+  g.drawImage(spr,x,y);
+  if(pose==='work'){
+    const ph=Math.floor(t*3)%2;
+    if(id==='chiikawa')g.drawImage(PROPS.weed,x+15,y+13-(ph?3:0));
+    if(id==='hachiware')g.drawImage(PROPS.book,x+5,y+15);
+    if(id==='usagi')g.drawImage(PROPS.stick,x+15,y+6+(ph?2:0));
+  }
+  g.restore();
+  if(pose==='happy'&&Math.floor(t*4)%2){g.drawImage(PROPS.spark,x-4,y+2);g.drawImage(PROPS.spark,x+spr.width-1,y+6)}
+}
+
+const sc=document.getElementById('scene').getContext('2d');
+function drawScene(t){
+  sc.fillStyle='#a6d37f';sc.fillRect(0,0,160,64);
+  sc.fillStyle='#97c670';for(let i=0;i<60;i++){sc.fillRect((i*37)%160,(i*23)%64,1,1)}
+  sc.fillStyle='#ead9a8';sc.fillRect(0,52,160,12);
+  // 草むしりの草・討伐のモンスター
+  [[12,46],[24,48]].forEach(([x,y])=>sc.drawImage(PROPS.weed,x,y));
+sc.drawImage(monC,140,43+(Math.floor(t*2)%2));
+  const k=Math.floor(t/3)%3,pose=['idle','work','happy'][k];
+  drawChar(sc,'chiikawa',pose,40,54,t);
+  drawChar(sc,'hachiware',pose,80,54,t+.3);
+  drawChar(sc,'usagi',pose,118,54,t+.6);
+}
+PAL.m='#9b7fd0';
+const monC=toCanvas(["...kkkk...","..kmmmmk..",".kmmmmmmk.","kmmkmmkmmk","kmmwmmwmmk","kmkkkkkkmk",".kmmmmmmk.","..k.kk.k.."]);
+
+const cvs=[...document.querySelectorAll('.card canvas')];
+function loop(ts){const t=ts/1000;drawScene(t);
+  cvs.forEach(c=>{const g=c.getContext('2d');g.clearRect(0,0,40,40);drawChar(g,c.dataset.id,state[c.dataset.id],20,34,t)});
+  requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
