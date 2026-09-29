@@ -346,7 +346,7 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 IMG.scoutA=IMG.yoroi;IMG.scoutB=IMG.yoroi;ICON.scoutA=ICON.yoroi;ICON.scoutB=ICON.yoroi;
 const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん（検収）',scoutA:'鎧さん（見回りA）',scoutB:'鎧さん（見回りB）',soyan:'そーやん'};
 const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['リスク担当','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
-const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion・freee・YouTube ネタを見回って、仕事の候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
+const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion のプロジェクト管理・議事録・freee・YouTube ネタを見回って、いま動かすとよいタスクの候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
 const JOIN={usagi:'フェーズ1で加入',momonga:'フェーズ1で加入',kuri:'フェーズ2で加入',rakko:'必要なときだけ招集'};
 const ORDER=['hachiware','scoutA','scoutB','yoroi','shisa','kuri','chiikawa','usagi','momonga','rakko'];
 const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:58,face:1,label:'🎬 撮影小屋'},kouza:{x:164,y:136,face:-1,label:'🌱 青空教室'},
@@ -358,7 +358,7 @@ const FREE_PREF={usagi:['run','swing','sand','run'],momonga:['pose','flowers','s
 const ACT_TEXT={nap:'💤 お昼寝',swing:'🎠 ブランコ',sand:'🏖 砂あそび',flowers:'🌼 お花を見てる',pose:'✨ きめポーズ',tea:'🍵 お茶',pond:'🎣 釣り',run:'🏃 走りまわってる',wander:'🚶 おさんぽ',post:'📮 郵便受けの前'};
 const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post',scoutA:'post',scoutB:'kiroku'};
 // 見回りルート（x, y, 見ているもの）
-const ROUTES={scoutA:[[150,96,'📮 受信箱'],[118,86,'📅 予定'],[196,110,'💬 Slack'],[58,112,'🌾 畑の予定']],scoutB:[[44,82,'📚 Notion'],[160,66,'🌰 freee'],[100,68,'🎬 YouTube ネタ'],[70,70,'✍️ 書きかけ']]};
+const ROUTES={scoutA:[[150,96,'📮 受信箱'],[118,86,'📅 予定'],[196,110,'💬 Slack'],[58,112,'🌾 畑の予定']],scoutB:[[44,82,'📋 プロジェクト管理'],[160,66,'🌰 freee'],[100,68,'🎬 YouTube ネタ'],[70,70,'✍️ 書きかけ']]};
 const isScout=id=>id==='scoutA'||id==='scoutB';
 const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事':'kiji','会計':'kaikei','農園・地域':'farm'};
 const SPEAK={x:140,y:116};
