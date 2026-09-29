@@ -601,7 +601,7 @@ function renderAudit(){const a=AUDITS.slice().sort(byTime).pop();if(!a)return;$(
     <div style="margin-top:8px"><button type="button" class="btn-s" id="auBtn">▶ シーサーから聞く</button></div>`;$('auBtn').onclick=()=>enqueue(auditScene(a))}
 function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,12);$('ntCnt').textContent=NOTES.length?`${NOTES.length}件`:'';
   const sel=$('noteTo'),cur=sel.value;sel.innerHTML='<option value="all">みんなへ</option>'+ORDER.map(id=>`<option value="${id}">${esc(NAMES[id])}（${esc(ROLES[id][0])}）へ</option>`).join('');sel.value=cur||'all';
-  $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・次の見回り（7:47／17:47）で読みます'}</div><div class="q">${esc(n.text)}</div>
+  $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・次の見回り（5:07／17:47）で読みます'}</div><div class="q">${esc(n.text)}</div>
     ${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.hachiware}" alt=""><div><small style="color:var(--sub)">${esc(NAMES[r.who]||r.who)}</small><br>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
 function renderMine(){const ts=TASKS.slice().sort((a,b)=>(!!a.done-!!b.done)||byTime(a,b));const nu=t=>safeUrl(t.notionUrl);
@@ -722,13 +722,13 @@ setInterval(()=>{if(!chatBusy&&!document.activeElement.closest?.('#chatForm'))re
 
 
 // ---------- 見回りの時間 ----------
-const ROUNDS=[[7,47,'朝の見回り'],[10,47,'更新'],[13,47,'更新'],[17,47,'夕の見回り'],[20,47,'更新']];
+const ROUNDS=[[5,7,'朝の見回り'],[10,47,'更新'],[13,47,'更新'],[17,47,'夕の見回り'],[20,47,'更新']];
 function renderRounds(){const now=Date.now(),jst=new Date(now+9*36e5);const y=jst.getUTCFullYear(),m=jst.getUTCMonth(),d=jst.getUTCDate();
   const at=(dd,h,mi)=>Date.UTC(y,m,dd,h,mi)-9*36e5;let best=null;
   for(let k=0;k<3;k++){const day=new Date(Date.UTC(y,m,d+k));const wd=day.getUTCDay();const list=ROUNDS.map(r=>[at(d+k,r[0],r[1]),r[2]]);if(wd===1)list.push([at(d+k,9,17),'週次の点検']);
     for(const [t,l] of list.sort((a,b)=>a[0]-b[0])){if(t>now&&(!best||t<best[0]))best=[t,l]}if(best)break}
   const el=$('rounds');if(!el)return;let nx='';if(best){const mins=Math.max(1,Math.round((best[0]-now)/6e4));const hh=Math.floor(mins/60),mm=mins%60;const t=new Date(best[0]+9*36e5);nx=`<span class="nx">次は ${t.getUTCHours()}:${String(t.getUTCMinutes()).padStart(2,'0')}（${best[1]}）・あと${hh?hh+'時間':''}${mm}分</span>`}
-  el.innerHTML=`🕐 見回り：<b>7:47</b> 朝／10:47／13:47／<b>17:47</b> 夕／20:47（毎日）　月曜は <b>9:17</b> に週次の点検<br>${nx}`}
+  el.innerHTML=`🕐 見回り：<b>5:07</b> 朝（6:00 までに完了）／10:47／13:47／<b>17:47</b> 夕／20:47（毎日）　月曜は <b>9:17</b> に週次の点検<br>${nx}`}
 renderRounds();setInterval(renderRounds,60000);
 
 // ---------- つながる ----------
