@@ -1,0 +1,16 @@
+# 引き継ぎ書式（基準書 TSK-05）。エージェント間の受け渡しはこの形式のファイルで行う。
+task_id: TASK-YYYYMMDD-001
+from: researcher
+to: chief-of-staff
+status: complete               # complete / partial / blocked
+scope_completed: []
+deliverables:
+  - path_or_uri: ""
+claims:
+  - statement: ""              # 検証可能な主張
+    evidence: []               # URL、テストログ、ファイル位置
+    confidence: 0.0            # 参考情報。証拠の代わりにはならない（AUT-04）
+assumptions: []
+risks: []
+unresolved: []
+recommended_next_action: ""
