@@ -5,6 +5,7 @@
 | 名前 | 種類 | 所在（リポジトリ / パス） | 担当範囲・目的（outcome_link） | 自律度 | 関連ルール | 最終見直し日 |
 |---|---|---|---|---|---|---|
 | 週次リサーチ | Routine（定期実行） | Claude Code Routines（毎週月曜 06:52 JST） / soyan3355-ui/my-context `standards/` | 基準書を最新の知見に保ち、稼働中のエージェントへ改善を届ける | L1（提案まで。変更はPRでオーナー承認） | GOV-01〜07 | 2026-09-29 |
+| ちいかわ株式会社（司令塔・検収・記録監査） | Routine（このセッションに毎日 7:47・17:47、月曜 9:17）＋サブエージェント | soyan3355-ui/my-context `chiikawa-village/RUNBOOK.md`、Notion「AIなかまの部屋」、Artifact 画面 | そーやんの時間を増やす（返信・事務の手間を減らす）。次に講座の申込数 | 司令塔：常時発注はL1〜L4、それ以外は承認。検収・記録監査：読むだけ | PRI-01〜10, ROL-01/04, TSK-*, VER-*, AUT-05/06, ESC-11 | 2026-09-29 |
 
 <!-- 追加例:
 | chief-of-staff | サブエージェント | owner/repo `.claude/agents/chief-of-staff.md` | 週次計画と委任で講座申込数を伸ばす | L3 | ROL-01, TSK-* | YYYY-MM-DD |

@@ -2,171 +2,146 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
 <style>
-/* layout: 1カラム。村のドット画面 → 会話窓 → 提案 → 会議 → ほうこく箱 → そーやんの仕事 */
-:root{--bg:#fbf5e8;--panel:#fffdf7;--ink:#3a3330;--sub:#857a70;--line:#e9dcc6;--accent:#e9829b;--good:#5f9d5a;--warn:#c98a1c;
+/* layout: 1カラム。会社の敷地（ドット）→ 会話窓 → ダイジェスト → 例外カード → タスクボード → 記録監査 → つぶやき → 自分の仕事 → 役割名簿 → 決定記録 */
+:root{--bg:#fbf5e8;--panel:#fffdf7;--ink:#3a3330;--sub:#857a70;--line:#e9dcc6;--accent:#e9829b;--good:#4f8f4a;--warn:#b7791f;--bad:#c2463d;--info:#3f6fd8;
   --win:#2b2a3a;--win-edge:#6b6a86;--win-ink:#fbf7ef;--win-hi:#fff3b0;--bub:#ffffff;--bub-ink:#3a3330;
   --dot:"DotGothic16","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;--body:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1a18;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#41382f;--good:#8fd18a;--warn:#e7b04a;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1e1a18;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#41382f;--good:#8fd18a;--warn:#e7b04a;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1a18;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#41382f;--good:#8fd18a;--warn:#e7b04a;--bad:#f08a80;--info:#8fb0f5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1e1a18;--panel:#2a2522;--ink:#f3ebe3;--sub:#b3a79c;--line:#41382f;--good:#8fd18a;--warn:#e7b04a;--bad:#f08a80;--info:#8fb0f5;color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--dot)}
-.app{max-width:600px;margin:0 auto;padding-inline:16px;padding-block:12px 40px}
+.app{max-width:620px;margin:0 auto;padding-inline:16px;padding-block:12px 40px}
 header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 header h1{font-size:18px;margin:0}
 header .date{font-size:12px;color:var(--sub)}
-.hud{display:flex;gap:6px;align-items:center}
-.pill{font-size:13px;background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.btn-s{font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:8px;padding:4px 8px;cursor:pointer;white-space:nowrap}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hud{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pill{font-size:12px;background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.btn-s,.pill a{font:inherit;font-size:12px;background:var(--panel);color:var(--ink);border:2px solid var(--line);border-radius:8px;padding:4px 8px;cursor:pointer;white-space:nowrap;text-decoration:none}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .stage{position:relative;border:3px solid #3b3533;border-radius:6px 6px 0 0;overflow:hidden;background:#a6d37f}
 .stage canvas{display:block;width:100%;max-width:100%;image-rendering:pixelated}
-.bub{position:absolute;transform:translate(-50%,-100%);background:var(--bub);color:var(--bub-ink);border:1.5px solid #3b3533;border-radius:6px;
-  padding:1px 5px;font-size:clamp(9px,2.5vw,11px);line-height:1.35;white-space:nowrap;max-width:44%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;
-  box-shadow:0 1px 0 rgba(0,0,0,.15);transition:opacity .2s}
-.bub.soyan{background:#fff6d6}
+.bub{position:absolute;transform:translate(-50%,-100%);background:var(--bub);color:var(--bub-ink);border:1.5px solid #3b3533;border-radius:6px;padding:1px 5px;font-size:clamp(9px,2.5vw,11px);line-height:1.35;white-space:nowrap;max-width:46%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;transition:opacity .2s}
+.bub.soyan{background:#fff6d6}.bub.bench{background:#eef0f4;color:#5b6070}
 .bub[data-empty="1"]{opacity:0}
+.plc{position:absolute;transform:translate(-50%,0);font-size:clamp(8px,2.1vw,10px);color:#2f3a24;background:rgba(255,255,255,.55);border-radius:4px;padding:0 3px;pointer-events:none;white-space:nowrap}
 .floater{position:absolute;transform:translate(-50%,-100%);font-size:14px;color:#fff;text-shadow:0 1px 0 #3b3533,1px 0 0 #3b3533,-1px 0 0 #3b3533,0 -1px 0 #3b3533;pointer-events:none;animation:up 1.2s ease-out forwards}
 @keyframes up{to{transform:translate(-50%,-220%);opacity:0}}
-.win{background:var(--win);color:var(--win-ink);border:3px solid #3b3533;border-top:0;border-radius:0 0 6px 6px;padding:12px 14px;min-height:172px;position:relative;box-shadow:inset 0 0 0 3px var(--win-edge)}
+.win{background:var(--win);color:var(--win-ink);border:3px solid #3b3533;border-top:0;border-radius:0 0 6px 6px;padding:12px 14px;min-height:160px;position:relative;box-shadow:inset 0 0 0 3px var(--win-edge)}
 .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;background:var(--win-edge);border-radius:6px;padding:2px 8px 2px 4px;margin-bottom:8px}
 .tag img{width:20px;height:20px;image-rendering:pixelated}
+.tag .role{font-size:10px;border-radius:999px;padding:0 7px;color:#fff;background:var(--rc,#857a70)}
 .head{font-size:11px;color:#c9c5e6;letter-spacing:.06em}
 .ttl{font-size:16px;margin:2px 0 4px;color:var(--win-hi);text-wrap:balance}
-.txt{font-size:14px;line-height:1.75;white-space:pre-wrap;min-height:3.5em;cursor:pointer;overflow-wrap:anywhere}
+.txt{font-size:14px;line-height:1.75;white-space:pre-wrap;min-height:3em;cursor:pointer;overflow-wrap:anywhere}
 .more{position:absolute;right:14px;bottom:10px;animation:blink 1s steps(2) infinite;font-size:12px}
 @keyframes blink{50%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.more{animation:none}.floater{animation-duration:.01s}}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .acts button,.acts a{font:inherit;font-size:13px;border-radius:8px;padding:6px 12px;border:2px solid var(--win-ink);background:transparent;color:var(--win-ink);cursor:pointer;text-decoration:none}
-.acts .ok{background:#f19bb0;border-color:#f19bb0;color:var(--win)}
-.acts .ok[aria-pressed="true"]{background:#8fd18a;border-color:#8fd18a}
 .acts .choice{border-color:var(--win-hi);color:var(--win-hi)}
 .acts .choice[aria-pressed="true"]{background:var(--win-hi);color:var(--win)}
 .box{margin-top:16px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:12px 14px}
-.box h2{font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.box h2 small{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums;font-weight:400}
-.box h3{font-size:13px;margin:14px 0 2px;color:var(--sub);font-weight:400;letter-spacing:.04em}
-.prog{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:6px}
-.prog i{display:block;height:100%;background:var(--good);width:0;transition:width .4s}
-.item{display:grid;grid-template-columns:26px minmax(0,1fr);gap:4px;padding:9px 0;border-top:1px dashed var(--line)}
+.box h2{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.box h2 small{font-size:12px;color:var(--sub);font-weight:400;font-variant-numeric:tabular-nums}
+.empty{font-size:13px;color:var(--sub);padding:6px 0;font-family:var(--body);line-height:1.6;margin:0}
+.dg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.dg{grid-template-columns:minmax(0,1fr)}}
+.dgc{border:2px solid var(--line);border-radius:8px;padding:8px 10px;border-left:5px solid var(--c)}
+.dgc b{font-size:13px;display:flex;justify-content:space-between}
+.dgc ul{margin:4px 0 0;padding-left:16px;font-family:var(--body);font-size:12.5px;line-height:1.6;color:var(--ink)}
+.dgc .none{font-family:var(--body);font-size:12px;color:var(--sub);margin-top:4px}
+.xc{border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
+.xc.done{opacity:.7}
+.xc .q{font-size:15px}
+.xc p{margin:4px 0 0;font-family:var(--body);font-size:12.5px;color:var(--sub);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.xc .opts{display:grid;gap:6px;margin-top:8px}
+.xc .opt{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;text-align:left;font:inherit;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;cursor:pointer}
+.xc .opt b{font-size:14px;text-align:center}
+.xc .opt span{font-family:var(--body);font-size:12.5px;line-height:1.55}
+.xc .opt[aria-pressed="true"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--bg))}
+.xc .rec{font-size:12px;color:var(--info);margin-top:6px;font-family:var(--body)}
+.lanes{display:grid;gap:10px}
+.lane h3{font-size:12.5px;margin:0 0 4px;color:var(--sub);font-weight:400;display:flex;gap:6px;align-items:center}
+.lane h3 i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c)}
+.tk{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;padding:7px 0;border-top:1px dashed var(--line)}
+.tk img{width:24px;height:24px;image-rendering:pixelated}
+.tk .t{font-size:14px;overflow-wrap:anywhere}
+.tk .meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.chip{font-size:10.5px;border-radius:999px;padding:0 7px;border:1.5px solid var(--line);color:var(--sub);white-space:nowrap}
+.chip.pass{border-color:var(--good);color:var(--good)}.chip.fail{border-color:var(--bad);color:var(--bad)}.chip.inc{border-color:var(--warn);color:var(--warn)}
+.chip.appr{border-color:var(--bad);color:var(--bad)}.chip.so{border-color:var(--info);color:var(--info)}
+.tk p{margin:3px 0 0;font-family:var(--body);font-size:12px;color:var(--sub);line-height:1.55;overflow-wrap:anywhere}
+.tk a{color:var(--info)}
+.au h4{font-size:12.5px;margin:10px 0 2px;color:var(--sub);font-weight:400}
+.au p{margin:0;font-family:var(--body);font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.item{display:grid;grid-template-columns:26px minmax(0,1fr);gap:4px;padding:8px 0;border-top:1px dashed var(--line)}
 .item input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:#6aa56a}
-.item .t{font-size:14px;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
-a.t:hover{text-decoration:underline}
+.item .t{font-size:14px;overflow-wrap:anywhere}
 .item.done .t{color:var(--sub);text-decoration:line-through}
-.item p,.card p{margin:3px 0 0;font-size:12.5px;color:var(--sub);line-height:1.6;font-family:var(--body);overflow-wrap:anywhere;white-space:pre-wrap}
-.item .ans{display:inline-block;margin-top:4px;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
-.sched{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.sched span{font-size:12px;border:2px solid var(--line);border-radius:6px;padding:2px 7px}
-.empty{font-size:13px;color:var(--sub);padding:10px 0;font-family:var(--body);line-height:1.6;margin:0}
-.card{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;padding:12px 0;border-top:1px dashed var(--line)}
-.card:first-of-type{border-top:0}
-.card .ava{width:40px;height:40px;border-radius:8px;background:var(--bg);display:grid;place-items:center}
-.card .ava img{width:32px;height:32px;image-rendering:pixelated}
-.card .who{font-size:12px;color:var(--sub);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.chip{font-size:11px;border-radius:999px;padding:1px 8px;border:1.5px solid var(--line)}
-.chip.proposed{border-color:var(--warn);color:var(--warn)}
-.chip.approved,.chip.doing{border-color:var(--accent);color:var(--accent)}
-.chip.done{border-color:var(--good);color:var(--good)}
-.card .t{font-size:15px;margin:2px 0 0}
-.card .plan{margin-top:4px}
-.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
-.row button{font:inherit;font-size:12.5px;border-radius:8px;padding:5px 10px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
-.row button.yes{border-color:var(--good);background:var(--good);color:var(--panel)}
-.row input{flex:1;min-width:0;font-family:var(--body);font-size:13px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-.result{margin-top:8px;border-left:3px solid var(--good);padding:4px 0 4px 10px}
-.result summary{cursor:pointer;font-size:13px;color:var(--good)}
-.mtg .line{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;align-items:start;margin-top:6px;font-family:var(--body);font-size:13px;line-height:1.55}
-.mtg .line img{width:20px;height:20px;image-rendering:pixelated}
-.mtg .dec{margin-top:10px;font-size:13px}
-.mtg .dec li{font-family:var(--body);color:var(--sub);line-height:1.6}
 form.add{display:flex;gap:6px;margin:6px 0 4px}
-form.add input{flex:1;min-width:0;font:inherit;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-form.add button{font:inherit;font-size:13px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:0 12px;cursor:pointer}
+form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.bt{font:inherit;font-size:13px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:0 12px;cursor:pointer}
+.notef{display:grid;gap:6px}
+.notef textarea{width:100%;min-height:70px;resize:vertical;font-family:var(--body);font-size:14px;line-height:1.6;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.notef .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.notef select{font-family:var(--body);font-size:13px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.notef .bt{padding:6px 12px}
+.nt{padding:9px 0;border-top:1px dashed var(--line)}
+.nt .meta{font-size:11px;color:var(--sub)}
+.nt .q{font-family:var(--body);font-size:13.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.nt .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.55}
+.nt .rep img{width:20px;height:20px;image-rendering:pixelated}
 .roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-@media (max-width:380px){.roster{grid-template-columns:minmax(0,1fr)}}
-.mem{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:start;background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:8px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+@media (max-width:420px){.roster{grid-template-columns:minmax(0,1fr)}}
+.mem{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;border:2px solid var(--line);border-radius:10px;padding:8px}
+.mem.bench{opacity:.72}
 .mem img{width:32px;height:32px;image-rendering:pixelated}
 .mem .nm{font-size:14px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .role{font-size:10.5px;border-radius:999px;padding:0 7px;color:#fff;background:var(--rc,#857a70);white-space:nowrap}
 .mem .ask{font-size:11.5px;color:var(--sub);font-family:var(--body);line-height:1.5;margin-top:2px}
-.mem .now{font-size:11px;color:var(--ink);font-family:var(--body);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tag .role{font-size:10px}
-.notef{display:grid;gap:6px;margin-top:6px}
-.notef textarea{width:100%;min-height:72px;resize:vertical;font-family:var(--body);font-size:14px;line-height:1.6;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-.notef .row{margin-top:0}
-.notef select{font-family:var(--body);font-size:13px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-.nt{padding:10px 0;border-top:1px dashed var(--line)}
-.nt .q{font-family:var(--body);font-size:13.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
-.nt .meta{font-size:11px;color:var(--sub);margin-bottom:2px}
-.nt .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.55;color:var(--ink)}
-.nt .rep img{width:20px;height:20px;image-rendering:pixelated}
-.nt .rep b{font-weight:400;color:var(--sub);font-size:11px;display:block}
-.grade{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
-.grade .g{font-size:44px;line-height:1;width:64px;height:64px;display:grid;place-items:center;border:3px solid var(--gc,#857a70);color:var(--gc,#857a70);border-radius:10px}
-.grade .sum{font-family:var(--body);font-size:13.5px;line-height:1.6}
-.rv h4{font-size:12.5px;margin:12px 0 2px;font-weight:400;color:var(--sub)}
-.rv ul{margin:0;padding-left:18px;font-family:var(--body);font-size:13px;line-height:1.65}
+.mem .now{font-size:11px;font-family:var(--body);margin-top:3px}
+.so-list{margin:10px 0 0;padding:0;list-style:none;font-family:var(--body);font-size:12.5px;line-height:1.6}
+.so-list li{padding:4px 0;border-top:1px dashed var(--line)}
+.dec{padding:7px 0;border-top:1px dashed var(--line)}
+.dec .t{font-size:13.5px}
+.dec p{margin:2px 0 0;font-family:var(--body);font-size:12px;color:var(--sub);line-height:1.55}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
+.note a{color:var(--info)}
 </style>
 
 <div class="app">
   <header>
     <div><h1>ちいかわ株式会社</h1><div class="date" id="date"></div></div>
-    <div class="hud"><span class="pill" id="coin">🌰 0</span><button class="btn-s" id="replay" type="button">ほうこくをきく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
+    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
-  <div class="stage" id="stage"><canvas id="cv" width="224" height="140" aria-label="ちいかわ株式会社のようす"></canvas></div>
+  <div class="stage" id="stage"><canvas id="cv" width="224" height="140" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
   <div class="win" id="win">
     <div class="tag"><img id="tagImg" alt=""><span id="tagName">ちいかわ</span><span class="role" id="tagRole"></span></div>
     <div class="head" id="dHead"></div>
     <div class="ttl" id="dTitle"></div>
-    <div class="txt" id="dText">（村とつながっています…）</div>
+    <div class="txt" id="dText">（会社とつながっています…）</div>
     <div class="acts" id="dActs"></div>
     <span class="more" id="more" hidden>▼</span>
   </div>
 
-  <section class="box" aria-labelledby="h-team">
-    <h2 id="h-team">👥 なかま名簿 <small>タップでたのむ</small></h2>
-    <div class="roster" id="roster"></div>
+  <section class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div></section>
+  <section class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
+  <section class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
+  <section class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
+  <section class="box" aria-labelledby="h-nt">
+    <h2 id="h-nt">💭 つぶやき箱 <small id="ntCnt"></small></h2>
+    <form class="notef" id="noteForm"><textarea id="noteIn" placeholder="悩んでいること、思いついたこと、頼みたいこと。なんでもどうぞ。" aria-label="つぶやき"></textarea>
+      <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="bt">とどける</button></div></form>
+    <div id="notes"></div>
   </section>
-
-  <section class="box" aria-labelledby="h-note">
-    <h2 id="h-note">💭 そーやんのつぶやき箱 <small id="ncnt"></small></h2>
-    <form class="notef" id="noteForm">
-      <textarea id="noteIn" placeholder="悩んでいること、思いついたこと、頼みたいこと。なんでもざっくばらんにどうぞ。" aria-label="つぶやき"></textarea>
-      <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="yes">とどける</button></div>
-    </form>
-    <div id="notes"><p class="empty">書いたことは、なかまが次の見回り（7:47・12:47・17:47）で読んで、返事や提案をくれます。</p></div>
-  </section>
-
-  <section class="box" aria-labelledby="h-prop">
-    <h2 id="h-prop">💡 なかまの提案 <small id="pcnt"></small></h2>
-    <div id="props"><p class="empty">なかまが「これやろうと思うんだけど、どう？」と相談しにきます。</p></div>
-  </section>
-
-  <section class="box rv" aria-labelledby="h-rv">
-    <h2 id="h-rv">🛡️ 鎧さんの監査 <small id="rtime"></small></h2>
-    <div id="review"><p class="empty">鎧さんが村の働きぶりを見回って、採点とダメ出しを届けます。</p></div>
-  </section>
-
-  <section class="box mtg" aria-labelledby="h-mtg">
-    <h2 id="h-mtg">🪵 なかまの会議 <small id="mtime"></small></h2>
-    <div id="mtg"><p class="empty">なかまが集まって話し合うと、ここに議事録が届きます。</p></div>
-  </section>
-
-  <section class="box" aria-labelledby="h-box">
-    <h2 id="h-box">📮 ほうこく箱 <small id="cnt"></small></h2>
-    <div class="prog"><i id="bar"></i></div>
-    <div class="sched" id="sched"></div>
-    <div id="att"><p class="empty">ちいかわからのほうこくがここに届きます。</p></div>
-    <h3>片づいたこと</h3>
-    <div id="res"></div>
-  </section>
-
   <section class="box" aria-labelledby="h-mine">
     <h2 id="h-mine">🧑‍🌾 そーやんの仕事 <small id="mcnt"></small></h2>
-    <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること（例：アンケートに答える）" aria-label="やることを追加" autocomplete="off"><button type="submit">追加</button></form>
-    <div id="mine"><p class="empty">やることを追加して、終わったらチェック。なかまが一緒によろこびます。</p></div>
+    <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること" aria-label="やることを追加" autocomplete="off"><button type="submit" class="bt">追加</button></form>
+    <div id="mine"><p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p></div>
   </section>
+  <section class="box" aria-labelledby="h-rs"><h2 id="h-rs">👥 役割名簿</h2><div class="roster" id="roster"></div>
+    <h2 style="margin-top:14px">📋 常時発注リスト <small>確認なしで進める仕事</small></h2><ul class="so-list" id="standing"></ul></section>
+  <section class="box" aria-labelledby="h-dc"><h2 id="h-dc">🧾 決定記録</h2><div id="decs"><p class="empty">決まったことがここに残ります。</p></div></section>
   <p class="note" id="note"></p>
 </div>
 <script>
@@ -176,10 +151,6 @@ const PAL={k:'#3b3533',w:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a
   l:'#e4ebf2',L:'#b8c5d3',N:'#8a5a33',c:'#f4dfae',v:'#cfc5e8',M:'#d98639',O:'#f7c86e',h:'#e9c66b',R:'#c9544b',H:'#4a3a33',s:'#f3cfa6',g:'#6f9f5e',d:'#4f73a8',
   G:'#3f8a3a',A:'#b9bfca',a:'#8a91a0',n:'#8a5a35',m:'#9b7fd0',B:'#6d8fd6',Y:'#ffd84a',E:'#f6efe0'};
 const W=224,H=140;
-const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん',soyan:'そーやん'};
-const ROLES={chiikawa:['秘書','#e9829b'],hachiware:['番頭','#3f6fd8'],usagi:['YouTube部','#e2604c'],rakko:['参謀','#7c63d6'],kuri:['会計','#c9851f'],momonga:['発信部','#9a62d0'],shisa:['講座部','#219384'],yoroi:['監査役','#6b7280'],soyan:['CEO','#3a3330']};
-const ASK={chiikawa:'メール整理・返信の下書き・予定の確認',hachiware:'優先順位・週の段取り・進み具合の確認',usagi:'動画ネタ出し・トレンド調べ・企画のたたき台',rakko:'事業戦略・新企画の壁打ち・判断の相談',kuri:'請求・入金・経費の整理と見える化',momonga:'記事の下書き・SNS投稿文・告知文',shisa:'講座の準備・受講生へのフォロー文・資料づくり',yoroi:'村の働きぶりの採点・ダメ出し・改善点'};
-const DEFAULT_DOING={chiikawa:'🌿 メールの草むしり',hachiware:'📖 優先順位のおべんきょう',usagi:'⚔️ ネタ探しの討伐',rakko:'🧭 作戦を考え中',kuri:'🌰 帳簿をながめ中',momonga:'✍️ 文章をかき中',shisa:'📚 講座の準備中',yoroi:'🛡️ 見回り中'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl=u=>/^https:\/\//.test(String(u||''))?u:'';
 function toC(rows){const c=document.createElement('canvas');c.width=rows[0].length;c.height=rows.length;const g=c.getContext('2d');
@@ -222,7 +193,7 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   // 柵
   for(let x=2;x<W;x+=9){if(x>150&&x<216)continue;R(g,'#9a6b4a',x,1,2,7);R(g,'#b98a5e',x,1,2,1)}R(g,'#b98a5e',0,3,152,1);R(g,'#b98a5e',0,6,152,1);
   // 木
-  tree(g,60,2);tree(g,132,46);tree(g,2,48);
+  tree(g,60,2);tree(g,132,42);tree(g,2,48);
   // 掲示板
   R(g,'#7a5230',15,20,2,12);R(g,'#7a5230',33,20,2,12);R(g,'#7a5230',11,11,28,13);R(g,'#c8995a',12,12,26,11);
   R(g,'#fff',14,13,6,5);R(g,'#fff6c9',22,14,6,6);R(g,'#ffe0e8',30,13,6,4);R(g,'#e36d72',16,13,1,1);R(g,'#6d8fd6',24,14,1,1);
@@ -235,8 +206,15 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   R(g,'#8a5a35',198,26,10,8);R(g,'#bfe3ff',199,27,8,6);R(g,'#8a5a35',203,27,1,6);
   R(g,'#c8995a',180,23,15,4);R(g,'#7a5230',181,24,13,2);
   [[166,34],[198,34]].forEach(([x,y])=>{R(g,'#9a6b4a',x,y,10,3);R(g,'#f7a7b9',x+1,y-1,2,1);R(g,'#ffd84a',x+4,y-1,2,1);R(g,'#fff',x+7,y-1,2,1)});
-  // 会議スペース（切り株）
-  R(g,'#94c46f',88,26,48,30);[[93,46],[127,46],[110,28]].forEach(([x,y])=>{R(g,'#7a5230',x,y,9,6);R(g,'#c8995a',x,y,9,3);R(g,'#a8743f',x+2,y+1,5,1)});
+  // 撮影小屋（YouTube）
+  R(g,'#94c46f',88,24,48,34);R(g,'#b8544b',92,24,30,2);R(g,'#e2604c',93,26,28,5);R(g,'#f6e7c9',95,31,24,14);R(g,'#8a5a35',103,36,7,9);
+  R(g,'#e2604c',112,33,6,5);R(g,'#fff',114,34,1,3);R(g,'#fff',115,35,1,1);R(g,'#3b3533',124,40,6,4);R(g,'#5a4a3a',126,44,1,6);R(g,'#5a4a3a',129,44,1,6);R(g,'#9ad6f0',124,41,2,2);
+  // 書き物机（記事）
+  R(g,'#a8743f',58,60,18,4);R(g,'#7a5230',59,64,1,4);R(g,'#7a5230',74,64,1,4);R(g,'#fff',61,59,6,2);R(g,'#fff6c9',68,58,5,3);
+  // 検収台（鎧さん）
+  R(g,'#6b7280',56,88,18,5);R(g,'#8a91a0',56,88,18,1);R(g,'#4b5260',57,93,1,4);R(g,'#4b5260',72,93,1,4);R(g,'#fff',59,86,6,2);R(g,'#d9544b',68,86,3,2);
+  // 休憩ベンチ（控え）
+  R(g,'#a8743f',158,72,54,3);R(g,'#8a5a35',158,75,54,1);[160,184,208].forEach(x=>R(g,'#7a5230',x,76,2,4));
   // ハチワレの読書コーナー
   R(g,'#e7bcc6',30,62,34,12);for(let x=31;x<63;x+=4)R(g,'#f3d3da',x,63,2,10);
   R(g,'#8a5a35',40,42,16,18);R(g,'#6b4428',40,48,16,1);R(g,'#6b4428',40,54,16,1);
@@ -246,9 +224,8 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   [[8,101],[16,101],[24,101],[8,107],[16,107],[24,107],[8,113],[16,113],[24,113],[8,119],[16,119],[24,119]].forEach(([x,y],i)=>g.drawImage(i%4===1?P.tomato:P.sprout,x,y));
   [[8,127],[16,127],[24,127],[8,131],[20,131]].forEach(([x,y])=>{R(g,'#e98a3b',x+1,y+2,2,2);R(g,'#5f9e4f',x+1,y,1,2);R(g,'#5f9e4f',x+2,y,1,2)});
   R(g,'#c8995a',34,99,1,38);
-  // 討伐の原っぱ
-  R(g,'#93c26f',152,86,64,22);R(g,'#8cbb68',156,90,56,14);R(g,'#9a948c',154,104,5,3);R(g,'#b0aaa0',154,104,2,1);R(g,'#9a948c',210,88,6,4);
-  R(g,'#7a5230',156,82,1,8);R(g,'#e36d72',157,82,5,3);
+  // 休憩所の原っぱ
+  R(g,'#93c26f',152,66,64,26);R(g,'#9a948c',210,88,6,4);
   // 池
   R(g,'#5aa6c9',176,112,44,24);R(g,'#7cc4e6',178,114,40,20);R(g,'#9ad6f0',182,116,12,2);R(g,'#5f9e4f',204,124,5,3);R(g,'#f7a7b9',206,124,1,1);
   [[174,116],[174,126],[196,110],[212,110],[186,134]].forEach(([x,y])=>{R(g,'#9a948c',x,y,4,3);R(g,'#b0aaa0',x,y,2,1)});
@@ -263,294 +240,217 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
     const c=['#f7a7b9','#ffffff','#ffd84a','#cfc5e8'][i%4];R(g,c,x,y,1,1);R(g,c,x-1,y+1,3,1);R(g,c,x,y+2,1,1);R(g,'#ffd84a',x,y+1,1,1)}
 })();
 
-// ---------- キャラ ----------
-const HOME={hachiware:{x:48,y:74,face:1},usagi:{x:176,y:100,face:1},rakko:{x:48,y:34,face:-1},kuri:{x:166,y:58,face:1},momonga:{x:80,y:64,face:-1},shisa:{x:164,y:136,face:-1}};
-const PATROL=[[40,88],[96,88],[150,88],[206,84],[150,88],[96,88]];
-const SPEAK={x:140,y:114};
-let MEET={};
-function setMeet(ids){MEET={};const n=ids.length;ids.forEach((id,i)=>{const a=Math.PI*(0.5+2*i/n);MEET[id]={x:Math.round(112+Math.cos(a)*30),y:Math.round(46+Math.sin(a)*13),face:Math.cos(a)>0?-1:1}})}
-const ent={
-  chiikawa:{x:60,y:118,face:-1,pose:'work',st:'home',t:0,weeds:6,jump:0},
-  hachiware:{x:48,y:74,face:1,pose:'work',st:'home',t:0,jump:0},
-  usagi:{x:176,y:100,face:1,pose:'work',st:'home',t:0,jump:0},
-  rakko:{x:48,y:34,face:-1,pose:'idle',st:'home',t:0,jump:0},
-  kuri:{x:166,y:58,face:1,pose:'idle',st:'home',t:0,jump:0},
-  momonga:{x:80,y:64,face:-1,pose:'work',st:'home',t:0,jump:0},
-  shisa:{x:164,y:136,face:-1,pose:'idle',st:'home',t:0,jump:0},
-  yoroi:{x:96,y:88,face:1,pose:'idle',st:'home',t:0,jump:0,wp:1,wait:0},
-  soyan:{x:114,y:108,face:1,pose:'idle',st:'desk',t:0,jump:0}};
+
+// ---------- 役割 ----------
+const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん',soyan:'そーやん'};
+const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['リスク担当','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
+const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
+const JOIN={usagi:'フェーズ1で加入',momonga:'フェーズ1で加入',kuri:'フェーズ2で加入',rakko:'必要なときだけ招集'};
+const ORDER=['hachiware','yoroi','shisa','chiikawa','usagi','momonga','kuri','rakko'];
+const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:58,face:1,label:'🎬 撮影小屋'},kouza:{x:164,y:136,face:-1,label:'🌱 青空教室'},
+  kiji:{x:67,y:64,face:1,label:'✍️ 書き物机'},kaikei:{x:166,y:58,face:1,label:'🌰 帳場'},farm:{x:52,y:118,face:-1,label:'🌾 畑'},
+  kenshu:{x:65,y:90,face:1,label:'🛡️ 検収台'},kiroku:{x:48,y:74,face:1,label:'📚 記録の棚'},post:{x:150,y:102,face:-1,label:''}};
+const BENCH=[[164,84],[180,84],[196,84],[210,84]];
+const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post'};
+const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事':'kiji','会計':'kaikei','農園・地域':'farm'};
+const SPEAK={x:140,y:116};
 const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi'];
-function homeOf(id){if(id==='yoroi'){const w=PATROL[ent.yoroi.wp%PATROL.length];return {x:w[0],y:w[1],face:1}}if(id==='chiikawa'){const w=WEEDS[Math.min(5,6-ent.chiikawa.weeds)]||WEEDS[0];return {x:w[0]+12,y:w[1]+6,face:-1}}return HOME[id]}
+const $=id=>document.getElementById(id);
+let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],db=null,canWrite=true;
+const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
+function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
+function homeOf(id){if(agentState(id)==='bench'){const i=['usagi','momonga','kuri','rakko'].indexOf(id);const b=BENCH[Math.max(0,i)];return {x:b[0],y:b[1],face:1}}
+  const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
+
+// ---------- キャラ ----------
+const ent={};AGENTS.forEach(id=>{const h=homeOf(id);ent[id]={x:h.x,y:h.y,face:h.face,pose:'idle',st:'home',t:0,jump:0}});
+ent.soyan={x:114,y:108,face:1,pose:'idle',st:'desk',t:0,jump:0};
 function stepTo(e,tx,ty,dt,sp=30){const dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy);if(d<1){e.x=tx;e.y=ty;return true}
   const k=Math.min(1,sp*dt/d);e.x+=dx*k;e.y+=dy*k;if(Math.abs(dx)>0.5)e.face=dx>0?1:-1;return false}
-
-const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
-function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0,dx=0;
-  if(e.walking)dy=Math.floor(t*8)%2;else if(e.pose!=='work')dy=Math.floor(t*2+e.x)%2;
+const cv=$('cv'),ctx=cv.getContext('2d');
+function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
+  if(e.walking)dy=Math.floor(t*8)%2;else if(e.pose!=='work')dy=Math.floor(t*(e.bench?1:2)+e.x)%2;
   if(e.jump>0)dy=-Math.round(Math.sin(e.jump*Math.PI)*8);
-  if(id==='usagi'&&e.st==='home')dx=Math.floor(t*3)%2?3:0;
-  const x=Math.round(e.x-im.width/2+dx),y=Math.round(e.y-im.height+dy);
+  const x=Math.round(e.x-im.width/2),y=Math.round(e.y-im.height+dy);
   ctx.save();if(e.face<0){ctx.translate(Math.round(e.x)*2,0);ctx.scale(-1,1)}
   ctx.drawImage(im,x,y);
-  if(e.pose==='work'&&e.st==='home'){const ph=Math.floor(t*3)%2;
-    if(id==='chiikawa')ctx.drawImage(P.weed,x+15,y+13-(ph?3:0));
-    if(id==='hachiware')ctx.drawImage(P.book,x+5,y+15+(Math.floor(t)%4===0?1:0));
-    if(id==='usagi')ctx.drawImage(P.stick,x+15,y+6+(ph?2:0));
-    if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));}
-  if(e.st==='home'&&id==='yoroi'&&!e.walking)ctx.drawImage(P.clip,x+15,y+10);
-  if(e.st==='home'&&id==='shisa'&&Math.floor(t)%3!==2)ctx.drawImage(P.stick,x-6,y+4);
-  if(e.st==='home'&&id==='kuri')ctx.drawImage(P.coin,x+(e.face>0?18:-4),y+10-(Math.floor(t*2)%2));
+  if(e.st==='home'&&!e.walking&&!e.bench){const ph=Math.floor(t*3)%2;
+    if(id==='hachiware')ctx.drawImage(P.clip,x+16,y+10+(ph?1:0));
+    if(id==='yoroi')ctx.drawImage(P.clip,x+15,y+10);
+    if(id==='shisa')ctx.drawImage(P.book,x+5,y+15+(ph?1:0));
+    if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));
+    if(id==='usagi')ctx.drawImage(P.book,x+5,y+15);
+    if(id==='kuri')ctx.drawImage(P.coin,x+18,y+10-(ph?1:0));}
   ctx.restore();e.top=y;e.left=x;e.w=im.width}
-function drawTable(){R(ctx,'#7a5230',111,44,3,6);R(ctx,'#8a5a35',100,38,26,8);R(ctx,'#b0793f',101,38,24,6);R(ctx,'#c8995a',103,39,10,1);
-  if(scene&&scene.type==='meeting'){R(ctx,'#fff',106,40,5,3);R(ctx,'#fff',115,39,5,4);R(ctx,'#e36d72',108,41,1,1)}}
 function drawDesk(t){R(ctx,'#a8743f',100,104,30,6);R(ctx,'#8a5a35',100,109,30,1);R(ctx,'#7a5230',101,110,2,5);R(ctx,'#7a5230',127,110,2,5);
-  R(ctx,'#cfd3d9',108,98,13,7);R(ctx,'#b8bdc4',108,104,13,1);R(ctx,Math.floor(t*1.5)%2?'#8fd18a':'#cfd3d9',114,100,2,2);
-  R(ctx,'#fff',123,101,3,3);R(ctx,'#a8743f',124,102,1,1);if(Math.floor(t*2)%3===0)R(ctx,'#ffffff',124,99,1,1)}
-
-// ---------- 動く背景 ----------
-const puffs=[0,1,2].map(i=>({p:i/3}));
-const flies=[{a:0,cx:70,cy:60,r:18},{a:2,cx:150,cy:70,r:14}];
-function ambient(t,dt,night){
-  // 雲の影
-  ctx.fillStyle='rgba(40,70,40,.07)';const cx=((t*4)%(W+120))-60;ctx.fillRect(cx,20,46,14);ctx.fillRect(cx+8,14,30,26);
-  const cx2=((t*3+140)%(W+120))-60;ctx.fillRect(cx2,90,40,12);ctx.fillRect(cx2+6,85,26,22);
-  // 池のきらめき
+  R(ctx,'#cfd3d9',108,98,13,7);R(ctx,'#b8bdc4',108,104,13,1);R(ctx,Math.floor(t*1.5)%2?'#8fd18a':'#cfd3d9',114,100,2,2);R(ctx,'#fff',123,101,3,3);R(ctx,'#a8743f',124,102,1,1)}
+const puffs=[0,1,2].map(i=>({p:i/3}));const flies=[{a:0,cx:70,cy:60,r:18},{a:2,cx:190,cy:100,r:14}];
+function ambient(t,dt,night){ctx.fillStyle='rgba(40,70,40,.07)';const cx=((t*4)%(W+120))-60;ctx.fillRect(cx,20,46,14);ctx.fillRect(cx+8,14,30,26);
   for(let i=0;i<5;i++){const x=180+((i*9+Math.floor(t*2)*7)%34),y=117+((i*5+Math.floor(t))%14);R(ctx,'#c9ecfa',x,y,2,1)}
-  // 煙突の煙
   puffs.forEach(p=>{p.p=(p.p+dt*0.18)%1;const a=1-p.p;ctx.fillStyle=`rgba(255,255,255,${0.55*a})`;const s=2+Math.round(p.p*4);ctx.fillRect(Math.round(207-p.p*10-s/2),Math.round(3-p.p*10),s,s)});
-  // チョウチョ（夜はホタル）
   flies.forEach((f,i)=>{f.a+=dt*(0.7+i*.2);const x=Math.round(f.cx+Math.cos(f.a)*f.r),y=Math.round(f.cy+Math.sin(f.a*1.7)*f.r*.5);
     if(night){if(Math.floor(t*2+i)%3)R(ctx,'#fff59a',x,y,1,1)}else{const w=Math.floor(t*6)%2;R(ctx,i?'#fff':'#ffd84a',x-1,y-w,1,1);R(ctx,i?'#fff':'#ffd84a',x+1,y-w,1,1);R(ctx,'#3b3533',x,y,1,1)}})}
-function tod(){const d=new Date(),h=d.getHours()+d.getMinutes()/60;
-  if(h>=19||h<5)return {c:'rgba(18,22,64,.42)',night:true};if(h>=17)return {c:'rgba(255,130,60,.16)'};if(h<7)return {c:'rgba(255,170,120,.14)'};return null}
-function lights(t){ctx.save();ctx.globalCompositeOperation='lighter';
-  const glow=(x,y,r,a)=>{for(let i=r;i>0;i-=2){ctx.fillStyle=`rgba(255,200,110,${a/(r/2)})`;ctx.fillRect(x-i,y-i,i*2,i*2)}};
-  LAMPS.forEach(([x,y])=>glow(x+1,y-2,7,.35));glow(171,30,5,.3);glow(203,30,5,.3);glow(114,101,5,.25);
-  R(ctx,'#ffd27a',167,27,8,6);R(ctx,'#ffd27a',199,27,8,6);ctx.restore()}
+function tod(){const d=new Date(),h=d.getHours()+d.getMinutes()/60;if(h>=19||h<5)return {c:'rgba(18,22,64,.42)',night:true};if(h>=17)return {c:'rgba(255,130,60,.16)'};if(h<7)return {c:'rgba(255,170,120,.14)'};return null}
+function lights(){ctx.save();ctx.globalCompositeOperation='lighter';const glow=(x,y,r,a)=>{for(let i=r;i>0;i-=2){ctx.fillStyle=`rgba(255,200,110,${a/(r/2)})`;ctx.fillRect(x-i,y-i,i*2,i*2)}};
+  LAMPS.forEach(([x,y])=>glow(x+1,y-2,7,.35));glow(171,30,5,.3);glow(203,30,5,.3);glow(114,101,5,.25);R(ctx,'#ffd27a',167,27,8,6);R(ctx,'#ffd27a',199,27,8,6);ctx.restore()}
 
-// ---------- 吹き出し ----------
-const stage=document.getElementById('stage');const BUB={};
+// ---------- 吹き出し・場所の名札 ----------
+const stage=$('stage');const BUB={};
 AGENTS.concat('soyan').forEach(id=>{const b=document.createElement('div');b.className='bub'+(id==='soyan'?' soyan':'');b.dataset.empty='1';stage.appendChild(b);BUB[id]=b});
+['youtube','kouza','kiji','kaikei','kenshu','kiroku','board'].forEach(k=>{const p=PLACES[k],l=document.createElement('div');l.className='plc';l.textContent=p.label;
+  l.style.left=(p.x/W*100)+'%';l.style.top=((p.y+1)/H*100)+'%';stage.appendChild(l)});
+{const l=document.createElement('div');l.className='plc';l.textContent='🪑 控えのベンチ';l.style.left=(186/W*100)+'%';l.style.top=(86/H*100)+'%';stage.appendChild(l)}
 function bubbleText(id){const e=ent[id];
-  if(id==='soyan'){const t=TASKS.filter(x=>!x.done).sort(byTime)[0];return t?'📝 '+t.title:(onBreak()?'☕ ひとやすみ':'')}
-  if(scene&&scene.type==='meeting'&&e.st!=='home')return e.st==='meet'?'':'🚶 会議へ';
-  if(e.st==='walkIn'||e.st==='arrive')return speakerLabel||'✉️ ほうこく';
-  if(e.st==='talk')return '';
-  if(e.st==='walkOut')return '🚶 もどる';
-  const a=(STATUS.agents||{})[id];return (a&&a.doing)||DEFAULT_DOING[id]}
-function onBreak(){return false}
-function bubbleOn(id){if(id==='soyan')return true;const e=ent[id];if(e.st!=='home')return true;const g=Math.floor(T/5)%3;return AGENTS.indexOf(id)%3===g}
-function placeBubbles(){for(const id in BUB){const e=ent[id],b=BUB[id],txt=bubbleOn(id)?bubbleText(id):'';if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';
-  if(e.top===undefined)continue;let lx=Math.min(88,Math.max(12,e.x/W*100));b.style.left=lx+'%';b.style.top=((e.top-2)/H*100)+'%'}}
+  if(id==='soyan'){const t=TASKS.filter(x=>!x.done).sort(byTime)[0];return t?'📝 '+t.title:''}
+  if(e.st==='walkIn'||e.st==='arrive')return speakerLabel||'✉️ おとどけ';
+  if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
+  if(agentState(id)==='bench')return '💤 控え（'+(JOIN[id]||'')+'）';
+  if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
+  const a=(STATUS.agents||{})[id];return (a&&a.doing)||''}
+function placeBubbles(){const g=Math.floor(T/5)%2;for(const id in BUB){const e=ent[id],b=BUB[id];
+  let txt=bubbleText(id);if(agentState(id)==='bench'&&id!=='soyan'&&['usagi','momonga','kuri','rakko'].indexOf(id)%2!==g)txt='';
+  if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';b.classList.toggle('bench',id!=='soyan'&&agentState(id)==='bench');
+  if(e.top===undefined)continue;b.style.left=Math.min(88,Math.max(12,e.x/W*100))+'%';b.style.top=((e.top-2)/H*100)+'%'}}
 
 // ---------- ループ ----------
 let T=0,last=0,tick=0;
-function update(dt){
-  AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;if(e.jump>0)e.jump=Math.max(0,e.jump-dt*1.6)});
-  AGENTS.forEach(id=>{const e=ent[id];
+function update(dt){AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;if(e.jump>0)e.jump=Math.max(0,e.jump-dt*1.6)});
+  AGENTS.forEach(id=>{const e=ent[id];e.bench=agentState(id)==='bench'&&e.st==='home';
     if(e.st==='walkIn'){e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
-    else if(e.st==='arrive'&&e.t>0.7){e.st='talk';if(scene&&speaker===id)showPage()}
-    else if(e.st==='walkOut'){e.walking=true;e.pose='idle';const h=homeOf(id);if(stepTo(e,h.x,h.y,dt)){e.walking=false;e.face=h.face;e.st='home';e.t=0}}
-    else if(e.st==='toMeet'){e.walking=true;e.pose='idle';const m=MEET[id];if(stepTo(e,m.x,m.y,dt)){e.walking=false;e.face=m.face;e.st='meet';if(scene&&scene.type==='meeting'&&!scene.started&&scene.members.every(k=>ent[k].st==='meet')){scene.started=true;pi=0;showPage()}}}
-    else if(e.st==='home'&&id==='yoroi'){if(e.wait>0){e.wait-=dt;e.walking=false;e.pose='idle'}else{e.walking=true;e.pose='idle';const w=PATROL[e.wp%PATROL.length];if(stepTo(e,w[0],w[1],dt,14)){e.wp++;e.wait=3+Math.random()*3;e.walking=false}}}
-    else if(e.st==='home'){if(e.pose!=='happy')e.pose=['chiikawa','hachiware','usagi','momonga'].includes(id)?'work':'idle';
-      if(id==='chiikawa'&&e.t>4){e.t=0;e.weeds--;if(e.weeds<=0){e.weeds=6;e.jump=1;e.pose='happy';setTimeout(()=>{if(e.pose==='happy')e.pose='work'},900)}const h=homeOf('chiikawa');e.x=h.x;e.y=h.y}}});
-}
-function render(t,dt){ctx.drawImage(bg,0,0);
-  const c=ent.chiikawa;WEEDS.forEach(([x,y],i)=>{if(i>=6-c.weeds)ctx.drawImage(P.weed,x,y)});
-  ctx.drawImage(P.mon,196,92+(Math.floor(t*2)%2));
-  const list=Object.entries(ent).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));
-  list.push({y:44.5,f:drawTable},{y:110.5,f:()=>drawDesk(t)});
+    else if(e.st==='arrive'&&e.t>0.6){e.st='talk';if(scene&&speaker===id)showPage()}
+    else if(e.st==='walkOut'||e.st==='home'){const h=homeOf(id);const arrived=stepTo(e,h.x,h.y,dt,e.st==='home'?22:30);e.walking=!arrived;
+      if(arrived){e.face=h.face;if(e.st==='walkOut')e.st='home'}
+      if(e.st==='home'&&!e.walking&&e.pose!=='happy')e.pose=(agentState(id)==='active'&&id!=='chiikawa')?'work':'idle';else if(e.walking)e.pose='idle'}});
+  const c=ent.chiikawa;if(c.st==='home'&&c.t>6&&!c.walking){c.t=0;c.jump=.4}}
+function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage(P.weed,x,y));
+  const list=Object.entries(ent).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:110.5,f:()=>drawDesk(t)});
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
   AGENTS.forEach(id=>{const e=ent[id];if(e.top===undefined)return;
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
-  const td=tod();ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights(t)}}
+  const td=tod();ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
 function loop(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 
-// ---------- データ ----------
-const $=id=>document.getElementById(id);
-let REPORTS=[],TASKS=[],PROPS=[],MEETS=[],NOTES=[],REVIEWS=[],STATUS={},db=null,canWrite=true;
-const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
-const attention=()=>REPORTS.filter(r=>r.kind!=='resolved');
-const resolved=()=>REPORTS.filter(r=>r.kind==='resolved');
-const coins=()=>(REPORTS.filter(r=>r.kind!=='resolved'&&r.done).length+TASKS.filter(t=>t.done).length+PROPS.filter(p=>p.status==='done').length)*10;
-let seen={};try{seen=JSON.parse(localStorage.getItem('hv-seen')||'{}')}catch(e){}
-function markSeen(k){seen[k]=1;try{localStorage.setItem('hv-seen',JSON.stringify(seen))}catch(e){}}
-
-// ---------- 場面（ほうこく・相談・会議）の進行 ----------
+// ---------- 会話（ちいかわが届ける） ----------
+let seen={};try{seen=JSON.parse(localStorage.getItem('ck-seen')||'{}')}catch(e){}
+function markSeen(k){seen[k]=1;try{localStorage.setItem('ck-seen',JSON.stringify(seen))}catch(e){}}
 const Q=[];let scene=null,speaker=null,speakerLabel='',speakerIcon='letter',pages=[],pi=0,typing=null,full='';
 function enqueue(s){if(s&&s.pages&&s.pages.length){Q.push(s);if(!scene)nextScene()}}
-function nextScene(){scene=Q.shift()||null;if(!scene){idle();return}pages=scene.pages;pi=0;
-  if(scene.type==='meeting'){speaker=null;scene.started=false;setMeet(scene.members);setText('','','（なかまが会議にあつまっていく…）',null);$('dActs').innerHTML='';scene.members.forEach(id=>{ent[id].st='toMeet';ent[id].walking=true})}
-  else goPage()}
-function goPage(){const p=pages[pi];if(!p)return;
-  if(scene.type==='talk'&&p.who&&p.who!==speaker){if(speaker&&ent[speaker].st!=='home')ent[speaker].st='walkOut';speaker=p.who;
-    speakerLabel=scene.label||'✉️ ほうこく';speakerIcon=scene.icon||'letter';const e=ent[speaker];e.st='walkIn';
-    setText('','',`（${NAMES[speaker]}がやってくる…）`,speaker);$('dActs').innerHTML='';$('more').hidden=true;return}
+function nextScene(){scene=Q.shift()||null;if(!scene){idle();return}pages=scene.pages;pi=0;goPage()}
+function goPage(){const p=pages[pi];if(!p)return;const who=p.who||'chiikawa';
+  if(who!==speaker){if(speaker&&ent[speaker].st!=='home')ent[speaker].st='walkOut';speaker=who;speakerLabel=scene.label||'✉️ おとどけ';speakerIcon=scene.icon||'letter';
+    ent[who].st='walkIn';setText('','',`（${NAMES[who]}がやってくる…）`,who);$('dActs').innerHTML='';$('more').hidden=true;return}
   showPage()}
-function setTag(id){if(!id)return;$('tagImg').src=ICON[id];$('tagName').textContent=NAMES[id]||id;const r=ROLES[id];$('tagRole').textContent=r?r[0]:'';$('tagRole').style.setProperty('--rc',r?r[1]:'')}
+function setTag(id){$('tagImg').src=ICON[id];$('tagName').textContent=NAMES[id];const r=ROLES[id];$('tagRole').textContent=r?r[0]:'';$('tagRole').style.setProperty('--rc',r?r[1]:'')}
 function setText(h,t,x,who){$('dHead').textContent=h;$('dTitle').textContent=t;$('dText').textContent=x;if(who)setTag(who)}
-function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'','',p.who||speaker||'chiikawa');full=p.text||'';let n=0;clearInterval(typing);$('more').hidden=true;renderActs(false);
-  if(scene&&scene.type==='meeting'&&p.who&&ent[p.who]){ent[p.who].jump=0.5}
-  typing=setInterval(()=>{n+=2;$('dText').textContent=full.slice(0,n);if(n>=full.length){clearInterval(typing);typing=null;renderActs(true)}},26)}
-function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.innerHTML='';return}
-  let h='';const r=p.rid&&REPORTS.find(x=>x.id===p.rid),pr=p.pid&&PROPS.find(x=>x.id===p.pid);
-  if(r&&r.kind==='question'&&Array.isArray(r.choices))h+=r.choices.map((c,i)=>`<button type="button" class="choice" data-act="ans" data-i="${i}" aria-pressed="${r.answer===c}">${esc(c)}</button>`).join('');
-  else if(r)h+=`<button type="button" class="ok" data-act="done" aria-pressed="${!!r.done}">${r.done?'✅ やった！':'✅ やった'}</button>`;
-  if(pr&&pr.status==='proposed')h+=`<button type="button" class="ok" data-act="yes">👍 やってみて</button><button type="button" data-act="no">🙅 今回はなし</button>`;
-  else if(pr&&p.ask)h+=`<button type="button" class="choice" aria-pressed="true" disabled>${pr.status==='rejected'?'🙅 今回はなし':'👍 おねがいした'}</button>`;
-  const link=safeUrl((r&&r.link)||(p.link));if(link)h+=`<a href="${esc(link)}" target="_blank" rel="noopener">ひらく ↗</a>`;
-  h+=p.end?`<button type="button" data-act="close">とじる</button>`:`<button type="button" data-act="next">つぎへ ▶</button>`;
-  a.innerHTML=h;$('more').hidden=!!p.end}
+function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'','',p.who||'chiikawa');full=p.text||'';let n=0;clearInterval(typing);$('more').hidden=true;renderActs(false);
+  typing=setInterval(()=>{n+=2;$('dText').textContent=full.slice(0,n);if(n>=full.length){clearInterval(typing);typing=null;renderActs(true)}},24)}
+function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.innerHTML='';return}let h='';
+  const x=p.xid&&XCS.find(c=>c.id===p.xid);
+  if(x&&Array.isArray(x.options))h+=x.options.map(o=>`<button type="button" class="choice" data-act="ans" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}">${esc(o.key)}：${esc(o.label)}</button>`).join('')+`<button type="button" class="choice" data-act="ans" data-k="保留" aria-pressed="${x.answer==='保留'}">保留</button>`;
+  const link=safeUrl(p.link);if(link)h+=`<a href="${esc(link)}" target="_blank" rel="noopener">ひらく ↗</a>`;
+  h+=p.end?`<button type="button" data-act="close">とじる</button>`:`<button type="button" data-act="next">つぎへ ▶</button>`;a.innerHTML=h;$('more').hidden=!!p.end}
 function next(){if(typing){clearInterval(typing);typing=null;$('dText').textContent=full;renderActs(true);return}
-  if(pi<pages.length-1){pi++;goPage();if(pages[pi]&&pages[pi].end&&speaker){ent[speaker].pose='happy';ent[speaker].jump=1;setTimeout(()=>{if(ent[speaker||'chiikawa'])ent[speaker||'chiikawa'].pose='idle'},900)}}else endScene()}
-function endScene(){if(!scene)return;if(scene.onEnd)scene.onEnd();
-  if(scene.type==='meeting')scene.members.forEach(id=>{ent[id].st='walkOut'});else if(speaker)ent[speaker].st='walkOut';
-  speaker=null;scene=null;nextScene()}
-function idle(){setText('','','（なかまはそれぞれの仕事をしている…）\nタップすると、もう一回ほうこくをきけます。','chiikawa');$('dActs').innerHTML='<button type="button" data-act="replay">ほうこくをきく</button>';$('more').hidden=true}
-$('dText').addEventListener('click',()=>{if(scene&&(ent[speaker]?.st==='talk'||(scene.type==='meeting'&&scene.started)))next();else if(!scene)enqueue(briefScene(true))});
+  if(pi<pages.length-1){pi++;goPage()}else endScene()}
+function endScene(){if(!scene)return;if(scene.onEnd)scene.onEnd();if(speaker)ent[speaker].st='walkOut';speaker=null;scene=null;nextScene()}
+function idle(){setText('','','（みんなそれぞれの持ち場で働いている…）\nタップすると、ダイジェストをもう一度きけます。','chiikawa');$('dActs').innerHTML='';$('more').hidden=true}
+$('dText').addEventListener('click',()=>{if(scene&&speaker&&ent[speaker].st==='talk')next();else if(!scene)enqueue(digestScene(true))});
 $('dActs').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const act=b.dataset.act,p=pages[pi];
-  if(act==='next')next();if(act==='close')endScene();if(act==='replay')enqueue(briefScene(true));
-  if(act==='done'&&p.rid){const r=REPORTS.find(x=>x.id===p.rid);await setReport(p.rid,{done:!r.done});renderActs(true)}
-  if(act==='ans'&&p.rid){const r=REPORTS.find(x=>x.id===p.rid);await setReport(p.rid,{answer:r.choices[+b.dataset.i],done:true});renderActs(true);flash('わかった…！ つたえておく…！')}
-  if((act==='yes'||act==='no')&&p.pid){await decide(p.pid,act==='yes'?'approved':'rejected');renderActs(true);flash(act==='yes'?'ありがと！ やってみる！':'わかった！ またほかのこと考えるね')}});
-function flash(t){const keep=full;$('dText').textContent=t;setTimeout(()=>{if(pages[pi]&&!typing)$('dText').textContent=keep},1500)}
-
-// ---------- 場面をつくる ----------
-function briefScene(force){const list=attention().filter(r=>!r.done);if(!force&&!list.length&&!resolved().length)return null;
-  const p=[{who:'chiikawa',text:STATUS.greeting||'そーやん…！ ほうこく、もってきた…！'}];
-  if(STATUS.schedule&&STATUS.schedule.length)p.push({who:'chiikawa',head:'きょうのよてい',text:STATUS.schedule.map(s=>`${s.time}  ${s.title}`).join('\n')});
-  list.forEach((r,i)=>p.push({who:'chiikawa',head:r.kind==='question'?'ちいかわからのしつもん':`きにかけたいこと ${i+1}/${list.length}`,title:r.title,text:r.body,rid:r.id}));
-  if(!list.length)p.push({who:'chiikawa',text:'いま、きにかけることはない…！'});
-  const res=resolved();if(res.length)p.push({who:'chiikawa',head:'いいしらせ',text:'かたづいたことも、あった…！\n'+res.map(r=>'・'+r.title).join('\n')});
-  p.push({who:'chiikawa',text:'ほうこく、おわり…！',end:true});return {type:'talk',pages:p,label:'✉️ ほうこく'}}
-function reportScene(list){const p=[{who:'chiikawa',text:'そーやん…！ あたらしいほうこく…！'}];
-  list.forEach((r,i)=>p.push({who:'chiikawa',head:r.kind==='question'?'ちいかわからのしつもん':`あたらしいほうこく ${i+1}/${list.length}`,title:r.title,text:r.body,rid:r.id}));
-  p.push({who:'chiikawa',text:'ほうこく、おわり…！',end:true});return {type:'talk',pages:p,label:'✉️ ほうこく'}}
-function propScene(list){const p=[];list.forEach(x=>{
-  p.push({who:x.agent,head:`${NAMES[x.agent]||''}からの相談`,title:x.title,text:`${x.why||''}${x.plan?`\n\nやること：${x.plan}`:''}\n\nこれやろうと思うんだけど、どうかな？`,pid:x.id,ask:true})});
-  p.push({who:list[list.length-1].agent,text:'きいてくれて、ありがと！',end:true});return {type:'talk',pages:p,label:'💡 そうだん',icon:'bulb'}}
-function resultScene(list){const p=[];list.forEach(x=>{p.push({who:x.agent,head:'できたよ！',title:x.title,text:x.result||'できあがりました。',link:x.link});});
-  p.push({who:list[list.length-1].agent,text:'つぎもがんばる！',end:true});return {type:'talk',pages:p,label:'🎁 できた！',onEnd:()=>list.forEach(x=>markSeen('done:'+x.id))}}
-function meetingScene(m){const lines=(m.lines||[]).filter(l=>NAMES[l.who]&&ent[l.who]);if(!lines.length)return null;
-  const p=lines.map(l=>({who:l.who,head:'🪵 '+(m.title||'なかまの会議'),text:l.text}));
-  if(m.decisions&&m.decisions.length)p.push({who:'hachiware',head:'きまったこと',text:m.decisions.map(d=>'・'+d).join('\n')});
-  p.push({who:'hachiware',text:'会議おわり！ それぞれの仕事にもどろー！',end:true});const members=[...new Set(p.map(x=>x.who))];return {type:'meeting',pages:p,members,onEnd:()=>markSeen('m:'+m.id)}}
-function reviewScene(r){const p=[{who:'yoroi',head:'🛡️ 監査',title:`評価 ${r.grade||'-'}${r.score!=null?`（${r.score}点）`:''}`,text:r.summary||''}];
-  if(r.good&&r.good.length)p.push({who:'yoroi',head:'よかった点',text:r.good.map(x=>'・'+x).join('\n')});
-  if(r.bad&&r.bad.length)p.push({who:'yoroi',head:'ダメ出し',text:r.bad.map(x=>'・'+x).join('\n')});
-  if(r.next&&r.next.length)p.push({who:'yoroi',head:'次への指示',text:r.next.map(x=>'・'+x).join('\n')});
-  p.push({who:'yoroi',text:'以上。引き続き励むように。',end:true});return {type:'talk',pages:p,label:'🛡️ 監査報告',icon:'letter',onEnd:()=>markSeen('rv:'+r.id)}}
+  if(act==='next')next();if(act==='close')endScene();
+  if(act==='ans'&&p&&p.xid){await answer(p.xid,b.dataset.k);renderActs(true);const keep=full;$('dText').textContent=b.dataset.k==='保留'?'わかった…！ またあとで…！':'わかった…！ ハチワレにつたえる…！';setTimeout(()=>{if(!typing&&pages[pi]===p)$('dText').textContent=keep},1500)}});
+const DG=[['approvals','🙋 承認待ち','#c2463d'],['blocked','⛔ ブロック','#b7791f'],['redflags','🚩 赤信号','#9a62d0'],['outcomes','🌱 成果の動き','#4f8f4a']];
+function digestScene(force){const d=STATUS.digest||{};const open=XCS.filter(x=>x.status!=='answered').sort(byTime);
+  const p=[{who:'chiikawa',text:STATUS.greeting||'そーやん…！ きょうのダイジェスト、もってきた…！'}];
+  DG.forEach(([k,label])=>{const arr=d[k]||[];p.push({who:'chiikawa',head:label,text:arr.length?arr.map(s=>'・'+s).join('\n'):'なし…！'})});
+  open.forEach((x,i)=>p.push({who:'chiikawa',head:`判断してほしいこと ${i+1}/${open.length}`,title:x.question,text:(x.why||'')+(x.recommend?`\n\nハチワレのおすすめ：${x.recommend}`:''),xid:x.id}));
+  p.push({who:'chiikawa',text:'おとどけ、おわり…！',end:true});if(!force&&!open.length&&!DG.some(([k])=>(d[k]||[]).length))return null;
+  return {type:'talk',pages:p,label:'✉️ ダイジェスト'}}
+function xcScene(list){const p=[{who:'chiikawa',text:'そーやん…！ 判断してほしいこと、とどいた…！'}];list.forEach((x,i)=>p.push({who:'chiikawa',head:`判断してほしいこと ${i+1}/${list.length}`,title:x.question,text:(x.why||'')+(x.recommend?`\n\nハチワレのおすすめ：${x.recommend}`:''),xid:x.id}));
+  p.push({who:'chiikawa',text:'おとどけ、おわり…！',end:true});return {type:'talk',pages:p,label:'🃏 例外カード'}}
+function auditScene(a){return {type:'talk',label:'🗂 記録監査',icon:'letter',onEnd:()=>markSeen('au:'+a.id),pages:[
+  {who:'shisa',head:'🗂 記録監査',title:a.title||'今週の点検',text:`結果：${a.result||'-'}\n${a.summary||''}`},
+  ...(a.fixes?[{who:'shisa',head:'修正案',text:a.fixes}]:[]),{who:'shisa',text:'以上です！ 引き続き、ていねいに見ていきます。',end:true}]}}
 
 // ---------- 書き込み ----------
 async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collection(col).doc(id).update(patch)}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}}}
-function cheer(id,big){const e=ent[id];if(!e)return;e.jump=1;const prev=e.pose;e.pose='happy';setTimeout(()=>{if(e.pose==='happy')e.pose=e.st==='home'?'work':'idle'},1000);floater('+10🌰',e);
-  if(big)AGENTS.forEach(k=>{if(k!==id){ent[k].jump=1}})}
 function floater(text,e){const f=document.createElement('div');f.className='floater';f.textContent=text;f.style.left=(e.x/W*100)+'%';f.style.top=((e.y-24)/H*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1300)}
-async function setReport(id,patch){const r=REPORTS.find(x=>x.id===id);if(!r)return;Object.assign(r,patch);if(patch.done)cheer('chiikawa');renderBox();await write('reports',id,patch)}
-async function decide(id,status,reply){const x=PROPS.find(p=>p.id===id);if(!x)return;const patch={status,decidedAt:Date.now()};if(reply)patch.reply=reply.slice(0,300);Object.assign(x,patch);
-  if(status==='approved')cheer(x.agent);renderProps();await write('proposals',id,patch)}
-async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;Object.assign(t,patch);if(patch.done)cheer('soyan',true);renderMine();$('coin').textContent='🌰 '+coins();await write('tasks',id,patch)}
-$('addForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('taskIn').value.trim();if(!v)return;$('taskIn').value='';
-  const t={title:v.slice(0,120),done:false,createdAt:Date.now()};
-  if(db&&canWrite){try{const ref=await db.collection('tasks').add(t);if(!TASKS.find(x=>x.id===ref.id)){TASKS.push({id:ref.id,...t});renderMine()}}catch(err){TASKS.push({id:'local'+Date.now(),...t});renderMine()}}
-  else{TASKS.push({id:'local'+Date.now(),...t});renderMine()}floater('📝',ent.soyan)});
-
-// ---------- 一覧の描画 ----------
-const tlink=r=>{const u=safeUrl(r.link);return u?`<a class="t" href="${esc(u)}" target="_blank" rel="noopener">${esc(r.title)}</a>`:`<span class="t">${esc(r.title)}</span>`};
-const CHIP={proposed:'相談中',approved:'おねがいした',doing:'とりかかり中',done:'できた',rejected:'見送り'};
-function fmt(ms){if(!ms)return '';const d=new Date(ms);return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`}
-function renderProps(){const list=PROPS.filter(p=>p.status!=='rejected').sort((a,b)=>{const o={proposed:0,approved:1,doing:1,done:2};return (o[a.status]??3)-(o[b.status]??3)||(b.createdAt||0)-(a.createdAt||0)}).slice(0,12);
-  $('pcnt').textContent=PROPS.filter(p=>p.status==='proposed').length?`${PROPS.filter(p=>p.status==='proposed').length}件 相談中`:'';
-  $('props').innerHTML=list.length?list.map(p=>`<div class="card"><div class="ava"><img src="${ICON[p.agent]||ICON.chiikawa}" alt=""></div><div style="min-width:0">
-    <div class="who">${esc(NAMES[p.agent]||p.agent)}<span class="chip ${esc(p.status)}">${esc(CHIP[p.status]||p.status)}</span><span>${fmt(p.createdAt)}</span></div>
-    <div class="t">${esc(p.title)}</div><p>${esc(p.why||'')}</p>${p.plan?`<p class="plan">やること：${esc(p.plan)}</p>`:''}
-    ${p.status==='proposed'?`<div class="row"><button type="button" class="yes" data-p="${esc(p.id)}" data-s="approved">👍 やってみて</button><button type="button" data-p="${esc(p.id)}" data-s="rejected">🙅 今回はなし</button></div>
-      <div class="row"><input id="rp-${esc(p.id)}" placeholder="ひとこと添える（任意）" aria-label="ひとこと"><button type="button" data-p="${esc(p.id)}" data-s="approved" data-r="1">これでおねがい</button></div>`:''}
-    ${p.reply?`<p>そーやん：${esc(p.reply)}</p>`:''}
-    ${p.status==='done'&&p.result?`<details class="result"><summary>できたものを見る</summary><p>${esc(p.result)}</p>${safeUrl(p.link)?`<p><a href="${esc(p.link)}" target="_blank" rel="noopener">ひらく ↗</a></p>`:''}</details>`:''}
-  </div></div>`).join(''):'<p class="empty">なかまが「これやろうと思うんだけど、どう？」と相談しにきます。</p>'}
-$('props').addEventListener('click',e=>{const b=e.target.closest('button[data-p]');if(!b)return;const id=b.dataset.p;const inp=document.getElementById('rp-'+id);
-  decide(id,b.dataset.s,b.dataset.r&&inp?inp.value.trim():'');if(pages[pi]&&pages[pi].pid===id)renderActs(!typing)});
-function renderMeeting(){const m=MEETS.slice().sort(byTime).pop();if(!m){return}
-  $('mtime').textContent=fmt(m.createdAt);
-  $('mtg').innerHTML=`<div class="t" style="font-size:15px">${esc(m.title||'なかまの会議')}</div>`+
-    (m.lines||[]).slice(0,8).map(l=>`<div class="line"><img src="${ICON[l.who]||ICON.chiikawa}" alt="${esc(NAMES[l.who]||'')}"><div>${esc(l.text)}</div></div>`).join('')+
-    (m.decisions&&m.decisions.length?`<div class="dec">きまったこと<ul>${m.decisions.map(d=>`<li>${esc(d)}</li>`).join('')}</ul></div>`:'')+
-    `<div class="row"><button type="button" id="watchMtg">▶ 会議のようすを見る</button></div>`;
-  $('watchMtg').onclick=()=>enqueue(meetingScene(m))}
-function renderBox(){const att=attention(),res=resolved();
-  $('sched').innerHTML=(STATUS.schedule||[]).map(s=>`<span>⏰ ${esc(s.time)} ${esc(s.title)}</span>`).join('');
-  $('att').innerHTML=att.length?att.map(r=>`<div class="item${r.done?' done':''}"><input type="checkbox" id="r-${esc(r.id)}" data-r="${esc(r.id)}" ${r.done?'checked':''} aria-label="やった：${esc(r.title)}">
-    <div>${tlink(r)}<p>${esc(r.body||'')}</p>${r.answer?`<span class="ans">こたえ：${esc(r.answer)}</span>`:''}</div></div>`).join(''):'<p class="empty">ちいかわからのほうこくがここに届きます。</p>';
-  $('res').innerHTML=res.length?res.map(r=>`<div class="item done"><span aria-hidden="true">✔</span><div>${tlink(r)}<p>${esc(r.body||'')}</p></div></div>`).join(''):'<p class="empty">まだありません。</p>';
-  const n=att.filter(r=>r.done).length;$('cnt').textContent=`${n} / ${att.length} 片づいた`;
-  $('bar').style.width=(att.length?n/att.length*100:0)+'%';$('coin').textContent='🌰 '+coins()}
-function renderMine(){const ts=TASKS.slice().sort(byTime);
-  $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span></div></div>`).join(''):'<p class="empty">やることを追加して、終わったらチェック。なかまが一緒によろこびます。</p>';
-  const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
-function renderRoster(){$('roster').innerHTML=AGENTS.map(id=>{const r=ROLES[id],a=(STATUS.agents||{})[id];
-  return `<button type="button" class="mem" data-ask="${id}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
-  <div class="ask">${esc(ASK[id])}</div><div class="now">${esc((a&&a.doing)||DEFAULT_DOING[id])}</div></div></button>`}).join('');
-  const sel=$('noteTo'),cur=sel.value;sel.innerHTML='<option value="all">みんなへ</option>'+AGENTS.map(id=>`<option value="${id}">${esc(NAMES[id])}（${esc(ROLES[id][0])}）へ</option>`).join('');sel.value=cur||'all'}
-$('roster').addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(!b)return;$('noteTo').value=b.dataset.ask;$('noteIn').focus();$('noteIn').scrollIntoView({block:'center',behavior:'smooth'});
-  const a=ent[b.dataset.ask];if(a){a.jump=1}});
-function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,15);
-  $('ncnt').textContent=NOTES.length?`${NOTES.length}件`:'';
-  $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・なかまが次の見回りで読みます'}</div>
-    <div class="q">${esc(n.text)}</div>${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.chiikawa}" alt=""><div><b>${esc(NAMES[r.who]||r.who)}${ROLES[r.who]?'（'+esc(ROLES[r.who][0])+'）':''}</b>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
-    :'<p class="empty">書いたことは、なかまが次の見回り（7:47・12:47・17:47）で読んで、返事や提案をくれます。</p>'}
-const GC={S:'#c9851f',A:'#5f9d5a',B:'#3f6fd8',C:'#c98a1c',D:'#d9544b'};
-function renderReview(){const r=REVIEWS.slice().sort(byTime).pop();if(!r)return;$('rtime').textContent=fmt(r.createdAt);
-  const li=a=>a&&a.length?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
-  $('review').innerHTML=`<div class="grade"><div class="g" style="--gc:${GC[r.grade]||'#857a70'}">${esc(r.grade||'-')}</div><div><div style="font-size:13px;color:var(--sub)">${r.score!=null?esc(r.score)+' 点':''}</div><div class="sum">${esc(r.summary||'')}</div></div></div>
-    ${r.good&&r.good.length?'<h4>よかった点</h4>'+li(r.good):''}${r.bad&&r.bad.length?'<h4>ダメ出し</h4>'+li(r.bad):''}${r.next&&r.next.length?'<h4>次への指示</h4>'+li(r.next):''}
-    <div class="row"><button type="button" id="watchRv">▶ 鎧さんから聞く</button></div>`;$('watchRv').onclick=()=>enqueue(reviewScene(r))}
-$('noteForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('noteIn').value.trim();if(!v)return;const to=$('noteTo').value||'all';
-  const n={text:v.slice(0,2000),to,createdAt:Date.now(),replies:[]};$('noteIn').value='';
-  if(db&&canWrite){try{const ref=await db.collection('notes').add(n);if(!NOTES.find(x=>x.id===ref.id)){NOTES.push({id:ref.id,...n});renderNotes()}}catch(err){NOTES.push({id:'local'+Date.now(),...n});renderNotes()}}
-  else{NOTES.push({id:'local'+Date.now(),...n});renderNotes()}
-  floater('💭',ent.soyan);(to==='all'?AGENTS:[to]).forEach(id=>{if(ent[id])ent[id].jump=1})});
-function renderStatus(){renderRoster();const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
-  $('note').textContent=(STATUS.note||'')+(STATUS.updatedAt?`　最終更新：${fmt(STATUS.updatedAt)}`:'');renderBox()}
-$('att').addEventListener('change',e=>{const id=e.target.dataset.r;if(id){const r=REPORTS.find(x=>x.id===id);setReport(id,{done:!r.done});if(pages[pi]&&pages[pi].rid===id)renderActs(!typing)}});
+async function answer(id,k){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};Object.assign(x,patch);
+  ent.chiikawa.jump=1;renderXcs();await write('exceptions',id,patch)}
+async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();await write('tasks',id,patch)}
+$('addForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('taskIn').value.trim();if(!v)return;$('taskIn').value='';const t={title:v.slice(0,120),done:false,createdAt:Date.now()};
+  if(db&&canWrite){try{const ref=await db.collection('tasks').add(t);if(!TASKS.find(x=>x.id===ref.id)){TASKS.push({id:ref.id,...t});renderMine()}}catch(err){TASKS.push({id:'local'+Date.now(),...t});renderMine()}}else{TASKS.push({id:'local'+Date.now(),...t});renderMine()}floater('📝',ent.soyan)});
 $('mine').addEventListener('change',e=>{const id=e.target.dataset.t;if(id){const t=TASKS.find(x=>x.id===id);setTask(id,{done:!t.done})}});
-$('replay').addEventListener('click',()=>enqueue(briefScene(true)));
+$('noteForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('noteIn').value.trim();if(!v)return;const to=$('noteTo').value||'all';const n={text:v.slice(0,2000),to,createdAt:Date.now(),replies:[]};$('noteIn').value='';
+  if(db&&canWrite){try{const ref=await db.collection('notes').add(n);if(!NOTES.find(x=>x.id===ref.id)){NOTES.push({id:ref.id,...n});renderNotes()}}catch(err){NOTES.push({id:'local'+Date.now(),...n});renderNotes()}}else{NOTES.push({id:'local'+Date.now(),...n});renderNotes()}
+  ent.chiikawa.jump=1;floater('💭',ent.chiikawa)});
+$('xcs').addEventListener('click',e=>{const b=e.target.closest('button[data-x]');if(b)answer(b.dataset.x,b.dataset.k)});
+$('replay').addEventListener('click',()=>enqueue(digestScene(true)));
 let lock=null;$('wake').addEventListener('click',async()=>{try{if(lock){await lock.release();lock=null;$('wake').textContent='💡'}else{lock=await navigator.wakeLock.request('screen');$('wake').textContent='🔆'}}catch(e){lock=null;$('wake').textContent='💡'}});
-renderStatus();renderMine();renderNotes();idle();
+
+// ---------- 一覧 ----------
+function fmt(ms){if(!ms)return '';const d=new Date(ms);return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`}
+function renderDigest(){const d=STATUS.digest||{};$('dgTime').textContent=STATUS.updatedAt?fmt(STATUS.updatedAt)+' 時点':'';
+  $('digest').innerHTML=DG.map(([k,label,c])=>{const arr=d[k]||[];return `<div class="dgc" style="--c:${c}"><b>${label}<span>${arr.length}</span></b>${arr.length?`<ul>${arr.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:'<div class="none">なし</div>'}</div>`}).join('')}
+function renderXcs(){const list=XCS.slice().sort((a,b)=>(a.status==='answered')-(b.status==='answered')||byTime(b,a)).slice(0,8);const open=XCS.filter(x=>x.status!=='answered').length;
+  $('xcCnt').textContent=open?`${open}件 待ち`:'';
+  $('xcs').innerHTML=list.length?list.map(x=>`<div class="xc${x.status==='answered'?' done':''}"><div class="q">${esc(x.question)}</div>${x.why?`<p>${esc(x.why)}</p>`:''}
+    <div class="opts">${(x.options||[]).map(o=>`<button type="button" class="opt" data-x="${esc(x.id)}" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}"><b>${esc(o.key)}</b><span>${esc(o.label)}${o.detail?`<br><small style="color:var(--sub)">${esc(o.detail)}</small>`:''}</span></button>`).join('')}
+    <button type="button" class="opt" data-x="${esc(x.id)}" data-k="保留" aria-pressed="${x.answer==='保留'}"><b>…</b><span>保留（あとで考える）</span></button></div>
+    ${x.recommend?`<div class="rec">ハチワレのおすすめ：${esc(x.recommend)}</div>`:''}${x.ifNothing?`<p>何もしない場合：${esc(x.ifNothing)}</p>`:''}</div>`).join(''):'<p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p>'}
+const LANES=[['review','🛡️ 検収待ち','#b7791f'],['blocked','⛔ ブロック','#c2463d'],['doing','🔨 作業中','#3f6fd8'],['todo','📌 これから','#857a70'],['done','✅ 完了（直近）','#4f8f4a']];
+const OWNER_ID={'ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
+function renderBoard(){const n=s=>BOARD.filter(b=>b.status===s).length;$('bdCnt').textContent=BOARD.length?`作業中 ${n('doing')}・検収待ち ${n('review')}・完了 ${n('done')}`:'';
+  if(!BOARD.length){$('board').innerHTML='<p class="empty">ハチワレが起票したタスクがここに並びます。</p>';return}
+  $('board').innerHTML=LANES.map(([s,label,c])=>{let arr=BOARD.filter(b=>b.status===s).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));if(s==='done')arr=arr.slice(0,5);if(!arr.length)return '';
+    return `<div class="lane"><h3><i style="--c:${c}"></i>${label}（${arr.length}）</h3>${arr.map(b=>{const oid=OWNER_ID[b.owner]||b.owner;const v=b.verdict&&b.verdict!=='未'?b.verdict:'';
+      const vc=v==='PASS'?'pass':v==='FAIL'?'fail':v?'inc':'';const link=safeUrl(b.link),nl=safeUrl(b.notionUrl);
+      return `<div class="tk"><img src="${ICON[oid]||ICON.hachiware}" alt="${esc(b.owner||'')}"><div style="min-width:0"><div class="t">${esc(b.title)}</div>
+      <div class="meta">${b.dept?`<span class="chip">${esc(b.dept)}</span>`:''}${b.autonomy?`<span class="chip">${esc(b.autonomy)}</span>`:''}${b.standing?'<span class="chip so">常時発注</span>':''}${b.needsApproval?'<span class="chip appr">要承認</span>':''}${v?`<span class="chip ${vc}">検収 ${esc(v)}</span>`:''}</div>
+      ${b.outcome?`<p>成果とのつながり：${esc(b.outcome)}</p>`:''}${b.verdictNote?`<p>🛡️ ${esc(b.verdictNote)}</p>`:''}${b.evidence?`<p>証拠：${esc(b.evidence)}</p>`:''}
+      ${link||nl?`<p>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">成果物をひらく ↗</a>`:''}${link&&nl?'　':''}${nl?`<a href="${esc(nl)}" target="_blank" rel="noopener">Notion ↗</a>`:''}</p>`:''}</div></div>`}).join('')}</div>`}).join('')}
+function renderAudit(){const a=AUDITS.slice().sort(byTime).pop();if(!a)return;$('auTime').textContent=fmt(a.createdAt);
+  const sec=(h,v)=>v?`<h4>${h}</h4><p>${esc(v)}</p>`:'';
+  $('audit').innerHTML=`<div class="t" style="font-size:14px">${esc(a.title||'今週の点検')}：<b>${esc(a.result||'-')}</b></div>${sec('まとめ',a.summary)}${sec('食い違い',a.mismatches)}${sec('記録漏れ',a.missing)}${sec('鮮度',a.freshness)}${sec('構成',a.structure)}${sec('修正案',a.fixes)}
+    <div style="margin-top:8px"><button type="button" class="btn-s" id="auBtn">▶ シーサーから聞く</button></div>`;$('auBtn').onclick=()=>enqueue(auditScene(a))}
+function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,12);$('ntCnt').textContent=NOTES.length?`${NOTES.length}件`:'';
+  const sel=$('noteTo'),cur=sel.value;sel.innerHTML='<option value="all">みんなへ</option>'+ORDER.map(id=>`<option value="${id}">${esc(NAMES[id])}（${esc(ROLES[id][0])}）へ</option>`).join('');sel.value=cur||'all';
+  $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・次の見回り（7:47／17:47）で読みます'}</div><div class="q">${esc(n.text)}</div>
+    ${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.hachiware}" alt=""><div><small style="color:var(--sub)">${esc(NAMES[r.who]||r.who)}</small><br>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
+    :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
+function renderMine(){const ts=TASKS.slice().sort(byTime);$('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
+  const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
+function renderRoster(){$('roster').innerHTML=ORDER.map(id=>{const r=ROLES[id],st=agentState(id),a=(STATUS.agents||{})[id];
+  return `<div class="mem${st==='bench'?' bench':''}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
+  <div class="ask">${esc(ASK[id])}</div><div class="now">${st==='bench'?'💤 控え（'+esc(JOIN[id]||'')+'）':esc((a&&a.doing)||(id==='chiikawa'?'📮 郵便受けの前で待機':'待機中'))}${a&&a.autonomy?`<span class="chip" style="margin-left:4px">${esc(a.autonomy)}</span>`:''}</div></div></div>`}).join('');
+  const so=STATUS.standing||[];$('standing').innerHTML=so.length?so.map(s=>`<li>✅ ${esc(s.title)}　<small style="color:var(--sub)">${esc(s.limit||'')}・${esc(s.autonomy||'')}</small></li>`).join(''):'<li style="color:var(--sub)">まだありません</li>'}
+function renderDecs(){const list=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,6);
+  $('decs').innerHTML=list.length?list.map(d=>`<div class="dec"><div class="t">${esc(d.title)}</div><p>${esc(d.decided||'')}${d.by?`（${esc(d.by)}・${esc(d.date||'')}）`:''}</p></div>`).join(''):'<p class="empty">決まったことがここに残ります。</p>'}
+function renderStatus(){const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;$('phase').textContent='フェーズ'+(STATUS.phase??0);
+  const nu=safeUrl(STATUS.notionUrl);$('note').innerHTML=(STATUS.note?esc(STATUS.note)+'　':'')+(STATUS.updatedAt?'最終更新 '+fmt(STATUS.updatedAt)+'　':'')+(nu?`<a href="${esc(nu)}" target="_blank" rel="noopener">Notion のAIなかまの部屋 ↗</a>`:'');
+  renderDigest();renderRoster()}
+renderStatus();renderMine();renderNotes();renderDecs();idle();
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
-  if(!db){setText('','','（この画面では村のデータを読めません。Claudeのアプリかブラウザで開いてください）','chiikawa');$('dActs').innerHTML='';return}
+  if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
   try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false}}catch(e){}
-  const ready={reports:false,proposals:false,meetings:false,reviews:false};let booted=false;
-  function boot(){if(booted||!Object.values(ready).every(Boolean))return;booted=true;
-    enqueue(briefScene(false));
-    const rv=REVIEWS.slice().sort(byTime).pop();const m=MEETS.slice().sort(byTime).pop();if(m&&!seen['m:'+m.id]&&Date.now()-(m.createdAt||0)<36*3600e3)enqueue(meetingScene(m));
-    const dn=PROPS.filter(p=>p.status==='done'&&!seen['done:'+p.id]&&ent[p.agent]);if(dn.length)enqueue(resultScene(dn));
-    const pend=PROPS.filter(p=>p.status==='proposed'&&ent[p.agent]).sort(byTime);if(pend.length)enqueue(propScene(pend));
-    if(rv&&!seen['rv:'+rv.id]&&Date.now()-(rv.createdAt||0)<36*3600e3)enqueue(reviewScene(rv));
+  const ready={status:false,ex:false};let booted=false;
+  function boot(){if(booted||!ready.status||!ready.ex)return;booted=true;
+    const key='dg:'+(STATUS.updatedAt||0);const open=XCS.filter(x=>x.status!=='answered');
+    if(!seen[key]||open.length){const s=digestScene(true);s.onEnd=()=>markSeen(key);enqueue(s)}
+    const a=AUDITS.slice().sort(byTime).pop();if(a&&!seen['au:'+a.id]&&Date.now()-(a.createdAt||0)<7*864e5)enqueue(auditScene(a));
     if(!scene)idle()}
-  const live=(s)=>s.docChanges().filter(c=>!c.doc.metadata.hasPendingWrites);
-  db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus()},()=>{});
-  db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine();$('coin').textContent='🌰 '+coins()},()=>{});
-  db.collection('reports').onSnapshot(s=>{REPORTS=s.docs.map(d=>({id:d.id,...d.data()})).sort(byTime);renderBox();
-    if(!ready.reports){if(!s.metadata.fromCache||REPORTS.length){ready.reports=true;boot()}return}
-    const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(r=>r.kind!=='resolved');if(add.length)enqueue(reportScene(add))},()=>{});
-  db.collection('proposals').onSnapshot(s=>{PROPS=s.docs.map(d=>({id:d.id,...d.data()}));renderProps();$('coin').textContent='🌰 '+coins();
-    if(!ready.proposals){if(!s.metadata.fromCache||PROPS.length){ready.proposals=true;boot()}return}
-    const ch=live(s).map(c=>({type:c.type,...c.doc.data(),id:c.doc.id}));
-    const np=ch.filter(c=>c.type==='added'&&c.status==='proposed'&&ent[c.agent]);if(np.length)enqueue(propScene(np));
-    const dn=ch.filter(c=>c.status==='done'&&!seen['done:'+c.id]);if(dn.length)enqueue(resultScene(dn))},()=>{});
-  db.collection('meetings').onSnapshot(s=>{MEETS=s.docs.map(d=>({id:d.id,...d.data()}));renderMeeting();
-    if(!ready.meetings){if(!s.metadata.fromCache||MEETS.length){ready.meetings=true;boot()}return}
-    live(s).filter(c=>c.type==='added').forEach(c=>{const m={id:c.doc.id,...c.doc.data()};if(!seen['m:'+m.id])enqueue(meetingScene(m))})},()=>{});
+  const live=s=>s.docChanges().filter(c=>!c.doc.metadata.hasPendingWrites);
+  db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus();if(!ready.status&&(!s.metadata.fromCache||s.exists)){ready.status=true;boot()}},()=>{});
+  db.collection('board').onSnapshot(s=>{BOARD=s.docs.map(d=>({id:d.id,...d.data()}));renderBoard()},()=>{});
+  db.collection('exceptions').onSnapshot(s=>{XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();
+    if(!ready.ex){if(!s.metadata.fromCache||XCS.length){ready.ex=true;boot()}return}
+    const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
+  db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
+  db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
   db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},()=>{});
-  db.collection('reviews').onSnapshot(s=>{REVIEWS=s.docs.map(d=>({id:d.id,...d.data()}));renderReview();
-    if(!ready.reviews){if(!s.metadata.fromCache||REVIEWS.length){ready.reviews=true;boot()}return}
-    live(s).filter(c=>c.type==='added').forEach(c=>{const r={id:c.doc.id,...c.doc.data()};if(!seen['rv:'+r.id])enqueue(reviewScene(r))})},()=>{});
-  setTimeout(()=>{ready.reports=ready.proposals=ready.meetings=ready.reviews=true;boot()},6000);
+  db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine()},()=>{});
+  setTimeout(()=>{ready.status=ready.ex=true;boot()},6000);
 })();
 </script>

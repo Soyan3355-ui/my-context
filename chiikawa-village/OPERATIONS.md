@@ -1,3 +1,5 @@
+> ⚠️ **この文書は廃止（2026-09-29）。** 旧「はしぐち村」の自動運営の記録です。現在の運行手順は `RUNBOOK.md`、設計は `REDESIGN.md` を参照。
+
 # はしぐち村 自動運営マニュアル
 
 ゲーム画面（Artifact）: https://claude.ai/artifact/QxcAubTbEmnZdyDSapJUF4
