@@ -181,6 +181,15 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .bx-sum .cp{display:inline-block;margin:0 5px 4px 0;padding:0 8px;border:1.5px solid var(--c,var(--line));border-radius:999px;font-size:11.5px}.bx-sum .cp b{font-variant-numeric:tabular-nums}
 .bx-sum .due{font-style:normal;font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 5px;margin-left:3px;white-space:nowrap}
 .bx-body[hidden],.bx-sum[hidden]{display:none!important}
+.idea{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px}
+.idea.done{opacity:.8;padding:6px 10px}
+.idea .hd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px}.idea .hd img{width:22px;height:22px;image-rendering:pixelated}
+.idea .ti{font-size:15px;margin:4px 0 2px;overflow-wrap:anywhere}
+.idea p{margin:3px 0 0;font-family:var(--body);font-size:12.5px;line-height:1.6;color:var(--sub);overflow-wrap:anywhere}
+.idea .mt{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.idea .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.idea .go button{font:inherit;font-size:13px;border-radius:8px;padding:6px 12px;cursor:pointer;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
+.idea .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 </style>
@@ -206,7 +215,8 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   </div>
   <div class="cols">
     <div class="colA">
-  <section style="order:3" class="box chat" aria-labelledby="h-chat">
+  <section style="order:3" class="box" aria-labelledby="h-idea"><h2 id="h-idea">💡 ちいかわからの提案 <small id="ideaCnt"></small></h2><div id="ideas"><p class="empty">「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p></div></section>
+  <section style="order:4" class="box chat" aria-labelledby="h-chat">
     <h2 id="h-chat">💬 ちいかわに相談 <small id="chatSt"></small></h2>
     <div class="chat-who" id="chatWho" role="group" aria-label="相談相手"></div>
     <div class="row" style="margin-top:8px"><label for="chatTask" style="font-size:12px;color:var(--sub)">タスク：</label><select id="chatTask" class="chat-sel"></select></div>
@@ -218,33 +228,33 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
       <div class="row"><button type="button" class="btn-s" id="chatSave">つぶやき箱に残す</button><button type="button" class="btn-s" id="chatClear">この会話をけす</button></div></form>
     <p class="empty" id="chatNote"></p>
   </section>
-  <section style="order:4" class="box" aria-labelledby="h-mine">
+  <section style="order:5" class="box" aria-labelledby="h-mine">
     <h2 id="h-mine">🧑‍🌾 そーやんの仕事 <small id="mcnt"></small></h2>
     <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること" aria-label="やることを追加" autocomplete="off"><button type="submit" class="bt">追加</button></form>
     <div id="mine"><p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p></div>
     <p class="empty" id="mNote" aria-live="polite" style="font-size:12px"></p>
   </section>
-  <section style="order:5" class="box" aria-labelledby="h-nt">
+  <section style="order:6" class="box" aria-labelledby="h-nt">
     <h2 id="h-nt">💭 つぶやき箱 <small id="ntCnt"></small></h2>
     <form class="notef" id="noteForm"><textarea id="noteIn" placeholder="悩んでいること、思いついたこと、頼みたいこと。なんでもどうぞ。" aria-label="つぶやき"></textarea>
       <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="bt">とどける</button></div></form>
     <div id="notes"></div>
   </section>
-  <section style="order:7" class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
+  <section style="order:8" class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
     <div id="ciForm"></div>
     <input class="ci-note" id="ciNote" placeholder="ひとこと（書きたいときだけ）" aria-label="ひとこと" autocomplete="off">
     <div class="ci-row"><button type="button" class="bt" id="ciSave" style="padding:6px 14px">記録する</button><small id="ciMsg" style="color:var(--sub);font-family:var(--body)"></small></div>
     <table class="ci-hist" id="ciHist" hidden></table>
   </section>
-  <section style="order:9" class="box" aria-labelledby="h-rs"><h2 id="h-rs">👥 役割名簿</h2><div class="roster" id="roster"></div>
+  <section style="order:10" class="box" aria-labelledby="h-rs"><h2 id="h-rs">👥 役割名簿</h2><div class="roster" id="roster"></div>
     <h2 style="margin-top:14px">📋 常時発注リスト <small>確認なしで進める仕事</small></h2><ul class="so-list" id="standing"></ul></section>
     </div>
     <div class="colB">
   <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="rounds" id="rounds" aria-live="off"></div><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
   <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
-  <section style="order:6" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
-  <section style="order:8" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
-  <section style="order:10" class="box" aria-labelledby="h-dc"><h2 id="h-dc">🧾 決定記録</h2><div id="decs"><p class="empty">決まったことがここに残ります。</p></div></section>
+  <section style="order:7" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
+  <section style="order:9" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
+  <section style="order:11" class="box" aria-labelledby="h-dc"><h2 id="h-dc">🧾 決定記録</h2><div id="decs"><p class="empty">決まったことがここに残ります。</p></div></section>
     </div>
   </div>
   <p class="note" id="note"></p>
@@ -376,7 +386,7 @@ const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事'
 const SPEAK={x:140,y:116};
 const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi','scoutA','scoutB'];
 const $=id=>document.getElementById(id);
-let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
+let IDEAS=[],STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
 function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench')}
@@ -786,8 +796,24 @@ function renderRounds(){const now=Date.now(),jst=new Date(now+9*36e5);const y=js
 renderRounds();setInterval(renderRounds,60000);
 
 
+
+// ---------- ちいかわからの提案 ----------
+function ideaCard(x,decided){const r=ROLES[x.who]||['',''];const st={approved:'承認ずみ（次の見回りで着手）',doing:'作業中',done:'できた',declined:'見送り',later:'あとで'}[x.status]||'';
+  const mt=`<div class="mt">${x.effort?`<span class="chip">手間 ${esc(x.effort)}</span>`:''}${x.autonomy?`<span class="chip">${esc(x.autonomy)}</span>`:''}${x.needsApproval?'<span class="chip appr">送信・お金の操作はしません</span>':''}</div>`;
+  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
+  return `<div class="idea"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="ti">${esc(x.title)}</div>
+    ${x.what?`<p>やること：${esc(x.what)}</p>`:''}${x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:''}${x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:''}${mt}
+    <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">やってもらう</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div></div>`}
+function renderIdeas(){const o=IDEAS.filter(x=>x.status==='open').sort(byTime);const dl=IDEAS.filter(x=>['approved','doing','done','declined'].includes(x.status)).sort((a,b)=>(b.decidedAt||b.createdAt||0)-(a.decidedAt||a.createdAt||0)).slice(0,6);
+  $('ideaCnt').textContent=o.length?`${o.length}件`:'';const keep=$('ideas').querySelector('details.xdone')?.open;
+  $('ideas').innerHTML=(o.length?o.map(x=>ideaCard(x,false)).join(''):'<p class="empty">いまの提案はありません。「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p>')
+   +(dl.length?`<details class="xdone"${keep?' open':''}><summary>これまでの提案（${dl.length}件）を見る</summary>${dl.map(x=>ideaCard(x,true)).join('')}</details>`:'');if(typeof renderSums==='function')renderSums()}
+$('ideas').addEventListener('click',async e=>{const b=e.target.closest('button[data-idea]');if(!b)return;const x=IDEAS.find(i=>i.id===b.dataset.idea);if(!x)return;
+  const k=b.dataset.k;const patch={status:k==='go'?'approved':k==='no'?'declined':'later',decidedAt:Date.now()};Object.assign(x,patch);
+  if(k==='go'){if(ent[x.who])ent[x.who].jump=1;floater('✨',ent[x.who]||ent.hachiware)}renderIdeas();await write('ideas',x.id,patch)});
+
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-xc','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-xc','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -797,6 +823,7 @@ const SUMS={
    const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
    return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
+ 'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> の提案：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,40))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
  'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
  'h-nt':()=>{const w=NOTES.filter(n=>!(n.replies||[]).length&&!n.fromChat).length;const l=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${NOTES.length}件・返事待ち <b>${w}</b>件${l?'<br>最新：'+esc(clip(l.text.replace(/\n+/g,' '),40)):''}</div>`},
@@ -837,6 +864,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(
   db.collection('exceptions').onSnapshot(s=>{XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();renderDigest();
     if(!ready.ex){if(!s.metadata.fromCache||XCS.length){ready.ex=true;boot()}return}
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
+  db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
   db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
   db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
   db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},()=>{});
