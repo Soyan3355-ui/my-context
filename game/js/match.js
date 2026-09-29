@@ -130,7 +130,9 @@
         if (this.combo('ace') && (id === 'leo' || id === 'hikaru') && k === 'sht') v += 5;
         if (this.combo('bonsai') && (id === 'kazuha' || id === 'mame') && k === 'pas') v += 8;
         if (id === 'ponta' && this.pontaAwake) v += 10;
-        if (id === 'hikaru' && (k === 'sht' || k === 'spd')) v += Math.round(this.crowdHype * 4);
+        // a spd bonus here used to let hikaru blow past the back line more than his own pace
+        // should allow, on top of the shooting confidence a hyped crowd is meant to represent
+        if (id === 'hikaru' && k === 'sht') v += Math.round(this.crowdHype * 4);
       }
       return v;
     }
@@ -831,7 +833,7 @@
       const ord = this.order[t] ? this.order[t].id : null;
       let best = { k: 'drib', s: 30 + this.stat(p, 'spd') * 0.25 - (pressure < 18 ? 22 : 0) + rand(0, 14) + (countering && pressure > 30 ? 20 : 0) - (tac === 'possession' && this.proj(t, p.x) < this.proj(t, CX) + 130 ? 10 : 0) };
       // shoot
-      const range = 100 + this.stat(p, 'sht') * 0.8 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 16 : 0);
+      const range = 100 + this.stat(p, 'sht') * 0.8 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 8 : 0);
       const patient = tac === 'possession' && this.noShotT[t] < 20;
       if (dGoal < range * (patient ? 0.85 : 1) && Math.abs(p.y - CY) < 110) {
         let s = 22 + (range - dGoal) * 0.55 + (pressure < 20 ? 10 : 0) + (dGoal < 110 ? 90 : 0) + rand(0, 20);
@@ -894,7 +896,7 @@
         if (tac === 'long') s -= 8;
         if (countering) { if (prog > 20) s += 30; if (prog < 0) s -= 40; }
         if (ord === 'pass') s += 18;
-        if (p.id === 'leo') s -= 6;
+        if (p.id === 'leo') s -= 3;
         if (p.id === 'kazuha') s += 8;
         s += rand(0, 16);
         if (s > best.s) best = { k: 'pass', s, m };
