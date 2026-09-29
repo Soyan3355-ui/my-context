@@ -72,6 +72,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .box h2{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .box h2 small{font-size:12px;color:var(--sub);font-weight:400;font-variant-numeric:tabular-nums}
 .empty{font-size:13px;color:var(--sub);padding:6px 0;font-family:var(--body);line-height:1.6;margin:0}
+.rounds{font-family:var(--body);font-size:12px;line-height:1.7;color:var(--sub);margin:0 0 8px}.rounds b{color:var(--ink);font-weight:600}.rounds .nx{display:inline-block;margin-top:2px;padding:0 8px;border:1.5px solid var(--line);border-radius:999px;color:var(--ink)}
 .dg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media (max-width:420px){.dg{grid-template-columns:minmax(0,1fr)}}
 .dgc{border:2px solid var(--line);border-radius:8px;padding:8px 10px;border-left:5px solid var(--c)}
@@ -228,7 +229,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <h2 style="margin-top:14px">📋 常時発注リスト <small>確認なしで進める仕事</small></h2><ul class="so-list" id="standing"></ul></section>
     </div>
     <div class="colB">
-  <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
+  <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="rounds" id="rounds" aria-live="off"></div><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
   <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
   <section style="order:6" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
   <section style="order:8" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
@@ -718,6 +719,17 @@ $('chatClear').addEventListener('click',()=>{if(chatBusy)return;delete LOGS[chat
 function chatAvail(){const ok=!!SAMPLE;$('chatIn').disabled=!ok;$('chatSend').disabled=!ok||chatBusy;$('chatSt').textContent=ok?'':'（いまは使えません）';if(!ok)$('chatNote').textContent='この画面では相談が使えません。Claude のアプリかブラウザで開くと使えます。'}
 renderChatUi();chatAvail();
 setInterval(()=>{if(!chatBusy&&!document.activeElement.closest?.('#chatForm'))renderChatUi()},4000);
+
+
+// ---------- 見回りの時間 ----------
+const ROUNDS=[[7,47,'朝の見回り'],[10,47,'更新'],[13,47,'更新'],[17,47,'夕の見回り'],[20,47,'更新']];
+function renderRounds(){const now=Date.now(),jst=new Date(now+9*36e5);const y=jst.getUTCFullYear(),m=jst.getUTCMonth(),d=jst.getUTCDate();
+  const at=(dd,h,mi)=>Date.UTC(y,m,dd,h,mi)-9*36e5;let best=null;
+  for(let k=0;k<3;k++){const day=new Date(Date.UTC(y,m,d+k));const wd=day.getUTCDay();const list=ROUNDS.map(r=>[at(d+k,r[0],r[1]),r[2]]);if(wd===1)list.push([at(d+k,9,17),'週次の点検']);
+    for(const [t,l] of list.sort((a,b)=>a[0]-b[0])){if(t>now&&(!best||t<best[0]))best=[t,l]}if(best)break}
+  const el=$('rounds');if(!el)return;let nx='';if(best){const mins=Math.max(1,Math.round((best[0]-now)/6e4));const hh=Math.floor(mins/60),mm=mins%60;const t=new Date(best[0]+9*36e5);nx=`<span class="nx">次は ${t.getUTCHours()}:${String(t.getUTCMinutes()).padStart(2,'0')}（${best[1]}）・あと${hh?hh+'時間':''}${mm}分</span>`}
+  el.innerHTML=`🕐 見回り：<b>7:47</b> 朝／10:47／13:47／<b>17:47</b> 夕／20:47（毎日）　月曜は <b>9:17</b> に週次の点検<br>${nx}`}
+renderRounds();setInterval(renderRounds,60000);
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
