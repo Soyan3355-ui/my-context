@@ -163,15 +163,58 @@
     return d ? d.look : null;
   }
   const FAKE_PORTRAITS = {};
-  // generated players have no painted portrait: frame their sprite instead
+  // generated players (free agents, generic rival squad members) have no hand-painted portrait
+  // in Portraits.js. This used to just crop the tiny 16x16 walking sprite and blow it up 3x,
+  // which reads as a blurry, blocky mess next to the hand-drawn cast - build a proper (if
+  // simpler) face at native 48x48 resolution instead, from the same look data the sprite uses.
+  function genericPortrait(look) {
+    const [c, g] = E.makeCanvas(48, 48);
+    const skin = look.skin || '#e8b088', skinD = look.skinD || '#c48860';
+    const hair = look.hair || '#2a1a24', hairD = look.hairD || '#140c12';
+    const shirt = look.shirt || '#4fb4e8', shirtD = look.shirtD || '#2f86c4';
+    const style = look.style || 'short';
+    const cx = 24;
+    // shoulders + collar, peeking in at the bottom like the hand-drawn portraits
+    Art.px(g, shirtD, 2, 39, 44, 9); Art.px(g, shirt, 2, 37, 44, 3);
+    if (look.collar) Art.px(g, look.collar, cx - 5, 37, 10, 2);
+    // neck: fills the gap between the head oval's chin and the shoulders below
+    Art.px(g, skin, cx - 5, 26, 10, 12); Art.px(g, skinD, cx + 1, 26, 4, 12);
+    // head: an oval built from per-row half-widths, shaded darker on the right
+    const rows = [[6, 8], [7, 11], [8, 13], [9, 14], [10, 15], [11, 16], [12, 16], [13, 16], [14, 16], [15, 16],
+      [16, 16], [17, 16], [18, 16], [19, 16], [20, 16], [21, 15], [22, 15], [23, 14], [24, 13], [25, 11], [26, 9], [27, 6]];
+    if (style === 'mask') {
+      // a solid wrestling mask instead of a face - matches the game's own 'mask'/'helmet' sprite styles
+      for (const [y, hw] of rows) Art.px(g, hair, cx - hw, y, hw * 2, 1);
+      Art.px(g, '#ffffff', cx - 6, 17, 4, 3); Art.px(g, '#ffffff', cx + 2, 17, 4, 3);
+    } else {
+      for (const [y, hw] of rows) { Art.px(g, skin, cx - hw, y, hw * 2, 1); Art.px(g, skinD, cx + Math.round(hw * 0.3), y, hw - Math.round(hw * 0.3), 1); }
+      // eyes, brows, blush, mouth
+      Art.px(g, hairD, cx - 8, 16, 4, 1); Art.px(g, hairD, cx + 4, 16, 4, 1);
+      Art.px(g, '#2a1a24', cx - 7, 18, 3, 2); Art.px(g, '#2a1a24', cx + 4, 18, 3, 2);
+      Art.px(g, '#ffffff', cx - 6, 18, 1, 1); Art.px(g, '#ffffff', cx + 5, 18, 1, 1);
+      if (!look.noBlush) { Art.px(g, '#e8938a', cx - 10, 22, 2, 1); Art.px(g, '#e8938a', cx + 8, 22, 2, 1); }
+      Art.px(g, '#8a4a3a', cx - 3, 24, 6, 1);
+      // hair, by the same generic style names the walking sprite already uses
+      if (style === 'helmet') { for (const [y, hw] of rows.slice(0, 9)) Art.px(g, '#9aa0b0', cx - hw - 1, y, hw * 2 + 2, 1); Art.px(g, '#6a707e', cx - 16, 14, 32, 1); }
+      else if (style !== 'bald') {
+        const cap = rows.slice(0, 9);
+        for (const [y, hw] of cap) Art.px(g, hair, cx - hw - 1, y, hw * 2 + 2, 1);
+        if (style === 'spiky') { for (let i = -3; i <= 3; i++) Art.px(g, hair, cx + i * 5 - 1, 6 - Math.abs(i % 2) * 3, 3, 4); }
+        else if (style === 'pomp') { Art.px(g, hair, cx - 2, 2, 13, 6); Art.px(g, hairD, cx + 8, 3, 3, 5); }
+        else if (style === 'perm') { Art.px(g, hair, cx - 15, 5, 6, 6); Art.px(g, hair, cx - 6, 2, 6, 6); Art.px(g, hair, cx + 4, 2, 6, 6); Art.px(g, hair, cx + 11, 5, 6, 6); }
+        else if (style === 'ponytail') { Art.px(g, hair, cx + 15, 13, 5, 14); Art.px(g, hairD, cx + 15, 25, 5, 2); }
+        else if (style === 'bob' || style === 'long') { const tail = style === 'long' ? 30 : 24; Art.px(g, hair, cx - 17, 10, 4, tail - 10); Art.px(g, hair, cx + 13, 10, 4, tail - 10); }
+        Art.px(g, hairD, cx - 16, 8, 32, 1);
+      }
+    }
+    Art.outline(c);
+    return c;
+  }
   function spritePortrait(id) {
     if (FAKE_PORTRAITS[id]) return FAKE_PORTRAITS[id];
     const look = lookFor(id);
     if (!look) return null;
-    const [c, g] = E.makeCanvas(48, 48);
-    g.fillStyle = '#9fdcff'; g.fillRect(0, 0, 48, 48);
-    g.fillStyle = '#bfe8ff'; for (let y = 0; y < 48; y += 6) g.fillRect(0, y, 48, 3);
-    g.drawImage(Art.sprite(look, 'down', 'walk1'), 0, 0, 16, 16, 0, 2, 48, 48);
+    const c = genericPortrait(look);
     FAKE_PORTRAITS[id] = c;
     return c;
   }
@@ -187,11 +230,11 @@
   ];
   const HAIRS = [['#2a1a24', '#140c12'], ['#4a3020', '#2a1a14'], ['#6a4020', '#4a2a14'], ['#c0a060', '#907040'], ['#8a8a92', '#5a5a62']];
   function genFreeAgent(n, i) {
-    const K = GEN_KIND[i % 3], pos = pick(['DF', 'MF', 'FW', 'DF', 'MF']);
+    const K = GEN_KIND[i % 3], pos = pick(['GK', 'DF', 'MF', 'FW', 'DF', 'MF']);
     const age = randi(K.age[0], K.age[1]), sur = pick(GEN_SURNAMES), given = pick(GEN_GIVEN);
     const v = () => Math.round(K.base + rand(-8, 8) + (n - 2) * 1.5);
     const st = { spd: v(), sht: v(), pas: v(), def: v(), sta: v() };
-    if (pos === 'DF') { st.def += 8; st.sht -= 8; } if (pos === 'FW') { st.sht += 8; st.def -= 10; }
+    if (pos === 'GK') { st.def += 10; st.sht -= 14; } if (pos === 'DF') { st.def += 8; st.sht -= 8; } if (pos === 'FW') { st.sht += 8; st.def -= 10; }
     for (const k in st) st[k] = clamp(st[k], 18, 85);
     const hair = pick(HAIRS), skin = pick([['#f7c9a0', '#dca27a'], ['#e8b088', '#c48860'], ['#c98c62', '#9e6a44']]);
     const shirt = pick([['#e0e0e8', '#b0b0c0'], ['#f0a868', '#c07838'], ['#8ac86a', '#5a9a3a'], ['#d88ab0', '#a85a80']]);
@@ -334,7 +377,7 @@
       for (const p of State.roster) { State.morale[p.id] = Math.round(62 + ((State.morale[p.id] ?? 60) - 62) * 0.5); State.benchWeeks[p.id] = 0; }
       // new faces: fresh free agents, and players who left town may come home
       const fresh = [];
-      for (let i = 0, tries = 0; fresh.length < 3 && tries < 30; tries++) { const d = genFreeAgent(n, i); if (fresh.some((f) => f.name === d.name) || State.roster.some((q) => q.name === d.name)) continue; fresh.push(d); i++; }
+      for (let i = 0, tries = 0; fresh.length < 5 && tries < 40; tries++) { const d = genFreeAgent(n, i); if (fresh.some((f) => f.name === d.name) || State.roster.some((q) => q.name === d.name)) continue; fresh.push(d); i++; }
       State.extraFA = (State.extraFA || []).filter((d) => State.freeAgents.includes(d.id)).concat(fresh);
       State.freeAgents = State.freeAgents.concat(fresh.map((d) => d.id));
       for (const d of State.departed) {
@@ -344,7 +387,7 @@
         State.extraFA.push(back); State.freeAgents.push(back.id);
         s.news.push(d.name + 'が町に戻ってきた！ 入団を希望している');
       }
-      const keep = new Set(State.freeAgents.slice(-5));
+      const keep = new Set(State.freeAgents.slice(-9));
       State.freeAgents = State.freeAgents.filter((id) => keep.has(id));
       State.listed = genListed(n);
       for (const d of State.departed) if (d.dest === 'rival' && d.p && d.season === n - 1 && League.clubById(d.club) && League.clubById(d.club).tier === State.tier) s.news.push('元ハマカゼの' + d.name + 'が、' + League.clubById(d.club).short + 'の一員として立ちはだかる');
