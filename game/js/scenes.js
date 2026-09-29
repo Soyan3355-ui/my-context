@@ -83,7 +83,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations', 'rivalGrowth'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -257,9 +257,14 @@
   // an opponent's eleven for this season: signed players are replaced, and ex-Hamakaze players turn up in the rival's kit
   function oppRoster(club) {
     const taken = new Set(State.roster.map((p) => p.id).concat(State.bought || []));
+    // the rest of the league keeps developing off-screen too (see the weekly tick in WeekEnd) -
+    // applied here, read-only, rather than mutating the shared squad array club.roster() returns
+    const growth = (State.rivalGrowth && State.rivalGrowth[club.id]) || {};
     const base = club.roster().map((p, i) => {
-      if (!taken.has(p.id)) return p;
-      return Object.assign({}, p, { id: p.id + '_rep', name: pick(GEN_GIVEN), trait: '', stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, v - 4])), look: Object.assign({}, p.look, { hair: pick(HAIRS)[0], key: p.look.key + '_rep' }) });
+      const g = growth[p.id];
+      const grown = g ? Object.assign({}, p, { stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, Math.min(94, v + (g[k] || 0))])) }) : p;
+      if (!taken.has(grown.id)) return grown;
+      return Object.assign({}, grown, { id: grown.id + '_rep', name: pick(GEN_GIVEN), trait: '', stats: Object.fromEntries(Object.entries(grown.stats).map(([k, v]) => [k, v - 4])), look: Object.assign({}, grown.look, { hair: pick(HAIRS)[0], key: grown.look.key + '_rep' }) });
     });
     const reunion = [];
     for (const d of State.departed || []) {
@@ -974,6 +979,7 @@
       { id: 'roster', label: '選手名鑑', sub: 'やる気・能力・人となり', icon: Icons.book },
       { id: 'train', label: '練習する', sub: State.trained ? '今週の練習は終わりました' : '週1回。能力や戦術理解がアップ', icon: Icons.shoe, disabled: !!State.trained },
       { id: 'tactics', label: '作戦ボード', sub: Data.FORMATIONS[State.formation].short + '・' + Data.TACTICS[State.tactic].name, icon: Icons.board },
+      { id: 'policy', label: '方針変更', sub: 'チーム方針：' + (IDENTITIES[State.identity] ? IDENTITIES[State.identity].name : '未定'), icon: Icons.book },
       { id: 'table', label: '順位表', sub: '現在 ' + State.rank() + '位　' + State.season.table.hamakaze.pts + '点', icon: Icons.book },
       { id: 'market', label: '移籍市場', sub: 'フリーの選手と獲得交渉（予算 ' + State.budget + '万円）', icon: Icons.book },
       { id: 'match', label: '試合へ！', sub: 'vs ' + fx.opp.name, icon: Icons.ball },
@@ -982,7 +988,7 @@
     s.enter = () => {
       Sound.bgm('hub'); Sound.crowd(0);
       s.saved = Save.write('hub');
-      s.menu = new Menu(items(), 316, 54, 154, 27, 3);
+      s.menu = new Menu(items(), 316, 54, 154, 25, 2);
       if (first) s.say([['nagisa', 'happy', 'ここがクラブハウスです！ 選手のみんなに声をかけたり、右のメニューから準備を進めてください。'], ['nagisa', 'normal', '試合までに「練習」は1回できます。何をきたえるか、よーく考えてくださいね！']]);
       else if (State.pendingTalk) { s.say(State.pendingTalk); State.pendingTalk = null; }
       else if (State.trained && !State.talked.afterTrain) { State.talked.afterTrain = true; s.say([['nagisa', 'happy', 'おつかれさまでした！ 準備ができたら「試合へ！」を選んでください。']]); }
@@ -1040,6 +1046,7 @@
       if (r.id === 'roster') Game.goto(Roster(), 'stripe');
       if (r.id === 'train') Game.goto(Training(), 'stripe');
       if (r.id === 'tactics') Game.goto(Tactics(), 'stripe');
+      if (r.id === 'policy') Game.goto(TeamPolicy(false), 'stripe');
       if (r.id === 'table') Game.goto(LeagueTable(() => Hub()), 'stripe');
       if (r.id === 'market') Game.goto(TransferMarket(() => Hub()), 'stripe');
       if (r.id === 'match') {
@@ -1096,16 +1103,14 @@
         g.globalAlpha = al; panel(g, 6, H - 22, 104, 16, 'dark'); Icons.ball(g, 8, H - 22); g.globalAlpha = 1;
         text(g, 'オートセーブしました', 26, H - 19, { size: 8, color: '#9fdcff', alpha: al });
       }
-      // mini team form strip
-      panel(g, 308, 235, 166, 33, 'dark');
-      text(g, 'チーム状態　やる気 ' + Math.round(State.avgMorale()), 316, 238, { size: 8, color: '#9fdcff' });
+      // mini team form strip - condensed to one line (full per-stat grades live on the roster
+      // screen) to leave room for the 7th menu row above
+      panel(g, 308, 246, 166, 18, 'dark');
       const avg = (k) => Math.round(State.roster.reduce((a, p) => a + p.stats[k], 0) / State.roster.length);
-      STAT_KEYS.forEach((k, i) => {
-        const x = 316 + i * 31;
-        text(g, STAT_NAMES[k].slice(0, 2), x, 253, { size: 8, color: '#c9d6e6' });
-        const gr = grade(avg(k));
-        text(g, gr, x + 20, 252, { size: 10, color: GRADE_COL[gr], outline: OUT });
-      });
+      const teamAvg = Math.round(STAT_KEYS.reduce((a, k) => a + avg(k), 0) / STAT_KEYS.length);
+      const teamGr = grade(teamAvg);
+      text(g, 'やる気 ' + Math.round(State.avgMorale()) + '　総合', 316, 250, { size: 8, color: '#9fdcff' });
+      text(g, teamGr, 402, 249, { size: 10, color: GRADE_COL[teamGr], outline: OUT });
       if (!s.talk && Input.mouse.active && s.hover) {
         const lbl = s.hover.r ? 'しらべる' : 'はなす';
         const mx = clamp(Input.mouse.x + 8, 0, 250), my = clamp(Input.mouse.y + 8, 0, 250);
@@ -2579,6 +2584,20 @@
       State.budget += inc;
       s.notes.unshift('ホーム観客 ' + att + '人（地元選手 ' + Math.round(State.localRatio() * 11) + '人）　入場料 +' + inc + '万円');
     } else { State.budget += 3; s.notes.unshift('アウェイ遠征　分配金 +3万円'); }
+    // the rest of the league doesn't stand still either - a small, quiet weekly nudge for a
+    // random player at a random club, read back in oppRoster(). Capped per stat (Math.min(94, ...)
+    // there) so this settles rather than spiraling over many seasons.
+    State.rivalGrowth = State.rivalGrowth || {};
+    for (const c of League.ALL_CLUBS) {
+      if (Math.random() >= 0.4) continue;
+      const sq = c.roster();
+      const cand = sq.filter((q) => q.pos !== 'GK');
+      const p = pick(cand.length ? cand : sq);
+      const g = State.rivalGrowth[c.id] || (State.rivalGrowth[c.id] = {});
+      const pg = g[p.id] || (g[p.id] = {});
+      const k = pick(STAT_KEYS);
+      pg[k] = (pg[k] || 0) + 1;
+    }
     State.trained = null;
     State.season.week++;
     for (const p of State.roster) { tickPotential(p); if (p.injuredWeeks > 0) p.injuredWeeks--; }
