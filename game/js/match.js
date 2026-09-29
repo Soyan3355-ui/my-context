@@ -523,9 +523,14 @@
         if (!p.gk) { const k = this.gk(t); if (this.proj(t, p.tx) < this.proj(t, k.x) + 14) p.tx = k.x + dirX(t) * 14; }
         p.tx = clamp(p.tx, P.x + 6, P.x + P.w - 6); p.ty = clamp(p.ty, P.y + 6, P.y + P.h - 6);
       }
-      // presser tackles
+      // presser tackles - only the actively-pressing player(s) used to ever get a tryTackle roll,
+      // so outside of the 'press' tactic a dribbler who beat (or simply outpaced) the single
+      // presser would glide straight past every other defender with zero further challenge, even
+      // one standing right in their path. Let the covering defender stick a leg out too if the
+      // ball carrier runs right through their spot - reach() is already tiny, so this only fires
+      // on a genuinely close pass, not a general swarm.
       if (b.owner && this.state === 'play' && !this.meter && !sp) {
-        for (const pr of [presser, this.presser2]) {
+        for (const pr of [presser, this.presser2, cover]) {
           if (!pr || pr.state || b.owner === null || b.owner.team === pr.team) continue;
           const c = b.owner;
           const d = dist(pr.x, pr.y, c.x, c.y);
