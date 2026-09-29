@@ -144,6 +144,14 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .ci-hist th,.ci-hist td{border-top:1px dashed var(--line);padding:4px 2px;text-align:center}
 .ci-hist th{color:var(--sub);font-weight:400}
 .ci-hist td.n{text-align:left;color:var(--sub);font-size:11.5px}
+@media (max-width:560px){
+  .win{padding:9px 11px;min-height:118px}
+  .tag{font-size:11.5px;margin-bottom:5px}.tag img{width:16px;height:16px}
+  .head{font-size:10px}.ttl{font-size:13.5px}
+  .txt{font-size:12.5px;line-height:1.65;min-height:2.4em}
+  .acts{gap:6px;margin-top:7px}.acts button,.acts a{font-size:11.5px;padding:4px 9px}
+  .nowbox h2{font-size:13px}.nw .n{font-size:12px}.nw .d{font-size:11.5px}.nw img{width:22px;height:22px}.nw{grid-template-columns:24px minmax(0,1fr);padding:4px 0}
+}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 </style>
@@ -154,7 +162,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
-  <div class="stage" id="stage"><canvas id="cv" width="224" height="140" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
+  <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
     <div class="side">
       <div class="nowbox" aria-labelledby="h-now"><h2 id="h-now">👀 いまの様子</h2><div id="nowList"></div></div>
   <div class="win" id="win">
@@ -205,7 +213,7 @@ const HAPPY={"chiikawa": {"7": "kwwwwwwwwwwwwwwwwwwk", "8": "kwwwwweewwwweewwwww
 const PAL={k:'#3b3533',w:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a0',r:'#e36d72',
   l:'#e4ebf2',L:'#b8c5d3',N:'#8a5a33',c:'#f4dfae',v:'#cfc5e8',M:'#d98639',O:'#f7c86e',h:'#e9c66b',R:'#c9544b',H:'#4a3a33',s:'#f3cfa6',g:'#6f9f5e',d:'#4f73a8',
   G:'#3f8a3a',A:'#b9bfca',a:'#8a91a0',n:'#8a5a35',m:'#9b7fd0',B:'#6d8fd6',Y:'#ffd84a',E:'#f6efe0'};
-const W=224,H=140;
+const W=224,H=196;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl=u=>/^https:\/\//.test(String(u||''))?u:'';
 function toC(rows){const c=document.createElement('canvas');c.width=rows[0].length;c.height=rows.length;const g=c.getContext('2d');
@@ -290,8 +298,16 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   // シーサーの黒板・くりまんじゅうの机
   R(g,'#7a5230',144,114,12,10);R(g,'#2f4a3a',145,115,10,7);R(g,'#e8f0e8',147,117,4,1);R(g,'#e8f0e8',147,119,6,1);R(g,'#7a5230',146,124,1,4);R(g,'#7a5230',153,124,1,4);
   R(g,'#a8743f',174,50,12,5);R(g,'#7a5230',175,55,1,3);R(g,'#7a5230',184,55,1,3);
+  // あそび場（下の広場）
+  path(g,110,116,8,32);path(g,0,146,W,6);
+  R(g,'#8a5a35',16,158,40,20);R(g,'#f1dca0',18,160,36,16);for(let i=0;i<14;i++)R(g,'#e3c985',20+(i*7)%32,161+(i*5)%14,2,1);R(g,'#d9544b',46,162,4,4);R(g,'#8a5a35',47,161,2,1);R(g,'#6d8fd6',22,170,3,2);
+  R(g,'#7a5230',72,152,2,22);R(g,'#7a5230',96,152,2,22);R(g,'#8a5a35',72,152,26,2);R(g,'#5a4a3a',80,154,1,10);R(g,'#5a4a3a',88,154,1,10);
+  tree(g,118,150);R(g,'#bfe3ff',120,176,24,6);R(g,'#9ad6f0',120,176,24,1);R(g,'#fff',122,177,5,3);
+  for(let i=0;i<34;i++){const x=150+(i*13)%42,y=156+(i*7)%18,c=['#f7a7b9','#ffd84a','#ffffff','#cfc5e8','#e36d72'][i%5];R(g,'#5f9e4f',x,y+2,1,2);R(g,c,x-1,y,3,2);R(g,'#ffd84a',x,y,1,1)}
+  R(g,'#a8743f',194,176,18,4);R(g,'#7a5230',196,180,2,6);R(g,'#7a5230',208,180,2,6);R(g,'#fff',198,173,4,3);R(g,'#a8743f',203,174,3,2);
+  for(let x=2;x<W;x+=9){R(g,'#9a6b4a',x,188,2,7);R(g,'#b98a5e',x,188,2,1)}R(g,'#b98a5e',0,190,W,1);R(g,'#b98a5e',0,193,W,1);
   // 花
-  for(let i=0;i<24;i++){const x=rnd()*W|0,y=60+(rnd()*80|0);if((x>4&&x<80&&y>96)||(x>150&&y>84)||(x>98&&x<132&&y>90))continue;
+  for(let i=0;i<24;i++){const x=rnd()*W|0,y=60+(rnd()*78|0);if((x>4&&x<80&&y>96)||(x>150&&y>84)||(x>98&&x<132&&y>90))continue;
     const c=['#f7a7b9','#ffffff','#ffd84a','#cfc5e8'][i%4];R(g,c,x,y,1,1);R(g,c,x-1,y+1,3,1);R(g,c,x,y+2,1,1);R(g,'#ffd84a',x,y+1,1,1)}
 })();
 
@@ -306,6 +322,9 @@ const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:5
   kiji:{x:67,y:64,face:1,label:'✍️ 書き物机'},kaikei:{x:166,y:58,face:1,label:'🌰 帳場'},farm:{x:52,y:118,face:-1,label:'🌾 畑'},
   kenshu:{x:65,y:90,face:1,label:'🛡️ 検収台'},kiroku:{x:48,y:74,face:1,label:'📚 記録の棚'},post:{x:150,y:102,face:-1,label:''}};
 const BENCH=[[164,84],[180,84],[196,84],[210,84]];
+const PLAY={sand:{x:36,y:174,face:1},swing:{x:85,y:172,face:1},nap:{x:132,y:182,face:1},flowers:{x:170,y:174,face:-1},tea:{x:188,y:186,face:1},pond:{x:168,y:132,face:1},post:{x:150,y:102,face:-1},pose:{x:160,y:170,face:1}};
+const FREE_PREF={usagi:['run','swing','sand','run'],momonga:['pose','flowers','swing'],kuri:['tea','nap','tea'],rakko:['pond','nap','pond'],chiikawa:['post','flowers','nap','sand']};
+const ACT_TEXT={nap:'💤 お昼寝',swing:'🎠 ブランコ',sand:'🏖 砂あそび',flowers:'🌼 お花を見てる',pose:'✨ きめポーズ',tea:'🍵 お茶',pond:'🎣 釣り',run:'🏃 走りまわってる',wander:'🚶 おさんぽ',post:'📮 郵便受けの前'};
 const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post'};
 const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事':'kiji','会計':'kaikei','農園・地域':'farm'};
 const SPEAK={x:140,y:116};
@@ -314,7 +333,8 @@ const $=id=>document.getElementById(id);
 let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
-function homeOf(id){if(agentState(id)==='bench'){const i=['usagi','momonga','kuri','rakko'].indexOf(id);const b=BENCH[Math.max(0,i)];return {x:b[0],y:b[1],face:1}}
+function isFree(id){return id==='chiikawa'||agentState(id)==='bench'}
+function homeOf(id){if(isFree(id)){const e=ent[id];if(e&&e.act)return {x:e.act.x,y:e.act.y,face:e.act.face||1};return {x:PLAY.sand.x,y:PLAY.sand.y,face:1}}
   const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
 
 // ---------- キャラ ----------
@@ -324,18 +344,19 @@ function stepTo(e,tx,ty,dt,sp=30){const dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy);
   const k=Math.min(1,sp*dt/d);e.x+=dx*k;e.y+=dy*k;if(Math.abs(dx)>0.5)e.face=dx>0?1:-1;return false}
 const cv=$('cv'),ctx=cv.getContext('2d');
 function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
-  if(e.walking)dy=Math.floor(t*8)%2;else if(e.pose!=='work')dy=Math.floor(t*(e.bench?1:2)+e.x)%2;
+  if(e.walking)dy=Math.floor(t*8)%2;else if(e.napping)dy=0;else if(e.pose!=='work')dy=Math.floor(t*2+e.x)%2;
   if(e.jump>0)dy=-Math.round(Math.sin(e.jump*Math.PI)*8);
   const x=Math.round(e.x-im.width/2),y=Math.round(e.y-im.height+dy);
   ctx.save();if(e.face<0){ctx.translate(Math.round(e.x)*2,0);ctx.scale(-1,1)}
   ctx.drawImage(im,x,y);
-  if(e.st==='home'&&!e.walking&&!e.bench){const ph=Math.floor(t*3)%2;
+  if(e.st==='home'&&!e.walking&&!isFree(id)){const ph=Math.floor(t*3)%2;
     if(id==='hachiware')ctx.drawImage(P.clip,x+16,y+10+(ph?1:0));
     if(id==='yoroi')ctx.drawImage(P.clip,x+15,y+10);
     if(id==='shisa')ctx.drawImage(P.book,x+5,y+15+(ph?1:0));
     if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));
     if(id==='usagi')ctx.drawImage(P.book,x+5,y+15);
     if(id==='kuri')ctx.drawImage(P.coin,x+18,y+10-(ph?1:0));}
+  if(e.st==='home'&&!e.walking&&e.act&&isFree(id)){if(e.act.kind==='tea')ctx.drawImage(P.coin,x+17,y+12);if(e.act.kind==='pond')ctx.drawImage(P.stick,x+16,y+4);if(e.act.kind==='sand')ctx.drawImage(P.weed,x+16,y+15)}
   ctx.restore();e.top=y;e.left=x;e.w=im.width}
 function drawDesk(t){R(ctx,'#a8743f',100,104,30,6);R(ctx,'#8a5a35',100,109,30,1);R(ctx,'#7a5230',101,110,2,5);R(ctx,'#7a5230',127,110,2,5);
   R(ctx,'#cfd3d9',108,98,13,7);R(ctx,'#b8bdc4',108,104,13,1);R(ctx,Math.floor(t*1.5)%2?'#8fd18a':'#cfd3d9',114,100,2,2);R(ctx,'#fff',123,101,3,3);R(ctx,'#a8743f',124,102,1,1)}
@@ -354,16 +375,16 @@ const stage=$('stage');const BUB={};
 AGENTS.concat('soyan').forEach(id=>{const b=document.createElement('div');b.className='bub'+(id==='soyan'?' soyan':'');b.dataset.empty='1';stage.appendChild(b);BUB[id]=b});
 const LABELS=[];
 ['youtube','kouza','kiji','kaikei','kenshu','kiroku','board'].forEach(k=>{const p=PLACES[k],l=document.createElement('div');l.className='plc';l.textContent=p.label;stage.appendChild(l);LABELS.push({el:l,x:p.x,y:p.y+1})});
-const benchLabel=document.createElement('div');benchLabel.className='plc bench-sign';stage.appendChild(benchLabel);LABELS.push({el:benchLabel,x:186,y:86,always:true});
+const benchLabel=document.createElement('div');benchLabel.className='plc bench-sign';stage.appendChild(benchLabel);LABELS.push({el:benchLabel,x:112,y:152,always:true});
 function bubbleText(id){const e=ent[id];
   if(id==='soyan'){const t=TASKS.filter(x=>!x.done).sort(byTime)[0];return t?'📝 '+t.title:''}
   if(e.st==='walkIn'||e.st==='arrive')return speakerLabel||'✉️ おとどけ';
   if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
-  if(agentState(id)==='bench')return '';
+  if(isFree(id)&&id!=='chiikawa')return '';if(id==='chiikawa'&&!scene)return '';
   if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
   const a=(STATUS.agents||{})[id];return (a&&a.doing)||''}
 function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)return;const placed=[];
-  const benchN=AGENTS.filter(id=>agentState(id)==='bench').length;const bt=benchN?`💤 控え ${benchN}人（出番待ち）`:'🪑 ベンチ';if(benchLabel.textContent!==bt)benchLabel.textContent=bt;
+  const benchN=AGENTS.filter(id=>agentState(id)==='bench').length;const bt=benchN?`🎈 あそび場（控え ${benchN}人）`:'🎈 あそび場';if(benchLabel.textContent!==bt)benchLabel.textContent=bt;
   const hit=(a,b)=>a.l<b.r&&a.r>b.l&&a.t<b.b&&a.b>b.t;
   const order=Object.keys(BUB).sort((a,b)=>(a==='soyan')-(b==='soyan')||(ent[b].y-ent[a].y));
   const sprites=Object.keys(ent).filter(k=>ent[k].top!==undefined).map(k=>{const e=ent[k];return {id:k,l:e.left/W*sw,r:(e.left+e.w)/W*sw,t:e.top/H*sh,b:e.y/H*sh}});
@@ -382,17 +403,53 @@ function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)
     L.el.style.left=x+'px';L.el.style.top=y+'px';L.el.style.opacity=clash&&!L.always?'0':'1';if(!clash||L.always)shown.push(r)}}
 // ---------- ループ ----------
 let T=0,last=0,tick=0;
+const PARTS=[];
+function emit(x,y,c,n=1,opt={}){for(let i=0;i<n;i++)PARTS.push({x,y,vx:(opt.vx??0)+(Math.random()-.5)*(opt.spread??6),vy:opt.vy??-8,life:opt.life??1,max:opt.life??1,c,z:opt.z})}
+const ZZ=toC(["kkk",".k.","kkk"]);
+function drawParts(dt){for(let i=PARTS.length-1;i>=0;i--){const p=PARTS[i];p.life-=dt;if(p.life<=0){PARTS.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;
+  ctx.globalAlpha=Math.min(1,p.life/p.max*1.5);if(p.z)ctx.drawImage(ZZ,Math.round(p.x),Math.round(p.y));else R(ctx,p.c,Math.round(p.x),Math.round(p.y),1,1);ctx.globalAlpha=1}}
+const rnd2=(a,b)=>a+Math.random()*(b-a);
+function freeBrain(id,e,dt){
+  if(!e.act||e.act.until<T){const pref=FREE_PREF[id]||['wander'];const kind=Math.random()<.25?'wander':pref[Math.floor(Math.random()*pref.length)];
+    const base=PLAY[kind];e.act={kind,until:T+rnd2(8,14),x:base?base.x+rnd2(-4,4):rnd2(14,210),y:base?base.y+rnd2(-2,2):rnd2(160,186),face:base?base.face:1};if(kind==='run'){e.act.x=rnd2(14,210);e.act.y=rnd2(158,186)}
+    if(id==='chiikawa'&&kind==='post'){e.act.x=PLAY.post.x;e.act.y=PLAY.post.y}}
+  const a=e.act;const sp=a.kind==='run'?40:16;const arrived=stepTo(e,a.x,a.y,dt,sp);e.walking=!arrived;
+  if(!arrived){e.pose='idle';e.napping=false;return}
+  e.face=a.face;e.napping=false;
+  switch(a.kind){
+    case 'run':a.x=rnd2(14,210);a.y=rnd2(158,186);if(Math.random()<.3)e.jump=.8;break;
+    case 'nap':e.napping=true;e.pose=HAPPY[id]?'happy':'idle';if(e.t%1.4<dt)emit(e.x+4,e.y-20,'',1,{z:1,vy:-5,vx:3,spread:1,life:1.6});break;
+    case 'swing':e.x=a.x+Math.sin(T*3)*3;e.pose='idle';break;
+    case 'sand':e.pose=Math.floor(T/.5)%2?'work':'idle';if(e.t%0.7<dt)emit(e.x+6,e.y-4,'#d9b870',2,{vy:-10,life:.5});break;
+    case 'flowers':e.pose='idle';if(e.t%2.5<dt){e.jump=.5;emit(e.x,e.y-20,'#ffd84a',3,{life:.8})}break;
+    case 'pose':e.pose=Math.floor(T/1.2)%3===0?'happy':'idle';if(e.t%1.6<dt){e.jump=.9;emit(e.x,e.y-22,'#ffd84a',4,{life:.9,spread:14})}break;
+    case 'tea':e.pose='idle';if(e.t%0.9<dt)emit(e.x+(e.face>0?11:-11),e.y-12,'#ffffff',1,{vy:-6,life:1.2,spread:2});break;
+    case 'pond':e.pose='idle';if(e.t%3.5<dt){emit(e.x+22,e.y-4,'#c9ecfa',3,{vy:-6,life:.6})}break;
+    case 'post':e.pose='idle';if(e.t%5<dt)e.jump=.4;break;
+    default:e.pose='idle';if(e.t%3<dt)a.x=a.x+rnd2(-20,20),a.x=Math.max(12,Math.min(212,a.x));}
+}
+const WORK_FX={hachiware:'#ffffff',yoroi:'#e36d72',shisa:'#ffd84a',usagi:'#9ad6f0',momonga:'#cfc5e8',kuri:'#ffd84a'};
+function workBrain(id,e,dt){const a=(STATUS.agents||{})[id]||{};const base=PLACES[a.place||DEFAULT_PLACE[id]]||PLACES.board;e.napping=false;e.wt=(e.wt||0)+dt;
+  if(e.errand){const k=PLACES.kenshu;const er=e.errand;er.t+=dt;
+    if(er.phase==='go'){if(stepTo(e,k.x-16,k.y+1,dt,26)){er.phase='give';er.t=0;e.face=1;e.pose='idle'}else{e.walking=true;e.pose='idle';return}}
+    if(er.phase==='give'){e.walking=false;if(er.t<dt*2){ent.yoroi.jump=1;emit(k.x+8,k.y-12,'#e36d72',6,{life:.9,spread:10})}if(er.t>1.4){er.phase='back'}return}
+    if(er.phase==='back'){if(stepTo(e,base.x,base.y,dt,26)){e.errand=null;e.wt=0}else{e.walking=true;e.pose='idle';return}}}
+  const cyc=e.wt%9;let tx=base.x,ty=base.y;if(cyc>6.2&&cyc<7.6)tx=base.x+(id.length%2?7:-7);
+  const arrived=stepTo(e,tx,ty,dt,18);e.walking=!arrived;
+  if(!arrived){e.pose='idle';return}
+  e.face=base.face;const beat=Math.floor(e.wt/0.35)%2;e.pose=beat?'work':'idle';
+  if(e.t%0.6<dt)emit(e.x+(e.face>0?10:-10),e.y-10,WORK_FX[id]||'#fff',2,{vy:-12,life:.7,spread:8});
+  if(id==='hachiware'&&agentState('yoroi')==='active'&&e.wt>22&&!scene){e.errand={phase:'go',t:0};e.wt=0}}
 function update(dt){AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;if(e.jump>0)e.jump=Math.max(0,e.jump-dt*1.6)});
-  AGENTS.forEach(id=>{const e=ent[id];e.bench=agentState(id)==='bench'&&e.st==='home';
-    if(e.st==='walkIn'){e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
+  AGENTS.forEach(id=>{const e=ent[id];e.bench=false;
+    if(e.st==='walkIn'){e.errand=null;e.napping=false;e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
     else if(e.st==='arrive'&&e.t>0.6){e.st='talk';if(scene&&speaker===id)showPage()}
-    else if(e.st==='walkOut'||e.st==='home'){const h=homeOf(id);const arrived=stepTo(e,h.x,h.y,dt,e.st==='home'?22:30);e.walking=!arrived;
-      if(arrived){e.face=h.face;if(e.st==='walkOut')e.st='home'}
-      if(e.st==='home'&&!e.walking&&e.pose!=='happy')e.pose=(agentState(id)==='active'&&id!=='chiikawa')?'work':'idle';else if(e.walking)e.pose='idle'}});
-  const c=ent.chiikawa;if(c.st==='home'&&c.t>6&&!c.walking){c.t=0;c.jump=.4}}
+    else if(e.st==='walkOut'){const h=homeOf(id);if(stepTo(e,h.x,h.y,dt,30)){e.walking=false;e.st='home'}else{e.walking=true;e.pose='idle'}}
+    else if(e.st==='home'){if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}});
+  const s=ent.soyan;if(TASKS.some(x=>!x.done)){s.pose=Math.floor(T/0.45)%2?'idle':'idle';if(s.t%2.2<dt)emit(114,96,'#8fd18a',1,{vy:-6,life:.8,spread:2})}}
 function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage(P.weed,x,y));
   const list=Object.entries(ent).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:110.5,f:()=>drawDesk(t)});
-  list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+  list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());drawParts(dt);
   AGENTS.forEach(id=>{const e=ent[id];if(e.top===undefined)return;
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
@@ -502,9 +559,9 @@ function renderStatus(){const d=new Date();$('date').textContent=STATUS.dateLabe
 function renderNow(){const rows=[];const tk=TASKS.filter(x=>!x.done).sort(byTime)[0];
   rows.push(`<div class="nw"><img src="${ICON.soyan}" alt=""><div style="min-width:0"><div class="n">そーやん<span class="role" style="--rc:${ROLES.soyan[1]}">オーナー</span></div><div class="d">${tk?'📝 '+esc(tk.title):'（自分の仕事は未入力）'}</div></div></div>`);
   ORDER.filter(id=>agentState(id)==='active').forEach(id=>{const a=(STATUS.agents||{})[id]||{};const r=ROLES[id];const e=ent[id];
-    let d=bubbleText(id)||(id==='chiikawa'?(scene?'✉️ おとどけ中':'📮 郵便受けの前で待機'):'待機中');if(e&&e.st==='talk')d='💬 そーやんと話し中';
+    let d=bubbleText(id)||(id==='chiikawa'?(scene?'✉️ おとどけ中':(ent.chiikawa.act&&!ent.chiikawa.walking?ACT_TEXT[ent.chiikawa.act.kind]:'🚶 おさんぽ')+'（呼ばれたら届けに行く）'):'待機中');if(e&&e.st==='talk')d='💬 そーやんと話し中';
     const pl=PLACES[a.place||DEFAULT_PLACE[id]];rows.push(`<div class="nw"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="n">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="d">${esc(d)}</div>${pl&&pl.label?`<div class="p">場所：${esc(pl.label)}</div>`:''}</div></div>`)});
-  const bench=ORDER.filter(id=>agentState(id)==='bench');if(bench.length)rows.push(`<div class="nw bench"><img src="${ICON[bench[0]]}" alt=""><div style="min-width:0"><div class="n">控え ${bench.length}人</div><div class="d">${bench.map(id=>esc(NAMES[id])).join('・')}（出番待ち）</div></div></div>`);
+  const bench=ORDER.filter(id=>agentState(id)==='bench');if(bench.length)rows.push(`<div class="nw bench"><img src="${ICON[bench[0]]}" alt=""><div style="min-width:0"><div class="n">控え ${bench.length}人（あそび場で自由時間）</div><div class="d">${bench.map(id=>{const e=ent[id];const k=e&&e.act&&!e.walking?e.act.kind:'wander';return esc(NAMES[id])+'：'+(ACT_TEXT[k]||'🚶 おさんぽ')}).join('　')}</div></div></div>`);
   const html=rows.join('');if($('nowList').innerHTML!==html)$('nowList').innerHTML=html}
 setInterval(renderNow,1500);
 // ---------- きょうのふりかえり ----------
