@@ -82,6 +82,30 @@ a.t:hover{text-decoration:underline}
 form.add{display:flex;gap:6px;margin:6px 0 4px}
 form.add input{flex:1;min-width:0;font:inherit;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 form.add button{font:inherit;font-size:13px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:0 12px;cursor:pointer}
+.roster{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:380px){.roster{grid-template-columns:minmax(0,1fr)}}
+.mem{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:start;background:var(--bg);border:2px solid var(--line);border-radius:10px;padding:8px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.mem img{width:32px;height:32px;image-rendering:pixelated}
+.mem .nm{font-size:14px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.role{font-size:10.5px;border-radius:999px;padding:0 7px;color:#fff;background:var(--rc,#857a70);white-space:nowrap}
+.mem .ask{font-size:11.5px;color:var(--sub);font-family:var(--body);line-height:1.5;margin-top:2px}
+.mem .now{font-size:11px;color:var(--ink);font-family:var(--body);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag .role{font-size:10px}
+.notef{display:grid;gap:6px;margin-top:6px}
+.notef textarea{width:100%;min-height:72px;resize:vertical;font-family:var(--body);font-size:14px;line-height:1.6;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.notef .row{margin-top:0}
+.notef select{font-family:var(--body);font-size:13px;padding:6px 8px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.nt{padding:10px 0;border-top:1px dashed var(--line)}
+.nt .q{font-family:var(--body);font-size:13.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere}
+.nt .meta{font-size:11px;color:var(--sub);margin-bottom:2px}
+.nt .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.55;color:var(--ink)}
+.nt .rep img{width:20px;height:20px;image-rendering:pixelated}
+.nt .rep b{font-weight:400;color:var(--sub);font-size:11px;display:block}
+.grade{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center}
+.grade .g{font-size:44px;line-height:1;width:64px;height:64px;display:grid;place-items:center;border:3px solid var(--gc,#857a70);color:var(--gc,#857a70);border-radius:10px}
+.grade .sum{font-family:var(--body);font-size:13.5px;line-height:1.6}
+.rv h4{font-size:12.5px;margin:12px 0 2px;font-weight:400;color:var(--sub)}
+.rv ul{margin:0;padding-left:18px;font-family:var(--body);font-size:13px;line-height:1.65}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 </style>
 
@@ -92,7 +116,7 @@ form.add button{font:inherit;font-size:13px;border:2px solid var(--ink);backgrou
   </header>
   <div class="stage" id="stage"><canvas id="cv" width="224" height="140" aria-label="はしぐち村のようす"></canvas></div>
   <div class="win" id="win">
-    <div class="tag"><img id="tagImg" alt=""><span id="tagName">ちいかわ</span></div>
+    <div class="tag"><img id="tagImg" alt=""><span id="tagName">ちいかわ</span><span class="role" id="tagRole"></span></div>
     <div class="head" id="dHead"></div>
     <div class="ttl" id="dTitle"></div>
     <div class="txt" id="dText">（村とつながっています…）</div>
@@ -100,9 +124,28 @@ form.add button{font:inherit;font-size:13px;border:2px solid var(--ink);backgrou
     <span class="more" id="more" hidden>▼</span>
   </div>
 
+  <section class="box" aria-labelledby="h-team">
+    <h2 id="h-team">👥 なかま名簿 <small>タップでたのむ</small></h2>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <section class="box" aria-labelledby="h-note">
+    <h2 id="h-note">💭 そーやんのつぶやき箱 <small id="ncnt"></small></h2>
+    <form class="notef" id="noteForm">
+      <textarea id="noteIn" placeholder="悩んでいること、思いついたこと、頼みたいこと。なんでもざっくばらんにどうぞ。" aria-label="つぶやき"></textarea>
+      <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="yes">とどける</button></div>
+    </form>
+    <div id="notes"><p class="empty">書いたことは、なかまが次の見回り（7:47・12:47・17:47）で読んで、返事や提案をくれます。</p></div>
+  </section>
+
   <section class="box" aria-labelledby="h-prop">
     <h2 id="h-prop">💡 なかまの提案 <small id="pcnt"></small></h2>
     <div id="props"><p class="empty">なかまが「これやろうと思うんだけど、どう？」と相談しにきます。</p></div>
+  </section>
+
+  <section class="box rv" aria-labelledby="h-rv">
+    <h2 id="h-rv">🛡️ 鎧さんの監査 <small id="rtime"></small></h2>
+    <div id="review"><p class="empty">鎧さんが村の働きぶりを見回って、採点とダメ出しを届けます。</p></div>
   </section>
 
   <section class="box mtg" aria-labelledby="h-mtg">
@@ -127,14 +170,16 @@ form.add button{font:inherit;font-size:13px;border:2px solid var(--ink);backgrou
   <p class="note" id="note"></p>
 </div>
 <script>
-const SPR={"chiikawa": ["....kkk......kkk....", "...kwwwk....kwwwk...", "...kwwwwkkkkwwwwk...", "..kwwwwwwwwwwwwwwk..", ".kwwwwwwwwwwwwwwwwk.", "kwwwwwwwwwwwwwwwwwwk", "kwwwwwwwwwwwwwwwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppwwwwwwwwwwppwwk", "kwwwwwwwwkkwwwwwwwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "hachiware": ["...k............k...", "...kk..........kk...", "...kbk........kbk...", "..kbbbkkkkkkkkbbbk..", ".kbbbbbbbwwbbbbbbbk.", "kbbbbbbbwwwwbbbbbbbk", "kbbbbbbwwwwwwbbbbbbk", "kwbbbbwwwwwwwwbbbbwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppweewwwweewppwwk", "kwwwwwwwkwwkwwwwwwwk", ".kwwwwwwwkkwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "usagi": [".....kkk....kkk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", "....kkyykkkkyykk....", "...kyyyyyyyyyyyyk...", "..kyyyyyyyyyyyyyyk..", ".kyyyyyyyyyyyyyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyppyyykkkkyyyppyk.", ".kyyyyykrrrrkyyyyyk.", "..kyyyyykkkkyyyyyk..", "...kkyyyyyyyyyykk...", "....kyyyyyyyyyyk....", "...kyykyyyyyykyyk...", "....kyyyyyyyyyyk....", "....kyyyyyyyyyyk....", ".....kyyykkyyyk.....", "......kkk..kkk......"], "rakko": ["......kkkkkkkk......", "....kkllllllllkk....", "...kllllllllllllk...", "..kllllllllllllllk..", ".kllllllllllllllllk.", "kllllllllllllllllllk", "kllllleelllleelllllk", "kllllleelllleelllllk", "klllpplLLLLLLlpplllk", "klllllLLLkkLLLlllllk", ".klllllLLLLLLlllllk.", "..kllllllllllllllk..", "...kkllllllllllkk...", "...kllllllllllllk...", "..kllkllllllllkllk..", "...kllllllllllllk...", "...kllllllllllllk...", "....kllllkkllllk....", ".....kkk....kkk....."], "kuri": [".........kk.........", "........kNNk........", ".......kNNNNk.......", ".....kkNNNNNNkk.....", "....kNNNNNNNNNNk....", "...kNNNNNNNNNNNNk...", "..kNNNNNNNNNNNNNNk..", ".kNNNNNNNNNNNNNNNNk.", ".kcccccccccccccccck.", "kcccccccccccccccccck", "kcccceecccccceecccck", "kcccccccccccccccccck", "kccppcccckkccccppcck", "kccccccckcckccccccck", ".kcccccccccccccccck.", "..kcccccccccccccck..", "...kkcccccccccckk...", ".....kkkkkkkkkk.....", "......kk....kk......"], "momonga": ["..kkk..........kkk..", ".kvvvk........kvvvk.", ".kvvvvkkkkkkkkvvvvk.", ".kvvvvvvvvvvvvvvvvk.", "kvvvvvvvvvvvvvvvvvvk", "kvvvvwwwwwwwwwwvvvvk", "kvvwwwwwwwwwwwwwwvvk", "kwwweeewwwwwweeewwwk", "kwwwewewwwwwwewewwwk", "kwwweeewwwwwweeewwwk", "kwwppwwwwkkwwwwppwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "shisa": ["....kkkkkkkkkkkk....", "..kkMMMMMMMMMMMMkk..", ".kMMMMMMMMMMMMMMMMk.", "kMMMMMMMMMMMMMMMMMMk", "kMMMOOOOOOOOOOOOMMMk", "kMMOOOOOOOOOOOOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOppOOkkOOppOOMMk", "kMMOOOOkrrrrkOOOOMMk", "kMMMOOOOOOOOOOOOMMMk", ".kMMMMMMMMMMMMMMMMk.", "..kkMMMMMMMMMMMMkk..", "....kOOOOOOOOOOk....", "...kOOkOOOOOOkOOk...", "....kOOOOOOOOOOk....", "....kOOOOOOOOOOk....", ".....kOOOkkOOOk.....", "......kkk..kkk......"], "soyan": ["......kkkkkkkk......", ".....khhhhhhhhk.....", ".....khhhhhhhhk.....", "....kRRRRRRRRRRk....", ".khhhhhhhhhhhhhhhhk.", ".kkkkkkkkkkkkkkkkkk.", "...kHHHHHHHHHHHHk...", "...kssssssssssssk...", "...ksseesssseessk...", "...ksppssssssppsk...", "...ksssskkkkssssk...", "....kssssssssssk....", "...kggggggggggggk...", "..kggddddddddddggk..", "..kssddddddddddssk..", "...kddddddddddddk...", "....kddddkkddddk....", "....kddddkkddddk....", "....kkkkk..kkkkk...."]};
+const SPR={"chiikawa": ["....kkk......kkk....", "...kwwwk....kwwwk...", "...kwwwwkkkkwwwwk...", "..kwwwwwwwwwwwwwwk..", ".kwwwwwwwwwwwwwwwwk.", "kwwwwwwwwwwwwwwwwwwk", "kwwwwwwwwwwwwwwwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppwwwwwwwwwwppwwk", "kwwwwwwwwkkwwwwwwwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "hachiware": ["...k............k...", "...kk..........kk...", "...kbk........kbk...", "..kbbbkkkkkkkkbbbk..", ".kbbbbbbbwwbbbbbbbk.", "kbbbbbbbwwwwbbbbbbbk", "kbbbbbbwwwwwwbbbbbbk", "kwbbbbwwwwwwwwbbbbwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppweewwwweewppwwk", "kwwwwwwwkwwkwwwwwwwk", ".kwwwwwwwkkwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "usagi": [".....kkk....kkk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", "....kkyykkkkyykk....", "...kyyyyyyyyyyyyk...", "..kyyyyyyyyyyyyyyk..", ".kyyyyyyyyyyyyyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyppyyykkkkyyyppyk.", ".kyyyyykrrrrkyyyyyk.", "..kyyyyykkkkyyyyyk..", "...kkyyyyyyyyyykk...", "....kyyyyyyyyyyk....", "...kyykyyyyyykyyk...", "....kyyyyyyyyyyk....", "....kyyyyyyyyyyk....", ".....kyyykkyyyk.....", "......kkk..kkk......"], "rakko": ["......kkkkkkkk......", "....kkllllllllkk....", "...kllllllllllllk...", "..kllllllllllllllk..", ".kllllllllllllllllk.", "kllllllllllllllllllk", "kllllleelllleelllllk", "kllllleelllleelllllk", "klllpplLLLLLLlpplllk", "klllllLLLkkLLLlllllk", ".klllllLLLLLLlllllk.", "..kllllllllllllllk..", "...kkllllllllllkk...", "...kllllllllllllk...", "..kllkllllllllkllk..", "...kllllllllllllk...", "...kllllllllllllk...", "....kllllkkllllk....", ".....kkk....kkk....."], "kuri": [".........kk.........", "........kNNk........", ".......kNNNNk.......", ".....kkNNNNNNkk.....", "....kNNNNNNNNNNk....", "...kNNNNNNNNNNNNk...", "..kNNNNNNNNNNNNNNk..", ".kNNNNNNNNNNNNNNNNk.", ".kcccccccccccccccck.", "kcccccccccccccccccck", "kcccceecccccceecccck", "kcccccccccccccccccck", "kccppcccckkccccppcck", "kccccccckcckccccccck", ".kcccccccccccccccck.", "..kcccccccccccccck..", "...kkcccccccccckk...", ".....kkkkkkkkkk.....", "......kk....kk......"], "momonga": ["..kkk..........kkk..", ".kvvvk........kvvvk.", ".kvvvvkkkkkkkkvvvvk.", ".kvvvvvvvvvvvvvvvvk.", "kvvvvvvvvvvvvvvvvvvk", "kvvvvwwwwwwwwwwvvvvk", "kvvwwwwwwwwwwwwwwvvk", "kwwweeewwwwwweeewwwk", "kwwwewewwwwwwewewwwk", "kwwweeewwwwwweeewwwk", "kwwppwwwwkkwwwwppwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "shisa": ["....kkkkkkkkkkkk....", "..kkMMMMMMMMMMMMkk..", ".kMMMMMMMMMMMMMMMMk.", "kMMMMMMMMMMMMMMMMMMk", "kMMMOOOOOOOOOOOOMMMk", "kMMOOOOOOOOOOOOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOppOOkkOOppOOMMk", "kMMOOOOkrrrrkOOOOMMk", "kMMMOOOOOOOOOOOOMMMk", ".kMMMMMMMMMMMMMMMMk.", "..kkMMMMMMMMMMMMkk..", "....kOOOOOOOOOOk....", "...kOOkOOOOOOkOOk...", "....kOOOOOOOOOOk....", "....kOOOOOOOOOOk....", ".....kOOOkkOOOk.....", "......kkk..kkk......"], "soyan": ["......kkkkkkkk......", ".....khhhhhhhhk.....", ".....khhhhhhhhk.....", "....kRRRRRRRRRRk....", ".khhhhhhhhhhhhhhhhk.", ".kkkkkkkkkkkkkkkkkk.", "...kHHHHHHHHHHHHk...", "...kssssssssssssk...", "...ksseesssseessk...", "...ksppssssssppsk...", "...ksssskkkkssssk...", "....kssssssssssk....", "...kggggggggggggk...", "..kggddddddddddggk..", "..kssddddddddddssk..", "...kddddddddddddk...", "....kddddkkddddk....", "....kddddkkddddk....", "....kkkkk..kkkkk...."], "yoroi": [".........RR.........", "........RRR.........", "......kkkkkkkk......", ".....kAAAAAAAAk.....", "....kAAAAAAAAAAk....", "....kAAAAAAAAAAk....", "....kaaaaaaaaaak....", "....kaakkkkkkaak....", "....kaakwkkwkaak....", "....kAAAAAAAAAAk....", "...kkAAAAAAAAAAkk...", "..kAAAkAAAAAAkAAAk..", "..kAAkaaaaaaaakAAk..", "..kAAkaaaYYaaakAAk..", "...kkaaaaaaaaaakk...", "....kAAAAkkAAAAk....", "....kAAAAkkAAAAk....", "....kaaaakkaaaak....", "...kkkkkk..kkkkkk..."]};
 const HAPPY={"chiikawa": {"7": "kwwwwwwwwwwwwwwwwwwk", "8": "kwwwwweewwwweewwwwwk", "9": "kwwwwewwewwewwewwwwk", "11": "kwwwwwwwkrrkwwwwwwwk", "16": "..kwwkwwwwwwwwkwwk.."}, "hachiware": {"8": "kwwwwwwwwwwwwwwwwwwk", "9": "kwwwwweewwwweewwwwwk", "10": "kwwppewwewwewwewppwk", "11": "kwwwwwwwkrrkwwwwwwwk", "16": "..kwwkwwwwwwwwkwwk.."}, "usagi": {"9": ".kyyyyeyyyyyyeyyyyk.", "10": ".kyyyeyeyyyyeyeyyyk.", "12": ".kyyyyykrrrrkyyyyyk.", "13": ".kyyyyykrrrrkyyyyyk.", "14": "..kyyyyykkkkyyyyyk..", "16": "..kyykyyyyyyyykyyk.."}};
 const PAL={k:'#3b3533',w:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a0',r:'#e36d72',
   l:'#e4ebf2',L:'#b8c5d3',N:'#8a5a33',c:'#f4dfae',v:'#cfc5e8',M:'#d98639',O:'#f7c86e',h:'#e9c66b',R:'#c9544b',H:'#4a3a33',s:'#f3cfa6',g:'#6f9f5e',d:'#4f73a8',
-  G:'#3f8a3a',n:'#8a5a35',m:'#9b7fd0',B:'#6d8fd6',Y:'#ffd84a',E:'#f6efe0'};
+  G:'#3f8a3a',A:'#b9bfca',a:'#8a91a0',n:'#8a5a35',m:'#9b7fd0',B:'#6d8fd6',Y:'#ffd84a',E:'#f6efe0'};
 const W=224,H=140;
-const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',soyan:'そーやん',rakko:'ラッコ'};
-const DEFAULT_DOING={chiikawa:'🌿 メールの草むしり',hachiware:'📖 優先順位のおべんきょう',usagi:'⚔️ ネタ探しの討伐'};
+const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん',soyan:'そーやん'};
+const ROLES={chiikawa:['秘書','#e9829b'],hachiware:['番頭','#3f6fd8'],usagi:['YouTube部','#e2604c'],rakko:['参謀','#7c63d6'],kuri:['会計','#c9851f'],momonga:['発信部','#9a62d0'],shisa:['講座部','#219384'],yoroi:['監査役','#6b7280'],soyan:['CEO','#3a3330']};
+const ASK={chiikawa:'メール整理・返信の下書き・予定の確認',hachiware:'優先順位・週の段取り・進み具合の確認',usagi:'動画ネタ出し・トレンド調べ・企画のたたき台',rakko:'事業戦略・新企画の壁打ち・判断の相談',kuri:'請求・入金・経費の整理と見える化',momonga:'記事の下書き・SNS投稿文・告知文',shisa:'講座の準備・受講生へのフォロー文・資料づくり',yoroi:'村の働きぶりの採点・ダメ出し・改善点'};
+const DEFAULT_DOING={chiikawa:'🌿 メールの草むしり',hachiware:'📖 優先順位のおべんきょう',usagi:'⚔️ ネタ探しの討伐',rakko:'🧭 作戦を考え中',kuri:'🌰 帳簿をながめ中',momonga:'✍️ 文章をかき中',shisa:'📚 講座の準備中',yoroi:'🛡️ 見回り中'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeUrl=u=>/^https:\/\//.test(String(u||''))?u:'';
 function toC(rows){const c=document.createElement('canvas');c.width=rows[0].length;c.height=rows.length;const g=c.getContext('2d');
@@ -151,6 +196,8 @@ const P={
   stick:toC(["......n","....nn.","...nn..","..nn...",".nn....","nn....."]),
   letter:toC(["kkkkkkkkk","kEkEEEkEk","kEEkEkEEk","kEEEkEEEk","kkkkkkkkk"]),
   bulb:toC(["..kkk..",".kYYYk.","kYYYYYk","kYYYYYk",".kYYYk.","..kkk..","..kkk.."]),
+  clip:toC(["kkkkkk","knnnnk","kEEEEk","kEkkEk","kEEEEk","kEkkEk","kkkkkk"]),
+  coin:toC([".kkk.","kYYYk","kYkYk","kYYYk",".kkk."]),
   bang:toC(["kYk","kYk","kYk","...","kYk"]),
   spark:toC(["..Y..","..Y..","YYYYY","..Y..","..Y.."]),
   mon:toC(["...kkkk...","..kmmmmk..",".kmmmmmmk.","kmmkmmkmmk","kmmwmmwmmk","kmkkkkkkmk",".kmmmmmmk.","..k.kk.k.."])};
@@ -208,22 +255,32 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   // 郵便受け・街灯
   R(g,'#7a5230',140,92,1,7);R(g,'#d9695f',137,88,7,5);R(g,'#b8544b',137,92,7,1);
   LAMPS.forEach(([x,y])=>{R(g,'#5a4a3a',x+1,y,1,8);R(g,'#3b3533',x,y-3,3,3);R(g,'#f6e7a0',x+1,y-2,1,1)});
+  // シーサーの黒板・くりまんじゅうの机
+  R(g,'#7a5230',144,114,12,10);R(g,'#2f4a3a',145,115,10,7);R(g,'#e8f0e8',147,117,4,1);R(g,'#e8f0e8',147,119,6,1);R(g,'#7a5230',146,124,1,4);R(g,'#7a5230',153,124,1,4);
+  R(g,'#a8743f',174,50,12,5);R(g,'#7a5230',175,55,1,3);R(g,'#7a5230',184,55,1,3);
   // 花
   for(let i=0;i<24;i++){const x=rnd()*W|0,y=60+(rnd()*80|0);if((x>4&&x<80&&y>96)||(x>150&&y>84)||(x>98&&x<132&&y>90))continue;
     const c=['#f7a7b9','#ffffff','#ffd84a','#cfc5e8'][i%4];R(g,c,x,y,1,1);R(g,c,x-1,y+1,3,1);R(g,c,x,y+2,1,1);R(g,'#ffd84a',x,y+1,1,1)}
 })();
 
 // ---------- キャラ ----------
-const HOME={hachiware:{x:48,y:74,face:1},usagi:{x:176,y:100,face:1}};
+const HOME={hachiware:{x:48,y:74,face:1},usagi:{x:176,y:100,face:1},rakko:{x:48,y:34,face:-1},kuri:{x:166,y:58,face:1},momonga:{x:80,y:64,face:-1},shisa:{x:164,y:136,face:-1}};
+const PATROL=[[40,88],[96,88],[150,88],[206,84],[150,88],[96,88]];
 const SPEAK={x:140,y:114};
-const MEET={chiikawa:{x:98,y:54,face:1},usagi:{x:132,y:54,face:-1},hachiware:{x:115,y:38,face:1}};
+let MEET={};
+function setMeet(ids){MEET={};const n=ids.length;ids.forEach((id,i)=>{const a=Math.PI*(0.5+2*i/n);MEET[id]={x:Math.round(112+Math.cos(a)*30),y:Math.round(46+Math.sin(a)*13),face:Math.cos(a)>0?-1:1}})}
 const ent={
   chiikawa:{x:60,y:118,face:-1,pose:'work',st:'home',t:0,weeds:6,jump:0},
   hachiware:{x:48,y:74,face:1,pose:'work',st:'home',t:0,jump:0},
   usagi:{x:176,y:100,face:1,pose:'work',st:'home',t:0,jump:0},
+  rakko:{x:48,y:34,face:-1,pose:'idle',st:'home',t:0,jump:0},
+  kuri:{x:166,y:58,face:1,pose:'idle',st:'home',t:0,jump:0},
+  momonga:{x:80,y:64,face:-1,pose:'work',st:'home',t:0,jump:0},
+  shisa:{x:164,y:136,face:-1,pose:'idle',st:'home',t:0,jump:0},
+  yoroi:{x:96,y:88,face:1,pose:'idle',st:'home',t:0,jump:0,wp:1,wait:0},
   soyan:{x:114,y:108,face:1,pose:'idle',st:'desk',t:0,jump:0}};
-const AGENTS=['chiikawa','hachiware','usagi'];
-function homeOf(id){if(id==='chiikawa'){const w=WEEDS[Math.min(5,6-ent.chiikawa.weeds)]||WEEDS[0];return {x:w[0]+12,y:w[1]+6,face:-1}}return HOME[id]}
+const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi'];
+function homeOf(id){if(id==='yoroi'){const w=PATROL[ent.yoroi.wp%PATROL.length];return {x:w[0],y:w[1],face:1}}if(id==='chiikawa'){const w=WEEDS[Math.min(5,6-ent.chiikawa.weeds)]||WEEDS[0];return {x:w[0]+12,y:w[1]+6,face:-1}}return HOME[id]}
 function stepTo(e,tx,ty,dt,sp=30){const dx=tx-e.x,dy=ty-e.y,d=Math.hypot(dx,dy);if(d<1){e.x=tx;e.y=ty;return true}
   const k=Math.min(1,sp*dt/d);e.x+=dx*k;e.y+=dy*k;if(Math.abs(dx)>0.5)e.face=dx>0?1:-1;return false}
 
@@ -238,7 +295,11 @@ function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0,dx=0;
   if(e.pose==='work'&&e.st==='home'){const ph=Math.floor(t*3)%2;
     if(id==='chiikawa')ctx.drawImage(P.weed,x+15,y+13-(ph?3:0));
     if(id==='hachiware')ctx.drawImage(P.book,x+5,y+15+(Math.floor(t)%4===0?1:0));
-    if(id==='usagi')ctx.drawImage(P.stick,x+15,y+6+(ph?2:0));}
+    if(id==='usagi')ctx.drawImage(P.stick,x+15,y+6+(ph?2:0));
+    if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));}
+  if(e.st==='home'&&id==='yoroi'&&!e.walking)ctx.drawImage(P.clip,x+15,y+10);
+  if(e.st==='home'&&id==='shisa'&&Math.floor(t)%3!==2)ctx.drawImage(P.stick,x-6,y+4);
+  if(e.st==='home'&&id==='kuri')ctx.drawImage(P.coin,x+(e.face>0?18:-4),y+10-(Math.floor(t*2)%2));
   ctx.restore();e.top=y;e.left=x;e.w=im.width}
 function drawTable(){R(ctx,'#7a5230',111,44,3,6);R(ctx,'#8a5a35',100,38,26,8);R(ctx,'#b0793f',101,38,24,6);R(ctx,'#c8995a',103,39,10,1);
   if(scene&&scene.type==='meeting'){R(ctx,'#fff',106,40,5,3);R(ctx,'#fff',115,39,5,4);R(ctx,'#e36d72',108,41,1,1)}}
@@ -269,7 +330,7 @@ function lights(t){ctx.save();ctx.globalCompositeOperation='lighter';
 
 // ---------- 吹き出し ----------
 const stage=document.getElementById('stage');const BUB={};
-['chiikawa','hachiware','usagi','soyan'].forEach(id=>{const b=document.createElement('div');b.className='bub'+(id==='soyan'?' soyan':'');b.dataset.empty='1';stage.appendChild(b);BUB[id]=b});
+AGENTS.concat('soyan').forEach(id=>{const b=document.createElement('div');b.className='bub'+(id==='soyan'?' soyan':'');b.dataset.empty='1';stage.appendChild(b);BUB[id]=b});
 function bubbleText(id){const e=ent[id];
   if(id==='soyan'){const t=TASKS.filter(x=>!x.done).sort(byTime)[0];return t?'📝 '+t.title:(onBreak()?'☕ ひとやすみ':'')}
   if(scene&&scene.type==='meeting'&&e.st!=='home')return e.st==='meet'?'':'🚶 会議へ';
@@ -278,7 +339,8 @@ function bubbleText(id){const e=ent[id];
   if(e.st==='walkOut')return '🚶 もどる';
   const a=(STATUS.agents||{})[id];return (a&&a.doing)||DEFAULT_DOING[id]}
 function onBreak(){return false}
-function placeBubbles(){for(const id in BUB){const e=ent[id],b=BUB[id],txt=bubbleText(id);if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';
+function bubbleOn(id){if(id==='soyan')return true;const e=ent[id];if(e.st!=='home')return true;const g=Math.floor(T/5)%3;return AGENTS.indexOf(id)%3===g}
+function placeBubbles(){for(const id in BUB){const e=ent[id],b=BUB[id],txt=bubbleOn(id)?bubbleText(id):'';if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';
   if(e.top===undefined)continue;let lx=Math.min(88,Math.max(12,e.x/W*100));b.style.left=lx+'%';b.style.top=((e.top-2)/H*100)+'%'}}
 
 // ---------- ループ ----------
@@ -289,8 +351,9 @@ function update(dt){
     if(e.st==='walkIn'){e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
     else if(e.st==='arrive'&&e.t>0.7){e.st='talk';if(scene&&speaker===id)showPage()}
     else if(e.st==='walkOut'){e.walking=true;e.pose='idle';const h=homeOf(id);if(stepTo(e,h.x,h.y,dt)){e.walking=false;e.face=h.face;e.st='home';e.t=0}}
-    else if(e.st==='toMeet'){e.walking=true;e.pose='idle';const m=MEET[id];if(stepTo(e,m.x,m.y,dt)){e.walking=false;e.face=m.face;e.st='meet';if(scene&&scene.type==='meeting'&&!scene.started&&AGENTS.every(k=>ent[k].st==='meet')){scene.started=true;pi=0;showPage()}}}
-    else if(e.st==='home'){if(e.pose!=='happy')e.pose='work';
+    else if(e.st==='toMeet'){e.walking=true;e.pose='idle';const m=MEET[id];if(stepTo(e,m.x,m.y,dt)){e.walking=false;e.face=m.face;e.st='meet';if(scene&&scene.type==='meeting'&&!scene.started&&scene.members.every(k=>ent[k].st==='meet')){scene.started=true;pi=0;showPage()}}}
+    else if(e.st==='home'&&id==='yoroi'){if(e.wait>0){e.wait-=dt;e.walking=false;e.pose='idle'}else{e.walking=true;e.pose='idle';const w=PATROL[e.wp%PATROL.length];if(stepTo(e,w[0],w[1],dt,14)){e.wp++;e.wait=3+Math.random()*3;e.walking=false}}}
+    else if(e.st==='home'){if(e.pose!=='happy')e.pose=['chiikawa','hachiware','usagi','momonga'].includes(id)?'work':'idle';
       if(id==='chiikawa'&&e.t>4){e.t=0;e.weeds--;if(e.weeds<=0){e.weeds=6;e.jump=1;e.pose='happy';setTimeout(()=>{if(e.pose==='happy')e.pose='work'},900)}const h=homeOf('chiikawa');e.x=h.x;e.y=h.y}}});
 }
 function render(t,dt){ctx.drawImage(bg,0,0);
@@ -308,7 +371,7 @@ requestAnimationFrame(loop);
 
 // ---------- データ ----------
 const $=id=>document.getElementById(id);
-let REPORTS=[],TASKS=[],PROPS=[],MEETS=[],STATUS={},db=null,canWrite=true;
+let REPORTS=[],TASKS=[],PROPS=[],MEETS=[],NOTES=[],REVIEWS=[],STATUS={},db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 const attention=()=>REPORTS.filter(r=>r.kind!=='resolved');
 const resolved=()=>REPORTS.filter(r=>r.kind==='resolved');
@@ -320,14 +383,14 @@ function markSeen(k){seen[k]=1;try{localStorage.setItem('hv-seen',JSON.stringify
 const Q=[];let scene=null,speaker=null,speakerLabel='',speakerIcon='letter',pages=[],pi=0,typing=null,full='';
 function enqueue(s){if(s&&s.pages&&s.pages.length){Q.push(s);if(!scene)nextScene()}}
 function nextScene(){scene=Q.shift()||null;if(!scene){idle();return}pages=scene.pages;pi=0;
-  if(scene.type==='meeting'){speaker=null;scene.started=false;setText('','','（なかまが会議にあつまっていく…）',null);$('dActs').innerHTML='';AGENTS.forEach(id=>{ent[id].st='toMeet'})}
+  if(scene.type==='meeting'){speaker=null;scene.started=false;setMeet(scene.members);setText('','','（なかまが会議にあつまっていく…）',null);$('dActs').innerHTML='';scene.members.forEach(id=>{ent[id].st='toMeet';ent[id].walking=true})}
   else goPage()}
 function goPage(){const p=pages[pi];if(!p)return;
   if(scene.type==='talk'&&p.who&&p.who!==speaker){if(speaker&&ent[speaker].st!=='home')ent[speaker].st='walkOut';speaker=p.who;
     speakerLabel=scene.label||'✉️ ほうこく';speakerIcon=scene.icon||'letter';const e=ent[speaker];e.st='walkIn';
     setText('','',`（${NAMES[speaker]}がやってくる…）`,speaker);$('dActs').innerHTML='';$('more').hidden=true;return}
   showPage()}
-function setTag(id){if(!id)return;$('tagImg').src=ICON[id];$('tagName').textContent=NAMES[id]||id}
+function setTag(id){if(!id)return;$('tagImg').src=ICON[id];$('tagName').textContent=NAMES[id]||id;const r=ROLES[id];$('tagRole').textContent=r?r[0]:'';$('tagRole').style.setProperty('--rc',r?r[1]:'')}
 function setText(h,t,x,who){$('dHead').textContent=h;$('dTitle').textContent=t;$('dText').textContent=x;if(who)setTag(who)}
 function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'','',p.who||speaker||'chiikawa');full=p.text||'';let n=0;clearInterval(typing);$('more').hidden=true;renderActs(false);
   if(scene&&scene.type==='meeting'&&p.who&&ent[p.who]){ent[p.who].jump=0.5}
@@ -344,7 +407,7 @@ function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.inner
 function next(){if(typing){clearInterval(typing);typing=null;$('dText').textContent=full;renderActs(true);return}
   if(pi<pages.length-1){pi++;goPage();if(pages[pi]&&pages[pi].end&&speaker){ent[speaker].pose='happy';ent[speaker].jump=1;setTimeout(()=>{if(ent[speaker||'chiikawa'])ent[speaker||'chiikawa'].pose='idle'},900)}}else endScene()}
 function endScene(){if(!scene)return;if(scene.onEnd)scene.onEnd();
-  if(scene.type==='meeting')AGENTS.forEach(id=>{ent[id].st='walkOut'});else if(speaker)ent[speaker].st='walkOut';
+  if(scene.type==='meeting')scene.members.forEach(id=>{ent[id].st='walkOut'});else if(speaker)ent[speaker].st='walkOut';
   speaker=null;scene=null;nextScene()}
 function idle(){setText('','','（なかまはそれぞれの仕事をしている…）\nタップすると、もう一回ほうこくをきけます。','chiikawa');$('dActs').innerHTML='<button type="button" data-act="replay">ほうこくをきく</button>';$('more').hidden=true}
 $('dText').addEventListener('click',()=>{if(scene&&(ent[speaker]?.st==='talk'||(scene.type==='meeting'&&scene.started)))next();else if(!scene)enqueue(briefScene(true))});
@@ -374,7 +437,12 @@ function resultScene(list){const p=[];list.forEach(x=>{p.push({who:x.agent,head:
 function meetingScene(m){const lines=(m.lines||[]).filter(l=>NAMES[l.who]&&ent[l.who]);if(!lines.length)return null;
   const p=lines.map(l=>({who:l.who,head:'🪵 '+(m.title||'なかまの会議'),text:l.text}));
   if(m.decisions&&m.decisions.length)p.push({who:'hachiware',head:'きまったこと',text:m.decisions.map(d=>'・'+d).join('\n')});
-  p.push({who:'hachiware',text:'会議おわり！ それぞれの仕事にもどろー！',end:true});return {type:'meeting',pages:p,onEnd:()=>markSeen('m:'+m.id)}}
+  p.push({who:'hachiware',text:'会議おわり！ それぞれの仕事にもどろー！',end:true});const members=[...new Set(p.map(x=>x.who))];return {type:'meeting',pages:p,members,onEnd:()=>markSeen('m:'+m.id)}}
+function reviewScene(r){const p=[{who:'yoroi',head:'🛡️ 監査',title:`評価 ${r.grade||'-'}${r.score!=null?`（${r.score}点）`:''}`,text:r.summary||''}];
+  if(r.good&&r.good.length)p.push({who:'yoroi',head:'よかった点',text:r.good.map(x=>'・'+x).join('\n')});
+  if(r.bad&&r.bad.length)p.push({who:'yoroi',head:'ダメ出し',text:r.bad.map(x=>'・'+x).join('\n')});
+  if(r.next&&r.next.length)p.push({who:'yoroi',head:'次への指示',text:r.next.map(x=>'・'+x).join('\n')});
+  p.push({who:'yoroi',text:'以上。引き続き励むように。',end:true});return {type:'talk',pages:p,label:'🛡️ 監査報告',icon:'letter',onEnd:()=>markSeen('rv:'+r.id)}}
 
 // ---------- 書き込み ----------
 async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collection(col).doc(id).update(patch)}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}}}
@@ -423,24 +491,47 @@ function renderBox(){const att=attention(),res=resolved();
 function renderMine(){const ts=TASKS.slice().sort(byTime);
   $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span></div></div>`).join(''):'<p class="empty">やることを追加して、終わったらチェック。なかまが一緒によろこびます。</p>';
   const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
-function renderStatus(){const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+function renderRoster(){$('roster').innerHTML=AGENTS.map(id=>{const r=ROLES[id],a=(STATUS.agents||{})[id];
+  return `<button type="button" class="mem" data-ask="${id}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
+  <div class="ask">${esc(ASK[id])}</div><div class="now">${esc((a&&a.doing)||DEFAULT_DOING[id])}</div></div></button>`}).join('');
+  const sel=$('noteTo'),cur=sel.value;sel.innerHTML='<option value="all">みんなへ</option>'+AGENTS.map(id=>`<option value="${id}">${esc(NAMES[id])}（${esc(ROLES[id][0])}）へ</option>`).join('');sel.value=cur||'all'}
+$('roster').addEventListener('click',e=>{const b=e.target.closest('[data-ask]');if(!b)return;$('noteTo').value=b.dataset.ask;$('noteIn').focus();$('noteIn').scrollIntoView({block:'center',behavior:'smooth'});
+  const a=ent[b.dataset.ask];if(a){a.jump=1}});
+function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,15);
+  $('ncnt').textContent=NOTES.length?`${NOTES.length}件`:'';
+  $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・なかまが次の見回りで読みます'}</div>
+    <div class="q">${esc(n.text)}</div>${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.chiikawa}" alt=""><div><b>${esc(NAMES[r.who]||r.who)}${ROLES[r.who]?'（'+esc(ROLES[r.who][0])+'）':''}</b>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
+    :'<p class="empty">書いたことは、なかまが次の見回り（7:47・12:47・17:47）で読んで、返事や提案をくれます。</p>'}
+const GC={S:'#c9851f',A:'#5f9d5a',B:'#3f6fd8',C:'#c98a1c',D:'#d9544b'};
+function renderReview(){const r=REVIEWS.slice().sort(byTime).pop();if(!r)return;$('rtime').textContent=fmt(r.createdAt);
+  const li=a=>a&&a.length?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+  $('review').innerHTML=`<div class="grade"><div class="g" style="--gc:${GC[r.grade]||'#857a70'}">${esc(r.grade||'-')}</div><div><div style="font-size:13px;color:var(--sub)">${r.score!=null?esc(r.score)+' 点':''}</div><div class="sum">${esc(r.summary||'')}</div></div></div>
+    ${r.good&&r.good.length?'<h4>よかった点</h4>'+li(r.good):''}${r.bad&&r.bad.length?'<h4>ダメ出し</h4>'+li(r.bad):''}${r.next&&r.next.length?'<h4>次への指示</h4>'+li(r.next):''}
+    <div class="row"><button type="button" id="watchRv">▶ 鎧さんから聞く</button></div>`;$('watchRv').onclick=()=>enqueue(reviewScene(r))}
+$('noteForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('noteIn').value.trim();if(!v)return;const to=$('noteTo').value||'all';
+  const n={text:v.slice(0,2000),to,createdAt:Date.now(),replies:[]};$('noteIn').value='';
+  if(db&&canWrite){try{const ref=await db.collection('notes').add(n);if(!NOTES.find(x=>x.id===ref.id)){NOTES.push({id:ref.id,...n});renderNotes()}}catch(err){NOTES.push({id:'local'+Date.now(),...n});renderNotes()}}
+  else{NOTES.push({id:'local'+Date.now(),...n});renderNotes()}
+  floater('💭',ent.soyan);(to==='all'?AGENTS:[to]).forEach(id=>{if(ent[id])ent[id].jump=1})});
+function renderStatus(){renderRoster();const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   $('note').textContent=(STATUS.note||'')+(STATUS.updatedAt?`　最終更新：${fmt(STATUS.updatedAt)}`:'');renderBox()}
 $('att').addEventListener('change',e=>{const id=e.target.dataset.r;if(id){const r=REPORTS.find(x=>x.id===id);setReport(id,{done:!r.done});if(pages[pi]&&pages[pi].rid===id)renderActs(!typing)}});
 $('mine').addEventListener('change',e=>{const id=e.target.dataset.t;if(id){const t=TASKS.find(x=>x.id===id);setTask(id,{done:!t.done})}});
 $('replay').addEventListener('click',()=>enqueue(briefScene(true)));
 let lock=null;$('wake').addEventListener('click',async()=>{try{if(lock){await lock.release();lock=null;$('wake').textContent='💡'}else{lock=await navigator.wakeLock.request('screen');$('wake').textContent='🔆'}}catch(e){lock=null;$('wake').textContent='💡'}});
-renderStatus();renderMine();idle();
+renderStatus();renderMine();renderNotes();idle();
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
   if(!db){setText('','','（この画面では村のデータを読めません。Claudeのアプリかブラウザで開いてください）','chiikawa');$('dActs').innerHTML='';return}
   try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false}}catch(e){}
-  const ready={reports:false,proposals:false,meetings:false};let booted=false;
+  const ready={reports:false,proposals:false,meetings:false,reviews:false};let booted=false;
   function boot(){if(booted||!Object.values(ready).every(Boolean))return;booted=true;
     enqueue(briefScene(false));
-    const m=MEETS.slice().sort(byTime).pop();if(m&&!seen['m:'+m.id]&&Date.now()-(m.createdAt||0)<36*3600e3)enqueue(meetingScene(m));
-    const dn=PROPS.filter(p=>p.status==='done'&&!seen['done:'+p.id]);if(dn.length)enqueue(resultScene(dn));
-    const pend=PROPS.filter(p=>p.status==='proposed').sort(byTime);if(pend.length)enqueue(propScene(pend));
+    const rv=REVIEWS.slice().sort(byTime).pop();const m=MEETS.slice().sort(byTime).pop();if(m&&!seen['m:'+m.id]&&Date.now()-(m.createdAt||0)<36*3600e3)enqueue(meetingScene(m));
+    const dn=PROPS.filter(p=>p.status==='done'&&!seen['done:'+p.id]&&ent[p.agent]);if(dn.length)enqueue(resultScene(dn));
+    const pend=PROPS.filter(p=>p.status==='proposed'&&ent[p.agent]).sort(byTime);if(pend.length)enqueue(propScene(pend));
+    if(rv&&!seen['rv:'+rv.id]&&Date.now()-(rv.createdAt||0)<36*3600e3)enqueue(reviewScene(rv));
     if(!scene)idle()}
   const live=(s)=>s.docChanges().filter(c=>!c.doc.metadata.hasPendingWrites);
   db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus()},()=>{});
@@ -451,11 +542,15 @@ renderStatus();renderMine();idle();
   db.collection('proposals').onSnapshot(s=>{PROPS=s.docs.map(d=>({id:d.id,...d.data()}));renderProps();$('coin').textContent='🌰 '+coins();
     if(!ready.proposals){if(!s.metadata.fromCache||PROPS.length){ready.proposals=true;boot()}return}
     const ch=live(s).map(c=>({type:c.type,...c.doc.data(),id:c.doc.id}));
-    const np=ch.filter(c=>c.type==='added'&&c.status==='proposed');if(np.length)enqueue(propScene(np));
+    const np=ch.filter(c=>c.type==='added'&&c.status==='proposed'&&ent[c.agent]);if(np.length)enqueue(propScene(np));
     const dn=ch.filter(c=>c.status==='done'&&!seen['done:'+c.id]);if(dn.length)enqueue(resultScene(dn))},()=>{});
   db.collection('meetings').onSnapshot(s=>{MEETS=s.docs.map(d=>({id:d.id,...d.data()}));renderMeeting();
     if(!ready.meetings){if(!s.metadata.fromCache||MEETS.length){ready.meetings=true;boot()}return}
     live(s).filter(c=>c.type==='added').forEach(c=>{const m={id:c.doc.id,...c.doc.data()};if(!seen['m:'+m.id])enqueue(meetingScene(m))})},()=>{});
-  setTimeout(()=>{ready.reports=ready.proposals=ready.meetings=true;boot()},6000);
+  db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},()=>{});
+  db.collection('reviews').onSnapshot(s=>{REVIEWS=s.docs.map(d=>({id:d.id,...d.data()}));renderReview();
+    if(!ready.reviews){if(!s.metadata.fromCache||REVIEWS.length){ready.reviews=true;boot()}return}
+    live(s).filter(c=>c.type==='added').forEach(c=>{const r={id:c.doc.id,...c.doc.data()};if(!seen['rv:'+r.id])enqueue(reviewScene(r))})},()=>{});
+  setTimeout(()=>{ready.reports=ready.proposals=ready.meetings=ready.reviews=true;boot()},6000);
 })();
 </script>
