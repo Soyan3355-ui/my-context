@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>はしぐち村AI組織図</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f9fc;--panel:#ffffff;--ink:#1d2433;--sub:#6b7486;--line:#c9d3e3;--shadow:0 2px 0 #e3e8f0,0 6px 16px rgba(30,45,80,.06);
+  --ceo:#1c2b4a;--ceo-ink:#ffffff;--ceo-accent:#f2a93b;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141821;--panel:#1d2330;--ink:#eef2f8;--sub:#9aa4b8;--line:#3a4458;--shadow:0 2px 0 #10141b,0 6px 16px rgba(0,0,0,.25);--ceo:#2c3d63}}
+:root[data-theme="dark"]{--bg:#141821;--panel:#1d2330;--ink:#eef2f8;--sub:#9aa4b8;--line:#3a4458;--shadow:0 2px 0 #10141b,0 6px 16px rgba(0,0,0,.25);--ceo:#2c3d63}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 40px;overflow:hidden}
+.topbar{width:48px;height:5px;border-radius:3px;background:#3f7be0;margin-bottom:14px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(22px,5.4vw,34px);font-weight:700;letter-spacing:.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill-big{font-size:clamp(11px,2.6vw,14px);font-weight:700;color:#2f6fd6;background:#e6efff;border-radius:999px;padding:5px 12px;white-space:nowrap}
+.sub{color:var(--sub);margin:6px 0 0;font-size:clamp(12px,2.8vw,15px)}
+.meta{text-align:right;font-size:11px;font-weight:700;color:#3f7be0;letter-spacing:.06em;line-height:1.9}
+.meta span{color:var(--sub);display:block}
+
+.tree{margin-top:26px;--g:12px}
+.tier{position:relative;display:flex;gap:var(--g);justify-content:center;margin-top:30px}
+.tier:first-child{margin-top:0}
+/* 親からの幹 */
+.tier.stem::after{content:"";position:absolute;top:-30px;left:var(--stem,50%);height:16px;border-left:2px solid var(--line)}
+.tier.single.stem::after{height:30px}
+/* 横棒と各カードへの枝 */
+.tier.multi::before{content:"";position:absolute;top:-14px;border-top:2px solid var(--line);
+  left:calc((100% - (var(--n) - 1) * var(--g)) / (2 * var(--n)));right:calc((100% - (var(--n) - 1) * var(--g)) / (2 * var(--n)))}
+.tier.multi>.card::before{content:"";position:absolute;top:-16px;left:50%;height:14px;border-left:2px solid var(--line)}
+.tier.multi>.card{flex:1;min-width:0}
+.tier.single>.card{width:min(100%,460px)}
+
+/* 秘書：幹の右に寄り添う */
+.ea-row{position:relative;margin-top:14px;padding-left:calc(50% + 18px);padding-bottom:2px}
+.ea-row::before{content:"";position:absolute;left:50%;top:-14px;bottom:-30px;border-left:2px solid var(--line)}
+.ea-row>.card{max-width:380px}
+.ea-row>.card::after{content:"";position:absolute;left:-19px;top:34px;width:18px;border-top:2px dashed var(--line)}
+
+.card{position:relative;background:var(--panel);border-radius:12px;box-shadow:var(--shadow);padding:12px 12px 11px 16px;overflow:visible}
+.card .bar{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:12px 0 0 12px;background:var(--c)}
+.card .tint{position:absolute;inset:0;border-radius:12px;background:var(--c);opacity:.06;pointer-events:none}
+.row1{display:flex;align-items:center;gap:8px}
+.ava{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c) 14%,transparent)}
+.ava img{width:36px;height:36px;image-rendering:pixelated}
+.badge{font-size:10px;font-weight:700;color:#fff;background:var(--c);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.who{font-family:"DotGothic16",sans-serif;font-size:13px;color:var(--c);margin-top:1px}
+.en{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--c);margin-top:9px}
+.title{font-size:clamp(15px,3.6vw,20px);font-weight:500;line-height:1.3;margin-top:1px}
+.desc{font-size:12px;color:var(--sub);line-height:1.55;margin-top:3px}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:10.5px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--sub);white-space:nowrap}
+.chip.p1{border-color:transparent;background:#fff2c7;color:#8a6200;font-weight:700}
+
+.card.ceo{background:var(--ceo);color:var(--ceo-ink)}
+.card.ceo .bar{background:var(--ceo-accent)}
+.card.ceo .en{color:#aebedf}.card.ceo .desc{color:#c6d1e8}.card.ceo .who{color:#ffd790}
+.card.ceo .ava{background:rgba(255,255,255,.1)}
+
+@media (max-width:560px){
+  .meta{text-align:left;display:flex;gap:10px}.meta span{display:inline}
+  .tree{--g:8px}
+  .tier.three>.card{padding:10px 8px 9px 11px}
+  .tier.three .row1{flex-direction:column;align-items:flex-start;gap:5px}
+  .tier.three .ava{width:38px;height:38px}.tier.three .ava img{width:30px;height:30px}
+  .tier.three .title{font-size:14px}.tier.three .desc{font-size:11px}
+  .ea-row .title{font-size:15px}
+}
+
+.flow{margin-top:30px;background:var(--panel);box-shadow:var(--shadow);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-around;gap:8px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;font-weight:700;font-size:clamp(12px,3vw,15px)}
+.step i{font-style:normal;font-size:20px}
+.arrow{color:var(--sub)}
+.s1{color:#7a55d6}.s2{color:#2f6fd6}.s3{color:#e0584a}
+.legend{margin-top:12px;font-size:11.5px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap}
+.foot{margin-top:18px;font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"></div>
+  <div class="head">
+    <div>
+      <h1>そーやんのAI社員組織図 <span class="pill-big">🌾 CEO以外はAI社員</span></h1>
+      <p class="sub">はしぐち村のなかまたち ― 一人ひとりが自分で動くAIエージェント</p>
+    </div>
+    <div class="meta">AI ORGANIZATION<span>2026.09</span></div>
+  </div>
+
+  <div class="tree" id="tree"></div>
+
+  <div class="flow">
+    <div class="step s1"><i>🧠</i>各AI社員が判断・実行</div><span class="arrow">→</span>
+    <div class="step s2"><i>🤝</i>部署間で連携</div><span class="arrow">→</span>
+    <div class="step s3"><i>🧑‍🌾</i>必要な判断だけCEOへ</div>
+  </div>
+  <div class="legend"><span><b style="color:#8a6200">★ フェーズ1</b>：最初に動き出す3人</span><span>メール送信・お金の操作は下書きまで。最終判断はCEOが行います</span></div>
+  <div class="foot">SOYAN HASHIGUCHI / HASHIGUCHI VILLAGE AI TEAM</div>
+</div>
+<script>
+const SPR={"chiikawa": ["....kkk......kkk....", "...kwwwk....kwwwk...", "...kwwwwkkkkwwwwk...", "..kwwwwwwwwwwwwwwk..", ".kwwwwwwwwwwwwwwwwk.", "kwwwwwwwwwwwwwwwwwwk", "kwwwwwwwwwwwwwwwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppwwwwwwwwwwppwwk", "kwwwwwwwwkkwwwwwwwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "hachiware": ["...k............k...", "...kk..........kk...", "...kbk........kbk...", "..kbbbkkkkkkkkbbbk..", ".kbbbbbbbwwbbbbbbbk.", "kbbbbbbbwwwwbbbbbbbk", "kbbbbbbwwwwwwbbbbbbk", "kwbbbbwwwwwwwwbbbbwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppweewwwweewppwwk", "kwwwwwwwkwwkwwwwwwwk", ".kwwwwwwwkkwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "usagi": [".....kkk....kkk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", "....kkyykkkkyykk....", "...kyyyyyyyyyyyyk...", "..kyyyyyyyyyyyyyyk..", ".kyyyyyyyyyyyyyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyppyyykkkkyyyppyk.", ".kyyyyykrrrrkyyyyyk.", "..kyyyyykkkkyyyyyk..", "...kkyyyyyyyyyykk...", "....kyyyyyyyyyyk....", "...kyykyyyyyykyyk...", "....kyyyyyyyyyyk....", "....kyyyyyyyyyyk....", ".....kyyykkyyyk.....", "......kkk..kkk......"], "rakko": ["......kkkkkkkk......", "....kkllllllllkk....", "...kllllllllllllk...", "..kllllllllllllllk..", ".kllllllllllllllllk.", "kllllllllllllllllllk", "kllllleelllleelllllk", "kllllleelllleelllllk", "klllpplLLLLLLlpplllk", "klllllLLLkkLLLlllllk", ".klllllLLLLLLlllllk.", "..kllllllllllllllk..", "...kkllllllllllkk...", "...kllllllllllllk...", "..kllkllllllllkllk..", "...kllllllllllllk...", "...kllllllllllllk...", "....kllllkkllllk....", ".....kkk....kkk....."], "kuri": [".........kk.........", "........kNNk........", ".......kNNNNk.......", ".....kkNNNNNNkk.....", "....kNNNNNNNNNNk....", "...kNNNNNNNNNNNNk...", "..kNNNNNNNNNNNNNNk..", ".kNNNNNNNNNNNNNNNNk.", ".kcccccccccccccccck.", "kcccccccccccccccccck", "kcccceecccccceecccck", "kcccccccccccccccccck", "kccppcccckkccccppcck", "kccccccckcckccccccck", ".kcccccccccccccccck.", "..kcccccccccccccck..", "...kkcccccccccckk...", ".....kkkkkkkkkk.....", "......kk....kk......"], "momonga": ["..kkk..........kkk..", ".kvvvk........kvvvk.", ".kvvvvkkkkkkkkvvvvk.", ".kvvvvvvvvvvvvvvvvk.", "kvvvvvvvvvvvvvvvvvvk", "kvvvvwwwwwwwwwwvvvvk", "kvvwwwwwwwwwwwwwwvvk", "kwwweeewwwwwweeewwwk", "kwwwewewwwwwwewewwwk", "kwwweeewwwwwweeewwwk", "kwwppwwwwkkwwwwppwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "shisa": ["....kkkkkkkkkkkk....", "..kkMMMMMMMMMMMMkk..", ".kMMMMMMMMMMMMMMMMk.", "kMMMMMMMMMMMMMMMMMMk", "kMMMOOOOOOOOOOOOMMMk", "kMMOOOOOOOOOOOOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOppOOkkOOppOOMMk", "kMMOOOOkrrrrkOOOOMMk", "kMMMOOOOOOOOOOOOMMMk", ".kMMMMMMMMMMMMMMMMk.", "..kkMMMMMMMMMMMMkk..", "....kOOOOOOOOOOk....", "...kOOkOOOOOOkOOk...", "....kOOOOOOOOOOk....", "....kOOOOOOOOOOk....", ".....kOOOkkOOOk.....", "......kkk..kkk......"], "soyan": ["......kkkkkkkk......", ".....khhhhhhhhk.....", ".....khhhhhhhhk.....", "....kRRRRRRRRRRk....", ".khhhhhhhhhhhhhhhhk.", ".kkkkkkkkkkkkkkkkkk.", "...kHHHHHHHHHHHHk...", "...kssssssssssssk...", "...ksseesssseessk...", "...ksppssssssppsk...", "...ksssskkkkssssk...", "....kssssssssssk....", "...kggggggggggggk...", "..kggddddddddddggk..", "..kssddddddddddssk..", "...kddddddddddddk...", "....kddddkkddddk....", "....kddddkkddddk....", "....kkkkk..kkkkk...."]};
+const PAL={k:'#3b3533',w:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a0',r:'#e36d72',
+  l:'#e4ebf2',L:'#b8c5d3',N:'#8a5a33',c:'#f4dfae',v:'#cfc5e8',M:'#d98639',O:'#f7c86e',h:'#e9c66b',R:'#c9544b',H:'#4a3a33',s:'#f3cfa6',g:'#6f9f5e',d:'#4f73a8'};
+function sprite(id){const rows=SPR[id],h=rows.length,w=rows[0].length,S=Math.max(w,h);
+  const c=document.createElement('canvas');c.width=S;c.height=S;const g=c.getContext('2d');
+  const ox=Math.floor((S-w)/2),oy=S-h;
+  rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch!=='.'){g.fillStyle=PAL[ch];g.fillRect(ox+x,oy+y,1,1)}}));
+  return c.toDataURL()}
+
+const ORG=[
+  {type:'single',cards:[{id:'soyan',ceo:true,badge:'CEO',en:'CEO',title:'橋口 創也',who:'そーやん',desc:'コミュニティファーマー ／ ビジョンと最終判断',c:'#f2a93b'}]},
+  {type:'ea',cards:[{id:'chiikawa',badge:'AI社員',en:'ASSISTANT',title:'秘書',who:'ちいかわ',desc:'朝のブリーフ・予定調整・メールの草むしり',c:'#e9829b',when:'毎朝',p1:true}]},
+  {type:'single',cards:[{id:'rakko',badge:'AI社員',en:'STRATEGY',title:'参謀',who:'ラッコ',desc:'事業戦略・新企画の壁打ち相手',c:'#7c63d6',when:'随時'}]},
+  {type:'multi',cards:[
+    {id:'hachiware',badge:'AI社員',en:'OPERATIONS',title:'番頭（COO）',who:'ハチワレ',desc:'全体の進行・今週の優先順位',c:'#3f6fd8',when:'毎週月曜',p1:true},
+    {id:'kuri',badge:'AI社員',en:'FINANCE',title:'会計（CFO）',who:'くりまんじゅう',desc:'freee・請求漏れ・入金チェック',c:'#d08a24',when:'毎週'}]},
+  {type:'multi three',stem:'calc((100% - var(--g)) / 4)',cards:[
+    {id:'usagi',badge:'AI社員',en:'YOUTUBE',title:'YouTube部',who:'うさぎ',desc:'「畑は小さな大自然」のネタ出し・トレンド討伐',c:'#e2604c',when:'毎週',p1:true},
+    {id:'momonga',badge:'AI社員',en:'WRITING',title:'発信部',who:'モモンガ',desc:'マイナビ農業の記事下書き・SNSの文章',c:'#9a62d0',when:'月初'},
+    {id:'shisa',badge:'AI社員',en:'COMMUNITY',title:'講座部',who:'シーサー',desc:'畑の寺子屋・米づくり道場の受講生フォロー',c:'#219384',when:'講座期間中'}]},
+];
+const tree=document.getElementById('tree');
+ORG.forEach((t,i)=>{
+  const el=document.createElement('div');
+  if(t.type==='ea'){el.className='ea-row'}
+  else{el.className='tier '+t.type+(i>0?' stem':'');el.style.setProperty('--n',t.cards.length);if(t.stem)el.style.setProperty('--stem',t.stem)}
+  el.innerHTML=t.cards.map(c=>`
+   <div class="card${c.ceo?' ceo':''}" style="--c:${c.c}">
+     ${c.ceo?'':'<div class="tint"></div>'}<div class="bar"></div>
+     <div class="row1"><div class="ava"><img alt="${c.who}" src="${sprite(c.id)}"></div>
+       <div><span class="badge">${c.badge}</span><div class="who">${c.who}</div></div></div>
+     <div class="en">${c.en}</div><div class="title">${c.title}</div><div class="desc">${c.desc}</div>
+     ${c.when?`<div class="chips">${c.p1?'<span class="chip p1">★ フェーズ1</span>':''}<span class="chip">⏰ ${c.when}</span></div>`:''}
+   </div>`).join('');
+  tree.appendChild(el);
+});
+</script>
+</body>
+</html>
