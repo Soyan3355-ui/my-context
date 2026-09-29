@@ -134,7 +134,9 @@
         // should allow, on top of the shooting confidence a hyped crowd is meant to represent
         if (id === 'hikaru' && k === 'sht') v += Math.round(this.crowdHype * 4);
       }
-      return v;
+      // stats can now climb past the old 99 ceiling (up to 200); every formula here was tuned on
+      // a 0-100 scale, so past 100 each point counts for half - still better, never physics-breaking
+      return v <= 100 ? v : 100 + (v - 100) * 0.5;
     }
     tacOf(t) { return this.tac[t]; }
     oppStyle() { const c = this.opp; return [c.ink, c.color, c.dark, c.light]; }
@@ -143,9 +145,10 @@
       tac = tac || this.tac[t];
       const ps = this.team(t);
       const avg = ps.reduce((a, p) => a + ((p.def.tacU && p.def.tacU[tac]) || 50), 0) / ps.length;
-      return 0.5 + 0.5 * (avg / 100);
+      // understanding past 100 still helps, but only a little (max ~110% realization)
+      return 0.5 + 0.5 * (Math.min(110, avg <= 100 ? avg : 100 + (avg - 100) * 0.2) / 100);
     }
-    understands(p) { return ((p.def.tacU && p.def.tacU[this.tac[p.team]]) || 50) / 100; }
+    understands(p) { return Math.min(1.1, ((p.def.tacU && p.def.tacU[this.tac[p.team]]) || 50) / 100); }
     bodyScore(p) { return p.def.look.body === 'big' ? 80 : p.def.look.body === 'small' ? 25 : 50; }
     scoreDiff(t) { return this.score[t] - this.score[1 - t]; }
     toast(textStr, color) { this.tacToast = { text: textStr, color: color || '#ffd24a', t: 0 }; }
@@ -377,13 +380,11 @@
         // pressing needs everyone to understand the triggers: re-roll who joins every second
         this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
         this.memoT -= dt; if (this.memoT <= 0) { this.memoT = 2; this.liveMemo(); }
-        this.oppSubT -= dt; if (this.oppSubT <= 0) { this.oppSubT = rand(8, 14); this.maybeOppSub(); }
+        this.oppSubT -= dt; if (this.oppSubT <= 0) { this.oppSubT = rand(8, 14); this.oppWantsSub = this.oppSubsLeft > 0 && this.team(1).some((p) => !p.gk && p.sta < 30); }
         // Nagisa: a running feed of hype and quiet worry from the bench
         if (this.nagisa.bubble) { this.nagisa.bubble.t -= dt; if (this.nagisa.bubble.t <= 0) this.nagisa.bubble = null; }
         if (this.nagisa.cd > 0) this.nagisa.cd -= dt;
         this.nagisa.idleT -= dt; if (this.nagisa.idleT <= 0) { this.nagisa.idleT = rand(12, 18); this.nagisaIdle(); }
-        // a queued substitution goes on at a quiet moment if play has not stopped for a while
-        if (this.subQueue.length && this.clock + (this.half - 1) * 1000 - this.subQueue[0].at > 8 && !b.shot && !this.sp && Math.abs(b.x - CX) < 200) this.applySubs();
         if (!this.opts.fixedTac && this.half === 2 && this.tac[1] !== this.opp.planB && this.score[1] < this.score[0] && this.clock > HALF_LEN * 0.3) {
           this.tac[1] = this.opp.planB;
           const TB = Data.TACTICS[this.opp.planB];
@@ -985,7 +986,7 @@
       if (fx !== undefined) { tx = fx; ty = fy; }
       else { tx = m.x + m.vx * 0.3; ty = m.y + m.vy * 0.3; }
       const acc = this.stat(p, 'pas') + (this.order[p.team] && this.order[p.team].id === 'pass' ? 10 : 0);
-      let err = ((100 - acc) / 100) * 0.26 * rand(-1, 1) * (this.tacOf(p.team) === 'possession' && dist(p.x, p.y, m.x, m.y) < 130 ? 0.75 : 1);
+      let err = (Math.max(4, 100 - acc) / 100) * 0.26 * rand(-1, 1) * (this.tacOf(p.team) === 'possession' && dist(p.x, p.y, m.x, m.y) < 130 ? 0.75 : 1);
       if (this.badge(p, 'longpass') && dist(p.x, p.y, m.x, m.y) > 190) err *= 0.65;
       // pressure from nearby opponents vs the carrier's press resistance (StatsBomb-style)
       let pressure = 0, pSk = 0, pn = 0;
@@ -1107,7 +1108,7 @@
       this.oneOnOne = null;
       // heading: timing, size and neck strength rather than shooting technique
       const headSk = this.stat(p, 'sht') * 0.45 + this.aerial(p) * 0.55;
-      let sigma = header ? (100 - headSk) * 0.26 + dGoal * 0.07 + 3 : (100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
+      let sigma = header ? Math.max(5, 100 - headSk) * 0.26 + dGoal * 0.07 + 3 : Math.max(5, 100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
       if (oneOnOne) sigma *= 0.97;
       if (this.badge(p, 'finisher')) sigma *= 0.85;
       // the human (or auto-mode's approximation) only ever gets a timing-quality roll on team 0's own
@@ -1199,14 +1200,14 @@
     fireSpecial(p, special, isSave) {
       // a hard freeze-frame punch before the slow-mo, so the trigger itself has weight
       Game.doHitstop(0.12);
-      this.cutin = { id: p.id, expr: 'determined', t: 0, dur: 1.6, text: '必殺！「' + special.name + '」', nick: p.def.nick, color: special.color, big: true };
-      this.banner(special.name + '！！', 'special', 2.0, special.color);
-      Game.addShake(7, 0.4); Game.doFlash(0.68, special.color);
+      // only the compact bottom band announces it - no banner, speech bubble or heavy flash over
+      // the middle of the screen, where the motion and the ball's flight need to stay visible
+      this.cutin = { id: p.id, expr: 'determined', t: 0, dur: 1.5, text: '必殺！「' + special.name + '」', nick: p.def.nick, color: special.color, big: true };
+      Game.addShake(5, 0.3); Game.doFlash(0.3, special.color);
       this.fx.burst(p.x, p.y, 60, { color: [special.color, '#ffffff', '#ffd24a'], speedMin: 60, speedMax: 210, lifeMin: 0.45, lifeMax: 1.0, size: 3, kind: 'star', drag: 0.035 });
       setTimeout(() => this.fx.burst(p.x, p.y, 26, { color: ['#ffffff', special.color], speedMin: 90, speedMax: 160, lifeMin: 0.3, lifeMax: 0.55, size: 2, kind: 'star', drag: 0.05 }), 90);
       Sound.play('levelup', { vol: 0.7 });
       this.tick(p.name + (isSave ? '、必殺セーブ「' : '、必殺技「') + special.name + '」炸裂ッ！', special.color);
-      this.say(p, pick(special.lines || ['ここだッ！']), 1.8);
       // a longer, deeper slow-motion window so the flourish actually reads as something special
       Game.timeScale = 0.16;
       Sound.setBgmRate(0.55);
@@ -1307,7 +1308,7 @@
 
     // ---------------- set pieces ----------------
     startSetPiece(type, team, x, y, forced) {
-      if (type !== 'gk') this.applySubs();
+      if (type !== 'gk') { this.applySubs(); this.applyOppSub(); }
       const b = this.ball;
       b.owner = null; b.pass = null; b.shot = null; b.vx = b.vy = b.vz = 0; b.z = 0; b.held = false;
       b.x = x; b.y = y;
@@ -1683,7 +1684,7 @@
           if (this.half === 2 && this.clock > HALF_LEN * 0.7) p.rec.distLate += v * dt;
         }
         if (this.state === 'play') {
-          let drain = (0.12 + (v / 100) * 0.55) * (1.45 - p.st.sta / 100) * dt;
+          let drain = (0.12 + (v / 100) * 0.55) * Math.max(0.35, 1.45 - Math.min(110, p.st.sta) / 100) * dt;
           if (p.id === 'ponta' && this.half === 2 && !this.pontaAwake) drain *= 1.35;
           if (this.combo('tofu') && p.team === 0 && (p.id === 'ponta' || p.id === 'morio')) drain *= 0.75;
           if (this.combo('okan') && p.id === 'ponta') drain *= 1.25;
@@ -3016,8 +3017,11 @@
     }
     // the rival manager rotates in fresh legs too, once fatigue is real — checked periodically
     // rather than every frame, and capped at the same 3 changes the human gets
-    maybeOppSub() {
-      if (this.oppSubsLeft <= 0 || this.state !== 'play') return;
+    // decided during play (oppWantsSub), but only carried out at the next stoppage
+    applyOppSub() {
+      if (!this.oppWantsSub) return;
+      this.oppWantsSub = false;
+      if (this.oppSubsLeft <= 0) return;
       if (!this.oppBench) this.oppBench = this.benchFor(this.opp);
       if (!this.oppBench.length) return;
       const tired = this.team(1).filter((p) => !p.gk && p.sta < 30).sort((a, c) => a.sta - c.sta)[0];
@@ -3428,30 +3432,21 @@
       const inK = Ease.outCubic(clamp(t / 0.22, 0, 1));
       const outK = clamp((t - (d - 0.32)) / 0.32, 0, 1);
       const alpha = 1 - outK;
-      const bandY = 58, bandH = 76;
-      // radial speed lines behind the band, kept above/around the action rather than over the whole pitch
-      g.save(); g.globalAlpha = alpha * 0.7;
-      g.fillStyle = c.color;
-      for (let i = 0; i < 20; i++) {
-        const a = (i / 20) * Math.PI * 2 + Game.time * 2.4;
-        const r0 = 20 + ((Game.time * 260 + i * 41) % 130);
-        const x0 = W / 2 + Math.cos(a) * r0, y0 = bandY + bandH / 2 + Math.sin(a) * r0 * 0.5;
-        g.fillRect(Math.round(x0), Math.round(y0), 3, 3);
-      }
-      g.restore();
-      const bx = -W + inK * (W + 40) + outK * (W + 60);
+      // a compact band hugging the bottom edge of the pitch view: the shot/save itself plays out in
+      // the middle of the screen during the slow-mo, so nothing is drawn over it
+      const bandH = 40, bandY = TOP_H + VIEW_H - bandH - 2, bw = 250;
+      const bx = -bw + inK * (bw + 6) - outK * (bw + 20);
       g.save(); g.globalAlpha = alpha;
       g.fillStyle = c.color;
-      g.beginPath(); g.moveTo(bx, bandY); g.lineTo(bx + W, bandY - 8); g.lineTo(bx + W, bandY + bandH); g.lineTo(bx, bandY + bandH + 8); g.fill();
-      g.fillStyle = '#10182e'; g.fillRect(bx, bandY + bandH + 8, W, 3);
+      g.beginPath(); g.moveTo(bx, bandY); g.lineTo(bx + bw, bandY); g.lineTo(bx + bw - 16, bandY + bandH); g.lineTo(bx, bandY + bandH); g.fill();
+      g.fillStyle = '#10182e'; g.fillRect(bx, bandY + bandH, bw - 16, 2);
       g.fillStyle = '#ffffff'; g.globalAlpha = alpha * (0.5 + 0.5 * Math.sin(Game.time * 16));
-      g.fillRect(bx, bandY, W, 2);
+      g.fillRect(bx, bandY, bw, 1);
       g.globalAlpha = alpha;
       const img = portrait(c.id, c.expr);
-      if (img) g.drawImage(img, Math.round(bx + 14), bandY + 6, 64, 64);
-      if (c.nick) text(g, '「' + c.nick + '」', Math.round(bx + 90), bandY + 10, { size: 9, color: '#fff6e0', outline: '#10182e' });
-      text(g, '必殺技', Math.round(bx + 90), bandY + 22, { size: 12, color: '#ffd24a', outline: '#10182e' });
-      text(g, c.text.replace('必殺！', ''), Math.round(bx + 90), bandY + 40, { size: 13, color: '#ffffff', outline: '#10182e' });
+      if (img) g.drawImage(img, Math.round(bx + 6), bandY + 2, 36, 36);
+      text(g, '必殺技' + (c.nick ? '　「' + c.nick + '」' : ''), Math.round(bx + 48), bandY + 5, { size: 8, color: '#ffd24a', outline: '#10182e' });
+      text(g, c.text.replace('必殺！', ''), Math.round(bx + 48), bandY + 19, { size: 12, color: '#ffffff', outline: '#10182e' });
       g.restore();
     }
 

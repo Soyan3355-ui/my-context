@@ -39,7 +39,7 @@
       this.setplay = { unlocked: [], ck: 'std', fk: 'std', lv: 0, prog: 0 };
       this.seasonNo = 1; this.history = []; this.clubMods = {}; this.extraFA = []; this.listed = null; this.bought = [];
       this.h2h = {}; this.lastSeasonRanks = {}; this.promo = null;
-      this.identity = null;
+      this.identity = null; this.capLevel = 0;
       if (typeof applyClubs === 'function') applyClubs();
     },
     nextSetplay() { return Data.SETPLAY_UNLOCK.find((k) => !this.setplay.unlocked.includes(k)); },
@@ -82,7 +82,7 @@
   const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
-    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen',
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel',
     'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations', 'rivalGrowth'];
   const Save = {
     _migrated: false,
@@ -262,9 +262,15 @@
   // growth slows down the closer a stat gets to its ceiling, so a season of play doesn't push everyone to S rank
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
   // level, then eases off hard past it, so a season closes the gap instead of blowing past it forever
-  function growthTaper(cur) { return cur < 52 ? 1 : clamp((82 - cur) / 38, 0.12, 1); }
-  // tactic understanding eases off near full mastery too, same idea as growthTaper but for the 0-100 scale
-  function tacTaper(cur) { return cur < 65 ? 1 : clamp((100 - cur) / 35, 0.1, 1); }
+  // the hard ceiling on stats and tactic understanding opens up as the club climbs:
+  // district 120 → prefecture 150 → prefecture champions 200. Kept on the peak level reached,
+  // so a relegation never shrinks what the squad has already earned.
+  const CAP_BY_LEVEL = [120, 150, 200];
+  function capLevel() { return Math.max(State.capLevel || 0, State.tier === 'prefecture' ? 1 : 0); }
+  function statCap() { return CAP_BY_LEVEL[capLevel()]; }
+  function growthTaper(cur) { const top = [82, 105, 135][capLevel()]; return cur < 52 ? 1 : clamp((top - cur) / (top - 44), 0.12, 1); }
+  // tactic understanding eases off near full mastery too, same idea as growthTaper
+  function tacTaper(cur) { const top = [100, 125, 160][capLevel()]; return cur < 65 ? 1 : clamp((top - cur) / (top - 65), 0.1, 1); }
   // the squad starts well below the rivals' level by design, but it shouldn't still feel like that
   // past the halfway point of the very first season: a fading catch-up bonus, gone by week 5 of
   // ~10, gets year one close to competitive without touching pace in any season after
@@ -335,7 +341,7 @@
       else if (p.age <= 35) { add('spd', -1); add('sta', -1); }
       else if (p.age <= 50) { add('spd', -2); add('sta', -2); add('pas', 1); }
       else { add('spd', -2); add('sta', -2); }
-      for (const k in ch) p.stats[k] = clamp(p.stats[k] + ch[k], 10, 99);
+      for (const k in ch) p.stats[k] = clamp(p.stats[k] + ch[k], 10, statCap());
       p.base = Object.assign({}, p.stats);
       out.push({ p, ch });
     }
@@ -383,7 +389,7 @@
       for (const d of State.departed) {
         if (d.dest !== 'away' || d.returned || !d.p || d.season >= n - 1 || Math.random() < 0.4) continue;
         d.returned = true;
-        const back = Object.assign({}, d.p, { stats: Object.fromEntries(Object.entries(d.p.stats).map(([k, v]) => [k, Math.min(99, v + randi(2, 5))])), pitch: 'ただいま、監督。外で揉まれて、少しはうまくなったよ。…もう一度、ここで蹴らせてくれないかな。', sal: d.p.sal || 10, growth: d.p.growth || 1 });
+        const back = Object.assign({}, d.p, { stats: Object.fromEntries(Object.entries(d.p.stats).map(([k, v]) => [k, Math.min(statCap(), v + randi(2, 5))])), pitch: 'ただいま、監督。外で揉まれて、少しはうまくなったよ。…もう一度、ここで蹴らせてくれないかな。', sal: d.p.sal || 10, growth: d.p.growth || 1 });
         State.extraFA.push(back); State.freeAgents.push(back.id);
         s.news.push(d.name + 'が町に戻ってきた！ 入団を希望している');
       }
@@ -445,9 +451,12 @@
     g.fillStyle = OUT; g.fillRect(x, y, w + 2, 7);
     g.fillStyle = '#3a3050'; g.fillRect(x + 1, y + 1, w, 5);
     const pv = prev !== undefined ? prev : v;
-    g.fillStyle = color; g.fillRect(x + 1, y + 1, Math.round((w * pv) / 100), 5);
-    if (v > pv) { g.fillStyle = '#ffffff'; g.fillRect(x + 1 + Math.round((w * pv) / 100), y + 1, Math.max(1, Math.round((w * (v - pv)) / 100)), 5); }
-    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x + 1, y + 1, Math.round((w * Math.min(v, pv)) / 100), 1);
+    const bw = (n) => Math.round((w * Math.min(100, n)) / 100);
+    g.fillStyle = color; g.fillRect(x + 1, y + 1, bw(pv), 5);
+    if (v > pv && pv < 100) { g.fillStyle = '#ffffff'; g.fillRect(x + 1 + bw(pv), y + 1, Math.max(1, bw(v) - bw(pv)), 5); }
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x + 1, y + 1, bw(Math.min(v, pv)), 1);
+    // past 100 the bar laps: a gold second layer over the first, so 150 reads as "full + half"
+    if (v > 100) { g.fillStyle = '#ffd24a'; g.fillRect(x + 1, y + 2, bw(v - 100), 3); g.fillStyle = '#fff6c0'; g.fillRect(x + 1, y + 2, bw(v - 100), 1); }
   }
   // ability ranks: S 80+ / A 70+ / B 60+ / C 50+ / D 40+ / E 30+ / F below
   const GRADES = [[80, 'S'], [70, 'A'], [60, 'B'], [50, 'C'], [40, 'D'], [30, 'E'], [0, 'F']];
@@ -457,7 +466,8 @@
   // a rank badge: coloured tile with the letter, sized for lists (10) or detail views (13)
   function drawGrade(g, x, y, v, size = 13) {
     const gr = grade(v), c = GRADE_COL[gr];
-    g.fillStyle = OUT; g.fillRect(x, y, size, size);
+    // beyond the old 99 ceiling: a purple (100+) / rainbow-ish magenta (150+) frame marks it
+    g.fillStyle = v >= 150 ? '#ff5ad8' : v >= 100 ? '#b06ad8' : OUT; g.fillRect(x, y, size, size);
     g.fillStyle = c; g.fillRect(x + 1, y + 1, size - 2, size - 2);
     g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(x + 1, y + 1, size - 2, 1);
     if (gr === 'S') { g.fillStyle = '#ffffff'; g.fillRect(x + 1, y + 1, 2, 2); g.fillRect(x + size - 3, y + size - 3, 2, 2); }
@@ -1263,7 +1273,8 @@
       if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
         const x = 254 + dx + i * 54, T = Data.TACTICS[k];
         text(g, T.short, x, 139 + rowShift, { size: 8, color: '#6d4f3a' });
-        g.fillStyle = '#3a3050'; g.fillRect(x + 28, 142 + rowShift, 22, 3); g.fillStyle = T.color; g.fillRect(x + 28, 142 + rowShift, Math.round(22 * p.tacU[k] / 100), 3);
+        g.fillStyle = '#3a3050'; g.fillRect(x + 28, 142 + rowShift, 22, 3); g.fillStyle = T.color; g.fillRect(x + 28, 142 + rowShift, Math.round(22 * Math.min(100, p.tacU[k]) / 100), 3);
+        if (p.tacU[k] > 100) { g.fillStyle = '#ffd24a'; g.fillRect(x + 28, 142 + rowShift, Math.round(22 * Math.min(100, p.tacU[k] - 100) / 100), 1); }
       });
       // stats
       STAT_KEYS.forEach((key, i) => {
@@ -1496,7 +1507,7 @@
         if (s.pick.id === 'tactics' && p.tacU) {
           const inXI = State.lineup.includes(p.id);
           const v = Math.min(3, Math.max(1, Math.round((inXI ? 3 : 2) * mult * (p.age && p.age < 25 ? 1.2 : 1) * tacTaper(p.tacU[State.tactic]))));
-          p.tacU[State.tactic] = Math.min(100, p.tacU[State.tactic] + v);
+          p.tacU[State.tactic] = Math.min(statCap(), p.tacU[State.tactic] + v);
           ups.tac = v;
         }
         for (const k in s.pick.gains) {
@@ -1514,7 +1525,7 @@
           v = Math.min(v, bulkCap);
           if (tp > 0.3) v = Math.max(1, v); else v = Math.max(0, v);
           if (mult < 1 && Math.random() < 0.5) v = 0;
-          if (v > 0) { p.stats[k] = Math.min(99, p.stats[k] + v); ups[k] = v; }
+          if (v > 0) { p.stats[k] = Math.min(statCap(), p.stats[k] + v); ups[k] = v; }
         }
         // focused, hands-on training gives a small extra shot at a breakthrough, on top of natural growth below
         const luck = s.pick.focus.includes(p.id) ? 0.12 : s.pick.special ? 0.1 : s.pick.id === 'study' ? 0.08 : 0;
@@ -2205,7 +2216,7 @@
       if (r.score[0] > r.score[1]) { const k = pick(STAT_KEYS); ups[k] = (ups[k] || 0) + 1; total++; }
       if (total === 0) { ups.sta = 1; total = 1; }
       const before = Object.assign({}, p.stats);
-      for (const k in ups) p.stats[k] = Math.min(99, p.stats[k] + ups[k]);
+      for (const k in ups) p.stats[k] = Math.min(statCap(), p.stats[k] + ups[k]);
       // playing a plan in a real match teaches it: understanding grows for the tactic(s) used
       const tacUps = {};
       if (p.tacU && r.tacTime) {
@@ -2213,7 +2224,7 @@
         for (const k in r.tacTime) {
           const share = r.tacTime[k] / Math.max(1, Object.values(r.tacTime).reduce((a, v) => a + v, 0));
           const v = Math.round((1 + 2 * share) * played * (p.age && p.age < 25 ? 1.25 : p.age > 50 ? 0.7 : 1) * tacTaper(p.tacU[k]));
-          if (v > 0 && share > 0.15) { p.tacU[k] = Math.min(100, p.tacU[k] + v); tacUps[k] = v; }
+          if (v > 0 && share > 0.15) { p.tacU[k] = Math.min(statCap(), p.tacU[k] + v); tacUps[k] = v; }
         }
       }
       const rating = clamp(5.5 + (rec.goal || 0) * 1.2 + (rec.assist || 0) * 0.7 + (rec.tackleOk || 0) * 0.25 + (rec.save || 0) * 0.35 + (rec.passOk || 0) * 0.06 + (rec.shot || 0) * 0.1 + (r.score[0] > r.score[1] ? 0.4 : r.score[0] < r.score[1] ? -0.3 : 0), 4.5, 9.8);
@@ -2786,6 +2797,7 @@
     s.enter = () => {
       if (!State.season.awarded) {
         State.budget += money; State.season.awarded = true;
+        if (wasTier === 'prefecture' && rank === 1) State.capLevel = Math.max(State.capLevel || 0, 2);
         // remember how everyone finished, for next time we meet them
         State.lastSeasonRanks = State.lastSeasonRanks || {};
         State.standings().forEach((row, i) => { State.lastSeasonRanks[row.id] = { rank: i + 1, tier: wasTier }; });
@@ -2969,7 +2981,7 @@
   function PromotionResult(promoted, gk) {
     const rank = State.rank();
     if (promoted) {
-      State.tier = 'prefecture';
+      State.tier = 'prefecture'; State.capLevel = Math.max(State.capLevel || 0, 1);
       return Dialog({
         bgm: 'victory', crowd: 0.7, title: '昇格決定！',
         bg: (g, t) => drawHarbor(g, t, 'dusk'),
