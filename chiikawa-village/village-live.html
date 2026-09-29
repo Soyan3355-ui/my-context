@@ -313,11 +313,12 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 
 
 // ---------- 役割 ----------
-const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん',soyan:'そーやん'};
-const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['リスク担当','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
-const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
+IMG.scoutA=IMG.yoroi;IMG.scoutB=IMG.yoroi;ICON.scoutA=ICON.yoroi;ICON.scoutB=ICON.yoroi;
+const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん（検収）',scoutA:'鎧さん（見回りA）',scoutB:'鎧さん（見回りB）',soyan:'そーやん'};
+const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['リスク担当','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
+const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion・freee・YouTube ネタを見回って、仕事の候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'お金・個人情報・外部送信がからむときの審査',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
 const JOIN={usagi:'フェーズ1で加入',momonga:'フェーズ1で加入',kuri:'フェーズ2で加入',rakko:'必要なときだけ招集'};
-const ORDER=['hachiware','yoroi','shisa','chiikawa','usagi','momonga','kuri','rakko'];
+const ORDER=['hachiware','scoutA','scoutB','yoroi','shisa','kuri','chiikawa','usagi','momonga','rakko'];
 const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:58,face:1,label:'🎬 撮影小屋'},kouza:{x:164,y:136,face:-1,label:'🌱 青空教室'},
   kiji:{x:67,y:64,face:1,label:'✍️ 書き物机'},kaikei:{x:166,y:58,face:1,label:'🌰 帳場'},farm:{x:52,y:118,face:-1,label:'🌾 畑'},
   kenshu:{x:65,y:90,face:1,label:'🛡️ 検収台'},kiroku:{x:48,y:74,face:1,label:'📚 記録の棚'},post:{x:150,y:102,face:-1,label:''}};
@@ -325,15 +326,18 @@ const BENCH=[[164,84],[180,84],[196,84],[210,84]];
 const PLAY={sand:{x:36,y:174,face:1},swing:{x:85,y:172,face:1},nap:{x:132,y:182,face:1},flowers:{x:170,y:174,face:-1},tea:{x:188,y:186,face:1},pond:{x:168,y:132,face:1},post:{x:150,y:102,face:-1},pose:{x:160,y:170,face:1}};
 const FREE_PREF={usagi:['run','swing','sand','run'],momonga:['pose','flowers','swing'],kuri:['tea','nap','tea'],rakko:['pond','nap','pond'],chiikawa:['post','flowers','nap','sand']};
 const ACT_TEXT={nap:'💤 お昼寝',swing:'🎠 ブランコ',sand:'🏖 砂あそび',flowers:'🌼 お花を見てる',pose:'✨ きめポーズ',tea:'🍵 お茶',pond:'🎣 釣り',run:'🏃 走りまわってる',wander:'🚶 おさんぽ',post:'📮 郵便受けの前'};
-const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post'};
+const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post',scoutA:'post',scoutB:'kiroku'};
+// 見回りルート（x, y, 見ているもの）
+const ROUTES={scoutA:[[150,96,'📮 受信箱'],[118,86,'📅 予定'],[196,110,'💬 Slack'],[58,112,'🌾 畑の予定']],scoutB:[[44,82,'📚 Notion'],[160,66,'🌰 freee'],[100,68,'🎬 YouTube ネタ'],[70,70,'✍️ 書きかけ']]};
+const isScout=id=>id==='scoutA'||id==='scoutB';
 const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事':'kiji','会計':'kaikei','農園・地域':'farm'};
 const SPEAK={x:140,y:116};
-const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi'];
+const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi','scoutA','scoutB'];
 const $=id=>document.getElementById(id);
 let STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
-function isFree(id){return id==='chiikawa'||agentState(id)==='bench'}
+function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench')}
 function homeOf(id){if(isFree(id)){const e=ent[id];if(e&&e.act)return {x:e.act.x,y:e.act.y,face:e.act.face||1};return {x:PLAY.sand.x,y:PLAY.sand.y,face:1}}
   const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
 
@@ -356,6 +360,7 @@ function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
     if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));
     if(id==='usagi')ctx.drawImage(P.book,x+5,y+15);
     if(id==='kuri')ctx.drawImage(P.coin,x+18,y+10-(ph?1:0));}
+  if(isScout(id)&&!e.carry)ctx.drawImage(P.stick,x+15,y+4);
   if(e.st==='home'&&!e.walking&&e.act&&isFree(id)){if(e.act.kind==='tea')ctx.drawImage(P.coin,x+17,y+12);if(e.act.kind==='pond')ctx.drawImage(P.stick,x+16,y+4);if(e.act.kind==='sand')ctx.drawImage(P.weed,x+16,y+15)}
   ctx.restore();e.top=y;e.left=x;e.w=im.width}
 function drawDesk(t){R(ctx,'#a8743f',100,104,30,6);R(ctx,'#8a5a35',100,109,30,1);R(ctx,'#7a5230',101,110,2,5);R(ctx,'#7a5230',127,110,2,5);
@@ -382,6 +387,7 @@ function bubbleText(id){const e=ent[id];
   if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
   if(isFree(id)&&id!=='chiikawa')return '';if(id==='chiikawa'&&!scene)return '';
   if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
+  if(isScout(id)){if(e.carry)return '📨 候補をハチワレへ';if(e.giving)return '📨 おとどけ';const r=ROUTES[id][e.ri||0];return e.walking?'🔍 見回り中':'🔍 '+r[2]+'を確認'}
   const a=(STATUS.agents||{})[id];return (a&&a.doing)||''}
 function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)return;const placed=[];
   const benchN=AGENTS.filter(id=>agentState(id)==='bench').length;const bt=benchN?`🎈 あそび場（控え ${benchN}人）`:'🎈 あそび場';if(benchLabel.textContent!==bt)benchLabel.textContent=bt;
@@ -440,18 +446,26 @@ function workBrain(id,e,dt){const a=(STATUS.agents||{})[id]||{};const base=PLACE
   e.face=base.face;const beat=Math.floor(e.wt/0.35)%2;e.pose=beat?'work':'idle';
   if(e.t%0.6<dt)emit(e.x+(e.face>0?10:-10),e.y-10,WORK_FX[id]||'#fff',2,{vy:-12,life:.7,spread:8});
   if(id==='hachiware'&&agentState('yoroi')==='active'&&e.wt>22&&!scene){e.errand={phase:'go',t:0};e.wt=0}}
+function scoutBrain(id,e,dt){const route=ROUTES[id];e.napping=false;e.st2=e.st2||'patrol';e.ri=e.ri||0;
+  if(e.st2==='patrol'){const r=route[e.ri];if(!stepTo(e,r[0],r[1],dt,22)){e.walking=true;e.pose='idle';e.lt=0;return}
+    e.walking=false;e.lt=(e.lt||0)+dt;e.pose=Math.floor(e.lt/0.5)%2?'work':'idle';if(e.t%0.8<dt)emit(e.x+(e.face>0?9:-9),e.y-16,'#9fd3e6',1,{vy:-8,life:.6,spread:4});
+    if(e.lt>3.2){e.lt=0;if(Math.random()<.3&&!scene&&!ent.hachiware.errand){e.carry=true;e.st2='deliver';e.jump=.8;emit(e.x,e.y-22,'#ffd84a',4,{life:.8})}else e.ri=(e.ri+1)%route.length}return}
+  if(e.st2==='deliver'){const h=ent.hachiware;const tx=h.x+(id==='scoutA'?14:-14),ty=h.y+2;if(!stepTo(e,tx,ty,dt,26)){e.walking=true;e.pose='idle';return}
+    e.walking=false;e.face=h.x>e.x?1:-1;e.carry=false;e.giving=true;e.gt=0;e.st2='give';h.jump=1;emit(h.x,h.y-20,'#ffffff',6,{life:.9,spread:10});return}
+  if(e.st2==='give'){e.gt+=dt;e.pose='idle';if(e.gt>1.6){e.giving=false;e.st2='patrol';e.ri=(e.ri+1)%route.length}}}
 function update(dt){AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;if(e.jump>0)e.jump=Math.max(0,e.jump-dt*1.6)});
   AGENTS.forEach(id=>{const e=ent[id];e.bench=false;
     if(e.st==='walkIn'){e.errand=null;e.napping=false;e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
     else if(e.st==='arrive'&&e.t>0.6){e.st='talk';if(scene&&speaker===id)showPage()}
     else if(e.st==='walkOut'){const h=homeOf(id);if(stepTo(e,h.x,h.y,dt,30)){e.walking=false;e.st='home'}else{e.walking=true;e.pose='idle'}}
-    else if(e.st==='home'){if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}});
+    else if(e.st==='home'){if(isScout(id))scoutBrain(id,e,dt);else if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}});
   const s=ent.soyan;if(TASKS.some(x=>!x.done)){s.pose=Math.floor(T/0.45)%2?'idle':'idle';if(s.t%2.2<dt)emit(114,96,'#8fd18a',1,{vy:-6,life:.8,spread:2})}}
 function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage(P.weed,x,y));
   const list=Object.entries(ent).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:110.5,f:()=>drawDesk(t)});
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());drawParts(dt);
   AGENTS.forEach(id=>{const e=ent[id];if(e.top===undefined)return;
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
+    if(e.carry)ctx.drawImage(P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
   const td=tod();ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
 function loop(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles();requestAnimationFrame(loop)}
@@ -524,7 +538,7 @@ function renderXcs(){const list=XCS.slice().sort((a,b)=>(a.status==='answered')-
     <button type="button" class="opt" data-x="${esc(x.id)}" data-k="保留" aria-pressed="${x.answer==='保留'}"><b>…</b><span>保留（あとで考える）</span></button></div>
     ${x.recommend?`<div class="rec">ハチワレのおすすめ：${esc(x.recommend)}</div>`:''}${x.ifNothing?`<p>何もしない場合：${esc(x.ifNothing)}</p>`:''}</div>`).join(''):'<p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p>'}
 const LANES=[['review','🛡️ 検収待ち','#b7791f'],['blocked','⛔ ブロック','#c2463d'],['doing','🔨 作業中','#3f6fd8'],['todo','📌 これから','#857a70'],['done','✅ 完了（直近）','#4f8f4a']];
-const OWNER_ID={'ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
+const OWNER_ID={'ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
 function renderBoard(){const n=s=>BOARD.filter(b=>b.status===s).length;$('bdCnt').textContent=BOARD.length?`作業中 ${n('doing')}・検収待ち ${n('review')}・完了 ${n('done')}`:'';
   if(!BOARD.length){$('board').innerHTML='<p class="empty">ハチワレが起票したタスクがここに並びます。</p>';return}
   $('board').innerHTML=LANES.map(([s,label,c])=>{let arr=BOARD.filter(b=>b.status===s).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));if(s==='done')arr=arr.slice(0,5);if(!arr.length)return '';
@@ -560,7 +574,7 @@ function renderNow(){const rows=[];const tk=TASKS.filter(x=>!x.done).sort(byTime
   rows.push(`<div class="nw"><img src="${ICON.soyan}" alt=""><div style="min-width:0"><div class="n">そーやん<span class="role" style="--rc:${ROLES.soyan[1]}">オーナー</span></div><div class="d">${tk?'📝 '+esc(tk.title):'（自分の仕事は未入力）'}</div></div></div>`);
   ORDER.filter(id=>agentState(id)==='active').forEach(id=>{const a=(STATUS.agents||{})[id]||{};const r=ROLES[id];const e=ent[id];
     let d=bubbleText(id)||(id==='chiikawa'?(scene?'✉️ おとどけ中':(ent.chiikawa.act&&!ent.chiikawa.walking?ACT_TEXT[ent.chiikawa.act.kind]:'🚶 おさんぽ')+'（呼ばれたら届けに行く）'):'待機中');if(e&&e.st==='talk')d='💬 そーやんと話し中';
-    const pl=PLACES[a.place||DEFAULT_PLACE[id]];rows.push(`<div class="nw"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="n">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="d">${esc(d)}</div>${pl&&pl.label?`<div class="p">場所：${esc(pl.label)}</div>`:''}</div></div>`)});
+    const pl=isScout(id)?{label:'🔍 見回りルート'}:PLACES[a.place||DEFAULT_PLACE[id]];rows.push(`<div class="nw"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="n">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="d">${esc(d)}</div>${pl&&pl.label?`<div class="p">場所：${esc(pl.label)}</div>`:''}</div></div>`)});
   const bench=ORDER.filter(id=>agentState(id)==='bench');if(bench.length)rows.push(`<div class="nw bench"><img src="${ICON[bench[0]]}" alt=""><div style="min-width:0"><div class="n">控え ${bench.length}人（あそび場で自由時間）</div><div class="d">${bench.map(id=>{const e=ent[id];const k=e&&e.act&&!e.walking?e.act.kind:'wander';return esc(NAMES[id])+'：'+(ACT_TEXT[k]||'🚶 おさんぽ')}).join('　')}</div></div></div>`);
   const html=rows.join('');if($('nowList').innerHTML!==html)$('nowList').innerHTML=html}
 setInterval(renderNow,1500);
