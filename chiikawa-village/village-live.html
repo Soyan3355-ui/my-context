@@ -104,6 +104,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .au p{margin:0;font-family:var(--body);font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
 .item{display:grid;grid-template-columns:26px minmax(0,1fr);gap:4px;padding:8px 0;border-top:1px dashed var(--line)}
 .item input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:#6aa56a}
+.item .sy{font-family:var(--body);font-size:11px;color:var(--sub);margin-top:1px}.item .sy.pend{color:var(--warn)}.item .sy a{color:var(--info)}
 .item .t{font-size:14px;overflow-wrap:anywhere}
 .item.done .t{color:var(--sub);text-decoration:line-through}
 form.add{display:flex;gap:6px;margin:6px 0 4px}
@@ -209,6 +210,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <h2 id="h-mine">🧑‍🌾 そーやんの仕事 <small id="mcnt"></small></h2>
     <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること" aria-label="やることを追加" autocomplete="off"><button type="submit" class="bt">追加</button></form>
     <div id="mine"><p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p></div>
+    <p class="empty" id="mNote" aria-live="polite" style="font-size:12px"></p>
   </section>
   <section style="order:5" class="box" aria-labelledby="h-nt">
     <h2 id="h-nt">💭 つぶやき箱 <small id="ntCnt"></small></h2>
@@ -545,8 +547,18 @@ async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collect
 function floater(text,e){const f=document.createElement('div');f.className='floater';f.textContent=text;f.style.left=(e.x/W*100)+'%';f.style.top=((e.y-24)/H*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1300)}
 async function answer(id,k){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};Object.assign(x,patch);
   ent.chiikawa.jump=1;renderXcs();await write('exceptions',id,patch)}
-async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();await write('tasks',id,patch)}
-$('addForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('taskIn').value.trim();if(!v)return;$('taskIn').value='';const t={title:v.slice(0,120),done:false,createdAt:Date.now()};
+let MCP=null;const NOTION_TASKS_DS='307a93e4-85ff-819e-a400-000b94b658ff';
+async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;if('done' in patch)patch.doneAt=patch.done?Date.now():0;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();await write('tasks',id,patch);if('done' in patch)syncNotion(t)}
+async function syncNotion(t){const set=async p=>{Object.assign(t,p);renderMine();await write('tasks',t.id,p)};
+  if(!t.notionId){await set({sync:'none'});$('mNote').textContent=t.done?'このタスクは Notion にまだないので、次の見回りで作ってから完了にします':'';return}
+  if(!MCP){await set({sync:'pending'});return}
+  const done=!!t.done;const props=done?{'ステータス':'完了','date:完了日:start':todayKey(),'date:完了日:is_datetime':0}:{'ステータス':'今からやる','date:完了日:start':null};
+  const call=p=>MCP.callTool('Notion','notion-update-page',{page_id:t.notionId,command:'update_properties',properties:p},{cache:false});
+  try{try{await call(props)}catch(e){if(done)throw e;await call({'ステータス':'今からやる'})}
+    await set({sync:'ok',syncedAt:Date.now(),syncErr:{__delete__:true}});$('mNote').textContent=done?'Notion も「完了」にしました':'Notion を「今からやる」に戻しました'}
+  catch(e){const c=(e&&e.code)||'upstream_error';await set({sync:'pending',syncErr:c});
+    $('mNote').textContent=({not_in_manifest:'Notion への反映が許可されていません。次の見回りで反映します',needs_reauth:'Notion の接続が切れています。次の見回りで反映します',server_not_connected:'Notion がつながっていません。次の見回りで反映します'})[c]||'Notion への反映に失敗しました。次の見回りで反映します'}}
+$('addForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('taskIn').value.trim();if(!v)return;$('taskIn').value='';const t={title:v.slice(0,120),done:false,createdAt:Date.now(),sync:'none'};
   if(db&&canWrite){try{const ref=await db.collection('tasks').add(t);if(!TASKS.find(x=>x.id===ref.id)){TASKS.push({id:ref.id,...t});renderMine()}}catch(err){TASKS.push({id:'local'+Date.now(),...t});renderMine()}}else{TASKS.push({id:'local'+Date.now(),...t});renderMine()}floater('📝',ent.soyan)});
 $('mine').addEventListener('change',e=>{const id=e.target.dataset.t;if(id){const t=TASKS.find(x=>x.id===id);setTask(id,{done:!t.done})}});
 $('noteForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('noteIn').value.trim();if(!v)return;const to=$('noteTo').value||'all';const n={text:v.slice(0,2000),to,createdAt:Date.now(),replies:[]};$('noteIn').value='';
@@ -591,7 +603,9 @@ function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.
   $('notes').innerHTML=list.length?list.map(n=>`<div class="nt"><div class="meta">${fmt(n.createdAt)}・${n.to&&n.to!=='all'?esc((NAMES[n.to]||n.to)+'へ'):'みんなへ'}${(n.replies||[]).length?'':'・次の見回り（7:47／17:47）で読みます'}</div><div class="q">${esc(n.text)}</div>
     ${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.hachiware}" alt=""><div><small style="color:var(--sub)">${esc(NAMES[r.who]||r.who)}</small><br>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
-function renderMine(){const ts=TASKS.slice().sort(byTime);$('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
+function renderMine(){const ts=TASKS.slice().sort((a,b)=>(!!a.done-!!b.done)||byTime(a,b));const nu=t=>safeUrl(t.notionUrl);
+  const st=t=>t.sync==='ok'||(t.notionId&&!t.sync)?'Notion と同じ':t.sync==='pending'?'Notion へ反映待ち（次の見回りで）':'Notion にはまだありません（次の見回りで作ります）';
+  $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span><div class="sy${t.sync==='pending'?' pend':''}">${t.notionId&&!t.sync?'Notion とつながっています':st(t)}${nu(t)?` <a href="${esc(nu(t))}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
   const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
 function renderRoster(){$('roster').innerHTML=ORDER.map(id=>{const r=ROLES[id],st=agentState(id),a=(STATUS.agents||{})[id];
   return `<div class="mem${st==='bench'?' bench':''}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
@@ -707,7 +721,7 @@ setInterval(()=>{if(!chatBusy&&!document.activeElement.closest?.('#chatForm'))re
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
-  if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}}chatAvail();renderChatUi();
+  if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}}chatAvail();renderChatUi();
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
   try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false}}catch(e){}
   const ready={status:false,ex:false};let booted=false;
