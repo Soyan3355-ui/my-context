@@ -907,8 +907,14 @@
           if (this.proj(t, m.x) <= this.proj(t, off) + 1) {
             const tl = this.laneBlock(p.x, p.y, tx, ty, t);
             let open2 = 99; for (const o of this.players) if (o.team !== t && !o.gk) open2 = Math.min(open2, dist(o.x, o.y, tx, ty));
+            // a through ball only really works when the runner can actually outpace whoever has
+            // to chase it down - without this a defense with just as much pace still "loses" the
+            // race every time the passing lane happens to be open, which read as the runner
+            // breaking through on pure luck/scripting rather than a real speed advantage
+            const chaser2 = this.team(1 - t).filter((o) => !o.gk).sort((a2, c) => dist(a2.x, a2.y, tx, ty) - dist(c.x, c.y, tx, ty))[0];
+            const paceEdge = chaser2 ? clamp(this.stat(m, 'spd') - this.stat(chaser2, 'spd'), -16, 16) : 0;
             // a defense that's actually tracking the run should shut most of these down before they're clean
-            let s2 = 2 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.55 - (tl < 14 ? 80 : tl < 22 ? 35 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16);
+            let s2 = 2 + (tx - p.x) * dx * 0.35 + Math.min(open2, 50) * 0.55 - (tl < 14 ? 80 : tl < 22 ? 35 : 0) + (this.stat(p, 'pas') - 45) * 0.4 + rand(0, 16) + paceEdge;
             if (p.id === 'kazuha') s2 += 12;
             if (countering) s2 += 35;
             if (tac === 'possession') s2 -= 6;
