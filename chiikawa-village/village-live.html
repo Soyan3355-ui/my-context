@@ -17,6 +17,10 @@ body{background:var(--bg);color:var(--ink);font-family:var(--dot)}
 .top .stage{order:1}.top .win{order:2}.top .nowbox{order:3}
 .nowbox{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:12px}
 .nowbox h2{font-size:14px;margin:0 0 6px}
+.nowbox h2 button{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;font:inherit;font-size:14px;background:none;border:0;padding:0;margin:0;color:var(--ink);cursor:pointer;text-align:left}
+.nowbox h2 button small{font-family:var(--body);font-size:11.5px;color:var(--sub);font-weight:400;margin-left:4px}
+.nowbox h2 button .arw{color:var(--sub);transition:transform .2s}.nowbox h2 button[aria-expanded="true"] .arw{transform:rotate(90deg)}
+.nowbox h2{margin:0}.nowbox h2 button[aria-expanded="true"]{margin-bottom:6px}
 .nw{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:center;padding:5px 0;border-top:1px dashed var(--line)}
 .nw:first-of-type{border-top:0}
 .nw img{width:26px;height:26px;image-rendering:pixelated}
@@ -44,7 +48,7 @@ header .date{font-size:12px;color:var(--sub)}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .stage{position:relative;border:3px solid #3b3533;border-radius:6px 6px 0 0;overflow:hidden;background:#a6d37f}
 .stage canvas{display:block;width:100%;max-width:100%;image-rendering:pixelated}
-.bub{position:absolute;transform:translate(-50%,-100%);background:var(--bub);color:var(--bub-ink);border:1.5px solid #3b3533;border-radius:6px;padding:0 4px;font-size:clamp(8.5px,1.9vw,10px);line-height:1.35;white-space:nowrap;max-width:32%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;transition:opacity .2s}
+.bub{position:absolute;transform:translate(-50%,-100%);background:var(--bub);color:var(--bub-ink);border:1.5px solid #3b3533;border-radius:6px;padding:0 4px;font-size:clamp(8.5px,1.9vw,10px);line-height:1.35;white-space:nowrap;max-width:32%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;transition:opacity .25s,left .8s ease,top .8s ease}
 .bub.soyan{background:#fff6d6}.bub.bench{background:#eef0f4;color:#5b6070}
 .bub[data-empty="1"]{opacity:0}
 .plc{position:absolute;transform:translate(-50%,0);transition:opacity .2s;font-size:clamp(8px,1.6vw,9.5px);color:#2f3a24;background:rgba(255,255,255,.55);border-radius:4px;padding:0 3px;pointer-events:none;white-space:nowrap}
@@ -59,7 +63,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .txt{font-size:14px;line-height:1.75;white-space:pre-wrap;min-height:3em;cursor:pointer;overflow-wrap:anywhere}
 .more{position:absolute;right:14px;bottom:10px;animation:blink 1s steps(2) infinite;font-size:12px}
 @keyframes blink{50%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.more{animation:none}.floater{animation-duration:.01s}}
+@media (prefers-reduced-motion:reduce){.bub{transition:opacity .2s}.more{animation:none}.floater{animation-duration:.01s}}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .acts button,.acts a{font:inherit;font-size:13px;border-radius:8px;padding:6px 12px;border:2px solid var(--win-ink);background:transparent;color:var(--win-ink);cursor:pointer;text-decoration:none}
 .acts .choice{border-color:var(--win-hi);color:var(--win-hi)}
@@ -177,7 +181,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   <div class="top">
   <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
     <div class="side">
-      <div class="nowbox" aria-labelledby="h-now"><h2 id="h-now">👀 いまの様子</h2><div id="nowList"></div></div>
+      <div class="nowbox" id="nowbox"><h2 id="h-now"><button type="button" id="nowBtn" aria-expanded="false" aria-controls="nowList"><span>👀 いまの様子 <small id="nowSum"></small></span><span class="arw" aria-hidden="true">▸</span></button></h2><div id="nowList" hidden></div></div>
   <div class="win" id="win">
     <div class="tag"><img id="tagImg" alt=""><span id="tagName">ちいかわ</span><span class="role" id="tagRole"></span></div>
     <div class="head" id="dHead"></div>
@@ -190,12 +194,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   </div>
   <div class="cols">
     <div class="colA">
-  <section style="order:1" class="box" aria-labelledby="h-mine">
-    <h2 id="h-mine">🧑‍🌾 そーやんの仕事 <small id="mcnt"></small></h2>
-    <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること" aria-label="やることを追加" autocomplete="off"><button type="submit" class="bt">追加</button></form>
-    <div id="mine"><p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p></div>
-  </section>
-  <section style="order:2" class="box chat" aria-labelledby="h-chat">
+  <section style="order:3" class="box chat" aria-labelledby="h-chat">
     <h2 id="h-chat">💬 ちいかわに相談 <small id="chatSt"></small></h2>
     <div class="chat-who" id="chatWho" role="group" aria-label="相談相手"></div>
     <div class="row" style="margin-top:8px"><label for="chatTask" style="font-size:12px;color:var(--sub)">タスク：</label><select id="chatTask" class="chat-sel"></select></div>
@@ -206,13 +205,18 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
       <div class="row"><button type="button" class="btn-s" id="chatSave">つぶやき箱に残す</button><button type="button" class="btn-s" id="chatClear">この会話をけす</button></div></form>
     <p class="empty" id="chatNote"></p>
   </section>
-  <section style="order:3" class="box" aria-labelledby="h-nt">
+  <section style="order:4" class="box" aria-labelledby="h-mine">
+    <h2 id="h-mine">🧑‍🌾 そーやんの仕事 <small id="mcnt"></small></h2>
+    <form class="add" id="addForm"><input id="taskIn" placeholder="いまからやること" aria-label="やることを追加" autocomplete="off"><button type="submit" class="bt">追加</button></form>
+    <div id="mine"><p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p></div>
+  </section>
+  <section style="order:5" class="box" aria-labelledby="h-nt">
     <h2 id="h-nt">💭 つぶやき箱 <small id="ntCnt"></small></h2>
     <form class="notef" id="noteForm"><textarea id="noteIn" placeholder="悩んでいること、思いついたこと、頼みたいこと。なんでもどうぞ。" aria-label="つぶやき"></textarea>
       <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="bt">とどける</button></div></form>
     <div id="notes"></div>
   </section>
-  <section style="order:6" class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
+  <section style="order:7" class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
     <div id="ciForm"></div>
     <input class="ci-note" id="ciNote" placeholder="ひとこと（書きたいときだけ）" aria-label="ひとこと" autocomplete="off">
     <div class="ci-row"><button type="button" class="bt" id="ciSave" style="padding:6px 14px">記録する</button><small id="ciMsg" style="color:var(--sub);font-family:var(--body)"></small></div>
@@ -222,9 +226,9 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <h2 style="margin-top:14px">📋 常時発注リスト <small>確認なしで進める仕事</small></h2><ul class="so-list" id="standing"></ul></section>
     </div>
     <div class="colB">
-  <section style="order:4" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
-  <section style="order:5" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
-  <section style="order:7" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
+  <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
+  <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
+  <section style="order:6" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
   <section style="order:8" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
   <section style="order:10" class="box" aria-labelledby="h-dc"><h2 id="h-dc">🧾 決定記録</h2><div id="decs"><p class="empty">決まったことがここに残ります。</p></div></section>
     </div>
@@ -386,7 +390,7 @@ function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
     if(id==='kuri')ctx.drawImage(P.coin,x+18,y+10-(ph?1:0));}
   if(isScout(id)&&!e.carry)ctx.drawImage(P.stick,x+15,y+4);
   if(e.st==='home'&&!e.walking&&e.act&&isFree(id)){if(e.act.kind==='tea')ctx.drawImage(P.coin,x+17,y+12);if(e.act.kind==='pond')ctx.drawImage(P.stick,x+16,y+4);if(e.act.kind==='sand')ctx.drawImage(P.weed,x+16,y+15)}
-  ctx.restore();e.top=y;e.left=x;e.w=im.width}
+  ctx.restore();e.top=y;e.bt=Math.round(e.y-im.height);e.left=x;e.w=im.width}
 function drawDesk(t){R(ctx,'#a8743f',100,104,30,6);R(ctx,'#8a5a35',100,109,30,1);R(ctx,'#7a5230',101,110,2,5);R(ctx,'#7a5230',127,110,2,5);
   R(ctx,'#cfd3d9',108,98,13,7);R(ctx,'#b8bdc4',108,104,13,1);R(ctx,Math.floor(t*1.5)%2?'#8fd18a':'#cfd3d9',114,100,2,2);R(ctx,'#fff',123,101,3,3);R(ctx,'#a8743f',124,102,1,1)}
 const puffs=[0,1,2].map(i=>({p:i/3}));const flies=[{a:0,cx:70,cy:60,r:18},{a:2,cx:190,cy:100,r:14}];
@@ -411,22 +415,23 @@ function bubbleText(id){const e=ent[id];
   if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
   if(isFree(id)&&id!=='chiikawa')return '';if(id==='chiikawa'&&!scene)return '';
   if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
-  if(isScout(id)){if(e.carry)return '📨 候補をハチワレへ';if(e.giving)return '📨 おとどけ';const r=ROUTES[id][e.ri||0];return e.walking?'🔍 見回り中':'🔍 '+r[2]+'を確認'}
+  if(isScout(id)){if(e.carry||e.giving)return '📨 おとどけ';return '🔍 '+ROUTES[id][e.ri||0][2]}
   const a=(STATUS.agents||{})[id];return (a&&a.doing)||''}
 function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)return;const placed=[];
   const benchN=AGENTS.filter(id=>agentState(id)==='bench').length;const bt=benchN?`🎈 あそび場（控え ${benchN}人）`:'🎈 あそび場';if(benchLabel.textContent!==bt)benchLabel.textContent=bt;
   const hit=(a,b)=>a.l<b.r&&a.r>b.l&&a.t<b.b&&a.b>b.t;
   const order=Object.keys(BUB).sort((a,b)=>(a==='soyan')-(b==='soyan')||(ent[b].y-ent[a].y));
-  const sprites=Object.keys(ent).filter(k=>ent[k].top!==undefined).map(k=>{const e=ent[k];return {id:k,l:e.left/W*sw,r:(e.left+e.w)/W*sw,t:e.top/H*sh,b:e.y/H*sh}});
+  const sprites=Object.keys(ent).filter(k=>ent[k].top!==undefined).map(k=>{const e=ent[k];return {id:k,l:e.left/W*sw,r:(e.left+e.w)/W*sw,t:e.bt/H*sh,b:e.y/H*sh}});
   const area=(a,b)=>Math.max(0,Math.min(a.r,b.r)-Math.max(a.l,b.l))*Math.max(0,Math.min(a.b,b.b)-Math.max(a.t,b.t));
   for(const id of order){const e=ent[id],b=BUB[id];const txt=bubbleText(id);if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';
-    if(!txt||e.top===undefined)continue;const bw=b.offsetWidth,bh=b.offsetHeight;const cx=e.x/W*sw,top=(e.top-2)/H*sh;
+    if(!txt||e.top===undefined)continue;const bw=b.offsetWidth,bh=b.offsetHeight;const cx=Math.round(e.x/4)*4/W*sw,top=(Math.round(e.bt/2)*2-2)/H*sh;
     let best=null;
     for(const lift of [0,bh+2,2*(bh+2)])for(const dx of [0,bw*0.35,-bw*0.35,bw*0.6,-bw*0.6]){
       const x=Math.min(sw-bw/2-2,Math.max(bw/2+2,cx+dx)),yb=Math.max(bh+2,top-lift);const r={l:x-bw/2,r:x+bw/2,t:yb-bh,b:yb};
       if(placed.some(p=>hit(p,r)))continue;const cover=sprites.filter(sp=>sp.id!==id).reduce((a,sp)=>a+area(sp,r),0);
-      const score=cover*3+Math.abs(dx)+lift*1.5;if(!best||score<best.score)best={x,yb,score,r}}
+      const score=cover*3+Math.abs(dx)+lift*1.5-(b._c&&b._c[0]===lift&&b._c[1]===dx/(bw||1)?60:0);if(!best||score<best.score)best={x,yb,score,r,c:[lift,dx/(bw||1)]}}
     if(!best){const x=Math.min(sw-bw/2-2,Math.max(bw/2+2,cx));best={x,yb:Math.max(bh+2,top),r:{l:x-bw/2,r:x+bw/2,t:top-bh,b:top}}}
+    b._c=best.c;if(b._p&&Math.abs(b._p.x-best.x)<5&&Math.abs(b._p.yb-best.yb)<5){best.x=b._p.x;best.yb=b._p.yb;best.r={l:best.x-bw/2,r:best.x+bw/2,t:best.yb-bh,b:best.yb}}else b._p={x:best.x,yb:best.yb};
     placed.push(best.r);b.style.left=best.x+'px';b.style.top=best.yb+'px'}
   const shown=[];for(const L of LABELS){const w=L.el.offsetWidth,h=L.el.offsetHeight;const x=Math.min(sw-w/2-2,Math.max(w/2+2,L.x/W*sw)),y=Math.min(sh-h-2,L.y/H*sh);
     const r={l:x-w/2,r:x+w/2,t:y,b:y+h};const clash=placed.some(p=>hit(p,r))||shown.some(p=>hit(p,r));
@@ -605,7 +610,10 @@ function renderNow(){const rows=[];const tk=TASKS.filter(x=>!x.done).sort(byTime
     let d=bubbleText(id)||(id==='chiikawa'?(scene?'✉️ おとどけ中':(ent.chiikawa.act&&!ent.chiikawa.walking?ACT_TEXT[ent.chiikawa.act.kind]:'🚶 おさんぽ')+'（呼ばれたら届けに行く）'):'待機中');if(e&&e.st==='talk')d='💬 そーやんと話し中';
     const pl=isScout(id)?{label:'🔍 見回りルート'}:PLACES[a.place||DEFAULT_PLACE[id]];rows.push(`<div class="nw"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="n">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div><div class="d">${esc(d)}</div>${pl&&pl.label?`<div class="p">場所：${esc(pl.label)}</div>`:''}</div></div>`)});
   const bench=ORDER.filter(id=>agentState(id)==='bench');if(bench.length)rows.push(`<div class="nw bench"><img src="${ICON[bench[0]]}" alt=""><div style="min-width:0"><div class="n">控え ${bench.length}人（あそび場で自由時間）</div><div class="d">${bench.map(id=>{const e=ent[id];const k=e&&e.act&&!e.walking?e.act.kind:'wander';return esc(NAMES[id])+'：'+(ACT_TEXT[k]||'🚶 おさんぽ')}).join('　')}</div></div></div>`);
-  const html=rows.join('');if($('nowList').innerHTML!==html)$('nowList').innerHTML=html}
+  const act=ORDER.filter(id=>agentState(id)==='active').length,bn=ORDER.filter(id=>agentState(id)==='bench').length;const sm='稼働 '+(act+0)+'人'+(bn?'・控え '+bn+'人':'');if($('nowSum').textContent!==sm)$('nowSum').textContent=sm;
+  const html=rows.join('');if($('nowList').hidden)return;if($('nowList').innerHTML!==html)$('nowList').innerHTML=html}
+function setNow(open){$('nowList').hidden=!open;$('nowBtn').setAttribute('aria-expanded',String(open));if(open)renderNow();try{localStorage.setItem('ck-now',open?'1':'0')}catch(e){}}
+$('nowBtn').addEventListener('click',()=>setNow($('nowList').hidden));
 setInterval(renderNow,1500);
 // ---------- きょうのふりかえり ----------
 const CIQ=[['easy','😌 仕事が楽になった？','しんどい','楽'],['helped','🙏 助かったと思えた？','いまいち','とても'],['fun','🎵 楽しく仕事できた？','つまらない','楽しい']];
@@ -625,7 +633,7 @@ $('ciSave').addEventListener('click',async()=>{const k=todayKey();const data={da
   if(db&&canWrite){try{await db.collection('checkins').doc(k).set(data)}catch(err){$('ciMsg').textContent='この画面では保存できませんでした'}}});
 function renderTrial(){const t=STATUS.trial;const el=$('trial');if(!t){el.hidden=true;return}el.hidden=false;
   el.innerHTML=`🎯 <b>${esc(t.title||'')}</b><small>${esc(t.period||'')}${t.note?'　'+esc(t.note):''}</small>`}
-renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle();renderNow();
+renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle();renderNow();let _nw=false;try{_nw=localStorage.getItem('ck-now')==='1'}catch(e){}setNow(_nw);
 
 
 // ---------- ちいかわに相談（画面の中のチャット） ----------
