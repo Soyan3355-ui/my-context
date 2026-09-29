@@ -173,6 +173,14 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .msg .who img{width:16px;height:16px;image-rendering:pixelated}
 .msg.sys{justify-self:center;max-width:100%;font-size:12px;color:var(--sub);background:transparent;border:1.5px dashed var(--line);text-align:center}.pend{display:grid;gap:6px;margin:0 0 8px}.pend .pd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--body);font-size:13px;border:2px solid var(--good);border-radius:10px;padding:6px 10px;background:color-mix(in srgb,var(--good) 10%,var(--bg))}.due{font-family:var(--body);font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
 .msg.err{border-color:var(--bad);color:var(--bad)}
+.box>h2[role=button]{cursor:pointer;user-select:none}.box>h2 .arw{color:var(--sub);transition:transform .2s;margin-left:auto;flex:none}.box>h2[aria-expanded="true"] .arw{transform:rotate(90deg)}
+.box>h2[role=button]:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
+.box.cp{padding:9px 12px;margin-top:10px}.box.cp>h2{margin:0}
+.bx-sum{margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.55;color:var(--ink);cursor:pointer}
+.bx-sum .li{padding:2px 0;overflow-wrap:anywhere}.bx-sum .li label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}.bx-sum .li input{margin:2px 0 0;width:17px;height:17px;accent-color:#6aa56a;flex:none}
+.bx-sum .cp{display:inline-block;margin:0 5px 4px 0;padding:0 8px;border:1.5px solid var(--c,var(--line));border-radius:999px;font-size:11.5px}.bx-sum .cp b{font-variant-numeric:tabular-nums}
+.bx-sum .due{font-style:normal;font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 5px;margin-left:3px;white-space:nowrap}
+.bx-body[hidden],.bx-sum[hidden]{display:none!important}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 </style>
@@ -180,7 +188,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 <div class="app">
   <header>
     <div><h1>ちいかわ株式会社</h1><div class="date" id="date"></div></div>
-    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
+    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
   <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
@@ -776,6 +784,41 @@ function renderRounds(){const now=Date.now(),jst=new Date(now+9*36e5);const y=js
   const el=$('rounds');if(!el)return;let nx='';if(best){const mins=Math.max(1,Math.round((best[0]-now)/6e4));const hh=Math.floor(mins/60),mm=mins%60;const t=new Date(best[0]+9*36e5);nx=`<span class="nx">次は ${t.getUTCHours()}:${String(t.getUTCMinutes()).padStart(2,'0')}（${best[1]}）・あと${hh?hh+'時間':''}${mm}分</span>`}
   el.innerHTML=`🕐 見回り：<b>5:07</b> 朝（6:00 までに完了）／10:47／13:47／<b>17:47</b> 夕／20:47（毎日）　月曜は <b>9:17</b> に週次の点検<br>${nx}`}
 renderRounds();setInterval(renderRounds,60000);
+
+
+// ---------- 小さい表示 ⇔ ひらいた表示 ----------
+const BOXES=['h-dg','h-xc','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
+const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
+const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
+const dgVisibleAll=k=>((STATUS.digest||{})[k]||[]).filter(dgVisible);
+const SUMS={
+ 'h-dg':()=>{const rf=dgVisibleAll('redflags'),bl=dgVisibleAll('blocked'),ap=dgVisibleAll('approvals'),oc=dgVisibleAll('outcomes');
+   const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
+   return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
+ 'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
+ 'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
+ 'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
+ 'h-nt':()=>{const w=NOTES.filter(n=>!(n.replies||[]).length&&!n.fromChat).length;const l=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${NOTES.length}件・返事待ち <b>${w}</b>件${l?'<br>最新：'+esc(clip(l.text.replace(/\n+/g,' '),40)):''}</div>`},
+ 'h-bd':()=>{const n=s=>BOARD.filter(b=>b.status===s).length;return chips([['検収待ち',n('review'),'#b7791f'],['ブロック',n('blocked'),'#c2463d'],['作業中',n('doing'),'#3f6fd8'],['これから',n('todo'),'#857a70'],['完了',n('done'),'#4f8f4a']])},
+ 'h-ci':()=>{const k=todayKey(),c=CHECKINS.find(x=>x.id===k);return `<div class="li">${c&&c.savedAt?'きょうは記録ずみ（楽 '+(c.easy??'-')+'・助かった '+(c.helped??'-')+'・楽しい '+(c.fun??'-')+'）':'きょうのふりかえりは まだ です'}</div>`},
+ 'h-au':()=>{const a=AUDITS.slice().sort(byTime).pop();return `<div class="li">${a?esc(clip((a.title||'今週の点検')+'：'+(a.result||'-'),50)):'まだ点検はありません（毎週月曜）'}</div>`},
+ 'h-rs':()=>{const act=ORDER.filter(id=>agentState(id)==='active').length,bn=ORDER.filter(id=>agentState(id)==='bench').length;return chips([['稼働',act,'#4f8f4a'],['控え',bn,'#857a70'],['常時発注',(STATUS.standing||[]).length,'#3f6fd8']])},
+ 'h-dc':()=>{const l=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${l?'最新：'+esc(clip(l.title,50)):'まだありません'}</div>`}};
+function setBox(id,open,noSave){const h=document.getElementById(id);if(!h)return;const sec=h.closest('section'),body=sec.querySelector(':scope>.bx-body'),sum=sec.querySelector(':scope>.bx-sum');if(!body)return;
+  body.hidden=!open;sum.hidden=open;h.setAttribute('aria-expanded',String(open));sec.classList.toggle('cp',!open);BOXST[id]=open?1:0;if(!noSave)saveBox();if(!open)renderSums()}
+function renderSums(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!h)return;const sum=h.closest('section').querySelector(':scope>.bx-sum');if(!sum||sum.hidden)return;let html='';try{html=SUMS[id]()}catch(e){html=''}if(sum.dataset.h!==html){const focus=document.activeElement&&sum.contains(document.activeElement);if(!focus){sum.innerHTML=html;sum.dataset.h=html}}})}
+function initBoxes(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!h)return;const sec=h.closest('section');if(sec.querySelector(':scope>.bx-body'))return;
+  const body=document.createElement('div');body.className='bx-body';[...sec.children].forEach(c=>{if(c!==h)body.appendChild(c)});const sum=document.createElement('div');sum.className='bx-sum';
+  h.insertAdjacentElement('afterend',sum);sec.appendChild(body);
+  const arw=document.createElement('span');arw.className='arw';arw.setAttribute('aria-hidden','true');arw.textContent='▸';h.appendChild(arw);h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-controls',id+'-body');body.id=id+'-body';
+  const tog=()=>setBox(id,body.hidden);h.addEventListener('click',e=>{if(e.target.closest('a,input,select,textarea'))return;tog()});h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog()}});
+  sum.addEventListener('click',e=>{if(e.target.closest('input,label,a,button'))return;setBox(id,true)});
+  setBox(id,!!BOXST[id],true)});renderSums()}
+initBoxes();setInterval(renderSums,1500);
+$('boxAll').addEventListener('click',()=>{const anyClosed=BOXES.some(id=>document.getElementById(id).getAttribute('aria-expanded')!=='true');BOXES.forEach(id=>setBox(id,anyClosed,true));saveBox();setNow(anyClosed);$('boxAll').textContent=anyClosed?'全部たたむ':'全部ひらく'});
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(t.dataset.sumt&&t.checked){setTask(t.dataset.sumt,{done:true}).then(renderSums)}
+  else if(t.dataset.dgt&&t.checked&&t.closest('.bx-sum')){setTask(t.dataset.dgt,{done:true}).then(()=>{renderDigest();renderSums()})}});
 
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
