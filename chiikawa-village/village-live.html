@@ -221,6 +221,9 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .fc-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.fc-btns button{flex:1;font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:7px 6px;cursor:pointer;white-space:nowrap}
 .fc-btns button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
 .hr-list{margin:8px 0 0;padding:0;list-style:none;font-family:var(--body);font-size:13px;line-height:1.7}.hr-q{display:grid;gap:4px;margin-top:6px;font-family:var(--body);font-size:12.5px}.hr-q div{display:flex;gap:6px;align-items:center}.hr-q img{width:20px;height:20px;image-rendering:pixelated}
+.fc-prog{margin-top:10px;border:2px dashed var(--line);border-radius:10px;padding:8px 10px;font-family:var(--body);font-size:13px}.fc-prog input[type=range]{width:100%;accent-color:#e36d72;margin:6px 0}.fc-prog b{font-family:var(--dot);font-size:16px}
+.pg{font-family:var(--body);font-size:12px;color:var(--sub);margin-top:3px;line-height:1.5}.pg b{color:var(--ink);margin-left:6px}.pgb{display:inline-block;vertical-align:middle;width:90px;height:7px;border-radius:4px;background:var(--line);overflow:hidden}.pgb i{display:block;height:100%;background:#e36d72}
+.bx-sum .pgc{font-style:normal;font-size:11px;color:#c2463d;margin-left:3px}
 .fc-pill{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;font:inherit;font-size:15px;border:2px solid #e36d72;border-radius:999px;background:var(--panel);color:var(--ink);padding:6px 14px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;font-variant-numeric:tabular-nums}
 .fc-pill.brk{border-color:#8fd18a}
 </style>
@@ -670,7 +673,7 @@ function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
 function renderMine(){const ts=TASKS.slice().sort((a,b)=>(!!a.done-!!b.done)||byTime(a,b));const nu=t=>safeUrl(t.notionUrl);
   const st=t=>t.sync==='ok'||(t.notionId&&!t.sync)?'Notion と同じ':t.sync==='pending'?'Notion へ反映待ち（次の見回りで）':'Notion にはまだありません（次の見回りで作ります）';
-  $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span>${t.due?` <span class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</span>`:''}<div class="sy${t.sync==='pending'?' pend':''}">${t.notionId&&!t.sync?'Notion とつながっています':st(t)}${nu(t)?` <a href="${esc(nu(t))}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
+  $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span>${t.due?` <span class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</span>`:''}${!t.done&&t.progress?`<div class="pg"><span class="pgb"><i style="width:${+t.progress}%"></i></span><b>${+t.progress}%</b>${t.carried?'・持ち越し':''}${t.nextStep?`<br>次：${esc(t.nextStep)}`:''}</div>`:''}<div class="sy${t.sync==='pending'?' pend':''}">${t.notionId&&!t.sync?'Notion とつながっています':st(t)}${nu(t)?` <a href="${esc(nu(t))}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
   const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
 function renderRoster(){$('roster').innerHTML=ORDER.map(id=>{const r=ROLES[id],st=agentState(id),a=(STATUS.agents||{})[id];
   return `<div class="mem${st==='bench'?' bench':''}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
@@ -940,8 +943,8 @@ let FC_MIN=30,FC_KIND='box';try{FC_MIN=+localStorage.getItem('ck-fmin')||30;FC_K
 function chime(n=3){try{const ac=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=i%2?988:1319;g.gain.setValueAtTime(.0001,ac.currentTime+i*.22);g.gain.exponentialRampToValueAtTime(.12,ac.currentTime+i*.22+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+i*.22+.18);o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.22);o.stop(ac.currentTime+i*.22+.2)}}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
 async function logFocus(done){if(!FOCUS||FOCUS.mode!=='focus'||FOCUS.logged)return;FOCUS.logged=true;saveFocus();const min=Math.round((FOCUS.dur-focusLeft())/60000);if(min<1)return;
   const doc={title:FOCUS.title,taskId:FOCUS.taskId||'',min,planned:Math.round(FOCUS.dur/60000),completed:!!done,startedAt:FOCUS.startAt,endedAt:Date.now(),kind:FOCUS.kind||'box'};
-  if(FOCUS.kind==='hunt'){const r=huntReport(min,FOCUS.startAt,FOCUS.party||['chiikawa'],FOCUS.title);FOCUS.report=r;saveFocus();doc.pt=r.pt;doc.beat=r.beat;doc.loot=r.loot}FLOG.push({id:'l'+Date.now(),...doc});
-  if(db&&canWrite){try{await db.collection('focus').add(doc)}catch(e){}}}
+  if(FOCUS.kind==='hunt'){const r=huntReport(min,FOCUS.startAt,FOCUS.party||['chiikawa'],FOCUS.title);FOCUS.report=r;saveFocus();doc.pt=r.pt;doc.beat=r.beat;doc.loot=r.loot}FLOG.push({id:'f'+FOCUS.startAt,...doc});
+  FOCUS.logId='f'+FOCUS.startAt;saveFocus();if(db&&canWrite){try{await db.collection('focus').doc(FOCUS.logId).set(doc)}catch(e){}}}
 let FLOG=[];
 function startFocus(mode,title,taskId,min,kind){FOCUS={mode,title,taskId,kind:kind||FC_KIND,dur:min*60e3,startAt:Date.now(),pausedTotal:0,pausedAt:0};FOCUS.party=GYM_CAND.filter(k=>k==='chiikawa'||isFree(k)).slice(0,3);saveFocus();
   if(mode==='focus'){AGENTS.forEach(k=>{if(gymSlot(k)>=0){ent[k].jump=1}});floater('🥊',ent.chiikawa);ent.soyan.jump=1}renderFocus(true)}
@@ -950,19 +953,21 @@ function renderFocus(force){const box=$('focusBox');if(!box)return;const run=FOC
     const pct=Math.round((1-left/FOCUS.dur)*100);const clk=box.querySelector('.fc-clock');
     if(clk&&!force){clk.textContent=mmss(left);box.querySelector('.fc-bar i').style.width=pct+'%';const ch=box.querySelector('.fc-cheer');const t=FOCUS.pausedAt?'⏸ 一時停止中':FOCUS.mode==='break'?'🍵 ひと休み。肩をまわしてね':FOCUS.kind==='hunt'?(left<5*60e3?'🔥 ラスト5分！ もうすぐ帰ってくるよ':pct>=50?'💥 遠くで戦ってる音がする…':'⚔️ ちいかわたちは討伐に出かけてるよ'):left<5*60e3?'🔥 ラスト5分！ みんなも全力パンチ中':pct>=50?'💪 折り返し過ぎたよ':'🥊 ちいかわたちもトレーニング中';if(ch.textContent!==t)ch.textContent=t;$('focusSt').textContent=mmss(left);updPill(left);return}
     $('focusSt').textContent=mmss(left);
-    $('focusBody').innerHTML=`<div class="fc-task">${FOCUS.mode==='break'?'🍵 休憩':'📝 '+esc(FOCUS.title)}</div><div class="fc-clock" aria-live="off">${mmss(left)}</div><div class="fc-bar"><i style="width:${pct}%"></i></div><div class="fc-cheer"></div>
+    $('focusBody').innerHTML=`<div class="fc-task">${FOCUS.mode==='break'?'🍵 休憩':'📝 '+esc(FOCUS.title)}${(()=>{const t=FOCUS.taskId&&TASKS.find(x=>x.id===FOCUS.taskId);return t&&t.progress&&FOCUS.mode==='focus'?`<br><small style="color:var(--sub)">前回 ${+t.progress}% まで${t.nextStep?'・次：'+esc(t.nextStep):''}</small>`:''})()}</div><div class="fc-clock" aria-live="off">${mmss(left)}</div><div class="fc-bar"><i style="width:${pct}%"></i></div><div class="fc-cheer"></div>
       <div class="fc-btns"><button type="button" data-fc="pause">${FOCUS.pausedAt?'▶ 再開':'⏸ 一時停止'}</button><button type="button" data-fc="plus">＋5分</button><button type="button" data-fc="stop">やめる</button></div>
       ${FOCUS.mode==='focus'&&FOCUS.taskId?`<div class="fc-btns"><button type="button" class="y" data-fc="done">✅ できた！（タスク完了）</button></div>`:''}`;updPill(left);return}
   $('focusSt').textContent='';updPill(0);
   if(FOCUS&&FOCUS.doneAt&&FOCUS.mode==='focus'&&!FOCUS.ack){const min=Math.round(FOCUS.dur/60000);const tk=FOCUS.taskId&&TASKS.find(x=>x.id===FOCUS.taskId&&!x.done);
-    const rep=FOCUS.report?huntHtml(FOCUS.report):`<div class="fc-clock" style="font-size:22px">🎉 ${min}分 集中できた！</div><div class="fc-cheer">「${esc(clip(FOCUS.title,30))}」おつかれさま…！</div>`;
+    const rep=FOCUS.report?huntHtml(FOCUS.report):`<div class="fc-clock" style="font-size:22px">${FOCUS.stopped?'✋ '+min+'分でひと区切り':'🎉 '+min+'分 集中できた！'}</div><div class="fc-cheer">「${esc(clip(FOCUS.title,30))}」おつかれさま…！</div>`;
     $('focusBody').innerHTML=rep+`
-      <div class="fc-btns">${tk?'<button type="button" class="y" data-fc="done2">✅ タスク完了にする</button>':''}<button type="button" data-fc="more">もう5分</button><button type="button" data-fc="break">🍵 休憩5分</button><button type="button" data-fc="ok">とじる</button></div>`;return}
+      ${tk?`<div class="fc-prog"><label for="fcPr">どこまで進んだ？ <b id="fcPv">${tk.progress||0}%</b></label><input type="range" id="fcPr" min="0" max="100" step="10" value="${+tk.progress||0}"><input class="fc-in" id="fcNext" placeholder="次はここから（例：3章の下書きから）" value="${esc(tk.nextStep||'')}" aria-label="次にやること"></div>
+      <div class="fc-btns"><button type="button" class="y" data-fc="carry">📌 ここまでで持ち越す</button><button type="button" data-fc="done2">✅ 完了（100%）</button></div>`:''}
+      <div class="fc-btns"><button type="button" data-fc="more">もう5分</button><button type="button" data-fc="break">🍵 休憩5分</button><button type="button" data-fc="ok">とじる</button></div>`;return}
   const open=TASKS.filter(x=>!x.done).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:(a.due||'9')>(b.due||'9')?1:byTime(a,b));
   const td=FLOG.filter(x=>x.startedAt>=dayStart(0));const tm=td.reduce((a,x)=>a+x.min,0);
   const sig=open.map(t=>t.id).join()+'|'+td.length+'|'+FC_MIN+FC_KIND;const cur=$('focusBody').querySelector('.fc-sel');if(!force&&cur&&$('focusBody').dataset.sig===sig)return;
   const keepSel=cur?cur.value:null,keepFree=$('fcFree')?.value||'';$('focusBody').dataset.sig=sig;
-  $('focusBody').innerHTML=`<div class="fc-row"><select class="fc-sel" id="fcTask" aria-label="集中するタスク">${open.map(t=>`<option value="${esc(t.id)}">${esc(clip(t.title,40))}${t.due?'（'+esc(String(t.due).slice(5).replace('-','/'))+'）':''}</option>`).join('')}<option value="">── タスクを選ばずに書く ──</option></select></div>
+  $('focusBody').innerHTML=`<div class="fc-row"><select class="fc-sel" id="fcTask" aria-label="集中するタスク">${open.map(t=>`<option value="${esc(t.id)}">${esc(clip(t.title,40))}${t.progress?'〔'+t.progress+'%〕':''}${t.due?'（'+esc(String(t.due).slice(5).replace('-','/'))+'）':''}</option>`).join('')}<option value="">── タスクを選ばずに書く ──</option></select></div>
     <div class="fc-row" id="fcFreeRow" ${open.length?'hidden':''}><input class="fc-in" id="fcFree" placeholder="なにに集中する？" aria-label="集中する内容"></div>
     <div class="fc-row" role="group" aria-label="ちいかわたちがすること">${[['box','🥊 ボクシング'],['hunt','⚔️ 討伐にいく']].map(([k,l])=>`<button type="button" class="fc-min" data-kind="${k}" aria-pressed="${k===FC_KIND}">${l}</button>`).join('')}</div>
     <div class="fc-row" role="group" aria-label="時間">${[15,25,30,45,60].map(n=>`<button type="button" class="fc-min" data-min="${n}" aria-pressed="${n===FC_MIN}">${n}分</button>`).join('')}</div>
@@ -972,6 +977,7 @@ function renderFocus(force){const box=$('focusBox');if(!box)return;const run=FOC
 function updPill(left){let p=$('fcPill');const box=$('focusBox');const vis=box&&box.getBoundingClientRect();const off=!vis||vis.bottom<0||vis.top>innerHeight;
   if(!left||!off){if(p)p.hidden=true;return}if(!p){p=document.createElement('button');p.id='fcPill';p.type='button';p.className='fc-pill';p.addEventListener('click',()=>$('focusBox').scrollIntoView({behavior:'smooth',block:'center'}));document.body.appendChild(p)}
   p.hidden=false;p.classList.toggle('brk',FOCUS.mode==='break');const t=(FOCUS.mode==='break'?'🍵 ':'🥊 ')+mmss(left);if(p.textContent!==t)p.textContent=t}
+$('focusBody').addEventListener('input',e=>{if(e.target.id==='fcPr'){$('fcPv').textContent=e.target.value+'%'}});
 $('focusBody').addEventListener('change',e=>{if(e.target.id==='fcTask')$('fcFreeRow').hidden=!!e.target.value});
 $('focusBody').addEventListener('click',e=>{const kb=e.target.closest('[data-kind]');if(kb){FC_KIND=kb.dataset.kind;try{localStorage.setItem('ck-fkind',FC_KIND)}catch(x){}renderFocus(true);return}
   const mb=e.target.closest('[data-min]');if(mb){FC_MIN=+mb.dataset.min;try{localStorage.setItem('ck-fmin',FC_MIN)}catch(x){}renderFocus(true);return}
@@ -979,10 +985,13 @@ $('focusBody').addEventListener('click',e=>{const kb=e.target.closest('[data-kin
   if(k==='start'){const id=$('fcTask')?.value||'';const t=id?TASKS.find(x=>x.id===id):null;const title=t?t.title:($('fcFree')?.value.trim()||'集中タイム');startFocus('focus',title,t?t.id:'',FC_MIN);return}
   if(k==='pause'){if(FOCUS.pausedAt){FOCUS.pausedTotal+=Date.now()-FOCUS.pausedAt;FOCUS.pausedAt=0}else FOCUS.pausedAt=Date.now();saveFocus();renderFocus(true);return}
   if(k==='plus'){FOCUS.dur+=5*60e3;saveFocus();renderFocus(true);return}
-  if(k==='stop'){logFocus(false);FOCUS=null;saveFocus();renderFocus(true);return}
+  if(k==='stop'){const used=FOCUS.dur-focusLeft();if(used<60e3&&!FOCUS.taskId){FOCUS=null;saveFocus();renderFocus(true);return}FOCUS.dur=used;logFocus(false);FOCUS.doneAt=Date.now();FOCUS.stopped=true;saveFocus();renderFocus(true);return}
   if(k==='done'){const id=FOCUS.taskId;FOCUS.dur=FOCUS.dur-focusLeft();logFocus(true);FOCUS.doneAt=Date.now();saveFocus();if(id)setTask(id,{done:true});renderFocus(true);return}
-  if(k==='done2'){const id=FOCUS.taskId;FOCUS.ack=true;saveFocus();if(id)setTask(id,{done:true});FOCUS=null;saveFocus();renderFocus(true);return}
+  if(k==='done2'){const id=FOCUS.taskId;FOCUS.ack=true;saveFocus();if(id)setTask(id,{done:true,progress:100});if(FOCUS.logId)write('focus',FOCUS.logId,{progress:100,completed:true});FOCUS=null;saveFocus();renderFocus(true);return}
   if(k==='more'){const f=FOCUS;startFocus('focus',f.title,f.taskId,5,f.kind);return}
+  if(k==='carry'){const id=FOCUS.taskId,v=+$('fcPr').value,nx=$('fcNext').value.trim();const t=TASKS.find(x=>x.id===id);const patch={progress:v,nextStep:nx,progressAt:Date.now(),carried:((t&&t.carried)||0)+1};
+    if(v>=100){setTask(id,{done:true,progress:100})}else if(t){Object.assign(t,patch);renderMine();write('tasks',id,patch);floater('📌',ent.soyan)}
+    if(FOCUS.logId)write('focus',FOCUS.logId,{progress:v,nextStep:nx});FOCUS=null;saveFocus();renderFocus(true);return}
   if(k==='break'){startFocus('break','休憩','',5);return}
   if(k==='ok'){FOCUS=null;saveFocus();renderFocus(true)}});
 setInterval(()=>renderFocus(false),1000);addEventListener('scroll',()=>{if(FOCUS&&!FOCUS.doneAt)updPill(focusLeft())},{passive:true});
@@ -1002,7 +1011,7 @@ const SUMS={
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
- 'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
+ 'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.progress?` <em class="pgc">${+t.progress}%</em>`:''}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
  'h-nt':()=>{const w=NOTES.filter(n=>!(n.replies||[]).length&&!n.fromChat).length;const l=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${NOTES.length}件・返事待ち <b>${w}</b>件${l?'<br>最新：'+esc(clip(l.text.replace(/\n+/g,' '),40)):''}</div>`},
  'h-bd':()=>{const n=s=>BOARD.filter(b=>b.status===s).length;return chips([['検収待ち',n('review'),'#b7791f'],['ブロック',n('blocked'),'#c2463d'],['作業中',n('doing'),'#3f6fd8'],['これから',n('todo'),'#857a70'],['完了',n('done'),'#4f8f4a']])},
  'h-ci':()=>{const k=todayKey(),c=CHECKINS.find(x=>x.id===k);return `<div class="li">${c&&c.savedAt?'きょうは記録ずみ（楽 '+(c.easy??'-')+'・助かった '+(c.helped??'-')+'・楽しい '+(c.fun??'-')+'）':'きょうのふりかえりは まだ です'}</div>`},
