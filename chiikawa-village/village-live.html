@@ -194,6 +194,17 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 .wk-big{font-size:28px;font-weight:700}.wk-bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:6px 0}.wk-bar i{display:block;height:100%;background:#4f8f4a}.wk table{width:100%;border-collapse:collapse;font-size:12px}.wk td,.wk th{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left}.wk .num{text-align:right;white-space:nowrap}.wk .warn{font-size:12px;color:#b7791f}
+.dn-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.dn-nums div{border:2px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;font-size:11.5px;color:var(--sub);font-family:var(--body)}
+.dn-nums b{display:block;font-family:var(--dot);font-size:24px;color:var(--ink);font-variant-numeric:tabular-nums}
+.dn-nums .s{border-color:#e6c25a}.dn-nums .c{border-color:#8fb0f5}.dn-nums .j{border-color:#f0a9bd}
+.dn-garden{display:flex;flex-wrap:wrap;gap:3px;padding:8px;border-radius:8px;background:color-mix(in srgb,#a6d37f 35%,var(--panel));min-height:40px;align-items:flex-end}
+.dn-garden span{width:24px;height:24px;display:grid;place-items:center;font-size:17px;line-height:1}
+.dn-garden img{width:22px;height:22px;image-rendering:pixelated}
+.dn-garden .new{animation:pop .6s ease-out}@keyframes pop{0%{transform:scale(0) translateY(6px)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.dn-garden .new{animation:none}}
+.dn-cmp{font-family:var(--body);font-size:12px;color:var(--sub);margin:6px 0 0}
+.dn-list{font-family:var(--body);font-size:12.5px;line-height:1.6;margin:6px 0 0;padding:0;list-style:none}.dn-list li{border-top:1px dashed var(--line);padding:3px 0;overflow-wrap:anywhere}.dn-list time{color:var(--sub);font-size:11px;margin-right:6px;font-variant-numeric:tabular-nums}
 </style>
 
 <div class="app">
@@ -254,6 +265,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     </div>
     <div class="colB">
   <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="rounds" id="rounds" aria-live="off"></div><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
+  <section style="order:1" class="box" aria-labelledby="h-done"><h2 id="h-done">🎉 きょうの成果 <small id="doneCnt"></small></h2><div id="done"><p class="empty">きょう終わった仕事が、ここにお花になって咲きます。</p></div></section>
   <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
   <section style="order:7" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
   <section style="order:9" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
@@ -832,8 +844,30 @@ function renderWork(){const c=workCalc();$('workCnt').textContent=WORK.length?`$
    <details><summary>舞さん・さやさんと分担している仕事（${c.share.length}件）</summary><table><tr><th>仕事</th><th>担当</th><th class="num">月</th></tr>${sh}</table><p class="warn">代替率の計算には入れていません。範囲は要確認です。</p></details></div>`:'<p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p>';
   if(typeof renderSums==='function')renderSums()}
 
+
+// ---------- きょうの成果 ----------
+const dayStart=(off=0)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+off);return d.getTime()};
+function doneItems(from,to){const inR=t=>t&&t>=from&&t<to;const L=[];
+  TASKS.forEach(t=>{if(t.done&&inR(t.doneAt))L.push({k:'s',t:t.doneAt,title:t.title,who:'soyan'})});
+  BOARD.forEach(b=>{const t=b.doneAt||b.updatedAt;if(b.status==='done'&&inR(t)&&b.owner!=='そーやん')L.push({k:'c',t,title:b.title,who:Object.keys(NAMES).find(k=>NAMES[k]===b.owner)||'hachiware'})});
+  BOARD.forEach(b=>{const t=b.doneAt||b.updatedAt;if(b.status==='done'&&inR(t)&&b.owner==='そーやん'&&!TASKS.some(x=>x.title===b.title))L.push({k:'s',t,title:b.title,who:'soyan'})});
+  XCS.forEach(x=>{if(x.status==='answered'&&inR(x.answeredAt))L.push({k:'j',t:x.answeredAt,title:'判断：'+x.question,who:'soyan'})});
+  IDEAS.forEach(x=>{if(inR(x.decidedAt)&&x.status!=='open')L.push({k:'j',t:x.decidedAt,title:'提案に回答：'+x.title,who:'soyan'})});
+  return L.sort((a,b)=>a.t-b.t)}
+let DONE_SIG='',DONE_SEEN=null;
+function renderDone(){const L=doneItems(dayStart(0),dayStart(1)),Y=doneItems(dayStart(-1),dayStart(0));const sig=L.map(x=>x.k+x.t).join()+'|'+Y.length;if(sig===DONE_SIG)return;DONE_SIG=sig;
+  const n=k=>L.filter(x=>x.k===k).length;const seen=DONE_SEEN||new Set(L.map(x=>x.k+x.t));
+  const fl={s:'🌼',j:'🌷'};const hm=t=>{const d=new Date(t);return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`};
+  $('doneCnt').textContent=L.length?`${L.length}件`:'';
+  $('done').innerHTML=`<div class="dn-nums"><div class="s"><b>${n('s')}</b>そーやんが<br>終えた</div><div class="c"><b>${n('c')}</b>ちいかわが<br>仕上げた</div><div class="j"><b>${n('j')}</b>判断・<br>回答した</div></div>
+   <div class="dn-garden" role="img" aria-label="きょう終わった仕事 ${L.length}件">${L.map(x=>`<span class="${seen.has(x.k+x.t)?'':'new'}" title="${esc(x.title)}">${x.k==='c'&&ICON[x.who]?`<img src="${ICON[x.who]}" alt="">`:fl[x.k]}</span>`).join('')||'<span>🌱</span>'}</div>
+   <p class="dn-cmp">${L.length?(L.length>=Y.length?`きのうは ${Y.length}件。きょうはもう ${L.length}件、よう進んでるで！`:`きのうは ${Y.length}件。きょうは ${L.length}件、ぼちぼちでええよ`):'まだこれから。1つ終わるごとにお花が咲きます'}</p>
+   ${L.length?`<details><summary style="cursor:pointer;font-family:var(--body);font-size:12.5px;color:var(--sub)">終わった仕事を見る</summary><ul class="dn-list">${L.slice().reverse().map(x=>`<li><time>${hm(x.t)}</time>${fl[x.k]||'🧸'} ${esc(clip(x.title,60))}</li>`).join('')}</ul></details>`:''}`;
+  DONE_SEEN=new Set(L.map(x=>x.k+x.t));if(typeof renderSums==='function')renderSums()}
+setInterval(renderDone,1500);
+
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-xc','h-work','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-done','h-xc','h-work','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -843,6 +877,7 @@ const SUMS={
    const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
    return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
+ 'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
