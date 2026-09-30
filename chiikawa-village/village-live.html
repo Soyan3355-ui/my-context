@@ -819,16 +819,16 @@ $('ideas').addEventListener('click',async e=>{const b=e.target.closest('button[d
 
 
 // ---------- 代替率 ----------
-let WORK=[];
+let WORK=[];const BIZ=['畑の寺子屋','お米づくり道場','イベント・見学','伝統野菜','アカデミー','コミュニティファーマーズラボ','YouTube','記事執筆','経営・組織','共通（連絡・記録）','事業マップに無い'];
 function workCalc(){const mine=WORK.filter(w=>w.from==='そーやん');const H=mine.reduce((a,w)=>a+(+w.hours||0),0),S=mine.reduce((a,w)=>a+(+w.hours||0)*(+w.rate||0)/100,0);
   const share=WORK.filter(w=>w.from==='舞さん'||w.from==='さやさん');return{H,S,pct:H?Math.round(S/H*100):0,mine,share,guess:WORK.filter(w=>w.sure!=='confirmed').length}}
 function renderWork(){const c=workCalc();$('workCnt').textContent=WORK.length?`${c.pct}%`:'';
-  const area={};c.mine.forEach(w=>{const a=area[w.area]||(area[w.area]={h:0,s:0});a.h+=+w.hours||0;a.s+=(+w.hours||0)*(+w.rate||0)/100});
+  const area={};c.mine.forEach(w=>{const k=w.biz||w.area;const a=area[k]||(area[k]={h:0,s:0});a.h+=+w.hours||0;a.s+=(+w.hours||0)*(+w.rate||0)/100});
   const rows=c.mine.slice().sort((a,b)=>(b.hours*b.rate)-(a.hours*a.rate)).map(w=>`<tr><td>${esc(w.title)}</td><td class="num">${esc(w.hours)}h</td><td class="num">${esc(w.rate)}%</td><td>${esc(w.now||'')}</td></tr>`).join('');
   const sh=c.share.map(w=>`<tr><td>${esc(w.title)}</td><td>${esc(w.from)}</td><td class="num">${esc(w.hours)}h</td></tr>`).join('');
   $('work').innerHTML=WORK.length?`<div class="wk"><div><span class="wk-big">${c.pct}%</span> <small>（月${c.H}時間のうち、およそ${Math.round(c.S*10)/10}時間ぶん）</small></div><div class="wk-bar"><i style="width:${c.pct}%"></i></div>
    <p class="warn">⚠ 時間と代替度は${c.guess}件が「推測」です。そーやんが直すと正確になります。</p>
-   <details><summary>領域ごと・仕事ごとの内訳</summary><p>${Object.entries(area).map(([k,v])=>`${esc(k)} ${v.h?Math.round(v.s/v.h*100):0}%`).join(' ／ ')}</p><table><tr><th>仕事</th><th class="num">月</th><th class="num">代替</th><th>いま</th></tr>${rows}</table></details>
+   <details><summary>事業ごとの内訳（Notionの事業マップ順）</summary>${Object.entries(area).sort((a,b)=>BIZ.indexOf(a[0])-BIZ.indexOf(b[0])).map(([k,v])=>`<p><b>${esc(k)}</b> ${v.h?Math.round(v.s/v.h*100):0}%（月${v.h}h）</p><table>${c.mine.filter(w=>(w.biz||w.area)===k).map(w=>`<tr><td>${esc(w.title)}</td><td class="num">${esc(w.hours)}h</td><td class="num">${esc(w.rate)}%</td><td>${esc(w.now||'')}</td></tr>`).join('')}</table>`).join('')}</details>
    <details><summary>舞さん・さやさんと分担している仕事（${c.share.length}件）</summary><table><tr><th>仕事</th><th>担当</th><th class="num">月</th></tr>${sh}</table><p class="warn">代替率の計算には入れていません。範囲は要確認です。</p></details></div>`:'<p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p>';
   if(typeof renderSums==='function')renderSums()}
 
