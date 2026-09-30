@@ -265,7 +265,7 @@
       this.next = scene; this.trans.phase = 'out'; this.trans.t = 0; this.trans.kind = kind; this.trans.color = color || '#1c2340';
       if (window.Sound && kind !== 'cut') Sound.play('swoosh', { vol: 0.35 });
     },
-    set(scene) { this.scene = scene; this.tweens.clear(); scene.enter && scene.enter(); },
+    set(scene) { this.scene = scene; this.error = null; this.tweens.clear(); try { scene.enter && scene.enter(); } catch (e) { reportError(e); } },
     addShake(m, t = 0.25) { this.shake.mag = Math.max(this.shake.mag, m); this.shake.t = Math.max(this.shake.t, t); },
     doHitstop(sec) { this.hitstop = Math.max(this.hitstop, sec); },
     doFlash(a = 0.8, color = '#fff') { this.flash.a = a; this.flash.color = color; },
@@ -302,6 +302,14 @@
     } else { g.globalAlpha = p; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   }
 
+  // one bad frame used to throw before requestAnimationFrame was re-armed, freezing the whole
+  // game with no clue why - keep the loop alive and pin the message on screen so it can be reported
+  function reportError(e) {
+    const msg = (e && e.message) || String(e), where = ((e && e.stack) || '').split('\n')[1] || '';
+    const line = msg + ' @' + where.replace(/^\s*at\s*/, '').replace(/https?:\/\/[^\s)]*\//g, '');
+    if (Game.error !== line) console.error(e);
+    Game.error = line;
+  }
   let last = performance.now();
   function loop(now) {
     let dt = Math.min(0.05, (now - last) / 1000);
@@ -328,7 +336,7 @@
       const blockInput = tr.phase === 'out';
       if (blockInput) { Input.pressed = {}; Input.mouse.clicked = false; }
       Game.tweens.update(dt);
-      Game.scene.update && Game.scene.update(sdt, dt);
+      try { Game.scene.update && Game.scene.update(sdt, dt); } catch (e) { reportError(e); }
     }
 
     // shake
@@ -346,9 +354,13 @@
     ctx.fillRect(0, 0, W, H);
     ctx.save();
     ctx.translate(sx, sy);
-    if (Game.scene && Game.scene.draw) Game.scene.draw(ctx);
+    try { if (Game.scene && Game.scene.draw) Game.scene.draw(ctx); } catch (e) { reportError(e); }
     ctx.restore();
-    if (Game.scene && Game.scene.drawOverlay) Game.scene.drawOverlay(ctx);
+    try { if (Game.scene && Game.scene.drawOverlay) Game.scene.drawOverlay(ctx); } catch (e) { reportError(e); }
+    if (Game.error) {
+      ctx.setTransform(S, 0, 0, S, 0, 0); ctx.globalAlpha = 0.85; ctx.fillStyle = '#5a0e14'; ctx.fillRect(0, 0, W, 12); ctx.globalAlpha = 1;
+      text(ctx, 'エラー: ' + Game.error.slice(0, 90), 3, 2, { size: 8, color: '#ffe0e0' });
+    }
 
     if (Game.flash.a > 0) {
       ctx.globalAlpha = Game.flash.a; ctx.fillStyle = Game.flash.color; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;

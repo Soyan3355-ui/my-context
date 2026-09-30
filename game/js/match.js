@@ -1311,6 +1311,8 @@
     // ---------------- set pieces ----------------
     startSetPiece(type, team, x, y, forced) {
       if (type !== 'gk') { this.applySubs(); this.applyOppSub(); }
+      // the fouled player may have just been substituted off - don't hand the kick to a ghost
+      if (forced && !this.players.includes(forced)) forced = null;
       const b = this.ball;
       b.owner = null; b.pass = null; b.shot = null; b.vx = b.vy = b.vz = 0; b.z = 0; b.held = false;
       b.x = x; b.y = y;
@@ -2987,6 +2989,9 @@
         np.face = 'up';
         this.players[idx] = np;
         if (this.ball.owner === old) this.ball.owner = null;
+        if (this.sp && this.sp.taker === old) this.sp.taker = np;
+        if (this.sp && this.sp.target === old) this.sp.target = null;
+        if (this.ball.pass && this.ball.pass.to === old) this.ball.pass.to = np;
         this.subbedOut.push(old);
         this.toast('交代　' + old.name + ' → ' + np.name, '#9fdcff');
         this.cutin = { id: np.id, expr: 'determined', t: 0, dur: 2.2, text: '「' + (q.inDef.nick || '') + '」' + np.name, color: '#2f86c4' };
