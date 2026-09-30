@@ -86,8 +86,6 @@
       this.log = [];
       this.aiCoachT = 18;
       this.cutin = null;
-      // rolling record of the last few seconds of play, for the post-goal replay
-      this.recFrames = []; this.recT = 0; this.recAcc = 0; this.replay = null; this.goalInfo = null; this.lastShotT = -99;
       this.hover = -1;
       this.halftimeUI = null;
       this.moraleMul = [opts.morale || 1, 1];
@@ -289,21 +287,10 @@
           if (this.stateT > lineupT + 2.1) this.startPlay();
           break;
         }
-        case 'play': this.simulate(dt); this.recordFrame(dt); break;
+        case 'play': this.simulate(dt); break;
         case 'goal':
           this.simulate(dt, true);
-          if (this.stateT < 0.7) this.recordFrame(dt); // the ball rippling the net
-          if (this.stateT > 2.3) {
-            this.placeKickoff(this.kickoffTeam, false);
-            if (this.startReplay()) { this.state = 'replay'; this.stateT = 0; }
-            else { this.state = 'reset'; this.stateT = 0; }
-          }
-          break;
-        case 'replay':
-          // everyone walks back to kickoff positions for real while the replay plays over it,
-          // so skipping (or finishing) the replay leaves almost no extra wait
-          this.moveAll(dt, true);
-          this.updateReplay(raw);
+          if (this.stateT > 2.3) { this.state = 'reset'; this.stateT = 0; this.placeKickoff(this.kickoffTeam, false); }
           break;
         case 'reset':
           this.moveAll(dt, true);
@@ -1168,8 +1155,7 @@
       b.vx = Math.cos(ang) * power; b.vy = Math.sin(ang) * power;
       b.vz = header ? -30 : dGoal > 150 ? rand(40, 90) : rand(10, 50);
       b.pass = null;
-      b.shot = { team: t, shooter: p, save, ty, power: attackerQ === 'just', t: 0, x0: b.x, y0: b.y, blk: new Set(), header: !!header, fromFK: !!fk, special: !!special };
-      this.lastShotT = this.recT;
+      b.shot = { team: t, shooter: p, save, ty, power: attackerQ === 'just', t: 0, x0: b.x, y0: b.y, blk: new Set() };
       if (fk && !fk.trick && fk.sp.wall) {
         // dip over the wall: custom arc that is ~22px high at the wall and back under the bar at the goal line
         const v = power, tw = 44 / v, tg = Math.max(tw * 2, dist(b.x, b.y, gx, ty) / v * 1.08);
@@ -2134,15 +2120,6 @@
     onGoal(team) {
       const b = this.ball;
       const scorer = b.shot ? b.shot.shooter : b.last;
-      const shot = b.shot;
-      // everything the replay needs to explain the goal, captured before it's cleared below
-      this.goalInfo = {
-        team, scorer, t: this.recT, x: b.x, y: b.y, z: b.z, keeper: this.gk(1 - team),
-        assister: this.lastPasser && this.lastPasser.team === team && this.lastPasser !== scorer ? this.lastPasser : null,
-        shotT: shot ? this.lastShotT : null, x0: shot ? shot.x0 : null, y0: shot ? shot.y0 : null,
-        header: !!(shot && shot.header), fk: !!(shot && shot.fromFK), special: !!(shot && shot.special),
-        own: !!(scorer && scorer.team !== team),
-      };
       if (this.half === 2) { this.evalHtChange(team === 0); this.evalOppSwitch(team === 0); }
       this.nudgeMomentum(team === 0 ? 0.05 : -0.05);
       this.score[team]++;
@@ -2490,95 +2467,6 @@
     }
     popupMeter(t, c) { this.meter.msg = { text: t, color: c }; }
 
-    // ---------------- goal replay ----------------
-    // the last ~4s of play are kept as 30Hz snapshots (sim time); after a goal they're played back
-    // - real speed, then slow-mo zoomed in on the finish with scorer/assist/shot path marked - and
-    // then a front-on "goal-mouth camera" shows exactly where it went in and how the keeper reacted
-    recordFrame(dt) {
-      this.recT += dt; this.recAcc += dt;
-      if (this.recAcc < 1 / 30) return;
-      this.recAcc = 0;
-      const b = this.ball;
-      this.recFrames.push({
-        t: this.recT, b: [b.x, b.y, b.z, b.roll || 0],
-        ps: this.players.map((p) => [p, p.x, p.y, p.face, p.state, p.moving, p.animT, p.kickAnim, p.cheer, p.sta, p.jump, p.diveUp]),
-      });
-      while (this.recFrames.length && this.recFrames[0].t < this.recT - 4.2) this.recFrames.shift();
-    }
-    startReplay() {
-      const info = this.goalInfo, fr = this.recFrames;
-      if (!info || fr.length < 12) return false;
-      const tStart = Math.max(fr[0].t, info.t - 2.8), tEnd = Math.min(fr[fr.length - 1].t, info.t + 0.55);
-      const tSlow = Math.max(tStart, info.t - 1.0), SLOW = 0.45;
-      const dA1 = tSlow - tStart, dA2 = (tEnd - tSlow) / SLOW;
-      this.replay = { frames: fr.slice(), info, tStart, tSlow, tEnd, SLOW, dA1, dA2, rB: dA1 + dA2 + 0.25, dur: dA1 + dA2 + 0.25 + 2.6, t: 0, cam: null, zoom: 1 };
-      this.recFrames = [];
-      Sound.play('swoosh');
-      return true;
-    }
-    replaySimT(r) {
-      const R = this.replay;
-      if (r < R.dA1) return R.tStart + r;
-      if (r < R.dA1 + R.dA2) return R.tSlow + (r - R.dA1) * R.SLOW;
-      return R.tEnd;
-    }
-    // interpolated snapshot at sim time s
-    replayFrameAt(s) {
-      const F = this.replay.frames;
-      let i = 0;
-      while (i < F.length - 2 && F[i + 1].t <= s) i++;
-      const a = F[i], c = F[Math.min(i + 1, F.length - 1)];
-      const k = c.t > a.t ? clamp((s - a.t) / (c.t - a.t), 0, 1) : 0;
-      const cmap = new Map(c.ps.map((e) => [e[0], e]));
-      return {
-        b: [lerp(a.b[0], c.b[0], k), lerp(a.b[1], c.b[1], k), lerp(a.b[2], c.b[2], k), a.b[3]],
-        ps: a.ps.map((e) => { const n = cmap.get(e[0]) || e; return [e[0], lerp(e[1], n[1], k), lerp(e[2], n[2], k)].concat(e.slice(3)); }),
-      };
-    }
-    updateReplay(raw) {
-      const R = this.replay;
-      if (!R) { this.state = 'reset'; this.stateT = 0; return; }
-      R.t += raw;
-      if (R.t > 0.3 && (Input.hit('ok') || Input.mouse.clicked)) R.t = R.dur;
-      if (R.t >= R.dur) { this.replay = null; this.state = 'reset'; this.stateT = 0; return; }
-      if (R.t >= R.rB && !R.netPlayed && R.t >= R.rB + 1.25) { R.netPlayed = true; Sound.play('net'); }
-      // camera: follow the ball, drifting toward the goal and zooming in once the slow-mo starts
-      const f = this.replayFrameAt(this.replaySimT(Math.min(R.t, R.rB)));
-      const slow = clamp((R.t - R.dA1) / 0.6, 0, 1);
-      const gx = goalX(R.info.team);
-      const tx = lerp(f.b[0], gx - dirX(R.info.team) * 40, 0.25 * slow), ty = lerp(f.b[1] - f.b[2], CY, 0.2 * slow);
-      R.zoom = lerp(1, 1.7, Ease.outCubic(slow));
-      if (!R.cam) R.cam = { x: tx, y: ty };
-      const k = clamp(raw * 5, 0, 1);
-      R.cam.x = lerp(R.cam.x, tx, k); R.cam.y = lerp(R.cam.y, ty, k);
-    }
-    // swap a snapshot onto the live objects for drawing; returns a restore function
-    applyReplayFrame(f) {
-      const saved = { players: this.players, b: [this.ball.x, this.ball.y, this.ball.z, this.ball.roll], vals: [] };
-      const keys = ['x', 'y', 'face', 'state', 'moving', 'animT', 'kickAnim', 'cheer', 'sta', 'jump', 'diveUp'];
-      this.players = f.ps.map((e) => {
-        const p = e[0];
-        saved.vals.push([p, keys.map((key) => p[key])]);
-        keys.forEach((key, i) => { p[key] = e[i + 1]; });
-        return p;
-      });
-      Object.assign(this.ball, { x: f.b[0], y: f.b[1], z: f.b[2], roll: f.b[3] });
-      return () => {
-        for (const [p, vals] of saved.vals) keys.forEach((key, i) => { p[key] = vals[i]; });
-        this.players = saved.players;
-        Object.assign(this.ball, { x: saved.b[0], y: saved.b[1], z: saved.b[2], roll: saved.b[3] });
-      };
-    }
-    // where on the goal face it went in, in plain words, from the shooter's point of view
-    goalZone(info) {
-      const u = clamp(((info.y - CY) / (GW / 2)) * (info.team === 0 ? 1 : -1), -1, 1), v = clamp(info.z / 14, 0, 1);
-      const h = u < -0.33 ? '左' : u > 0.33 ? '右' : '';
-      if (Math.abs(u) > 0.6 && v > 0.55) return h + '上隅';
-      if (Math.abs(u) > 0.6 && info.z < 3) return h + '下隅';
-      if (!h) return v > 0.55 ? '中央の高め' : info.z < 1.5 ? 'ど真ん中・グラウンダー' : 'ど真ん中';
-      return 'ゴール' + h + (info.z < 1.5 ? '・グラウンダー' : v > 0.55 ? '・高め' : '・低め');
-    }
-
     // ---------------- camera ----------------
     updateCamera(raw) {
       const b = this.ball;
@@ -2595,17 +2483,9 @@
 
     // ---------------- drawing ----------------
     draw(g) {
-      // during the field part of a replay, draw a recorded snapshot instead of the live state
-      const R = this.state === 'replay' && this.replay && this.replay.t < this.replay.rB && this.replay.cam ? this.replay : null;
-      let restore = null;
-      if (R) restore = this.applyReplayFrame(this.replayFrameAt(this.replaySimT(R.t)));
-      const ox = R ? clamp(Math.round(R.cam.x - W / 2), 0, Art.WORLD.w - W) : Math.round(this.cam.x);
-      const oy = R ? clamp(Math.round(R.cam.y - VIEW_H / 2), -6, Art.WORLD.h - VIEW_H) - TOP_H : Math.round(this.cam.y) - TOP_H;
+      const ox = Math.round(this.cam.x), oy = Math.round(this.cam.y) - TOP_H;
       g.save();
       g.beginPath(); g.rect(0, TOP_H, W, VIEW_H); g.clip();
-      if (R && R.zoom > 1.01) { g.translate(W / 2, TOP_H + VIEW_H / 2); g.scale(R.zoom, R.zoom); g.translate(-W / 2, -(TOP_H + VIEW_H / 2)); }
-      const slowRep = R && R.t > R.dA1;
-      const involved = R ? new Set([R.info.scorer, R.info.assister, R.info.keeper].filter(Boolean)) : null;
       this.drawStands(g, ox, oy);
       g.drawImage(this.pitch, -ox, -oy);
       this.drawBenches(g, ox, oy);
@@ -2628,25 +2508,15 @@
         g.lineWidth = 1;
         g.beginPath(); g.ellipse(Math.round(o.x - ox) + 0.5, Math.round(o.y - oy) + 0.5, 8, 3.5, 0, 0, Math.PI * 2); g.stroke();
       }
-      // replay: rings on the ground under the scorer (gold) and the provider (blue)
-      if (R) {
-        const ring = (p, col) => { if (!p || !this.players.includes(p)) return; g.strokeStyle = col; g.lineWidth = 1.5; g.beginPath(); g.ellipse(Math.round(p.x - ox) + 0.5, Math.round(p.y - oy) + 0.5, 9 + Math.sin(Game.time * 8), 4, 0, 0, Math.PI * 2); g.stroke(); };
-        ring(R.info.assister, 'rgba(120,210,255,0.95)');
-        ring(R.info.scorer, 'rgba(255,210,74,1)');
-      }
       // entities sorted by y
       const ents = this.players.slice().sort((a, c) => a.y - c.y);
       let ballDrawn = false;
       for (const p of ents) {
         if (!ballDrawn && b.y < p.y) { this.drawBall(g, ox, oy); ballDrawn = true; }
-        // in the slow-mo part, everyone not involved fades back so a crowded box stays readable
-        if (slowRep && !involved.has(p)) g.globalAlpha = 0.45;
         this.drawPlayer(g, p, ox, oy);
-        g.globalAlpha = 1;
       }
       if (!ballDrawn) this.drawBall(g, ox, oy);
-      if (R) this.drawReplayMarks(g, R, ox, oy);
-      else this.fx.draw(g, ox, oy);
+      this.fx.draw(g, ox, oy);
       // goal front posts again (depth)
       this.drawFloodlights(g, ox, oy);
       // evening grade
@@ -2657,7 +2527,6 @@
         g.globalCompositeOperation = 'source-over';
         this.drawLightGlow(g, ox, oy);
       }
-      if (R) { g.restore(); restore(); return; }
       // bubbles & names
       for (const p of this.players) this.drawBubble(g, p, ox, oy);
       if (b.owner && this.state === 'play' && !this.meter && !b.owner.bubble) {
@@ -3305,7 +3174,6 @@
     }
     drawOverlay(g) {
       this.drawHUD(g);
-      if (this.state === 'replay' && this.replay) { this.drawReplayHud(g, this.replay); return; }
       this.fxTop.draw(g);
       for (const bn of this.banners) this.drawBanner(g, bn);
       if (this.comboShow) this.drawCombo(g);
@@ -3541,99 +3409,6 @@
       text(g, c.kind === 'bad' ? 'ケンカ発動！' : 'コンビ発動！', x + 62, y + 4, { size: 8, color: c.kind === 'bad' ? '#ffe0e0' : '#4a2a10' });
       text(g, c.name, x + 62, y + 16, { size: 11, color: c.kind === 'bad' || c.kind === 'mixed' ? '#ffffff' : '#2a1a24', outline: c.kind === 'bad' || c.kind === 'mixed' ? '#2a0e14' : undefined });
     }
-    // world-space replay marks: the shot's flight path, where it was struck from, and name tags
-    drawReplayMarks(g, R, ox, oy) {
-      const s = this.replaySimT(R.t), info = R.info;
-      const from = info.shotT != null ? Math.max(R.tStart, info.shotT - 0.05) : R.tSlow;
-      if (s > from) {
-        g.fillStyle = 'rgba(255,226,110,0.95)';
-        for (const f of R.frames) if (f.t >= from && f.t <= s) g.fillRect(Math.round(f.b[0] - ox) - 1, Math.round(f.b[1] - f.b[2] - oy) - 1, 2, 2);
-      }
-      if (info.x0 != null && info.shotT != null && s >= info.shotT) {
-        const x = Math.round(info.x0 - ox), y = Math.round(info.y0 - oy);
-        g.fillStyle = '#ffd24a'; g.fillRect(x - 3, y - 3, 2, 2); g.fillRect(x + 2, y - 3, 2, 2); g.fillRect(x - 1, y - 1, 2, 2); g.fillRect(x - 3, y + 1, 2, 2); g.fillRect(x + 2, y + 1, 2, 2);
-      }
-      if (R.t <= R.dA1) return;
-      const tag = (p, str, col) => { if (p && this.players.includes(p)) text(g, str, Math.round(p.x - ox), Math.round(p.y - oy) - 31, { size: 8, align: 'center', color: col, outline: '#10182e' }); };
-      if (info.assister) tag(info.assister, 'アシスト ' + info.assister.name, '#9fdcff');
-      if (info.scorer) tag(info.scorer, (info.own ? 'OG ' : '') + info.scorer.name, '#ffd24a');
-    }
-    drawReplayHud(g, R) {
-      if (R.t >= R.rB) this.drawGoalMouth(g, R);
-      // small "REPLAY" tag and a skip hint - kept to the corners, away from the action
-      const blink = Math.floor(Game.time * 2) % 2;
-      panel(g, 6, TOP_H + 4, 64, 15, 'dark');
-      if (blink) { g.fillStyle = '#e0474c'; g.fillRect(12, TOP_H + 9, 5, 5); }
-      text(g, 'REPLAY', 21, TOP_H + 7, { size: 8, color: '#ffffff' });
-      if (R.t > 0.3) text(g, 'Z / クリックでスキップ', W - 8, TOP_H + VIEW_H - 12, { size: 8, align: 'right', color: '#ffffff', outline: '#10182e', alpha: 0.6 + 0.4 * Math.sin(Game.time * 4) });
-    }
-    // front-on view of the goal: where exactly it crossed the line and what the keeper did
-    drawGoalMouth(g, R) {
-      const info = R.info, t = R.t - R.rB;
-      const fade = clamp(t / 0.25, 0, 1) * (1 - clamp((R.t - (R.dur - 0.25)) / 0.25, 0, 1));
-      const y0 = TOP_H, h = VIEW_H;
-      g.save();
-      // backdrop: evening stadium behind the goal, a strip of grass (always opaque, so the live
-      // field never bleeds through - only the contents fade in)
-      g.fillStyle = '#16203c'; g.fillRect(0, y0, W, h);
-      g.globalAlpha = fade;
-      g.fillStyle = '#1e2c52'; for (let yy = 0; yy < 70; yy += 6) g.fillRect(0, y0 + yy, W, 3);
-      const ground = y0 + h - 34;
-      g.fillStyle = '#3f8a3e'; g.fillRect(0, ground, W, y0 + h - ground);
-      g.fillStyle = '#4e9a48'; for (let x = 0; x < W; x += 24) g.fillRect(x, ground, 12, y0 + h - ground);
-      g.fillStyle = '#ffffff'; g.fillRect(0, ground, W, 1);
-      // goal frame and net
-      const gw = 300, gh = 104, gxL = W / 2 - gw / 2;
-      g.fillStyle = 'rgba(230,240,255,0.22)';
-      for (let x = gxL; x <= gxL + gw; x += 10) g.fillRect(x, ground - gh, 1, gh);
-      for (let yy = ground - gh; yy <= ground; yy += 10) g.fillRect(gxL, yy, gw, 1);
-      g.fillStyle = Art.OUT; g.fillRect(gxL - 4, ground - gh - 4, 6, gh + 4); g.fillRect(gxL + gw - 2, ground - gh - 4, 6, gh + 4); g.fillRect(gxL - 4, ground - gh - 4, gw + 8, 6);
-      g.fillStyle = '#ffffff'; g.fillRect(gxL - 3, ground - gh - 3, 4, gh + 3); g.fillRect(gxL + gw - 1, ground - gh - 3, 4, gh + 3); g.fillRect(gxL - 3, ground - gh - 3, gw + 6, 4);
-      // shooter's-eye mapping: lateral position across the mouth, height up to the bar
-      const side = info.team === 0 ? 1 : -1;
-      const sx = (wy) => W / 2 + clamp(((wy - CY) / (GW / 2)) * side, -1.25, 1.25) * (gw / 2);
-      const sy = (wz) => ground - clamp(wz / 14, 0, 1.2) * gh;
-      // animate the last ~0.9s before it went in: ball and keeper, in step
-      const k = clamp(t / 1.2, 0, 1);
-      const sT = lerp(info.t - 0.9, info.t, Ease.outQuad(k));
-      const f = this.replayFrameAt(Math.max(R.tStart, sT));
-      const gkE = f.ps.find((e) => e[0] === info.keeper);
-      if (gkE) {
-        const L = info.keeper.def.look, kx = Math.round(sx(gkE[2]));
-        // diveUp = diving toward smaller world y, which is screen-left when side > 0
-        if (gkE[4] === 'dive') { const img = Art.diveSprite(L, side > 0 ? !!gkE[11] : !gkE[11]); g.drawImage(img, kx - 36, ground - 70, 72, 36); }
-        else { const img = Art.sprite(L, 'down', 'walk1'); g.drawImage(img, kx - 24, ground - 63, 48, 63); }
-      }
-      // the ball grows as it approaches the camera-side goal plane
-      const gxT = goalX(info.team), startX = info.x0 != null ? info.x0 : f.b[0];
-      const rem = clamp(Math.abs(gxT - f.b[0]) / Math.max(20, Math.abs(gxT - startX)), 0, 1);
-      const bs = Math.round(lerp(18, 7, rem));
-      const bx = sx(f.b[1]), by = sy(f.b[2]);
-      g.drawImage(Art.ballFrames[Math.floor(Game.time * 12) & 3], Math.round(bx - bs / 2), Math.round(by - bs), bs, bs);
-      if (k >= 1) {
-        // impact marker where it crossed the line
-        const ix = sx(info.y), iy = sy(info.z) - 8, pulse = 1 + 0.15 * Math.sin(Game.time * 10);
-        g.strokeStyle = '#ffd24a'; g.lineWidth = 2; g.beginPath(); g.arc(ix, iy, 13 * pulse, 0, Math.PI * 2); g.stroke();
-        g.fillStyle = '#ffd24a'; for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; g.fillRect(Math.round(ix + Math.cos(a) * 19 * pulse) - 1, Math.round(iy + Math.sin(a) * 19 * pulse) - 1, 3, 3); }
-      }
-      // caption: who, how, from where; where it went; what the keeper managed
-      const how = info.own ? 'オウンゴール' : info.special ? '必殺シュート' : info.header ? 'ヘディング' : info.fk ? '直接フリーキック' : info.shotT == null ? '押し込み' : 'シュート';
-      const meters = info.x0 != null ? Math.round((dist(info.x0, info.y0, gxT, CY) * 105) / P.w) : null;
-      const who = info.scorer ? info.scorer.name : '';
-      panel(g, 78, y0 + 4, W - 156, 30, info.team === 0 ? 'sky' : this.oppStyle());
-      text(g, 'ゴール正面カメラ', 86, y0 + 7, { size: 8, color: '#ffffff', alpha: 0.8 });
-      text(g, who + '　' + how + (meters != null && !info.own ? '（' + meters + 'm）' : '') + (info.assister ? '　／アシスト ' + info.assister.name : ''), W / 2, y0 + 18, { size: 9, align: 'center', color: '#ffffff', outline: '#10182e' });
-      if (k >= 1) {
-        const kp = info.keeper, kE = R.frames.length ? this.replayFrameAt(info.t).ps.find((e) => e[0] === kp) : null;
-        const reach = kE ? Math.abs(kE[2] - info.y) : 99;
-        const gkLine = !kp ? '' : kE && kE[4] === 'dive' ? (reach < 14 ? 'GK' + kp.name + '、指先わずかに届かず！' : 'GK' + kp.name + '、飛ぶも届かず') : reach > 22 ? 'GK' + kp.name + '、逆を突かれて一歩も動けず' : 'GK' + kp.name + '、反応しきれず';
-        panel(g, W / 2 - 110, ground + 4, 220, 26, 'dark');
-        text(g, this.goalZone(info) + 'に突き刺さった！', W / 2, ground + 7, { size: 10, align: 'center', color: '#ffd24a' });
-        text(g, gkLine, W / 2, ground + 19, { size: 8, align: 'center', color: '#c9d6e6' });
-      }
-      g.restore();
-    }
-
     drawCutin(g, c) {
       if (c.big) { this.drawBigCutin(g, c); return; }
       const t = c.t, d = c.dur;
