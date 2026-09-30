@@ -1400,15 +1400,23 @@
       // a teammate can look open at their own spot and still have a presser standing in the passing
       // lane back near the keeper — check the whole lane, not just the landing point, or the keeper
       // ends up handing possession straight to whoever's pressing highest
-      const short = mates.filter((m) => dist(m.x, m.y, gk.x, gk.y) < 170 && openness(m) > 34 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 32).sort((a, c) => openness(c) - openness(a))[0];
+      // the further the ball travels, the more time a presser has to close in on it - demand more room for longer throws
+      const short = mates.filter((m) => { const d = dist(m.x, m.y, gk.x, gk.y); return d < 170 && openness(m) > 34 + d * 0.12 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 32 + d * 0.08; }).sort((a, c) => openness(c) - openness(a))[0];
       const gtac = this.tacOf(t);
       const pShort = gtac === 'long' ? 0.1 : gtac === 'possession' ? 0.9 : gtac === 'counter' ? 0.4 : 0.65;
+      // an overarm throw out to a free full-back or midfielder: the safe middle option a keeper
+      // takes when the short ball is pressed but hoofing it would just hand the ball back
+      const medium = fromHands && mates.filter((m) => { const d = dist(m.x, m.y, gk.x, gk.y); return d >= 120 && d < 300 && openness(m) > 58 && this.laneBlock(gk.x, gk.y, m.x, m.y, t) > 44; })
+        .sort((a, c) => (openness(c) + this.proj(t, c.x) * 0.2) - (openness(a) + this.proj(t, a.x) * 0.2))[0];
       if (short && Math.random() < pShort) {
         if (fromHands) { gk.cheer = 0.3; this.doPass(gk, short, false); this.ball.vz = 40; this.ball.z = 8; }
         else this.doPass(gk, short, false);
+      } else if (medium && (gtac !== 'long' || Math.random() < 0.4)) {
+        gk.cheer = 0.3; this.doPass(gk, medium, true); this.ball.vz = 110;
       } else {
-        // long kick / punt toward the most advanced open teammate
-        const far = mates.sort((a, c) => (this.proj(t, c.x) + openness(c) * 0.8) - (this.proj(t, a.x) + openness(a) * 0.8))[0];
+        // long kick / punt: favour whoever has the most room around them over whoever is simply furthest
+        // forward - a punt aimed at a forward standing among three defenders was just a gift to the other side
+        const far = mates.sort((a, c) => (this.proj(t, c.x) * 0.5 + Math.min(openness(c), 120) * 1.6) - (this.proj(t, a.x) * 0.5 + Math.min(openness(a), 120) * 1.6))[0];
         // against a high line, the keeper's kick goes over the top for a forward to run onto
         const space = this.spaceBehind(t);
         if (this.role(far) === 'FW' && space > 180 && Math.random() < 0.55) {

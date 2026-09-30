@@ -325,15 +325,32 @@
     if (avgStat(p) >= SPECIAL_UNLOCK_AVG || (luckChance > 0 && Math.random() < luckChance)) { p.specialUnlocked = true; return true; }
     return false;
   }
+  // how much a rival's whole squad is lifted above its generated base. The squads are built once from
+  // a fixed rating, so without this the league stood still while our own players raced past 100 -
+  // promotion ended up feeling like a formality. Three parts:
+  //  - the club's own off-season strengthening (clubMods, which used to only touch the sim rating)
+  //  - the higher tier simply being a tougher place
+  //  - chasing part of the gap to our starting eleven, so they close in without ever overtaking by default
+  function rivalLift(club) {
+    const m = (State.clubMods || {})[club.id] || { r: 0 };
+    const pref = club.tier === 'prefecture';
+    const xi = State.lineup.map((id) => State.roster.find((q) => q.id === id)).filter(Boolean);
+    const ours = xi.length ? xi.reduce((a, p) => a + avgStat(p), 0) / xi.length : 50;
+    const sq = club.roster(), theirs = sq.reduce((a, p) => a + avgStat(p), 0) / sq.length;
+    const own = m.r + (pref ? 4 : 0) + (club.gatekeeper ? 4 : 0);
+    const chase = Math.max(0, ours - (theirs + own)) * (pref ? 0.8 : 0.7);
+    return Math.round(own + chase);
+  }
   // an opponent's eleven for this season: signed players are replaced, and ex-Hamakaze players turn up in the rival's kit
   function oppRoster(club) {
     const taken = new Set(State.roster.map((p) => p.id).concat(State.bought || []));
     // the rest of the league keeps developing off-screen too (see the weekly tick in WeekEnd) -
     // applied here, read-only, rather than mutating the shared squad array club.roster() returns
     const growth = (State.rivalGrowth && State.rivalGrowth[club.id]) || {};
+    const lift = rivalLift(club), cap = statCap();
     const base = club.roster().map((p, i) => {
-      const g = growth[p.id];
-      const grown = g ? Object.assign({}, p, { stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, Math.min(94, v + (g[k] || 0))])) }) : p;
+      const g = growth[p.id] || {};
+      const grown = Object.assign({}, p, { stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, Math.min(cap, Math.round(v + (g[k] || 0) + lift))])) });
       if (!taken.has(grown.id)) return grown;
       return Object.assign({}, grown, { id: grown.id + '_rep', name: pick(GEN_GIVEN), trait: '', stats: Object.fromEntries(Object.entries(grown.stats).map(([k, v]) => [k, v - 4])), look: Object.assign({}, grown.look, { hair: pick(HAIRS)[0], key: grown.look.key + '_rep' }) });
     });
@@ -2666,8 +2683,7 @@
       s.notes.unshift('ホーム観客 ' + att + '人（地元選手 ' + Math.round(State.localRatio() * 11) + '人）　入場料 +' + inc + '万円');
     } else { State.budget += 3; s.notes.unshift('アウェイ遠征　分配金 +3万円'); }
     // the rest of the league doesn't stand still either - a small, quiet weekly nudge for a
-    // random player at a random club, read back in oppRoster(). Capped per stat (Math.min(94, ...)
-    // there) so this settles rather than spiraling over many seasons.
+    // random player at a random club, read back in oppRoster() (capped at the current stat cap there).
     State.rivalGrowth = State.rivalGrowth || {};
     for (const c of League.ALL_CLUBS) {
       if (Math.random() >= 0.4) continue;
@@ -2945,9 +2961,10 @@
   }
   function PromotionShootout(gk) {
     const home = State.lineup.map((id) => State.roster.find((q) => q.id === id)).filter((p) => p.pos !== 'GK').sort((a, b) => b.stats.sht - a.stats.sht).slice(0, 5);
-    const away = gk.roster().filter((p) => p.pos !== 'GK').sort((a, b) => b.stats.sht - a.stats.sht).slice(0, 5);
+    const gkSquad = oppRoster(gk).roster;
+    const away = gkSquad.filter((p) => p.pos !== 'GK').sort((a, b) => b.stats.sht - a.stats.sht).slice(0, 5);
     const homeGK = State.roster.find((p) => p.pos === 'GK');
-    const awayGK = gk.roster().find((p) => p.pos === 'GK');
+    const awayGK = gkSquad.find((p) => p.pos === 'GK');
     const pOf = (kicker, keeper) => clamp(0.62 + ((kicker.stats.sht || 50) - (keeper ? keeper.stats.def : 50)) / 300, 0.35, 0.92);
     const seq = []; let hs = 0, as = 0, i = 0;
     const takeKick = (side, kicker, keeper) => { const made = Math.random() < pOf(kicker, keeper); seq.push({ side, kicker, made }); return made; };
@@ -3134,7 +3151,11 @@
     const cardRect = (i) => ({ x: 10, y: 60 + (i - s.off) * 30, w: 200, h: 28 });
     s.off = 0;
     const VIS = 6;
-    const scroll = (n) => { s.off = clamp(s.sel - (VIS - 2), 0, Math.max(0, n - VIS)); };
+    // keep the cursor visible when it moves by key, but leave a tapped page alone - on a phone the
+    // pager buttons are the only way to reach anyone past the first few cards
+    const scroll = (n) => { if (s.sel < n) s.off = clamp(s.off, s.sel - VIS + 1, s.sel); s.off = clamp(s.off, 0, Math.max(0, n - VIS)); };
+    const doneRect = (n) => ({ x: 10, y: 60 + Math.min(VIS, n) * 30 + 4, w: n > VIS ? 124 : 200, h: 22 });
+    const pageRects = (n) => { const d = doneRect(n); return { up: { x: 138, y: d.y, w: 34, h: 22 }, down: { x: 176, y: d.y, w: 34, h: 22 } }; };
     s.update = (dt) => {
       s.t += dt;
       if (s.flash) { s.flash.t += dt; if (s.flash.t > 2) s.flash = null; }
@@ -3167,11 +3188,16 @@
         if (E.clickedIn(tabRelR) && s.tab !== 'release') { s.tab = 'release'; s.sel = 0; s.off = 0; Sound.play('cursor'); }
         if (Input.hit('c3')) { s.tab = s.tab === 'sign' ? 'release' : 'sign'; s.sel = 0; s.off = 0; Sound.play('cursor'); }
         const list = s.tab === 'sign' ? cands() : State.roster;
-        if (Input.hit('up')) { s.sel = (s.sel + list.length) % (list.length + 1); Sound.play('cursor'); }
-        if (Input.hit('down')) { s.sel = (s.sel + 1) % (list.length + 1); Sound.play('cursor'); }
-        scroll(list.length);
+        if (Input.hit('up')) { s.sel = (s.sel + list.length) % (list.length + 1); Sound.play('cursor'); scroll(list.length); }
+        if (Input.hit('down')) { s.sel = (s.sel + 1) % (list.length + 1); Sound.play('cursor'); scroll(list.length); }
+        s.off = clamp(s.off, 0, Math.max(0, list.length - VIS));
+        if (list.length > VIS) {
+          const pr = pageRects(list.length);
+          if (E.clickedIn(pr.up) && s.off > 0) { s.off = Math.max(0, s.off - (VIS - 1)); Sound.play('cursor'); }
+          if (E.clickedIn(pr.down) && s.off + VIS < list.length) { s.off = Math.min(list.length - VIS, s.off + (VIS - 1)); Sound.play('cursor'); }
+        }
         list.forEach((c, i) => { if (i >= s.off && i < s.off + VIS && E.clickedIn(cardRect(i))) { s.sel = i; Sound.play('cursor'); } });
-        const doneR = { x: 10, y: 60 + Math.min(VIS, list.length) * 30 + 4, w: 200, h: 22 };
+        const doneR = doneRect(list.length);
         if (E.clickedIn(doneR)) s.sel = list.length;
         if (State.auto && s.t > 1) { s.phase = 'summary'; s.t = 0; return; }
         if (s.tab === 'sign') {
@@ -3257,9 +3283,16 @@
             text(g, '年齢' + (c.age || '?') + '　やる気' + (State.morale[c.id] ?? 60), r.x + 24 + (sel ? 4 : 0), r.y + 15, { size: 8, color: '#6d4f3a' });
           }
         });
-        const doneR = { x: 10, y: 60 + Math.min(VIS, list.length) * 30 + 4, w: 200, h: 22 };
+        const doneR = doneRect(list.length);
         panel(g, doneR.x + (s.sel === list.length ? 4 : 0), doneR.y, doneR.w, doneR.h, s.sel === list.length ? 'gold' : 'dark');
-        text(g, '移籍市場を閉じる', doneR.x + 100, doneR.y + 5, { size: 9, align: 'center', color: s.sel === list.length ? '#2a1a24' : '#ffffff' });
+        text(g, '移籍市場を閉じる', doneR.x + doneR.w / 2, doneR.y + 5, { size: 9, align: 'center', color: s.sel === list.length ? '#2a1a24' : '#ffffff' });
+        if (list.length > VIS) {
+          const pr = pageRects(list.length), canUp = s.off > 0, canDown = s.off + VIS < list.length;
+          panel(g, pr.up.x, pr.up.y, pr.up.w, pr.up.h, canUp ? (E.hoverIn(pr.up) ? 'gold' : 'sky') : 'dark');
+          text(g, '▲', pr.up.x + pr.up.w / 2, pr.up.y + 5, { size: 9, align: 'center', color: canUp ? '#10304f' : '#5a6488' });
+          panel(g, pr.down.x, pr.down.y, pr.down.w, pr.down.h, canDown ? (E.hoverIn(pr.down) ? 'gold' : 'sky') : 'dark');
+          text(g, '▼', pr.down.x + pr.down.w / 2, pr.down.y + 5, { size: 9, align: 'center', color: canDown ? '#10304f' : '#5a6488' });
+        }
         const c = list[s.sel];
         panel(g, 218, 56, 256, 210, 'paper');
         if (c && s.tab === 'sign') {
@@ -3291,7 +3324,7 @@
           text(g, d.full || d.name, 304, 76, { size: 11, color: '#2a1a24' });
           text(g, (d.age ? d.age + '歳 ' : '') + d.pos + '　やる気 ' + (State.morale[d.id] ?? 60), 304, 92, { size: 8, color: '#6d4f3a' });
           STAT_KEYS.forEach((k, i) => {
-            const y = 122 + i * 12;
+            const y = 140 + i * 11;
             text(g, STAT_NAMES[k], 228, y, { size: 8, color: '#2a1a24' });
             drawGrade(g, 280, y, d.stats[k], 11);
             statBar(g, 294, y + 1, 140, d.stats[k], STAT_COLORS[k]);
@@ -3299,8 +3332,8 @@
           });
           const dest = destinationFor(d);
           const err = canRelease(d);
-          text(g, '放出すると：' + (dest.kind === 'staff' ? 'クラブにコーチとして残る' : dest.kind === 'rival' ? 'ライバルクラブへ移籍する' : '町を出る（いつか戻るかも）'), 228, 196, { size: 8, color: '#2f86c4' });
-          if (err) text(g, '※' + err, 228, 210, { size: 8, color: '#e0474c' });
+          text(g, '放出すると：' + (dest.kind === 'staff' ? 'クラブにコーチとして残る' : dest.kind === 'rival' ? 'ライバルクラブへ移籍する' : '町を出る（いつか戻るかも）'), 228, 200, { size: 8, color: '#2f86c4' });
+          if (err) text(g, '※' + err, 228, 214, { size: 8, color: '#e0474c' });
           panel(g, 250, 238, 214, 24, err ? ['#2a1a24', '#c9bda8', '#a89c86', '#e0d6c4'] : E.hoverIn({ x: 250, y: 238, w: 214, h: 24 }) ? 'gold' : 'crimson');
           text(g, 'Z / クリック：放出する', 357, 244, { size: 9, align: 'center', color: err ? '#7a6e5a' : '#ffffff' });
         } else {
@@ -3420,7 +3453,7 @@
 
   // ---------------- entry ----------------
   window.Scenes = {
-    State, Save,
+    State, Save, oppRoster,
     start(name, o) {
       State.auto = !!(o && o.auto);
       const map = { title: Title, intro: Intro, hub: () => Hub(true), roster: Roster, train: Training, tactics: Tactics, vs: Versus, pre: PreMatch,
