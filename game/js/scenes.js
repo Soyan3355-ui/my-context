@@ -1949,7 +1949,9 @@
         drawPortrait(g, p.id, 'normal', 8, 237, 0.5);
         text(g, '「' + p.nick + '」' + p.name + '　' + p.pos + '　特性：' + p.trait, 38, 239, { size: 9, color: '#2a1a24' });
         STAT_KEYS.forEach((k, i) => { const x = 330 + i * 28; text(g, STAT_NAMES[k].slice(0, 2), x, 240, { size: 7, color: '#6d4f3a' }); drawGrade(g, x + 15, 239, p.stats[k], 10); });
-        const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => (c.kind === 'bad' ? '✕' : '♪') + byId(c.ids.find((x) => x !== p.id)).name + '「' + c.name + '」');
+        // a combo partner may have left the club - only list the ones still on the roster
+        const rel = Data.COMBOS.filter((c) => c.ids.includes(p.id)).map((c) => ({ c, mate: byId(c.ids.find((x) => x !== p.id)) })).filter((r) => r.mate)
+          .map(({ c, mate }) => (c.kind === 'bad' ? '✕' : '♪') + mate.name + '「' + c.name + '」');
         text(g, rel.length ? '相性：' + rel.join('　') : p.traitDesc, 38, 252, { size: 8, color: '#6d4f3a' });
       } else if (s.tacHover) {
         const T = Data.TACTICS[s.tacHover];
