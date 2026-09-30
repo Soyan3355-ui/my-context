@@ -157,66 +157,25 @@
     }
   }
   function faDef(id) { return Data.FREE_AGENTS.find((d) => d.id === id) || (State.extraFA || []).find((d) => d.id === id); }
-  function lookFor(id) {
-    const d = State.roster.find((q) => q.id === id) || faDef(id) || (State.departed || []).map((x) => x.p).find((q) => q && q.id === id)
-      || League.ALL_CLUBS.map((c) => c.roster().find((q) => q.id === id)).find(Boolean);
-    return d ? d.look : null;
+
+  // players without a hand-made portrait (generated free agents, rival squad members, the
+  // prefecture captains) are drawn by Portraits.fromLook from the same parts as the hand-made
+  // cast, dressed for where they are: our kit, their club's kit, or everyday clothes for a free agent
+  function casualFor(job) {
+    if (/会社員|職員/.test(job || '')) return 'office';
+    if (/高校|学校|学生/.test(job || '')) return 'student';
+    if (/漁師/.test(job || '')) return 'fisher';
+    if (/郵便/.test(job || '')) return 'courier';
+    return 'club';
   }
-  const FAKE_PORTRAITS = {};
-  // generated players (free agents, generic rival squad members) have no hand-painted portrait
-  // in Portraits.js. This used to just crop the tiny 16x16 walking sprite and blow it up 3x,
-  // which reads as a blurry, blocky mess next to the hand-drawn cast - build a proper (if
-  // simpler) face at native 48x48 resolution instead, from the same look data the sprite uses.
-  function genericPortrait(look) {
-    const [c, g] = E.makeCanvas(48, 48);
-    const skin = look.skin || '#e8b088', skinD = look.skinD || '#c48860';
-    const hair = look.hair || '#2a1a24', hairD = look.hairD || '#140c12';
-    const shirt = look.shirt || '#4fb4e8', shirtD = look.shirtD || '#2f86c4';
-    const style = look.style || 'short';
-    const cx = 24;
-    // shoulders + collar, peeking in at the bottom like the hand-drawn portraits
-    Art.px(g, shirtD, 2, 39, 44, 9); Art.px(g, shirt, 2, 37, 44, 3);
-    if (look.collar) Art.px(g, look.collar, cx - 5, 37, 10, 2);
-    // neck: fills the gap between the head oval's chin and the shoulders below
-    Art.px(g, skin, cx - 5, 26, 10, 12); Art.px(g, skinD, cx + 1, 26, 4, 12);
-    // head: an oval built from per-row half-widths, shaded darker on the right
-    const rows = [[6, 8], [7, 11], [8, 13], [9, 14], [10, 15], [11, 16], [12, 16], [13, 16], [14, 16], [15, 16],
-      [16, 16], [17, 16], [18, 16], [19, 16], [20, 16], [21, 15], [22, 15], [23, 14], [24, 13], [25, 11], [26, 9], [27, 6]];
-    if (style === 'mask') {
-      // a solid wrestling mask instead of a face - matches the game's own 'mask'/'helmet' sprite styles
-      for (const [y, hw] of rows) Art.px(g, hair, cx - hw, y, hw * 2, 1);
-      Art.px(g, '#ffffff', cx - 6, 17, 4, 3); Art.px(g, '#ffffff', cx + 2, 17, 4, 3);
-    } else {
-      for (const [y, hw] of rows) { Art.px(g, skin, cx - hw, y, hw * 2, 1); Art.px(g, skinD, cx + Math.round(hw * 0.3), y, hw - Math.round(hw * 0.3), 1); }
-      // eyes, brows, blush, mouth
-      Art.px(g, hairD, cx - 8, 16, 4, 1); Art.px(g, hairD, cx + 4, 16, 4, 1);
-      Art.px(g, '#2a1a24', cx - 7, 18, 3, 2); Art.px(g, '#2a1a24', cx + 4, 18, 3, 2);
-      Art.px(g, '#ffffff', cx - 6, 18, 1, 1); Art.px(g, '#ffffff', cx + 5, 18, 1, 1);
-      if (!look.noBlush) { Art.px(g, '#e8938a', cx - 10, 22, 2, 1); Art.px(g, '#e8938a', cx + 8, 22, 2, 1); }
-      Art.px(g, '#8a4a3a', cx - 3, 24, 6, 1);
-      // hair, by the same generic style names the walking sprite already uses
-      if (style === 'helmet') { for (const [y, hw] of rows.slice(0, 9)) Art.px(g, '#9aa0b0', cx - hw - 1, y, hw * 2 + 2, 1); Art.px(g, '#6a707e', cx - 16, 14, 32, 1); }
-      else if (style !== 'bald') {
-        const cap = rows.slice(0, 9);
-        for (const [y, hw] of cap) Art.px(g, hair, cx - hw - 1, y, hw * 2 + 2, 1);
-        if (style === 'spiky') { for (let i = -3; i <= 3; i++) Art.px(g, hair, cx + i * 5 - 1, 6 - Math.abs(i % 2) * 3, 3, 4); }
-        else if (style === 'pomp') { Art.px(g, hair, cx - 2, 2, 13, 6); Art.px(g, hairD, cx + 8, 3, 3, 5); }
-        else if (style === 'perm') { Art.px(g, hair, cx - 15, 5, 6, 6); Art.px(g, hair, cx - 6, 2, 6, 6); Art.px(g, hair, cx + 4, 2, 6, 6); Art.px(g, hair, cx + 11, 5, 6, 6); }
-        else if (style === 'ponytail') { Art.px(g, hair, cx + 15, 13, 5, 14); Art.px(g, hairD, cx + 15, 25, 5, 2); }
-        else if (style === 'bob' || style === 'long') { const tail = style === 'long' ? 30 : 24; Art.px(g, hair, cx - 17, 10, 4, tail - 10); Art.px(g, hair, cx + 13, 10, 4, tail - 10); }
-        Art.px(g, hairD, cx - 16, 8, 32, 1);
-      }
-    }
-    Art.outline(c);
-    return c;
-  }
-  function spritePortrait(id) {
-    if (FAKE_PORTRAITS[id]) return FAKE_PORTRAITS[id];
-    const look = lookFor(id);
-    if (!look) return null;
-    const c = genericPortrait(look);
-    FAKE_PORTRAITS[id] = c;
-    return c;
+  function spritePortrait(id, expr) {
+    if (!window.Portraits || !Portraits.fromLook) return null;
+    const mine = State.roster.find((q) => q.id === id);
+    let d = mine, body = mine ? (mine.pos === 'GK' ? 'gk' : 'team') : null;
+    if (!d) { d = faDef(id) || (State.departed || []).map((x) => x.p).find((q) => q && q.id === id); if (d) body = casualFor(d.job); }
+    if (!d) { d = League.ALL_CLUBS.map((c) => c.roster().find((q) => q.id === id)).find(Boolean); body = 'club'; }
+    if (!d || !d.look) return null;
+    return Portraits.fromLook(id, d.look, { body, age: d.age }, expr || 'normal');
   }
   const GEN_SURNAMES = ['岬', '汐田', '磯部', '浜口', '波多野', '網元', '潮崎', '船橋', '灯台守', '入江', '小浜', '渚沢'];
   const GEN_GIVEN = ['カイト', 'リク', 'ナミ', 'ユウ', 'ショウ', 'ミオ', 'タクミ', 'アオイ', 'ケイ', 'ハヤテ', 'ツムギ', 'ゴロウ'];
@@ -439,7 +398,7 @@
     return s;
   }
 
-  function portrait(id, expr) { if (window.Portraits && Portraits.ids.includes(id)) return Portraits.get(id, expr || 'normal'); return spritePortrait(id); }
+  function portrait(id, expr) { if (window.Portraits && Portraits.ids.includes(id)) return Portraits.get(id, expr || 'normal'); return spritePortrait(id, expr); }
   function drawPortrait(g, id, expr, x, y, scale, flip) {
     const img = portrait(id, expr);
     if (!img) return;

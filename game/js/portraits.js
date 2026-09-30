@@ -1,5 +1,5 @@
 /* ハマカゼFC — procedural 48x48 character portraits (bust shots).
- * Plain browser script. Exposes window.Portraits = { SIZE, ids, exprs, get(id, expr) }.
+ * Plain browser script. Exposes window.Portraits = { SIZE, ids, exprs, get(id, expr), fromLook(key, look, opts, expr) }.
  * Every portrait is built from layered pixel parts (back hair, neck, body, collar,
  * ears, head, beard, hair, accessories). A part-aware pass shades skin under hair
  * and draws 1px outlines wherever a part sits on top of something behind it.
@@ -1615,13 +1615,231 @@
     }
   };
 
+  // ------------------------------------------------------------------ generated characters
+  // Players with no hand-made entry (generated free agents, rival squad members, the prefecture
+  // captains) are assembled from the same parts as the hand-made cast: a head profile, one of the
+  // eye sets, a hair mask drawn per hairstyle and auto-shaded by maskLayer, a body, and small
+  // face/accessory details - all seeded from the player's key so each face is stable and distinct.
+  function hexRgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  function rgbHex(r, g, bl) {
+    var f = function (v) { v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? '0' : '') + v.toString(16); };
+    return '#' + f(r) + f(g) + f(bl);
+  }
+  function tint(h, amt) {
+    var c = hexRgb(h);
+    if (amt >= 0) return rgbHex(c[0] + (255 - c[0]) * amt, c[1] + (255 - c[1]) * amt, c[2] + (255 - c[2]) * amt);
+    return rgbHex(c[0] * (1 + amt), c[1] * (1 + amt), c[2] * (1 + amt * 0.8));
+  }
+  function seeded(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return function () {
+      h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16;
+      return (h >>> 0) / 4294967296;
+    };
+  }
+  function rint(rng, a, b2) { return a + Math.floor(rng() * (b2 - a + 1)); }
+  function rpick(rng, arr) { return arr[Math.floor(rng() * arr.length)]; }
+  function nearestSkin(hex) {
+    if (!hex) return SKIN.std;
+    var c = hexRgb(hex), best = 'std', bd = 1e9;
+    ['std', 'fair', 'mid', 'tan', 'ruddy'].forEach(function (k) {
+      var s = hexRgb(SKIN[k].B), d = (s[0] - c[0]) * (s[0] - c[0]) + (s[1] - c[1]) * (s[1] - c[1]) + (s[2] - c[2]) * (s[2] - c[2]);
+      if (d < bd) { bd = d; best = k; }
+    });
+    return SKIN[best];
+  }
+  // per-column [top, bottom] ranges -> the [y, x0, x1, ...] span rows maskLayer expects
+  function colsToShape(cols) {
+    var rows = {};
+    for (var x = 0; x < S; x++) {
+      var c = cols[x];
+      if (!c) continue;
+      for (var y = Math.max(0, c[0]); y <= Math.min(S - 1, c[1]); y++) (rows[y] = rows[y] || []).push(x);
+    }
+    var out = [];
+    Object.keys(rows).map(Number).sort(function (a, b2) { return a - b2; }).forEach(function (y) {
+      var xs = rows[y], row = [y], s0 = xs[0], prev = xs[0];
+      for (var i = 1; i <= xs.length; i++) {
+        if (i < xs.length && xs[i] === prev + 1) { prev = xs[i]; continue; }
+        row.push(s0, prev);
+        if (i < xs.length) { s0 = xs[i]; prev = xs[i]; }
+      }
+      out.push(row);
+    });
+    return out;
+  }
+  // hair mask for a hairstyle name: a crown arc, a fringe of strands with a parting, sides of the
+  // style's length, plus spikes / a quiff / curls / back hair where the style has them
+  function genHair(style, rng) {
+    var P = {
+      short: { W: 15, y0: 3, base: 14, depth: 3, side: 20, sideW: 3, n: [4, 6] },
+      spiky: { W: 15, y0: 3, base: 15, depth: 4, side: 19, sideW: 3, n: [6, 7], spikes: true },
+      bob: { W: 16, y0: 3, base: 16, depth: 1, side: 29, sideW: 5, n: [7, 8] },
+      long: { W: 16, y0: 3, base: 16, depth: 2, side: 34, sideW: 5, n: [5, 7], back: 'long' },
+      ponytail: { W: 15, y0: 3, base: 14, depth: 2, side: 19, sideW: 3, n: [3, 4], back: 'tail' },
+      pomp: { W: 15, y0: 2, base: 12, depth: 1, side: 19, sideW: 3, n: [3, 3], quiff: true },
+      perm: { W: 17, y0: 3, base: 15, depth: 2, side: 24, sideW: 5, n: [6, 7], curl: true }
+    }[style] || null;
+    if (!P) return null;
+    var cols = {}, W = P.W, cx = 23.5;
+    var set = function (x, y0, y1) { if (x < 0 || x >= S || y1 < y0) return; var c = cols[x]; if (!c) cols[x] = [y0, y1]; else { c[0] = Math.min(c[0], y0); c[1] = Math.max(c[1], y1); } };
+    var crownTop = function (x) { var dx = Math.abs(x - cx) / (W + 0.5); return P.y0 + Math.round((1 - Math.sqrt(Math.max(0, 1 - dx * dx))) * 9); };
+    var x0 = Math.round(cx - W + 0.5), x1 = Math.round(cx + W - 0.5);
+    // fringe strands between the side locks, parted at one point
+    var fx0 = x0 + P.sideW, fx1 = x1 - P.sideW, fw = fx1 - fx0 + 1;
+    var n = rint(rng, P.n[0], P.n[1]);
+    var part = style === 'bob' ? -99 : fx0 + Math.round(fw * rpick(rng, [0.25, 0.3, 0.7, 0.75, 0.5]));
+    for (var x = x0; x <= x1; x++) {
+      var bottom;
+      if (x < fx0 || x > fx1) bottom = P.side - (Math.abs(x - cx) > W - 1 ? 1 : 0);
+      else {
+        var u = (x - fx0) / fw * n, t = u - Math.floor(u);
+        bottom = P.base + Math.round(P.depth * (1 - Math.abs(2 * t - 1)));
+        if (Math.abs(x - part) <= 1) bottom = Math.min(bottom, 12 + (Math.abs(x - part) === 1 ? 1 : 0));
+      }
+      set(x, crownTop(x), bottom);
+    }
+    if (P.spikes) {
+      for (var k = 0; k < 5; k++) {
+        var sx = x0 + 3 + Math.round((k + 0.5) * (x1 - x0 - 6) / 5) + rint(rng, -1, 1), h = rint(rng, 3, 4);
+        for (var d = -2; d <= 2; d++) set(sx + d, crownTop(sx) - h + Math.abs(d) * 2, crownTop(sx + d));
+      }
+    }
+    if (P.quiff) {
+      // a swept-up pompadour, heavier on the parting's far side
+      var qs = part < cx ? 1 : -1;
+      for (x = x0 + 2; x <= x1 - 2; x++) { var q = Math.round(4 * Math.max(0, 1 - Math.abs(x - (cx + qs * 3)) / 11)); set(x, crownTop(x) - q, crownTop(x)); }
+      var lock = Math.round(cx - qs * 4);
+      for (x = lock - 1; x <= lock + 1; x++) set(x, 12, 16 - Math.abs(x - lock));
+    }
+    if (P.curl) {
+      for (x = x0 + 1; x <= x1 - 1; x += 5) for (var e2 = -1; e2 <= 1; e2++) set(x + e2, crownTop(x) - 2 + Math.abs(e2), crownTop(x));
+    }
+    // a stray tuft at the crown on some heads, for a bit of individuality
+    if (!P.quiff && !P.curl && rng() < 0.35) { var tfx = Math.round(cx + rint(rng, -5, 3)); set(tfx, P.y0 - 2, P.y0); set(tfx + 1, P.y0 - 3, P.y0); set(tfx + 2, P.y0 - 1, P.y0); }
+    var hair = { shape: colsToShape(cols), curl: !!P.curl };
+    // crown highlight arcs and a few strand shadows through the fringe
+    var hx = x0 + 4 + rint(rng, 0, 2);
+    hair.hi = [[P.y0 + 2, hx + 2, hx + 6], [P.y0 + 3, hx, hx + 2, hx + 7, hx + 8], [P.y0 + 4, hx - 1, hx]];
+    hair.sh = [];
+    for (k = 1; k < n; k++) {
+      var bx = fx0 + Math.round(k * fw / n);
+      for (var y = 13; y < P.base; y++) hair.sh.push([y, bx, bx]);
+    }
+    var back = null, bc = {};
+    var setB = function (x, y0, y1) { if (x < 0 || x >= S) return; bc[x] = [y0, y1]; };
+    if (P.back === 'long') { for (x = x0 - 1; x <= x1 + 1; x++) setB(x, 10, Math.abs(x - cx) > 10 ? 37 : 33); }
+    if (P.back === 'tail') {
+      var tx = rng() < 0.5 ? 1 : -1;
+      for (var yy = 8; yy <= 30; yy++) {
+        var w = yy < 12 ? 2 : yy < 24 ? 3 : 2, c0 = tx > 0 ? 39 + Math.round((yy - 8) * 0.18) : 8 - Math.round((yy - 8) * 0.18);
+        for (x = c0 - w; x <= c0 + w; x++) (bc[x] = bc[x] ? [Math.min(bc[x][0], yy), Math.max(bc[x][1], yy)] : [yy, yy]);
+      }
+      hair.tieX = tx > 0 ? 38 : 8;
+    }
+    if (Object.keys(bc).length) back = { shape: colsToShape(bc), base: 'd' };
+    return { hair: hair, back: back };
+  }
+
+  var IRISES = [
+    { I: '#4a3020', i: '#7a5232', P: '#2a1a14' }, { I: '#3a2418', i: '#6a4428', P: '#1e120c' },
+    { I: '#5a3a2a', i: '#8a5a3a', P: '#2a1a1a' }, { I: '#2a4a7a', i: '#6a8ac8', P: '#10203a' },
+    { I: '#2e7a4a', i: '#6ac08a', P: '#123a22' }, { I: '#6a4a1a', i: '#b8883a', P: '#3a2410' }
+  ];
+  var GEN_MOUTHS = [null, { normal: ['m....m', '.mmmm.'] }, { normal: ['mmmm'], determined: ['mmmmmm'] }, { normal: ['mmm.'] }, { normal: ['.mm.'] }];
+  var CASUAL_BODIES = { office: 'shirt', student: 'hoodie', fisher: 'stripes', courier: 'hivis' };
+
+  // build a character definition for drawing from a player's look data; opts.body picks the
+  // outfit ('team', 'gk', 'club' with opts.ramp, or a casual one), opts.age tunes the face
+  function genChar(key, look, opts) {
+    var rng = seeded(String(key));
+    var age = opts.age || 25;
+    var elder = age >= 50, veteran = age >= 31, young = age <= 20;
+    var style = look.style || 'short';
+    if (style === 'mask' || style === 'helmet') style = 'short';
+    var hairCol = look.hair || '#2a1a24', hairD = look.hairD || tint(hairCol, -0.35);
+    var skin = elder ? SKIN.old : nearestSkin(look.skin);
+    var big = look.body === 'big', small = look.body === 'small';
+    var ch = {
+      skin: skin,
+      head: big ? 'square' : small ? 'slender' : rpick(rng, ['std', 'std', 'slender', 'square', elder ? 'old' : 'round']),
+      dw: big ? 2 : small ? -2 : rint(rng, -2, 1),
+      eye: young ? rpick(rng, ['big', 'big', 'round', 'calm']) : veteran ? rpick(rng, ['small', 'sharp', 'sleepy', 'calm']) : rpick(rng, ['calm', 'sharp', 'small', 'big', 'sleepy']),
+      eyeX: 14, eyeY: rpick(rng, [20, 21]),
+      iris: rpick(rng, IRISES.slice(0, rng() < 0.8 ? 3 : 6)),
+      brow: { col: tint(hairD, -0.25), thick: veteran && rng() < 0.5 ? 2 : 1, dy: rpick(rng, [0, 0, -1]) },
+      blush: young ? true : rng() < 0.12 ? 'always' : false,
+      mouthY: rpick(rng, [31, 32]),
+      hairPal: { h: tint(hairCol, 0.35), H: hairCol, d: hairD, D: tint(hairD, -0.35) }, hairLine: tint(hairD, -0.55)
+    };
+    var gm = rpick(rng, GEN_MOUTHS); if (gm) ch.mouths = gm;
+    // curls carry their own texture, so keep their highlight close to the base colour
+    if (style === 'perm') ch.hairPal.h = tint(hairCol, 0.15);
+    var hs = style === 'bald' ? null : genHair(style, rng);
+    if (hs) { ch.hair = hs.hair; if (hs.back) ch.back = hs.back; }
+    else if (elder || rng() < 0.5) ch.hair = { shape: [[15, 9, 12, 35, 38], [16, 9, 11, 36, 38], [17, 9, 11, 36, 38], [18, 9, 10, 37, 38], [19, 9, 10, 37, 38], [20, 10, 10, 37, 37]] };
+    if (style === 'bald') ch.head = 'bald';
+    // body
+    var body = opts.body || 'club';
+    if (CASUAL_BODIES[body]) ch.body = CASUAL_BODIES[body];
+    else if (body === 'team' || body === 'gk') ch.body = body;
+    else {
+      var sh = look.shirt || '#8a8a92';
+      ch.body = 'club';
+      ch.club = { ramp: { L: look.shirtL && look.shirtL !== '#ffffff' ? look.shirtL : tint(sh, 0.3), B: sh, S: look.shirtD || tint(sh, -0.3), D: tint(look.shirtD || sh, -0.35) }, trim: look.collar || '#2a1a24', trim2: tint(look.collar || '#2a1a24', -0.3) };
+    }
+    // small details: stubble or a moustache on older men, freckles on some youngsters, lines with age
+    var faceBits = [];
+    if (veteran && rng() < 0.35) faceBits.push('stubble');
+    if (age >= 38 && rng() < 0.3) faceBits.push('moustache');
+    if (young && rng() < 0.3) faceBits.push('freckles');
+    if (age >= 40) faceBits.push('lines');
+    var glasses = rng() < (age >= 45 ? 0.35 : 0.12) ? rpick(rng, ['rect', 'round']) : null;
+    var band = !glasses && !young && rng() < 0.1 ? rpick(rng, ['#e0474c', '#2f86c4', '#fdfdf8']) : (young && rng() < 0.15 ? '#e0474c' : null);
+    ch.face = function (b) {
+      var D = skin.D, Sh = skin.S;
+      // stubble: a light stipple along the jawline only, in the skin's own shadow tone
+      if (faceBits.indexOf('stubble') >= 0) for (var y = 34; y <= 37; y++) for (var x = 15; x <= 32; x++) {
+        if (b.part(x, y) !== Z.head || b.k[y * S + x] || b.part(x, y + 1) === Z.head && y < 36 && x > 18 && x < 29) continue;
+        if ((x + y) % 2 === 0) b.set(x, y, Sh, 'head', 1);
+      }
+      if (faceBits.indexOf('moustache') >= 0) spans(b, [[30, 20, 27], [31, 19, 21, 26, 28]], tint(hairD, -0.1), 'head', 1);
+      if (faceBits.indexOf('freckles') >= 0) { var fr = [[15, 27], [17, 28], [16, 26], [31, 27], [30, 28], [32, 26]]; for (var i = 0; i < fr.length; i++) b.set(fr[i][0], fr[i][1], Sh, 'head', 1); }
+      if (faceBits.indexOf('lines') >= 0) { b.set(12, 23, D, 'head', 1); b.set(35, 23, D, 'head', 1); b.set(16, 30, Sh, 'head', 1); b.set(31, 30, Sh, 'head', 1); }
+    };
+    ch.acc = function (b) {
+      if (band) spans(b, [[12, 9, 38], [13, 9, 38]], function (x, y) { return y === 12 ? tint(band, 0.25) : band; }, 'acc');
+      if (hs && hs.hair.tieX) spans(b, [[8, hs.hair.tieX - 1, hs.hair.tieX + 1], [9, hs.hair.tieX - 1, hs.hair.tieX + 1]], rpick(seeded(key + 't'), ['#e0474c', '#2f86c4', '#ffd24a', '#3a3340']), 'acc');
+      if (glasses === 'rect') {
+        var F = '#3a3340', rect = ['FFFFFFFFFF', 'F........F', 'F........F', 'F........F', 'F........F', 'FFFFFFFFFF'];
+        pmap(b, 12, ch.eyeY - 1, rect, { F: F }, 'acc', 1); pmap(b, 26, ch.eyeY - 1, rect, { F: F }, 'acc', 1);
+        spans(b, [[ch.eyeY + 1, 22, 25], [ch.eyeY + 1, 10, 11, 36, 37]], F, 'acc', 1);
+        pmap(b, 19, ch.eyeY, ['.g', 'g.'], { g: '#e8f6ff' }, 'acc', 1); pmap(b, 33, ch.eyeY, ['.g', 'g.'], { g: '#e8f6ff' }, 'acc', 1);
+      } else if (glasses === 'round') {
+        var ring = ['..FFFF..', '.F....F.', 'F......F', 'F......F', 'F......F', '.F....F.', '..FFFF..'], G2 = '#6a3a24';
+        pmap(b, 12, ch.eyeY - 1, ring, { F: G2 }, 'acc', 1); pmap(b, 28, ch.eyeY - 1, ring, { F: G2 }, 'acc', 1);
+        spans(b, [[ch.eyeY + 1, 20, 27], [ch.eyeY + 1, 10, 11, 36, 37]], G2, 'acc', 1);
+      }
+    };
+    return ch;
+  }
+  var genCache = {};
+  function fromLook(key, look, opts, expr) {
+    opts = opts || {};
+    if (EXPRS.indexOf(expr) < 0) expr = 'normal';
+    var ck = key + '|' + (opts.body || '') + '|' + (opts.age || '') + '|' + expr;
+    if (!genCache[ck]) genCache[ck] = toCanvas(buildCh(genChar(key, look, opts), expr));
+    return genCache[ck];
+  }
+
   var IDS = ['otaki', 'nagisa', 'gen', 'morio', 'tsubame', 'kazuha', 'ponta', 'leo', 'haruki', 'tetsuyama', 'yukimaru', 'onigawara',
     'kawataro', 'mask', 'mame', 'shizuku', 'daifuku', 'hikaru', 'ume', 'kotaro',
     'kaoru', 'tatsumi', 'oyuki', 'gonzo', 'minato', 'sora', 'kenji', 'pochi'];
 
   // ------------------------------------------------------------------ render
-  function build(id, e) {
-    var ch = C[id];
+  function build(id, e) { return buildCh(C[id], e); }
+  function buildCh(ch, e) {
     var b = new Buf();
     if (ch.back) maskLayer(b, ch.back, ch.hairPal, 'hairB');
     if (ch.preBack) ch.preBack(b, e);
@@ -1699,6 +1917,7 @@
     SIZE: S,
     ids: IDS.slice(),
     exprs: EXPRS.slice(),
-    get: get
+    get: get,
+    fromLook: fromLook
   };
 })();
