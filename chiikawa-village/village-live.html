@@ -108,7 +108,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .item input[type=checkbox]{width:18px;height:18px;margin:2px 0 0;accent-color:#6aa56a}
 .item .sy{font-family:var(--body);font-size:11px;color:var(--sub);margin-top:1px}.item .sy.pend{color:var(--warn)}.item .sy a{color:var(--info)}
 .item .t{font-size:14px;overflow-wrap:anywhere}
-.item.done .t{color:var(--sub);text-decoration:line-through}
+.item.done .t{color:var(--sub);text-decoration:line-through}.item.done{opacity:.6}
 form.add{display:flex;gap:6px;margin:6px 0 4px}
 form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 .bt{font:inherit;font-size:13px;border:2px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:8px;padding:0 12px;cursor:pointer}
@@ -673,7 +673,8 @@ function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
 function renderMine(){const ts=TASKS.slice().sort((a,b)=>(!!a.done-!!b.done)||byTime(a,b));const nu=t=>safeUrl(t.notionUrl);
   const st=t=>t.sync==='ok'||(t.notionId&&!t.sync)?'Notion と同じ':t.sync==='pending'?'Notion へ反映待ち（次の見回りで）':'Notion にはまだありません（次の見回りで作ります）';
-  $('mine').innerHTML=ts.length?ts.map(t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span>${t.due?` <span class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</span>`:''}${!t.done&&t.progress?`<div class="pg"><span class="pgb"><i style="width:${+t.progress}%"></i></span><b>${+t.progress}%</b>${t.carried?'・持ち越し':''}${t.nextStep?`<br>次：${esc(t.nextStep)}`:''}</div>`:''}<div class="sy${t.sync==='pending'?' pend':''}">${t.notionId&&!t.sync?'Notion とつながっています':st(t)}${nu(t)?` <a href="${esc(nu(t))}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div></div>`).join(''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
+  const item=t=>`<div class="item${t.done?' done':''}"><input type="checkbox" id="t-${esc(t.id)}" data-t="${esc(t.id)}" ${t.done?'checked':''} aria-label="できた：${esc(t.title)}"><div><span class="t">${esc(t.title)}</span>${t.due?` <span class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</span>`:''}${!t.done&&t.progress?`<div class="pg"><span class="pgb"><i style="width:${+t.progress}%"></i></span><b>${+t.progress}%</b>${t.carried?'・持ち越し':''}${t.nextStep?`<br>次：${esc(t.nextStep)}`:''}</div>`:''}<div class="sy${t.sync==='pending'?' pend':''}">${t.notionId&&!t.sync?'Notion とつながっています':st(t)}${nu(t)?` <a href="${esc(nu(t))}" target="_blank" rel="noopener">Notion ↗</a>`:''}</div></div></div>`;const d0=dayStart(0);const now=ts.filter(t=>!t.done||(t.doneAt||0)>=d0),old=ts.filter(t=>t.done&&(t.doneAt||0)<d0).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0));const keepOld=$('mine').querySelector('details.olddone')?.open;
+  $('mine').innerHTML=ts.length?now.map(item).join('')+(old.length?`<details class="xdone olddone"${keepOld?' open':''}><summary>前の日までに終わった仕事（${old.length}件）を見る</summary>${old.slice(0,15).map(item).join('')}</details>`:''):'<p class="empty">自分の仕事を書いておくと、ハチワレが段取りに入れます。</p>';
   const n=ts.filter(t=>t.done).length;$('mcnt').textContent=ts.length?`${n} / ${ts.length} できた`:''}
 function renderRoster(){$('roster').innerHTML=ORDER.map(id=>{const r=ROLES[id],st=agentState(id),a=(STATUS.agents||{})[id];
   return `<div class="mem${st==='bench'?' bench':''}"><img src="${ICON[id]}" alt=""><div style="min-width:0"><div class="nm">${esc(NAMES[id])}<span class="role" style="--rc:${r[1]}">${esc(r[0])}</span></div>
@@ -874,7 +875,7 @@ function renderWork(){const c=workCalc();$('workCnt').textContent=WORK.length?`$
 
 
 // ---------- きょうの成果 ----------
-const dayStart=(off=0)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+off);return d.getTime()};
+function dayStart(off=0){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+off);return d.getTime()}
 function doneItems(from,to){const inR=t=>t&&t>=from&&t<to;const L=[];
   TASKS.forEach(t=>{if(t.done&&inR(t.doneAt))L.push({k:'s',t:t.doneAt,title:t.title,who:'soyan'})});
   BOARD.forEach(b=>{const t=b.doneAt||b.updatedAt;if(b.status==='done'&&inR(t)&&b.owner!=='そーやん')L.push({k:'c',t,title:b.title,who:Object.keys(NAMES).find(k=>NAMES[k]===b.owner)||'hachiware'})});
