@@ -69,11 +69,6 @@
       this.cam = { x: CX - W / 2, y: CY - VIEW_H / 2 - 30 };
       this.banners = []; this.popups = []; this.ticker = { lines: [], shown: 0 };
       this.meter = null; this.chanceCD = 8; this.pinchCD = 10;
-      // the rival's "no meter needed" quality roll (see aiQuality) used to fire on every single
-      // shot and every save against us with no cooldown at all, while our own equivalent roll only
-      // ever came around every 9-15s through chanceCD/pinchCD - so the rival was effectively never
-      // "off form" while we usually were. these mirror chanceCD/pinchCD to close that gap.
-      this.aiShotCD = 8; this.aiSaveCD = 10;
       this.netShake = [0, 0];
       this.evening = 0; // 0 day .. 1 evening
       this.pitch = Art.buildPitch();
@@ -375,7 +370,7 @@
           this.kiai[t] = Math.min(100, this.kiai[t] + dt * 5.5);
           if (this.order[t]) { this.order[t].t -= dt; if (this.order[t].t <= 0) this.order[t] = null; }
         }
-        this.chanceCD -= dt; this.pinchCD -= dt; this.aiShotCD -= dt; this.aiSaveCD -= dt;
+        this.chanceCD -= dt; this.pinchCD -= dt;
         for (let t = 0; t < 2; t++) if (this.counterT[t] > 0) this.counterT[t] -= dt;
         // pressing needs everyone to understand the triggers: re-roll who joins every second
         this.pressRollT -= dt; if (this.pressRollT <= 0) { this.pressRollT = 1; for (let t = 0; t < 2; t++) this.pressOn[t] = Math.random() < this.realize(t, 'press') + 0.05; }
@@ -426,6 +421,8 @@
 
     // projected x along team t's attacking direction
     proj(t, x) { return x * dirX(t); }
+    // room between the opponent's last line and their penalty box, seen from attacking team t
+    spaceBehind(t) { return this.proj(t, goalX(t) - dirX(t) * (Art.BOX_W + 6)) - this.proj(t, this.offsideX(t)); }
     // the furthest point attackers of team t may stand (offside line), as a world x
     offsideX(t) {
       const opp = this.team(1 - t).map((o) => this.proj(t, o.x)).sort((a, c) => c - a);
@@ -930,11 +927,14 @@
       }
       // long ball: skip midfield and hit the most advanced forward — any side will hoof it long when pressed deep,
       // but a team actually built around it (tac === 'long') reaches for it far more readily
-      const longMinded = tac === 'long' || (this.role(p) === 'DF' && pressure > 24 && this.proj(t, p.x) < this.proj(t, CX) - 20);
+      // a very high opposing line leaves acres behind it: any side, whatever its tactic, will look to
+      // play over it - that's the natural counter to a high press, and without it pressing had no risk
+      const openBehind = this.spaceBehind(t);
+      const longMinded = tac === 'long' || openBehind > 220 || (this.role(p) === 'DF' && pressure > 24 && this.proj(t, p.x) < this.proj(t, CX) - 20);
       if (longMinded && this.proj(t, p.x) < this.proj(t, CX) + 80 && best.k !== 'shoot') {
         const tgt = this.team(t).filter((m) => m !== p && !m.gk && this.role(m) === 'FW').sort((a, c) => this.proj(t, c.x) - this.proj(t, a.x))[0];
         if (tgt && dist(p.x, p.y, tgt.x, tgt.y) > 110) {
-          const s = (tac === 'long' ? 44 : 26) + 18 * this.realize(t) + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 22 ? 30 : 0);
+          const s = (tac === 'long' ? 44 : 26) + 18 * this.realize(t) + (this.role(p) === 'DF' ? 18 : 0) + rand(0, 16) + (pressure < 22 ? 30 : 0) + (openBehind > 180 ? 22 : 0);
           if (s > best.s) best = { k: 'long', s, m: tgt };
         }
       }
@@ -942,11 +942,14 @@
       else if (best.k === 'long') {
         const fw = best.m, oppDefs = this.team(1 - t).filter((o) => !o.gk);
         // space between the opponent's last line and their penalty box decides whether a ball in behind is on
-        const boxEdge = goalX(t) - dx * (Art.BOX_W + 6);
-        const space = (this.proj(t, boxEdge) - this.proj(t, this.offsideX(t)));
+        const space = this.spaceBehind(t);
         const slowest = oppDefs.filter((o) => this.role(o) === 'DF').sort((a2, c) => this.stat(a2, 'spd') - this.stat(c, 'spd'))[0];
-        // a clean run in behind needs real space AND a real pace advantage — not just "not much slower"
-        const behind = space > 130 && slowest && this.stat(fw, 'spd') > this.stat(slowest, 'spd') + 6;
+        // a clear pace edge makes it an obvious ball in behind; without one it's still worth trying
+        // against a high line (the runner starts facing goal, the defenders have to turn) - more so
+        // the more space there is, less so the slower the runner. This used to be a hard "6 points
+        // faster than the slowest defender" gate, so a quick back line meant it never happened at all.
+        const edge = slowest ? this.stat(fw, 'spd') - this.stat(slowest, 'spd') : 0;
+        const behind = space > 130 && !!slowest && (edge > 6 || Math.random() < clamp((space - 150) / 260 + edge / 60, 0, 0.6));
         const ltx = behind ? this.offsideX(t) + dx * Math.min(60, space - 40) : fw.x - dx * 10;
         if (behind) { fw.burst = 1.6; } else { fw.holdUp = true; } // marked tight: control it, then look to lay it off first-time
         this.doPass(p, fw, true, ltx, fw.y);
@@ -1111,23 +1114,22 @@
       let sigma = header ? Math.max(5, 100 - headSk) * 0.26 + dGoal * 0.07 + 3 : Math.max(5, 100 - sht) * (fk ? 0.3 : 0.42) + dGoal * (fk ? 0.06 : 0.1);
       if (oneOnOne) sigma *= 0.97;
       if (this.badge(p, 'finisher')) sigma *= 0.85;
-      // the human (or auto-mode's approximation) only ever gets a timing-quality roll on team 0's own
-      // shots and team 0's own keeper's saves — the rival attacker and rival keeper never got an
-      // equivalent roll at all, meaning skill only ever cut one way regardless of stats. Give them
-      // the same statistical roll the meter gives the human, just without needing an input to drive it.
-      const attackerQ = t === 0 ? q : this.aiQuality('shot'), defenderQ = t === 1 ? q : this.aiQuality('save');
+      // quality rolls happen only on a "big chance" - a shot that came through a timing meter (q is
+      // set: our chance meter, or our keeper's pinch meter on their shot). On that shot the human
+      // side uses the meter result and the rival side gets the same-distribution roll; on every other
+      // shot (crowded, header, meter on cooldown) neither side rolls. The rival used to roll on its
+      // own timer on any shot at all, so its keeper and shooters got boosts in exactly the crowded
+      // situations where ours never could - the main reason it converted far more than we did.
+      const attackerQ = t === 0 ? q : (q ? this.aiQuality() : null), defenderQ = t === 1 ? q : (q ? this.aiQuality() : null);
       const gk = this.gk(1 - t);
-      // a rare, flashy finisher: fires occasionally on a JUST-timed shot, or a JUST save for the keeper.
-      // the rival captain has no JUST-timing input to key off (the AI just shoots), so theirs rolls
-      // independently instead — a signature move the manager will have to scout and answer.
-      const special = t === 0 && attackerQ === 'just' && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.65
-        ? Data.SPECIALS[p.id]
-        : t === 1 && p.id === this.opp.captain && !header && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.22
-          ? this.specialFor(p) : null;
+      // a rare, flashy finisher: fires occasionally on a JUST-quality shot, or a JUST save for the keeper
+      // - the same trigger for our players and for the rival captain
+      const special = attackerQ === 'just' && (t === 0 || (p.id === this.opp.captain && !header)) && Data.SPECIALS[p.id] && p.def.specialUnlocked && Game.time - (this.specialCD[p.id] || -99) > 25 && Math.random() < 0.65
+        ? (t === 0 ? Data.SPECIALS[p.id] : this.specialFor(p)) : null;
       if (special) this.specialCD[p.id] = Game.time;
       const gkSpecial = t === 1 && defenderQ === 'just' && Data.SPECIALS[gk.id] && gk.def.specialUnlocked && Game.time - (this.specialCD[gk.id] || -99) > 25 && Math.random() < 0.65 ? Data.SPECIALS[gk.id] : null;
       if (gkSpecial) this.specialCD[gk.id] = Game.time;
-      if (attackerQ === 'just') sigma *= 0.3; else if (attackerQ === 'good') sigma *= 0.7; else if (attackerQ === 'bad') sigma *= 1.35;
+      if (attackerQ === 'just') sigma *= 0.3; else if (attackerQ === 'good') sigma *= 0.7; else if (attackerQ === 'bad') sigma *= 1.12;
       const aimY = CY + rand(-1, 1) * (GW / 2 - 4);
       const ty = aimY + (rand(-1, 1) + rand(-1, 1) + rand(-1, 1)) * 0.75 * sigma;
       const power = (header ? 170 + sht * 0.8 + (p.id === 'mask' ? 50 : 0) : fk ? 225 + sht * 1.3 : 240 + sht * 1.6) + (attackerQ === 'just' ? 90 : 0) + (special ? 40 : 0);
@@ -1142,7 +1144,7 @@
       if (gk.id === 'daifuku') pSave += 0.06;
       if (gk.team === 0 && this.combo('kabe') && dGoal < 110) { pSave += 0.12; this.comboFx('kabe'); }
       if (header && p.id === 'mask') pSave -= 0.1;
-      if (attackerQ === 'just') pSave -= 0.34; else if (attackerQ === 'good') pSave -= 0.12; else if (attackerQ === 'bad') pSave += 0.12;
+      if (attackerQ === 'just') pSave -= 0.34; else if (attackerQ === 'good') pSave -= 0.12; else if (attackerQ === 'bad') pSave += 0.05;
       if (defenderQ === 'just') pSave += 0.5; else if (defenderQ === 'good') pSave += 0.2; else if (defenderQ === 'bad') pSave -= 0.08;
       if (special) pSave -= 0.15;
       if (gkSpecial) pSave += 0.15;
@@ -1405,7 +1407,13 @@
       } else {
         // long kick / punt toward the most advanced open teammate
         const far = mates.sort((a, c) => (this.proj(t, c.x) + openness(c) * 0.8) - (this.proj(t, a.x) + openness(a) * 0.8))[0];
-        this.doPass(gk, far, true);
+        // against a high line, the keeper's kick goes over the top for a forward to run onto
+        const space = this.spaceBehind(t);
+        if (this.role(far) === 'FW' && space > 180 && Math.random() < 0.55) {
+          far.burst = 1.6;
+          this.doPass(gk, far, true, this.offsideX(t) + dirX(t) * Math.min(60, space - 40), far.y);
+          if (this.ball.pass) this.ball.pass.behind = true;
+        } else this.doPass(gk, far, true);
         this.ball.vz = 170;
         Sound.play('shoot', { vol: 0.4 });
       }
@@ -2453,15 +2461,8 @@
       } else if (d < 0.17) { m.result = 'good'; Sound.play('select'); this.popupMeter('GOOD!', '#9fdcff'); }
       else { m.result = 'bad'; Sound.play('miss_timing'); this.popupMeter('あっ…！', '#c9d6e6'); }
     }
-    // the rival has no timing meter of its own to drive a quality roll, but it deserves the same
-    // statistical shot at a well-taken finish or a well-judged save that auto-mode's meter gives the
-    // human — same distribution as resolveMeter's default 0.05/0.17 thresholds. Gated by its own
-    // cooldown (mirroring chanceCD/pinchCD) so the rival isn't rolling for a lucky "JUST" on every
-    // single shot while our own roll only comes around once every 9-15s.
-    aiQuality(kind) {
-      const cd = kind === 'shot' ? 'aiShotCD' : 'aiSaveCD';
-      if (this[cd] > 0) return null;
-      this[cd] = rand(9, 14);
+    // the rival's side of a meter moment: same distribution as resolveMeter's 0.05/0.17 thresholds
+    aiQuality() {
       const d = Math.abs(clamp(0.5 + (rand(-1, 1) + rand(-1, 1)) * 0.12, 0.05, 0.95) - 0.5);
       return d < 0.05 ? 'just' : d < 0.17 ? 'good' : 'bad';
     }
