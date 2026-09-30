@@ -39,7 +39,7 @@
       this.setplay = { unlocked: [], ck: 'std', fk: 'std', lv: 0, prog: 0 };
       this.seasonNo = 1; this.history = []; this.clubMods = {}; this.extraFA = []; this.listed = null; this.bought = [];
       this.h2h = {}; this.lastSeasonRanks = {}; this.promo = null;
-      this.identity = null; this.capLevel = 0;
+      this.identity = null; this.capLevel = 0; this.faTopUp = null;
       if (typeof applyClubs === 'function') applyClubs();
     },
     nextSetplay() { return Data.SETPLAY_UNLOCK.find((k) => !this.setplay.unlocked.includes(k)); },
@@ -82,7 +82,7 @@
   const OLD_SAVE_KEY = 'hamakaze_fc_save_v1'; // pre-multi-slot save, migrated into slot 0 on first read
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
-    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel',
+    'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel', 'faTopUp',
     'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations', 'rivalGrowth'];
   const Save = {
     _migrated: false,
@@ -123,6 +123,9 @@
       // older saves used a simpler stat-only identity system; remap to the closest philosophy, or clear it
       const LEGACY_IDENTITY = { speed: 'counter', power: 'long', technique: 'possession', finish: 'press' };
       if (State.identity && !IDENTITIES[State.identity]) State.identity = LEGACY_IDENTITY[State.identity] || null;
+      // players bought from rivals in older versions joined without a nickname or trait
+      for (const p of State.roster) withProfile(p);
+      for (const x of State.departed || []) if (x && x.p) withProfile(x.p);
       applyClubs();
       State.saveSlot = slot;
       return d.where;
@@ -157,6 +160,26 @@
     }
   }
   function faDef(id) { return Data.FREE_AGENTS.find((d) => d.id === id) || (State.extraFA || []).find((d) => d.id === id); }
+  // keep a few keepers and defenders on the market at all times; refilled at most once a matchweek
+  // so signing one doesn't instantly conjure the next
+  const FA_MIN = { GK: 2, DF: 3 };
+  function topUpFreeAgents() {
+    const key = (State.seasonNo || 1) + '-' + ((State.season && State.season.week) || 0);
+    if (State.faTopUp === key) return;
+    State.faTopUp = key;
+    State.extraFA = State.extraFA || [];
+    const n = State.seasonNo || 1, tag = 't' + key.replace('-', '_');
+    let k = 0;
+    for (const pos in FA_MIN) {
+      let have = State.freeAgents.filter((id) => { const d = faDef(id); return d && d.pos === pos; }).length;
+      for (let tries = 0; have < FA_MIN[pos] && tries < 20; tries++) {
+        const d = genFreeAgent(n, k, pos, tag);
+        k++;
+        if (State.extraFA.some((f) => f.name === d.name || f.id === d.id) || State.roster.some((q) => q.name === d.name)) continue;
+        State.extraFA.push(d); State.freeAgents.push(d.id); have++;
+      }
+    }
+  }
 
   // players without a hand-made portrait (generated free agents, rival squad members, the
   // prefecture captains) are drawn by Portraits.fromLook from the same parts as the hand-made
@@ -188,8 +211,8 @@
       nick: ['実業団帰り', '最後のひと花', '港に戻った男'], pitch: 'もうひと花、咲かせたい。…この港町で。' },
   ];
   const HAIRS = [['#2a1a24', '#140c12'], ['#4a3020', '#2a1a14'], ['#6a4020', '#4a2a14'], ['#c0a060', '#907040'], ['#8a8a92', '#5a5a62']];
-  function genFreeAgent(n, i) {
-    const K = GEN_KIND[i % 3], pos = pick(['GK', 'DF', 'MF', 'FW', 'DF', 'MF']);
+  function genFreeAgent(n, i, forcePos, idTag) {
+    const K = GEN_KIND[i % 3], pos = forcePos || pick(['GK', 'DF', 'MF', 'FW', 'DF', 'MF']);
     const age = randi(K.age[0], K.age[1]), sur = pick(GEN_SURNAMES), given = pick(GEN_GIVEN);
     const v = () => Math.round(K.base + rand(-8, 8) + (n - 2) * 1.5);
     const st = { spd: v(), sht: v(), pas: v(), def: v(), sta: v() };
@@ -197,7 +220,7 @@
     for (const k in st) st[k] = clamp(st[k], 18, 85);
     const hair = pick(HAIRS), skin = pick([['#f7c9a0', '#dca27a'], ['#e8b088', '#c48860'], ['#c98c62', '#9e6a44']]);
     const shirt = pick([['#e0e0e8', '#b0b0c0'], ['#f0a868', '#c07838'], ['#8ac86a', '#5a9a3a'], ['#d88ab0', '#a85a80']]);
-    const id = 'gen_s' + n + '_' + i;
+    const id = 'gen_' + (idTag || 's' + n) + '_' + i;
     return {
       id, name: given, full: sur + ' ' + given, nick: pick(K.nick), pos, age, job: pick(K.jobs), local: Math.random() < 0.6,
       bio: K.kind === 'young' ? '町の学校のサッカー部。ハマカゼの試合を見て、入団を決めた。' : K.kind === 'veteran' ? '若いころは上のリーグでプレーしていた。体力は落ちたが、技術は健在。' : '仕事と両立しながら、ずっとボールを蹴ってきた。',
@@ -207,6 +230,46 @@
     };
   }
   // players the rival clubs are willing to sell this winter
+  // rival squads are generated as bare stat lines (name, position, numbers); once one of them
+  // wears our shirt they need the same nickname/trait/bio as everyone else in the book.
+  // derived from the id so the same player always reads the same way
+  const RIVAL_BG = {
+    yamaoroshi: { jobs: ['鉄工所の職人', '溶接工', '製鉄所の班長'], place: '山の鉄工所' },
+    shiomi: { jobs: ['商店街の店主', '店の二代目', '商店街の配達係'], place: '潮見の商店街' },
+    chikurin: { jobs: ['大学院生', '体育教師', 'スポーツ店員'], place: '竹林大学' },
+    yukemuri: { jobs: ['旅館の板前', '温泉旅館の番頭', '旅館の送迎係'], place: '湯けむり温泉' },
+    minori: { jobs: ['農家', '農協職員', '果樹園の手伝い'], place: '実りの里' },
+    kaiyou: { jobs: ['学習塾講師', '会社員', '大学職員'], place: '海陽学園' },
+    tekkyo: { jobs: ['工場勤務', '重機オペレーター', '検査技師'], place: '鉄橋の工場' },
+    shirasagi: { jobs: ['実業団の社員', '営業職', '事務職'], place: '白鷺の実業団' },
+    kurogane: { jobs: ['保線区員', '鉄道整備士', '駅員'], place: '機関区' },
+    minatomirai: { jobs: ['クラブ職員', '元ユース選手', 'スポーツトレーナー'], place: 'みなと未来' },
+  };
+  const RIVAL_TRAITS = {
+    spd: { trait: '快足', traitDesc: 'とにかく足が速い。裏への抜け出しが得意。', nick: ['韋駄天', '駆け抜ける風', '俊足自慢'] },
+    sht: { trait: '決定力', traitDesc: 'ゴール前での落ち着きがある。', nick: ['ゴール前の職人', '一発屋', '狙撃手'] },
+    pas: { trait: '配球', traitDesc: 'パスの精度が高く、展開を作れる。', nick: ['つなぎ役', '陰の司令塔', '配達上手'] },
+    def: { trait: '堅守', traitDesc: '1対1の守備に強く、簡単には抜かせない。', nick: ['壁', '守りの番人', '鉄のブロック'] },
+    sta: { trait: '無尽蔵', traitDesc: '最後まで走り続けられるスタミナ。', nick: ['走る働き者', '疲れ知らず', 'スタミナ男'] },
+  };
+  function profileFor(d) {
+    const club = String(d.id).split('_')[0], bg = RIVAL_BG[club] || { jobs: ['会社員', '自営業', '町の職人'], place: '隣町' };
+    let h = 0; for (const ch of String(d.id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    const st = d.stats || {}, best = ['spd', 'sht', 'pas', 'def', 'sta'].sort((a, b) => (st[b] || 0) - (st[a] || 0))[0];
+    const T = RIVAL_TRAITS[best];
+    return {
+      nick: bg.place.replace(/の.*$/, '') + 'の' + T.nick[h % T.nick.length], trait: T.trait, traitDesc: T.traitDesc,
+      age: 20 + (h % 17), job: bg.jobs[(h >>> 3) % bg.jobs.length],
+      bio: bg.place + 'から来た' + ({ GK: 'キーパー', DF: 'ディフェンダー', MF: 'ミッドフィルダー', FW: 'フォワード' }[d.pos] || '選手') + '。新天地の港町で、もう一度ボールを追う。',
+    };
+  }
+  // fill only what's missing, never overwrite a hand-written profile
+  function withProfile(d) {
+    if (!d || (d.nick && d.trait && d.traitDesc)) return d;
+    const pf = profileFor(d);
+    for (const k in pf) if (d[k] === undefined || d[k] === null || d[k] === '') d[k] = pf[k];
+    return d;
+  }
   function genListed(n) {
     return League.clubsForTier(State.tier).slice().sort(() => Math.random() - 0.5).slice(0, 2).map((c) => {
       const cap = c.captain;
@@ -342,7 +405,10 @@
       for (const p of State.roster) { State.morale[p.id] = Math.round(62 + ((State.morale[p.id] ?? 60) - 62) * 0.5); State.benchWeeks[p.id] = 0; }
       // new faces: fresh free agents, and players who left town may come home
       const fresh = [];
-      for (let i = 0, tries = 0; fresh.length < 5 && tries < 40; tries++) { const d = genFreeAgent(n, i); if (fresh.some((f) => f.name === d.name) || State.roster.some((q) => q.name === d.name)) continue; fresh.push(d); i++; }
+      // every winter brings at least a keeper and a couple of defenders - the positions that
+      // are hardest to replace when someone gets hurt or retires
+      const want = ['GK', 'DF', 'DF'];
+      for (let i = 0, tries = 0; fresh.length < 7 && tries < 60; tries++) { const d = genFreeAgent(n, i, want[i]); if (fresh.some((f) => f.name === d.name) || State.roster.some((q) => q.name === d.name)) continue; fresh.push(d); i++; }
       State.extraFA = (State.extraFA || []).filter((d) => State.freeAgents.includes(d.id)).concat(fresh);
       State.freeAgents = State.freeAgents.concat(fresh.map((d) => d.id));
       for (const d of State.departed) {
@@ -352,7 +418,7 @@
         State.extraFA.push(back); State.freeAgents.push(back.id);
         s.news.push(d.name + 'が町に戻ってきた！ 入団を希望している');
       }
-      const keep = new Set(State.freeAgents.slice(-9));
+      const keep = new Set(State.freeAgents.slice(-12));
       State.freeAgents = State.freeAgents.filter((id) => keep.has(id));
       State.listed = genListed(n);
       for (const d of State.departed) if (d.dest === 'rival' && d.p && d.season === n - 1 && League.clubById(d.club) && League.clubById(d.club).tier === State.tier) s.news.push('元ハマカゼの' + d.name + 'が、' + League.clubById(d.club).short + 'の一員として立ちはだかる');
@@ -3032,6 +3098,7 @@
   function TransferMarket(next) {
     const midSeason = !!next;
     next = next || (() => Credits());
+    topUpFreeAgents();
     const s = { t: 0, phase: 'leave', idx: 0, tab: 'sign', sel: 0, log: [], rejected: {} };
     // players asking to leave (or retire) only comes up at the end-of-season market - a mid-season
     // visit shouldn't cost a keep-fee just for opening the menu
@@ -3042,7 +3109,7 @@
     // mid-season, only genuinely free agents are up for grabs - poaching a rival's listed player
     // is an off-season-only move
     const cands = () => State.freeAgents.filter((id) => faDef(id)).map((id) => ({ def: faDef(id), fee: 0, sal: faDef(id).sal, from: null, reason: (State.departed.some((d) => d.id === id) ? '古巣に戻りたがっている' : 'フリー。入団を希望している') }))
-      .concat(midSeason ? [] : (State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id)), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })))
+      .concat(midSeason ? [] : (State.seasonNo > 1 ? State.listed || [] : LISTED).filter((l) => !State.roster.some((q) => q.id === l.id) && !(State.bought || []).includes(l.id)).map((l) => ({ def: withProfile(Object.assign({ local: false, growth: 0.9 }, League.clubById(l.from).roster().find((q) => q.id === l.id))), fee: l.fee, sal: l.sal, from: l.from, reason: l.reason })))
       .filter((c) => !s.rejected[c.def.id] && !(State.pendingNegotiations || []).some((n) => n.id === c.def.id))
       .sort((a, c) => (onPolicy(c.def) ? 1 : 0) - (onPolicy(a.def) ? 1 : 0));
     // a negotiation can fall through: free agents already want in, but poaching from a rival is a real gamble
@@ -3353,7 +3420,7 @@
 
   // ---------------- entry ----------------
   window.Scenes = {
-    State,
+    State, Save,
     start(name, o) {
       State.auto = !!(o && o.auto);
       const map = { title: Title, intro: Intro, hub: () => Hub(true), roster: Roster, train: Training, tactics: Tactics, vs: Versus, pre: PreMatch,
