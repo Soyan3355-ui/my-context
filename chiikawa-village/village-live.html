@@ -220,6 +220,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .fc-cheer{text-align:center;font-family:var(--body);font-size:12.5px;color:var(--sub);min-height:1.5em;margin-top:4px}
 .fc-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.fc-btns button{flex:1;font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:7px 6px;cursor:pointer;white-space:nowrap}
 .fc-btns button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
+.hr-list{margin:8px 0 0;padding:0;list-style:none;font-family:var(--body);font-size:13px;line-height:1.7}.hr-q{display:grid;gap:4px;margin-top:6px;font-family:var(--body);font-size:12.5px}.hr-q div{display:flex;gap:6px;align-items:center}.hr-q img{width:20px;height:20px;image-rendering:pixelated}
 .fc-pill{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;font:inherit;font-size:15px;border:2px solid #e36d72;border-radius:999px;background:var(--panel);color:var(--ink);padding:6px 14px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;font-variant-numeric:tabular-nums}
 .fc-pill.brk{border-color:#8fd18a}
 </style>
@@ -241,7 +242,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
     <div class="acts" id="dActs"></div>
     <span class="more" id="more" hidden>▼</span>
   </div>
-  <section class="focus" id="focusBox" aria-labelledby="h-focus"><h2 id="h-focus">🥊 集中タイム <small id="focusSt"></small></h2><div id="focusBody"></div></section>
+  <section class="focus" id="focusBox" aria-labelledby="h-focus"><h2 id="h-focus">⏱ 集中タイム <small id="focusSt"></small></h2><div id="focusBody"></div></section>
     </div>
   </div>
   <div class="cols">
@@ -447,6 +448,7 @@ function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
     if(id==='usagi')ctx.drawImage(P.book,x+5,y+15);
     if(id==='kuri')ctx.drawImage(P.coin,x+18,y+10-(ph?1:0));}
   if(isScout(id)&&!e.carry)ctx.drawImage(P.stick,x+15,y+4);
+  if(e.hunt&&!e.hidden)ctx.drawImage(P.stick,x+15,y+4);if(e.loot&&e.loot>T)ctx.drawImage(P.coin,x+6,y-6);
   if(e.st==='home'&&!e.walking&&e.act&&isFree(id)){if(e.act.kind==='tea')ctx.drawImage(P.coin,x+17,y+12);if(e.act.kind==='pond')ctx.drawImage(P.stick,x+16,y+4);if(e.act.kind==='sand')ctx.drawImage(P.weed,x+16,y+15)}
   ctx.restore();e.top=y;e.bt=Math.round(e.y-im.height);e.left=x;e.w=im.width}
 function drawDesk(t){R(ctx,'#a8743f',100,104,30,6);R(ctx,'#8a5a35',100,109,30,1);R(ctx,'#7a5230',101,110,2,5);R(ctx,'#7a5230',127,110,2,5);
@@ -468,7 +470,9 @@ const LABELS=[];
 ['youtube','kouza','kiji','kaikei','kenshu','kiroku','board'].forEach(k=>{const p=PLACES[k],l=document.createElement('div');l.className='plc';l.textContent=p.label;stage.appendChild(l);LABELS.push({el:l,x:p.x,y:p.y+1})});
 const benchLabel=document.createElement('div');benchLabel.className='plc bench-sign';stage.appendChild(benchLabel);LABELS.push({el:benchLabel,x:112,y:152,always:true});
 function bubbleText(id){const e=ent[id];
+  if(e&&e.hidden)return '';
   if(e&&e.gym)return e.gymTxt||'🥊';
+  if(e&&e.hunt)return '⚔️ 討伐にいってくる！';
   if(id==='soyan'&&focusOn())return '🔥 集中：'+clip(FOCUS.title,14);
   if(id==='soyan'){const t=TASKS.filter(x=>!x.done).sort(byTime)[0];return t?'📝 '+t.title:''}
   if(e.st==='walkIn'||e.st==='arrive')return speakerLabel||'✉️ おとどけ';
@@ -547,10 +551,10 @@ function update(dt){AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;
     if(e.st==='walkIn'){e.errand=null;e.napping=false;e.walking=true;e.pose='idle';if(stepTo(e,SPEAK.x,SPEAK.y,dt)){e.walking=false;e.face=-1;e.st='arrive';e.t=0}}
     else if(e.st==='arrive'&&e.t>0.6){e.st='talk';if(scene&&speaker===id)showPage()}
     else if(e.st==='walkOut'){const h=homeOf(id);if(stepTo(e,h.x,h.y,dt,30)){e.walking=false;e.st='home'}else{e.walking=true;e.pose='idle'}}
-    else if(e.st==='home'){const gs=GYM_ON()?gymSlot(id):-1;if(gs>=0)gymBrain(id,e,dt,gs);else{if(e.gym){e.gym=false;e.punch=false;e.act=null}if(isScout(id))scoutBrain(id,e,dt);else if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}}});
+    else if(e.st==='home'){const gs=GYM_ON()?gymSlot(id):-1,hs=HUNT_ON()?huntSlot(id):-1;if(hs>=0)huntBrain(id,e,dt,hs);else if(gs>=0)gymBrain(id,e,dt,gs);else{if(e.gym){e.gym=false;e.punch=false;e.act=null}if(e.hunt||e.hidden){e.hunt=false;e.hidden=false;e.act=null;e.jump=1;e.loot=T+10;e.x=226;e.y=79}if(isScout(id))scoutBrain(id,e,dt);else if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}}});
   const s=ent.soyan;if(TASKS.some(x=>!x.done)){s.pose=Math.floor(T/0.45)%2?'idle':'idle';if(s.t%2.2<dt)emit(114,96,'#8fd18a',1,{vy:-6,life:.8,spread:2})}}
 function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage(P.weed,x,y));
-  const list=Object.entries(ent).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:110.5,f:()=>drawDesk(t)});if(GYM_ON())list.push({y:170,f:()=>drawBag(t)});
+  const list=Object.entries(ent).filter(([id,e])=>!e.hidden).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:110.5,f:()=>drawDesk(t)});if(GYM_ON())list.push({y:170,f:()=>drawBag(t)});if(HUNT_ON())list.push({y:84,f:()=>drawHuntSign(t)});
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());drawParts(dt);
   AGENTS.forEach(id=>{const e=ent[id];if(e.top===undefined)return;
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
@@ -874,7 +878,7 @@ function doneItems(from,to){const inR=t=>t&&t>=from&&t<to;const L=[];
   BOARD.forEach(b=>{const t=b.doneAt||b.updatedAt;if(b.status==='done'&&inR(t)&&b.owner==='そーやん'&&!TASKS.some(x=>x.title===b.title))L.push({k:'s',t,title:b.title,who:'soyan'})});
   XCS.forEach(x=>{if(x.status==='answered'&&inR(x.answeredAt))L.push({k:'j',t:x.answeredAt,title:'判断：'+x.question,who:'soyan'})});
   IDEAS.forEach(x=>{if(inR(x.decidedAt)&&x.status!=='open')L.push({k:'j',t:x.decidedAt,title:'提案に回答：'+x.title,who:'soyan'})});
-  FLOG.forEach(x=>{if(inR(x.endedAt)&&x.min>=5)L.push({k:'f',t:x.endedAt,title:`集中 ${x.min}分：${x.title}`,who:'soyan'})});
+  FLOG.forEach(x=>{if(inR(x.endedAt)&&x.min>=5)L.push({k:'f',t:x.endedAt,title:(x.kind==='hunt'?`討伐 ${x.min}分（${x.pt||0}pt）：`:`集中 ${x.min}分：`)+x.title,who:'soyan',hunt:x.kind==='hunt'})});
   return L.sort((a,b)=>a.t-b.t)}
 let DONE_SIG='',DONE_SEEN=null;
 function renderDone(){const L=doneItems(dayStart(0),dayStart(1)),Y=doneItems(dayStart(-1),dayStart(0));const sig=L.map(x=>x.k+x.t).join()+'|'+Y.length;if(sig===DONE_SIG)return;DONE_SIG=sig;
@@ -882,18 +886,40 @@ function renderDone(){const L=doneItems(dayStart(0),dayStart(1)),Y=doneItems(day
   const fl={s:'🌼',j:'🌷',f:'🥊'};const hm=t=>{const d=new Date(t);return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`};
   $('doneCnt').textContent=L.length?`${L.length}件`:'';
   $('done').innerHTML=`<div class="dn-nums"><div class="s"><b>${n('s')}</b>そーやんが<br>終えた</div><div class="c"><b>${n('c')}</b>ちいかわが<br>仕上げた</div><div class="j"><b>${n('j')}</b>判断・<br>回答した</div></div>
-   <div class="dn-garden" role="img" aria-label="きょう終わった仕事 ${L.length}件">${L.map(x=>`<span class="${seen.has(x.k+x.t)?'':'new'}" title="${esc(x.title)}">${x.k==='c'&&ICON[x.who]?`<img src="${ICON[x.who]}" alt="">`:fl[x.k]}</span>`).join('')||'<span>🌱</span>'}</div>
+   <div class="dn-garden" role="img" aria-label="きょう終わった仕事 ${L.length}件">${L.map(x=>`<span class="${seen.has(x.k+x.t)?'':'new'}" title="${esc(x.title)}">${x.k==='c'&&ICON[x.who]?`<img src="${ICON[x.who]}" alt="">`:x.hunt?'⚔️':fl[x.k]}</span>`).join('')||'<span>🌱</span>'}</div>
    <p class="dn-cmp">${L.length?(L.length>=Y.length?`きのうは ${Y.length}件。きょうはもう ${L.length}件、よう進んでるで！`:`きのうは ${Y.length}件。きょうは ${L.length}件、ぼちぼちでええよ`):'まだこれから。1つ終わるごとにお花が咲きます'}</p>
    ${L.length?`<details><summary style="cursor:pointer;font-family:var(--body);font-size:12.5px;color:var(--sub)">終わった仕事を見る</summary><ul class="dn-list">${L.slice().reverse().map(x=>`<li><time>${hm(x.t)}</time>${fl[x.k]||'🧸'} ${esc(clip(x.title,60))}</li>`).join('')}</ul></details>`:''}`;
   DONE_SEEN=new Set(L.map(x=>x.k+x.t));if(typeof renderSums==='function')renderSums()}
 setInterval(renderDone,1500);
 
 
+
+// ---------- 討伐 ----------
+const HUNT_EXIT={x:232,y:79};
+function huntSlot(id){const free=GYM_CAND.filter(k=>k==='chiikawa'||isFree(k));return free.slice(0,3).indexOf(id)}
+function huntBrain(id,e,dt,slot){e.gym=false;e.napping=false;e.act=null;if(e.hidden){if(Math.random()<dt/5)emit(218,70+Math.random()*8,'#ffd84a',5,{life:.5,spread:14});return}
+  e.hunt=true;const tx=HUNT_EXIT.x+slot*6,ty=HUNT_EXIT.y-slot;if(stepTo(e,tx,ty,dt,30)){e.hidden=true;e.walking=false}else{e.walking=true;e.pose='idle'}}
+function drawHuntSign(t){R(ctx,'#7a5230',214,62,2,14);R(ctx,'#c8995a',206,56,18,8);R(ctx,'#e36d72',208,58,4,4);R(ctx,'#fff',213,58,9,1);R(ctx,'#fff',213,61,7,1);
+  if(Math.floor(t*3)%6===0)R(ctx,'#ffd84a',219+Math.floor(Math.random()*4),48+Math.floor(Math.random()*6),2,2)}
+function huntReport(min,seed,party,title){let s=seed%2147483647||7;const rnd=()=>(s=s*16807%2147483647)/2147483647;const pick=a=>a[Math.floor(rnd()*a.length)];
+  const MON=[['ちびモンスター','🟣'],['キノコおばけ','🍄'],['ツノっこ','🦏'],['ぬるぬるスライム','🫧'],['草むらのヌシ','🌿'],['トゲトゲ虫','🐛']];
+  const DROP={'ちびモンスター':'モンスターのかけら','キノコおばけ':'ふしぎなキノコ','ツノっこ':'ちいさなツノ','ぬるぬるスライム':'ぷるぷるゼリー','草むらのヌシ':'よく育った草','トゲトゲ虫':'きれいな羽'};
+  const n=Math.max(1,Math.round(min/5));const beat={},loot={};for(let i=0;i<n;i++){const[mn]=pick(MON);beat[mn]=(beat[mn]||0)+1;if(rnd()<.7){const d=DROP[mn];loot[d]=(loot[d]||0)+1}}
+  if(rnd()<.5)loot['どんぐり']=(loot['どんぐり']||0)+1+Math.floor(rnd()*3);
+  let boss='';if(min>=45){boss='でかつよモンスター';beat[boss]=1;loot['でかつよのキバ']=1}
+  const Q={chiikawa:['こわかったけど…がんばった…！','ちゃんと、たおせた…っ','そーやんも、がんばってたね…！'],usagi:['ヤハッ！','ウラッ！ ハァ〜ッ！','フゥン！（どんぐりを見せる）'],momonga:['ぼくがいちばん活躍した！ ほめて！','見てた？ ぼくのキック！'],kuri:['討伐のあとの一杯は最高','いい汗かいた。ビールがうまい'],rakko:['…（静かにうなずく）','まだまだだな'],hachiware:['みんな無事だよ！','そーやんのぶんまで、がんばってきた！']};
+  const quotes=party.map(k=>({who:k,t:pick(Q[k]||['がんばった！'])}));
+  return {min,pt:min+(boss?20:0),beat,loot,boss,quotes,title}}
+function huntHtml(r){const li=o=>Object.entries(o).map(([k,v])=>`${esc(k)}×${v}`).join('、');
+  return `<div class="fc-clock" style="font-size:20px">⚔️ 討伐の報告</div><div class="fc-cheer">「${esc(clip(r.title,26))}」の ${r.min}分 と、同じだけ戦ってきたよ</div>
+  <ul class="hr-list"><li>🗡 たおした：${li(r.beat)}</li>${Object.keys(r.loot).length?`<li>🎒 持ち帰ったもの：${li(r.loot)}</li>`:''}<li>🏅 討伐ポイント：<b>${r.pt}pt</b>${r.boss?'（ボス撃破ボーナス！）':''}</li></ul>
+  <div class="hr-q">${r.quotes.map(q=>`<div><img src="${ICON[q.who]||''}" alt=""><span><b>${esc(NAMES[q.who]||'')}</b> ${esc(q.t)}</span></div>`).join('')}</div>`}
+
 // ---------- 集中タイム（ジム） ----------
 let FOCUS=null;try{FOCUS=JSON.parse(localStorage.getItem('ck-focus')||'null')}catch(e){}
 const saveFocus=()=>{try{FOCUS?localStorage.setItem('ck-focus',JSON.stringify(FOCUS)):localStorage.removeItem('ck-focus')}catch(e){}};
 const focusOn=()=>!!(FOCUS&&FOCUS.mode==='focus'&&!FOCUS.doneAt);
-const GYM_ON=()=>focusOn();
+const GYM_ON=()=>focusOn()&&FOCUS.kind!=='hunt';const HUNT_ON=()=>focusOn()&&FOCUS.kind==='hunt';
 const GYM_SPOT=[{x:74,y:175,face:1},{x:97,y:175,face:-1}];
 const GYM_CAND=['chiikawa','usagi','momonga','kuri','rakko'];
 function gymSlot(id){const free=GYM_CAND.filter(k=>k==='chiikawa'||isFree(k));return free.slice(0,2).indexOf(id)}
@@ -910,49 +936,53 @@ function drawBag(t){BAG.v+=-BAG.a*9*0.016-BAG.v*0.05;BAG.a+=BAG.v*0.016;BAG.a=Ma
   R(ctx,'#5a4a3a',85,154,1,5);R(ctx,'#8a2f28',83+dx,158,6,1);R(ctx,'#c0392b',82+dx,159,8,12);R(ctx,'#e0584b',83+dx,160,2,9);R(ctx,'#8a2f28',82+dx,171,8,1);R(ctx,'#f6efe0',84+dx,164,4,1)}
 function focusLeft(){if(!FOCUS)return 0;const now=Date.now();const paused=(FOCUS.pausedTotal||0)+(FOCUS.pausedAt?now-FOCUS.pausedAt:0);return Math.max(0,FOCUS.dur-(now-FOCUS.startAt-paused))}
 const mmss=ms=>{const s=Math.ceil(ms/1000);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};
-let FC_MIN=30;try{FC_MIN=+localStorage.getItem('ck-fmin')||30}catch(e){}
+let FC_MIN=30,FC_KIND='box';try{FC_MIN=+localStorage.getItem('ck-fmin')||30;FC_KIND=localStorage.getItem('ck-fkind')||'box'}catch(e){}
 function chime(n=3){try{const ac=new (window.AudioContext||window.webkitAudioContext)();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=i%2?988:1319;g.gain.setValueAtTime(.0001,ac.currentTime+i*.22);g.gain.exponentialRampToValueAtTime(.12,ac.currentTime+i*.22+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+i*.22+.18);o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+i*.22);o.stop(ac.currentTime+i*.22+.2)}}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}}
 async function logFocus(done){if(!FOCUS||FOCUS.mode!=='focus'||FOCUS.logged)return;FOCUS.logged=true;saveFocus();const min=Math.round((FOCUS.dur-focusLeft())/60000);if(min<1)return;
-  const doc={title:FOCUS.title,taskId:FOCUS.taskId||'',min,planned:Math.round(FOCUS.dur/60000),completed:!!done,startedAt:FOCUS.startAt,endedAt:Date.now()};FLOG.push({id:'l'+Date.now(),...doc});
+  const doc={title:FOCUS.title,taskId:FOCUS.taskId||'',min,planned:Math.round(FOCUS.dur/60000),completed:!!done,startedAt:FOCUS.startAt,endedAt:Date.now(),kind:FOCUS.kind||'box'};
+  if(FOCUS.kind==='hunt'){const r=huntReport(min,FOCUS.startAt,FOCUS.party||['chiikawa'],FOCUS.title);FOCUS.report=r;saveFocus();doc.pt=r.pt;doc.beat=r.beat;doc.loot=r.loot}FLOG.push({id:'l'+Date.now(),...doc});
   if(db&&canWrite){try{await db.collection('focus').add(doc)}catch(e){}}}
 let FLOG=[];
-function startFocus(mode,title,taskId,min){FOCUS={mode,title,taskId,dur:min*60e3,startAt:Date.now(),pausedTotal:0,pausedAt:0};saveFocus();
+function startFocus(mode,title,taskId,min,kind){FOCUS={mode,title,taskId,kind:kind||FC_KIND,dur:min*60e3,startAt:Date.now(),pausedTotal:0,pausedAt:0};FOCUS.party=GYM_CAND.filter(k=>k==='chiikawa'||isFree(k)).slice(0,3);saveFocus();
   if(mode==='focus'){AGENTS.forEach(k=>{if(gymSlot(k)>=0){ent[k].jump=1}});floater('🥊',ent.chiikawa);ent.soyan.jump=1}renderFocus(true)}
 function renderFocus(force){const box=$('focusBox');if(!box)return;const run=FOCUS&&!FOCUS.doneAt;box.classList.toggle('run',!!(run&&FOCUS.mode==='focus'));box.classList.toggle('brk',!!(run&&FOCUS.mode==='break'));
   if(run){const left=focusLeft();if(left<=0){FOCUS.doneAt=Date.now();saveFocus();if(FOCUS.mode==='focus'){logFocus(false);chime(4);AGENTS.forEach(k=>{if(ent[k]&&(isFree(k)||k==='chiikawa'))ent[k].jump=1});ent.soyan.jump=1;floater('🎉',ent.soyan)}else chime(2);renderFocus(true);return}
     const pct=Math.round((1-left/FOCUS.dur)*100);const clk=box.querySelector('.fc-clock');
-    if(clk&&!force){clk.textContent=mmss(left);box.querySelector('.fc-bar i').style.width=pct+'%';const ch=box.querySelector('.fc-cheer');const t=FOCUS.pausedAt?'⏸ 一時停止中':FOCUS.mode==='break'?'🍵 ひと休み。肩をまわしてね':left<5*60e3?'🔥 ラスト5分！ みんなも全力パンチ中':pct>=50?'💪 折り返し過ぎたよ':'🥊 ちいかわたちもトレーニング中';if(ch.textContent!==t)ch.textContent=t;$('focusSt').textContent=mmss(left);updPill(left);return}
+    if(clk&&!force){clk.textContent=mmss(left);box.querySelector('.fc-bar i').style.width=pct+'%';const ch=box.querySelector('.fc-cheer');const t=FOCUS.pausedAt?'⏸ 一時停止中':FOCUS.mode==='break'?'🍵 ひと休み。肩をまわしてね':FOCUS.kind==='hunt'?(left<5*60e3?'🔥 ラスト5分！ もうすぐ帰ってくるよ':pct>=50?'💥 遠くで戦ってる音がする…':'⚔️ ちいかわたちは討伐に出かけてるよ'):left<5*60e3?'🔥 ラスト5分！ みんなも全力パンチ中':pct>=50?'💪 折り返し過ぎたよ':'🥊 ちいかわたちもトレーニング中';if(ch.textContent!==t)ch.textContent=t;$('focusSt').textContent=mmss(left);updPill(left);return}
     $('focusSt').textContent=mmss(left);
     $('focusBody').innerHTML=`<div class="fc-task">${FOCUS.mode==='break'?'🍵 休憩':'📝 '+esc(FOCUS.title)}</div><div class="fc-clock" aria-live="off">${mmss(left)}</div><div class="fc-bar"><i style="width:${pct}%"></i></div><div class="fc-cheer"></div>
       <div class="fc-btns"><button type="button" data-fc="pause">${FOCUS.pausedAt?'▶ 再開':'⏸ 一時停止'}</button><button type="button" data-fc="plus">＋5分</button><button type="button" data-fc="stop">やめる</button></div>
       ${FOCUS.mode==='focus'&&FOCUS.taskId?`<div class="fc-btns"><button type="button" class="y" data-fc="done">✅ できた！（タスク完了）</button></div>`:''}`;updPill(left);return}
   $('focusSt').textContent='';updPill(0);
   if(FOCUS&&FOCUS.doneAt&&FOCUS.mode==='focus'&&!FOCUS.ack){const min=Math.round(FOCUS.dur/60000);const tk=FOCUS.taskId&&TASKS.find(x=>x.id===FOCUS.taskId&&!x.done);
-    $('focusBody').innerHTML=`<div class="fc-clock" style="font-size:22px">🎉 ${min}分 集中できた！</div><div class="fc-cheer">「${esc(clip(FOCUS.title,30))}」おつかれさま…！</div>
+    const rep=FOCUS.report?huntHtml(FOCUS.report):`<div class="fc-clock" style="font-size:22px">🎉 ${min}分 集中できた！</div><div class="fc-cheer">「${esc(clip(FOCUS.title,30))}」おつかれさま…！</div>`;
+    $('focusBody').innerHTML=rep+`
       <div class="fc-btns">${tk?'<button type="button" class="y" data-fc="done2">✅ タスク完了にする</button>':''}<button type="button" data-fc="more">もう5分</button><button type="button" data-fc="break">🍵 休憩5分</button><button type="button" data-fc="ok">とじる</button></div>`;return}
   const open=TASKS.filter(x=>!x.done).sort((a,b)=>(a.due||'9')<(b.due||'9')?-1:(a.due||'9')>(b.due||'9')?1:byTime(a,b));
   const td=FLOG.filter(x=>x.startedAt>=dayStart(0));const tm=td.reduce((a,x)=>a+x.min,0);
-  const sig=open.map(t=>t.id).join()+'|'+td.length+'|'+FC_MIN;const cur=$('focusBody').querySelector('.fc-sel');if(!force&&cur&&$('focusBody').dataset.sig===sig)return;
+  const sig=open.map(t=>t.id).join()+'|'+td.length+'|'+FC_MIN+FC_KIND;const cur=$('focusBody').querySelector('.fc-sel');if(!force&&cur&&$('focusBody').dataset.sig===sig)return;
   const keepSel=cur?cur.value:null,keepFree=$('fcFree')?.value||'';$('focusBody').dataset.sig=sig;
   $('focusBody').innerHTML=`<div class="fc-row"><select class="fc-sel" id="fcTask" aria-label="集中するタスク">${open.map(t=>`<option value="${esc(t.id)}">${esc(clip(t.title,40))}${t.due?'（'+esc(String(t.due).slice(5).replace('-','/'))+'）':''}</option>`).join('')}<option value="">── タスクを選ばずに書く ──</option></select></div>
     <div class="fc-row" id="fcFreeRow" ${open.length?'hidden':''}><input class="fc-in" id="fcFree" placeholder="なにに集中する？" aria-label="集中する内容"></div>
+    <div class="fc-row" role="group" aria-label="ちいかわたちがすること">${[['box','🥊 ボクシング'],['hunt','⚔️ 討伐にいく']].map(([k,l])=>`<button type="button" class="fc-min" data-kind="${k}" aria-pressed="${k===FC_KIND}">${l}</button>`).join('')}</div>
     <div class="fc-row" role="group" aria-label="時間">${[15,25,30,45,60].map(n=>`<button type="button" class="fc-min" data-min="${n}" aria-pressed="${n===FC_MIN}">${n}分</button>`).join('')}</div>
-    <button type="button" class="fc-go" data-fc="start">🥊 ${FC_MIN}分 集中スタート</button>
-    <div class="fc-cheer">${td.length?`きょうの集中：${td.length}回・${tm}分`:'押すと、ちいかわたちもトレーニングを始めます'}</div>`;
+    <button type="button" class="fc-go" data-fc="start">${FC_KIND==='hunt'?'⚔️':'🥊'} ${FC_MIN}分 集中スタート</button>
+    <div class="fc-cheer">${td.length?`きょうの集中：${td.length}回・${tm}分${td.some(x=>x.pt)?`・討伐 ${td.reduce((a,x)=>a+(x.pt||0),0)}pt`:''}`:FC_KIND==='hunt'?'押すと、ちいかわたちが討伐に出かけます。終わったら成果を報告します':'押すと、ちいかわたちもトレーニングを始めます'}</div>`;
   const s=$('fcTask');if(!open.length)s.value='';else if(keepSel&&[...s.options].some(o=>o.value===keepSel))s.value=keepSel;else if(keepSel===''&&keepFree)s.value='';$('fcFreeRow').hidden=!!s.value;if(keepFree)$('fcFree').value=keepFree}
 function updPill(left){let p=$('fcPill');const box=$('focusBox');const vis=box&&box.getBoundingClientRect();const off=!vis||vis.bottom<0||vis.top>innerHeight;
   if(!left||!off){if(p)p.hidden=true;return}if(!p){p=document.createElement('button');p.id='fcPill';p.type='button';p.className='fc-pill';p.addEventListener('click',()=>$('focusBox').scrollIntoView({behavior:'smooth',block:'center'}));document.body.appendChild(p)}
   p.hidden=false;p.classList.toggle('brk',FOCUS.mode==='break');const t=(FOCUS.mode==='break'?'🍵 ':'🥊 ')+mmss(left);if(p.textContent!==t)p.textContent=t}
 $('focusBody').addEventListener('change',e=>{if(e.target.id==='fcTask')$('fcFreeRow').hidden=!!e.target.value});
-$('focusBody').addEventListener('click',e=>{const mb=e.target.closest('[data-min]');if(mb){FC_MIN=+mb.dataset.min;try{localStorage.setItem('ck-fmin',FC_MIN)}catch(x){}renderFocus(true);return}
+$('focusBody').addEventListener('click',e=>{const kb=e.target.closest('[data-kind]');if(kb){FC_KIND=kb.dataset.kind;try{localStorage.setItem('ck-fkind',FC_KIND)}catch(x){}renderFocus(true);return}
+  const mb=e.target.closest('[data-min]');if(mb){FC_MIN=+mb.dataset.min;try{localStorage.setItem('ck-fmin',FC_MIN)}catch(x){}renderFocus(true);return}
   const b=e.target.closest('[data-fc]');if(!b)return;const k=b.dataset.fc;
   if(k==='start'){const id=$('fcTask')?.value||'';const t=id?TASKS.find(x=>x.id===id):null;const title=t?t.title:($('fcFree')?.value.trim()||'集中タイム');startFocus('focus',title,t?t.id:'',FC_MIN);return}
   if(k==='pause'){if(FOCUS.pausedAt){FOCUS.pausedTotal+=Date.now()-FOCUS.pausedAt;FOCUS.pausedAt=0}else FOCUS.pausedAt=Date.now();saveFocus();renderFocus(true);return}
   if(k==='plus'){FOCUS.dur+=5*60e3;saveFocus();renderFocus(true);return}
   if(k==='stop'){logFocus(false);FOCUS=null;saveFocus();renderFocus(true);return}
-  if(k==='done'){const id=FOCUS.taskId;logFocus(true);FOCUS=null;saveFocus();if(id)setTask(id,{done:true});renderFocus(true);return}
+  if(k==='done'){const id=FOCUS.taskId;FOCUS.dur=FOCUS.dur-focusLeft();logFocus(true);FOCUS.doneAt=Date.now();saveFocus();if(id)setTask(id,{done:true});renderFocus(true);return}
   if(k==='done2'){const id=FOCUS.taskId;FOCUS.ack=true;saveFocus();if(id)setTask(id,{done:true});FOCUS=null;saveFocus();renderFocus(true);return}
-  if(k==='more'){const f=FOCUS;startFocus('focus',f.title,f.taskId,5);return}
+  if(k==='more'){const f=FOCUS;startFocus('focus',f.title,f.taskId,5,f.kind);return}
   if(k==='break'){startFocus('break','休憩','',5);return}
   if(k==='ok'){FOCUS=null;saveFocus();renderFocus(true)}});
 setInterval(()=>renderFocus(false),1000);addEventListener('scroll',()=>{if(FOCUS&&!FOCUS.doneAt)updPill(focusLeft())},{passive:true});
@@ -968,7 +998,7 @@ const SUMS={
    const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
    return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
- 'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':x.k==='f'?'🥊':'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
+ 'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':x.k==='f'?(x.hunt?'⚔️':'🥊'):'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
