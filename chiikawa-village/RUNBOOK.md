@@ -196,3 +196,9 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
 
 - 画面の「🎉 きょうの成果」は、きょう終わったものを数えてお花で見せる：そーやんのタスク（tasks.doneAt）🌼、ちいかわが仕上げた仕事（board の status=done、owner≠そーやん）はキャラの顔、判断・提案への回答（exceptions.answeredAt / ideas.decidedAt）🌷。
 - board を done にするときは、必ず `doneAt: Date.now()` を書く（ない場合は updatedAt で数える）。
+
+## 集中タイム（画面・2026-09-30 そーやんの依頼）
+
+- 画面の「🥊 集中タイム」で、タスクを選んで 15〜60 分のタイマーを動かせる。動いている間は、手のあいたちいかわたち（ちいかわ・うさぎ など2人）があそび場のサンドバッグでボクシングをする。
+- 終わった集中は画面 db の `focus`（title, taskId, min, planned, completed, startedAt, endedAt）に残る。5分以上の集中は「きょうの成果」に 🥊 で並ぶ。
+- 見回りの回で読んでよい（きょうの集中の回数・分数を greeting でねぎらう程度）。`focus` は書き換えない。
