@@ -305,6 +305,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 .np .foot{border-top:1px solid var(--ink2);margin-top:10px;padding-top:8px;font-size:12.5px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
 .np .close{font:inherit;font-size:14px;padding:8px 16px;border:2px solid var(--ink2);background:var(--ink2);color:var(--np);border-radius:4px;cursor:pointer;min-height:44px}
 .np .letters{font-size:13.5px;line-height:1.75}.np .letters .rep{margin-left:1em;opacity:.85}
+@keyframes flashk{0%{box-shadow:0 0 0 0 rgba(255,216,74,.95)}100%{box-shadow:0 0 0 14px rgba(255,216,74,0)}}section.flash{animation:flashk 1.2s ease-out 2}
 </style>
 
 <div class="news" id="news" role="dialog" aria-modal="true" aria-labelledby="newsTitle" hidden><div class="np" id="newsBody"></div></div>
@@ -631,6 +632,17 @@ function drawBaseBG(g){seed=7;
   b=box('gym','#e3ecf4','#d1dde9');
   R(g,'#4f6fa8',b.x+4,b.y+33,58,3);R(g,'#6d8fd6',b.x+6,b.y+33,54,1);R(g,'#b9bfca',b.x+46,b.y+5,14,18);R(g,'#dfe6ee',b.x+47,b.y+6,12,16);
   R(g,'#3b3533',b.x+6,b.y+29,10,2);R(g,'#5a5e68',b.x+5,b.y+27,3,6);R(g,'#5a5e68',b.x+15,b.y+27,3,6);R(g,'#5a4a3a',b.x+33,b.y+3,1,1);
+  // 描き込みの追加（夜の自走 A）
+  [[74,30],[86,32]].forEach(([x,y])=>{R(g,'#7a5230',x+4,y+6,2,8);R(g,'#4f8f43',x,y,10,7);R(g,'#5f9e4f',x+1,y-2,8,4);R(g,'#74b562',x+2,y-1,3,2)});
+  R(g,'#a8743f',94,40,10,2);R(g,'#7a5230',95,42,1,2);R(g,'#7a5230',102,42,1,2);
+  for(let x=118;x<138;x+=2)R(g,'#d7c28a',x,43,2,1);
+  R(g,'#c2463d',58,62,3,3);R(g,'#ffd84a',59,63,1,1);R(g,'#4fd1c5',40,57,6,4);R(g,'#2b3c5d',41,58,4,2);
+  R(g,'#fff',10,98,8,10);R(g,'#e36d72',11,99,6,3);R(g,'#3b3533',12,104,4,1);R(g,'#fff',22,98,8,10);R(g,'#6d8fd6',23,99,6,4);R(g,'#3b3533',24,105,4,1);
+  R(g,'#fff',133,98,8,8);R(g,'#3b3533',137,99,1,3);R(g,'#3b3533',137,101,2,1);
+  R(g,'#4f8f43',157,74,5,6);R(g,'#5f9e4f',156,71,7,4);R(g,'#c65a51',157,80,5,6);
+  R(g,'#c8995a',58,140,1,30);R(g,'#c8995a',62,140,1,30);for(let y=142;y<170;y+=4)R(g,'#c8995a',58,y,5,1);
+  [[60,182],[64,183],[68,182]].forEach(([x,y])=>{R(g,'#f6efe0',x,y,1,2);R(g,'#e36d72',x-1,y-1,3,1)});
+  [[16,94],[200,94],[110,138]].forEach(([x,y])=>{R(g,'#5a5e68',x,y-2,1,4)});
   // 天井の配管
   R(g,'#8a8f99',0,48,W,1);R(g,'#8a8f99',0,92,W,1);R(g,'#8a8f99',0,136,W,1);
   // 岩盤・地下水・鉱石
@@ -790,7 +802,7 @@ function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
     if(e.carry)ctx.drawImage(P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
-  const td=tod();if(BASE){ambientBase(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,46);ctx.fillStyle=td.night?'rgba(18,22,64,.16)':td.c;ctx.fillRect(0,46,W,H-46);if(td.night)lightsBase()}return}ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
+  const td=tod();if(BASE){ambientBase(t,dt,td&&td.night);drawHover();if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,46);ctx.fillStyle=td.night?'rgba(18,22,64,.16)':td.c;ctx.fillRect(0,46,W,H-46);if(td.night)lightsBase()}return}ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
 function loop(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 
@@ -1410,6 +1422,23 @@ $('sceneBtn').textContent=BASE?'🏡 村にする':'🛰 基地にする';$('sce
 $('news').addEventListener('click',e=>{if(e.target.id==='news'||e.target.closest('[data-nclose]')){closeNews();return}const b=e.target.closest('button[data-nx]');if(b){answer(b.dataset.nx,b.dataset.k).then(()=>renderNews());renderNews()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('news').hidden)closeNews()});
 function newsAuto(n){let seen=true;try{seen=!!localStorage.getItem('ck-news-'+newsEd().key)}catch(e){}if(seen)return;if(scene&&(n||0)<20){setTimeout(()=>newsAuto((n||0)+1),3000);return}openNews()}
+
+// ---------- 基地の部屋を押すと、その部署の欄がひらく（夜の自走 A） ----------
+const ROOM_GO={cmd:['h-bd','司令室：タスクボード'],meet:['h-dg','会議室：きょうのダイジェスト'],kaikei:['h-fin','帳場：お金の見通し'],studio:['h-app','制作室：アプリ制作部'],pm:['h-tl','進行表：タイムライン'],kenshu:['h-bd','検収室：タスクボード'],kiroku:['h-dc','記録庫：決定記録'],rest:['h-chat','休憩室：ちいかわに相談'],gym:['focusBox','ジム：集中タイム'],field:['h-tl','田んぼ：タイムライン'],meadow:['focusBox','討伐の草原：集中タイム（討伐）'],gate:['h-nt','郵便受け：つぶやき箱']};
+let HOVER=null;
+function spotAt(wx,wy){if(wy<46){if(wx<70)return 'field';if(wx>166)return 'meadow';if(wx>100&&wx<166)return 'gate';return null}
+  const r=ROOMS.find(r=>wx>=r.x&&wx<=r.x1&&wy>=roomTop(r.r)&&wy<=ROWY[r.r]+2);return r?r.k:null}
+function cvWorld(ev){const rc=cv.getBoundingClientRect();return [(ev.clientX-rc.left)/rc.width*W,(ev.clientY-rc.top)/rc.height*H]}
+function goSpot(k){const g=ROOM_GO[k];if(!g)return;const [id]=g;const el=document.getElementById(id);if(!el)return;
+  if(BOXES.includes(id))setBox(id,true);const sec=el.closest('section')||el;sec.scrollIntoView({behavior:'smooth',block:'start'});sec.classList.remove('flash');void sec.offsetWidth;sec.classList.add('flash');
+  const rm=ROOMS.find(r=>r.k===k);if(rm){AGENTS.forEach(a=>{const e=ent[a];if(e&&e.x>=rm.x&&e.x<=rm.x1&&rowOf(e.y)===rm.r)e.jump=1})}}
+if(BASE){cv.style.cursor='pointer';cv.setAttribute('aria-label','ちいかわ株式会社の作戦司令基地。部屋を押すと、その部署の欄がひらきます');
+  cv.addEventListener('click',ev=>{const [x,y]=cvWorld(ev);const k=spotAt(x,y);if(k)goSpot(k)});
+  cv.addEventListener('mousemove',ev=>{const [x,y]=cvWorld(ev);const k=spotAt(x,y);if(k!==HOVER){HOVER=k;cv.title=k&&ROOM_GO[k]?ROOM_GO[k][1]+' をひらく':''}});
+  cv.addEventListener('mouseleave',()=>{HOVER=null})}
+function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER);ctx.fillStyle='rgba(255,216,74,.9)';
+  if(rm){const y=roomTop(rm.r),w=rm.x1-rm.x;ctx.fillRect(rm.x-2,y-2,w+4,1);ctx.fillRect(rm.x-2,y+38,w+4,1);ctx.fillRect(rm.x-2,y-2,1,41);ctx.fillRect(rm.x1+1,y-2,1,41)}
+  else{const b={field:[2,18,66,26],meadow:[168,18,54,26],gate:[104,6,62,38]}[HOVER];if(b){ctx.fillRect(b[0],b[1],b[2],1);ctx.fillRect(b[0],b[1]+b[3],b[2],1);ctx.fillRect(b[0],b[1],1,b[3]);ctx.fillRect(b[0]+b[2],b[1],1,b[3])}}}
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
 const BOXES=['h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
