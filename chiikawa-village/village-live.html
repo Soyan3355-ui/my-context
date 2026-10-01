@@ -245,6 +245,23 @@ body.arrange .cols>div>section{outline:2px dashed var(--info);outline-offset:-2p
 @media (min-width:900px){.arr .mv-col{display:inline-block}}
 .arr-bar{display:none;position:sticky;top:0;z-index:15;background:var(--panel);border:2px solid var(--info);border-radius:10px;padding:8px 12px;margin-top:10px;font-family:var(--body);font-size:13px;gap:8px;align-items:center;flex-wrap:wrap}
 body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:4px 10px;cursor:pointer}.arr-bar button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
+.fin{--s1:#2a78d6;--s2:#eb6834}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fin{--s1:#3987e5;--s2:#d95926}}:root[data-theme="dark"] .fin{--s1:#3987e5;--s2:#d95926}
+.fin .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fin .tile{border:2px solid var(--line);border-radius:10px;padding:8px 10px;font-family:var(--body);min-width:0}
+.fin .tile .l{font-size:11.5px;color:var(--sub);line-height:1.4}.fin .tile .v{font-family:var(--dot);font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}.fin .tile .v small{font-size:12px;margin-left:2px}.fin .tile .s{font-size:11px;color:var(--sub);line-height:1.45;margin-top:2px}
+.fin .tile.warn{border-color:var(--warn)}.fin .tile.bad{border-color:var(--bad)}
+.fin h3{font-size:13.5px;margin:14px 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fin h3 small{font-family:var(--body);font-size:11.5px;color:var(--sub);font-weight:400}
+.fin .chart{position:relative}.fin .chart svg{display:block;width:100%;overflow:visible}
+.fin .chart text{font-family:var(--body);font-size:11px;fill:var(--sub)}.fin .chart .grid{stroke:var(--line);stroke-width:1}.fin .chart .zero{stroke:var(--sub);stroke-width:1}
+.fin .lg{display:flex;gap:12px;font-family:var(--body);font-size:12px;color:var(--ink)}.fin .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.fin .tip{position:absolute;pointer-events:none;background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:6px 9px;font-family:var(--body);font-size:12px;line-height:1.5;color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12);white-space:nowrap;z-index:5}
+.fin .tip b{font-variant-numeric:tabular-nums}.fin .tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.fin ul{margin:4px 0 0;padding-left:18px;font-family:var(--body);font-size:12.5px;line-height:1.65}.fin ul .amt{font-variant-numeric:tabular-nums;font-weight:600}
+.fin details{margin-top:10px;font-family:var(--body);font-size:12.5px}.fin details summary{cursor:pointer;color:var(--sub)}
+.fin table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-variant-numeric:tabular-nums}.fin th,.fin td{border-bottom:1px solid var(--line);padding:3px 4px;text-align:right}.fin th:first-child,.fin td:first-child{text-align:left}
+.fin .foot{font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.6}
+.fin .alert{border-left:4px solid var(--warn);padding:4px 8px;margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.6;background:color-mix(in srgb,var(--warn) 8%,var(--panel));border-radius:4px}
 </style>
 
 <div class="app">
@@ -316,6 +333,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="rounds" id="rounds" aria-live="off"></div><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
   <section style="order:1" class="box" aria-labelledby="h-done"><h2 id="h-done">🎉 きょうの成果 <small id="doneCnt"></small></h2><div id="done"><p class="empty">きょう終わった仕事が、ここにお花になって咲きます。</p></div></section>
   <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
+  <section style="order:2" class="box fin" aria-labelledby="h-fin"><h2 id="h-fin">💰 お金の見通し <small id="finAsOf"></small></h2><div id="fin"><p class="empty">くりまんじゅうが freee を読んで、残高・売上と経費・これからの見込みをここに出します（そーやんだけに見えます）。</p></div></section>
   <section style="order:7" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
   <section style="order:9" class="box au" aria-labelledby="h-au"><h2 id="h-au">🗂 記録監査（シーサー） <small id="auTime"></small></h2><div id="audit"><p class="empty">シーサーが毎週、Notion の記録と実際の進み具合を点検します。</p></div></section>
   <section style="order:11" class="box" aria-labelledby="h-dc"><h2 id="h-dc">🧾 決定記録</h2><div id="decs"><p class="empty">決まったことがここに残ります。</p></div></section>
@@ -1085,8 +1103,61 @@ $('apps').addEventListener('click',e=>{const b=e.target.closest('button[data-app
   else if(k==='go'){th.push({who:'soyan',text:'✅ このまま次へ進めて',at:now});appPatch(a.id,{thread:th,go:a.stage,goAt:now,waiting:'team',updatedAt:now});floater('✅',ent.rakko)}
   else if(k==='hold'){th.push({who:'soyan',text:'⏸ いったん保留',at:now});appPatch(a.id,{thread:th,stage:'hold',holdFrom:a.stage,waiting:'team',updatedAt:now})}
   else if(k==='resume'){th.push({who:'soyan',text:'▶ 再開する',at:now});appPatch(a.id,{thread:th,stage:a.holdFrom||'idea',waiting:'team',updatedAt:now})}});renderApps();
+
+// ---------- お金の見通し（2026-10-01 そーやんの依頼。くりまんじゅうが freee を読んで finance/now に置く） ----------
+let FIN=null;
+const yen=n=>(n<0?'−':'')+Math.abs(Math.round(n||0)).toLocaleString('ja-JP')+'円';
+const man=n=>{const v=(n||0)/1e4;if(!v)return '0';return (v<0?'−':'')+(Math.abs(v)>=100?Math.round(Math.abs(v)).toLocaleString('ja-JP'):String(+Math.abs(v).toFixed(1)))};
+const mLabel=m=>(+String(m).slice(5,7))+'月';
+function niceTicks(lo,hi){const st=niceMax((hi-lo)/3);const a=Math.floor(lo/st)*st,b=Math.ceil(hi/st)*st;const t=[];for(let v=a;v<=b+1e-6;v+=st)t.push(Math.round(v));return t}
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));const f=v/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p}
+function finTip(wrap,html,x,y){let t=wrap.querySelector('.tip');if(!t){t=document.createElement('div');t.className='tip';wrap.appendChild(t)}if(!html){t.hidden=true;return}t.hidden=false;t.innerHTML=html;const W=wrap.clientWidth,tw=t.offsetWidth;t.style.left=Math.max(0,Math.min(W-tw,x-tw/2))+'px';t.style.top=Math.max(0,y-t.offsetHeight-10)+'px'}
+function finLine(el){const act=(FIN.bank||[]).map(b=>({m:b.m,v:b.end,f:false})),fc=(FIN.forecast||[]).map(b=>({m:b.m,v:b.end,f:true,note:b.note,inn:b.in,out:b.out}));const pts=act.concat(fc);if(!pts.length){el.innerHTML='';return}
+  const W=Math.max(280,el.clientWidth||320),H=190,L=44,R=10,T=14,B=26;const tk=niceTicks(Math.min(0,...pts.map(p=>p.v)),Math.max(...pts.map(p=>p.v),1));const lo=tk[0],mx=tk[tk.length-1];
+  const x=i=>L+(pts.length===1?0:(W-L-R)*i/(pts.length-1)),y=v=>T+(H-T-B)*(1-(v-lo)/(mx-lo));
+  let g=tk.map(v=>`<line class="${v===0?'zero':'grid'}" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${man(v)}${v?'万':''}</text>`).join('');
+  const ev=Math.ceil(30/((W-L-R)/(pts.length-1||1)));pts.forEach((p,i)=>{if(i%ev===0||i===pts.length-1&&ev===1)g+=`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${mLabel(p.m)}</text>`});
+  const na=act.length;const path=a=>a.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const A=act.map((p,i)=>[x(i),y(p.v)]);const F=(na?[[x(na-1),y(act[na-1].v)]]:[]).concat(fc.map((p,j)=>[x(na+j),y(p.v)]));
+  if(fc.length)g+=`<rect x="${x(na)-((W-L-R)/(pts.length-1||1))/2}" y="${T}" width="${W-R-x(na)+((W-L-R)/(pts.length-1||1))/2}" height="${H-T-B}" fill="var(--line)" opacity=".35"/><text x="${W-R}" y="${T+10}" text-anchor="end">見込み（推測）</text>`;
+  g+=`<path d="${path(A)}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>`;if(F.length>1)g+=`<path d="${path(F)}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-dasharray="5 4"/>`;
+  pts.forEach((p,i)=>{g+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="4" fill="${p.f?'var(--panel)':'var(--s1)'}" stroke="var(--s1)" stroke-width="2"/>`});
+  const last=act[na-1];if(last)g+=`<text x="${x(na-1)}" y="${y(last.v)-10}" text-anchor="middle" style="fill:var(--ink);font-weight:600">${man(last.v)}万</text>`;
+  const step=(W-L-R)/(pts.length-1||1);g+=pts.map((p,i)=>`<rect data-i="${i}" x="${x(i)-step/2}" y="${T}" width="${step}" height="${H-T-B}" fill="transparent"/>`).join('');
+  g+=`<line class="xh" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--sub)" stroke-width="1" visibility="hidden"/>`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="月末の銀行残高の動きと見込み">${g}</svg>`;const svg=el.querySelector('svg'),xh=svg.querySelector('.xh');
+  const show=e=>{const r=e.target.closest('rect[data-i]');if(!r){finTip(el,'');xh.setAttribute('visibility','hidden');return}const i=+r.dataset.i,p=pts[i];xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.setAttribute('visibility','visible');
+    finTip(el,`<div>${mLabel(p.m)}末${p.f?'（見込み）':''}</div><div><i style="background:var(--s1)"></i>銀行残高 <b>${yen(p.v)}</b></div>${p.f?`<div>入 ${yen(p.inn)}／出 ${yen(p.out)}</div>${p.note?`<div style="color:var(--sub);white-space:normal;max-width:220px">${esc(p.note)}</div>`:''}`:''}`,x(i),y(p.v))};
+  svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);svg.addEventListener('pointerleave',()=>{finTip(el,'');xh.setAttribute('visibility','hidden')})}
+function finBars(el){const pl=FIN.pl||[];if(!pl.length){el.innerHTML='';return}const W=Math.max(280,el.clientWidth||320),H=190,L=44,R=6,T=10,B=26;const btk=niceTicks(0,Math.max(...pl.map(p=>Math.max(p.sales,p.expense)),1)),mx=btk[btk.length-1];
+  const y=v=>T+(H-T-B)*(1-v/mx),gw=(W-L-R)/pl.length,bw=Math.max(3,Math.min(16,(gw-6)/2-1));
+  let g=btk.map(v=>`<line class="${v?'grid':'zero'}" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${man(v)}${v?'万':''}</text>`).join('');
+  const bar=(cx,v,c)=>{const h=Math.max(0,y(0)-y(v));if(h<=0)return '';const r=Math.min(4,h,bw/2);const x0=cx,x1=cx+bw,yt=y(v),yb=y(0);return `<path d="M${x0} ${yb}V${yt+r}Q${x0} ${yt} ${x0+r} ${yt}H${x1-r}Q${x1} ${yt} ${x1} ${yt+r}V${yb}Z" fill="${c}"/>`};
+  pl.forEach((p,i)=>{const c=L+gw*i+gw/2;g+=bar(c-bw-1,p.sales,'var(--s1)')+bar(c+1,p.expense,'var(--s2)');if(i%Math.ceil(30/gw)===0)g+=`<text x="${c}" y="${H-8}" text-anchor="middle">${mLabel(p.m)}</text>`});
+  g+=pl.map((p,i)=>`<rect data-i="${i}" x="${L+gw*i}" y="${T}" width="${gw}" height="${H-T-B}" fill="transparent"/>`).join('');
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="月ごとの売上と経費">${g}</svg>`;const svg=el.querySelector('svg');
+  const show=e=>{const r=e.target.closest('rect[data-i]');if(!r){finTip(el,'');return}const p=pl[+r.dataset.i];const d=p.sales-p.expense;finTip(el,`<div>${mLabel(p.m)}</div><div><i style="background:var(--s1)"></i>売上 <b>${yen(p.sales)}</b></div><div><i style="background:var(--s2)"></i>経費 <b>${yen(p.expense)}</b></div><div>差し引き <b>${yen(d)}</b></div>`,L+gw*(+r.dataset.i)+gw/2,y(Math.max(p.sales,p.expense)))};
+  svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);svg.addEventListener('pointerleave',()=>finTip(el,''))}
+function renderFin(){const box=$('fin');if(!FIN){return}const f=FIN;$('finAsOf').textContent=f.asOf?String(f.asOf).slice(5).replace('-','/')+' 時点':'';
+  const items=(f.cash&&f.cash.items)||[];const bankFresh=items.filter(x=>x.fresh&&x.amount>0).reduce((a,x)=>a+x.amount,0);const card=items.filter(x=>x.amount<0).reduce((a,x)=>a+x.amount,0);
+  const fc=f.forecast||[],lastF=fc[fc.length-1],minF=fc.length?fc.reduce((a,b)=>b.end<a.end?b:a):null;
+  const pl=f.pl||[],ys=pl.reduce((a,p)=>a+p.sales,0),ye=pl.reduce((a,p)=>a+p.expense,0);const rc=f.receivables||{};
+  const tile=(l,v,s,cls)=>`<div class="tile ${cls||''}"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
+  const tiles=tile('銀行にあるお金（同期できている口座）',`${man(bankFresh)}<small>万円</small>`,items.filter(x=>x.fresh&&x.amount>0).map(x=>esc(x.name)).join('・')+(card?`／カードの未払い ${man(card)}万（帳簿）`:''))
+    +(lastF?tile(`${mLabel(lastF.m)}末の見込み`,`${man(lastF.end)}<small>万円</small>`,minF&&minF!==lastF?`いちばん少ないのは ${mLabel(minF.m)}末 ${man(minF.end)}万`:'推測（くり返しの入出金から）',lastF.end<0?'bad':lastF.end<100000?'warn':''):'')
+    +(pl.length?tile(`${mLabel(pl[0].m)}〜${mLabel(pl[pl.length-1].m)}の差し引き`,`${man(ys-ye)}<small>万円</small>`,`売上 ${man(ys)}万・経費 ${man(ye)}万（freee の帳簿）`):'')
+    +(rc.amount!=null?tile('入金待ち（本当の分）',`${man(rc.amount)}<small>万円</small>`,`${rc.count!=null?rc.count+'件・':''}${esc(clip(rc.note||'',60))}`):'');
+  const al=(f.alerts||[]).map(a=>`<div class="alert">⚠️ ${esc(a)}</div>`).join('');
+  const rec=f.recurring||[];const recH=rec.length?`<h3>毎月くり返す入出金 <small>くりまんじゅう調べ</small></h3><ul>${rec.map(r=>`<li>${r.dir==='in'?'⬆︎ 入金':'⬇︎ 出金'}：${esc(r.who)} <span class="amt">${yen(r.amount)}</span>${r.day?`（${esc(r.day)}）`:''}${r.note?` <span style="color:var(--sub)">${esc(r.note)}</span>`:''}</li>`).join('')}</ul>`:'';
+  const tbl=`<details><summary>数字の表で見る</summary><table><tr><th>月</th><th>売上</th><th>経費</th><th>銀行の入金</th><th>銀行の出金</th><th>月末残高</th></tr>${[...new Set([...pl.map(p=>p.m),...(f.bank||[]).map(b=>b.m),...fc.map(b=>b.m)])].sort().map(m=>{const p=pl.find(x=>x.m===m)||{},b=(f.bank||[]).find(x=>x.m===m)||fc.find(x=>x.m===m)||{};const isF=fc.some(x=>x.m===m);return `<tr><td>${mLabel(m)}${isF?'（見込み）':''}</td><td>${p.sales!=null?yen(p.sales):'−'}</td><td>${p.expense!=null?yen(p.expense):'−'}</td><td>${b.in!=null?yen(b.in):'−'}</td><td>${b.out!=null?yen(b.out):'−'}</td><td>${b.end!=null?yen(b.end):'−'}</td></tr>`}).join('')}</table></details>`;
+  const notes=(f.notes||[]).length?`<details><summary>前提と注意（推測のところ）</summary><ul>${f.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></details>`:'';
+  box.innerHTML=`<div class="tiles">${tiles}</div>${al}<h3>月末の銀行残高 <small>楽天銀行・実線は実績、点線は見込み</small></h3><div class="chart" id="finLine"></div>
+    <h3>月ごとの売上と経費 <span class="lg"><span><i style="background:var(--s1)"></i>売上</span><span><i style="background:var(--s2)"></i>経費</span></span></h3><div class="chart" id="finBars"></div>${recH}${tbl}${notes}
+    <div class="foot">くりまんじゅうが freee を読むだけで集計（書き込みはしません）。更新：${f.updatedAt?fmt(f.updatedAt):'-'}。毎週月曜と、頼まれたときに更新します。この欄はそーやんだけに見えます。</div>`;
+  finLine($('finLine'));finBars($('finBars'))}
+let finRz=0;addEventListener('resize',()=>{clearTimeout(finRz);finRz=setTimeout(()=>{if(FIN&&$('finLine'))renderFin()},200)});
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-done','h-xc','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-done','h-xc','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1098,6 +1169,7 @@ const SUMS={
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
  'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':x.k==='f'?(x.hunt?'⚔️':'🥊'):'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
+ 'h-fin':()=>{if(!FIN)return '<div class="li">くりまんじゅうが集計中です</div>';const it=((FIN.cash||{}).items||[]).filter(x=>x.fresh&&x.amount>0).reduce((a,x)=>a+x.amount,0);const fc=FIN.forecast||[],l=fc[fc.length-1];return `<div class="li">銀行 <b>${man(it)}万円</b>${l?`・${mLabel(l.m)}末の見込み <b>${man(l.end)}万円</b>`:''}</div>`+((FIN.alerts||[])[0]?`<div class="li">⚠️ ${esc(clip(FIN.alerts[0],44))}</div>`:'')},
  'h-app':()=>{const mine=APPS.filter(appMine);const n=k=>APPS.filter(a=>a.stage===k).length;return APPS.length?chips([['アイデア',n('idea')],['企画・設計',n('plan')+n('design')],['試作・試用',n('build')+n('try'),'#b7791f'],['運用',n('live'),'#4f8f4a']])+(mine.length?`<div class="li">🙋 そーやんの番：${esc(clip(mine[0].title,40))}${mine.length>1?' ほか':''}</div>`:''):'<div class="li">つくってみたいアプリを書くと、制作部が動きます</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
@@ -1109,7 +1181,7 @@ const SUMS={
  'h-rs':()=>{const act=ORDER.filter(id=>agentState(id)==='active').length,bn=ORDER.filter(id=>agentState(id)==='bench').length;return chips([['稼働',act,'#4f8f4a'],['控え',bn,'#857a70'],['常時発注',(STATUS.standing||[]).length,'#3f6fd8']])},
  'h-dc':()=>{const l=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${l?'最新：'+esc(clip(l.title,50)):'まだありません'}</div>`}};
 function setBox(id,open,noSave){const h=document.getElementById(id);if(!h)return;const sec=h.closest('section'),body=sec.querySelector(':scope>.bx-body'),sum=sec.querySelector(':scope>.bx-sum');if(!body)return;
-  body.hidden=!open;sum.hidden=open;h.setAttribute('aria-expanded',String(open));sec.classList.toggle('cp',!open);BOXST[id]=open?1:0;if(!noSave)saveBox();if(!open)renderSums()}
+  body.hidden=!open;sum.hidden=open;if(open&&id==='h-fin'&&FIN)setTimeout(renderFin,0);h.setAttribute('aria-expanded',String(open));sec.classList.toggle('cp',!open);BOXST[id]=open?1:0;if(!noSave)saveBox();if(!open)renderSums()}
 function renderSums(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!h)return;const sum=h.closest('section').querySelector(':scope>.bx-sum');if(!sum||sum.hidden)return;let html='';try{html=SUMS[id]()}catch(e){html=''}if(sum.dataset.h!==html){const focus=document.activeElement&&sum.contains(document.activeElement);if(!focus){sum.innerHTML=html;sum.dataset.h=html}}})}
 function initBoxes(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!h)return;const sec=h.closest('section');if(sec.querySelector(':scope>.bx-body'))return;
   const body=document.createElement('div');body.className='bx-body';[...sec.children].forEach(c=>{if(c!==h)body.appendChild(c)});const sum=document.createElement('div');sum.className='bx-sum';
@@ -1171,7 +1243,7 @@ $('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contain
 $('arrDone').addEventListener('click',()=>laySet(false));
 $('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
 LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
-async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin()},()=>{});
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
