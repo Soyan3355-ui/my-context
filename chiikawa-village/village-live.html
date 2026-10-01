@@ -843,13 +843,14 @@ renderRounds();setInterval(renderRounds,60000);
 
 
 // ---------- ちいかわからの提案 ----------
+function uiChip(x){return x.kind==='ui'?`<span class="chip so">${x.uiType==='add'?'✨ 画面に足す案':'🖥 画面の改善'}</span>`:''}
 function ideaCard(x,decided){const r=ROLES[x.who]||['',''];const st={approved:x.kind==='structure'?'承認ずみ（第一歩を次の見回りで）':'承認ずみ（次の見回りで着手）',doing:'作業中',done:'できた',declined:'見送り',later:'あとで'}[x.status]||'';const big=x.kind==='structure';
   const mt=`<div class="mt">${x.effort?`<span class="chip">手間 ${esc(x.effort)}</span>`:''}${x.autonomy?`<span class="chip">${esc(x.autonomy)}</span>`:''}${x.needsApproval?'<span class="chip appr">送信・お金の操作はしません</span>':''}</div>`;
-  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b>${big?'<span class="chip so">仕組み</span>':''}<span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.instruction?`<p>✏️ 指示：${esc(x.instruction)}</p>`:''}${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
+  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b>${big?'<span class="chip so">仕組み</span>':''}${uiChip(x)}<span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.instruction?`<p>✏️ 指示：${esc(x.instruction)}</p>`:''}${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
   const P=(l,v)=>v?`<p><b>${l}</b>${esc(v)}</p>`:'';
   const body=big?P('いまの流れ：',x.current)+P('自動化するとどうなる：',x.after)+P('見込み：',x.saving)+P('必要なもの：',x.needs)+P('リスクと歯止め：',x.risks)+P('小さく試す第一歩：',x.firstStep)+P('担当・承認が要る操作：',x.owners)
-    :(x.what?`<p>やること：${esc(x.what)}</p>`:'')+(x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:'')+(x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:'')+mt;
-  return `<div class="idea${big?' big':''}"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span>${big?'<span class="chip so">🏗 仕組みの提案</span>':''}</div><div class="ti">${esc(x.title)}</div>${body}${big&&safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">くわしい資料（Notion）↗</a></p>`:''}
+    :P('使われ方：',x.evidence)+(x.what?`<p>やること：${esc(x.what)}</p>`:'')+(x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:'')+(x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:'')+mt;
+  return `<div class="idea${big?' big':''}"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span>${big?'<span class="chip so">🏗 仕組みの提案</span>':''}${uiChip(x)}</div><div class="ti">${esc(x.title)}</div>${body}${big&&safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">くわしい資料（Notion）↗</a></p>`:''}
     <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">${big?'第一歩を始める':'やってもらう'}</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div><details class="ins"><summary>✏️ 指示を書いて頼む</summary><textarea data-ins="${esc(x.id)}" placeholder="例：講座の分だけでいい／金曜までに／○○も入れて" aria-label="指示"></textarea><div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="ins">この指示で頼む</button></div></details></div>`}
 function renderIdeas(){const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const dl=IDEAS.filter(x=>['approved','doing','done','declined'].includes(x.status)).sort((a,b)=>(b.decidedAt||b.createdAt||0)-(a.decidedAt||a.createdAt||0)).slice(0,6);
   $('ideaCnt').textContent=o.length?`${o.length}件`:'';const keep=$('ideas').querySelector('details.xdone')?.open;
@@ -1036,11 +1037,32 @@ $('boxAll').addEventListener('click',()=>{const anyClosed=BOXES.some(id=>documen
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(t.dataset.sumt&&t.checked){setTask(t.dataset.sumt,{done:true}).then(renderSums)}
   else if(t.dataset.dgt&&t.checked&&t.closest('.bx-sum')){setTask(t.dataset.dgt,{done:true}).then(()=>{renderDigest();renderSums()})}});
 
+// ---------- つかい方の記録（3日ごとの画面の見直し用） ----------
+// 項目ごとに「ひらいて見えていた秒数」（閉じた見出しだけは数えない）と「さわった回数」を1日1端末1件で usage に残す。中身（入力した文字など）は残さない
+const USE={day:'',doc:null,secs:{},taps:{},dirty:false,cid:''};
+function useKey(el){if(!el||!el.closest)return '';const s=el.closest('section[aria-labelledby]');if(s)return s.getAttribute('aria-labelledby');
+  if(el.closest('#nowbox'))return 'h-now';if(el.closest('#win'))return 'win';if(el.closest('#stage'))return 'stage';if(el.closest('.hud'))return 'hud';if(el.closest('.fc-pill'))return 'pill';return ''}
+function useDay(){const d=new Date(dayStart(0));return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}
+function useRoll(){const k=useDay();if(USE.day===k)return;if(USE.dirty)useFlush();USE.day=k;USE.secs={};USE.taps={};USE.doc=null;USE.dirty=false}
+async function useFlush(){if(!db||!canWrite||!USE.dirty||!USE.day)return;USE.dirty=false;
+  const id='u-'+USE.day+'-'+USE.cid;const doc={day:USE.day,client:USE.cid,secs:USE.secs,taps:USE.taps,updatedAt:Date.now(),w:innerWidth};
+  try{await db.collection('usage').doc(id).set(doc)}catch(e){}}
+function usageStart(){
+  try{USE.cid=localStorage.getItem('ck-cid')||'';if(!USE.cid){USE.cid=Math.random().toString(36).slice(2,10);localStorage.setItem('ck-cid',USE.cid)}}catch(e){USE.cid=USE.cid||Math.random().toString(36).slice(2,10)}
+  useRoll();
+  const vis=new Map();const io=new IntersectionObserver(es=>{for(const e of es){const k=useKey(e.target);if(!k)continue;if(e.isIntersecting&&e.intersectionRatio>=0.3)vis.set(k,e.target);else vis.delete(k)}},{threshold:[0,0.3,0.6]});
+  document.querySelectorAll('section[aria-labelledby],#nowbox,#stage').forEach(el=>io.observe(el));
+  setInterval(()=>{if(document.visibilityState!=='visible')return;useRoll();for(const [k,el] of vis){if(el.offsetHeight<90)continue;USE.secs[k]=(USE.secs[k]||0)+1}USE.secs._all=(USE.secs._all||0)+1;USE.dirty=true},1000);
+  const tap=e=>{const k=useKey(e.target);if(!k)return;useRoll();USE.taps[k]=(USE.taps[k]||0)+1;USE.dirty=true};
+  document.addEventListener('click',tap,true);document.addEventListener('change',tap,true);
+  setInterval(useFlush,60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')useFlush()});addEventListener('pagehide',useFlush)}
+
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
   if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}}if(SAMPLE)await chatProbe();chatAvail();renderChatUi();
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
   try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false}}catch(e){}
+  usageStart();
   const ready={status:false,ex:false};let booted=false;
   function boot(){if(booted||!ready.status||!ready.ex)return;booted=true;
     const key='dg:'+(STATUS.updatedAt||0);const open=XCS.filter(x=>x.status!=='answered');
