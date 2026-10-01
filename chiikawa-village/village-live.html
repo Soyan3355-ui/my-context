@@ -227,6 +227,14 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .bx-sum .pgc{font-style:normal;font-size:11px;color:#c2463d;margin-left:3px}
 .fc-pill{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;font:inherit;font-size:15px;border:2px solid #e36d72;border-radius:999px;background:var(--panel);color:var(--ink);padding:6px 14px;box-shadow:0 2px 8px rgba(0,0,0,.18);cursor:pointer;font-variant-numeric:tabular-nums}
 .fc-pill.brk{border-color:#8fd18a}
+.ap-flow{display:flex;flex-wrap:wrap;gap:4px;font-size:12px;margin-bottom:6px}.ap-flow span{border:1.5px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--sub)}.ap-flow span b{color:var(--ink)}
+.ap-new summary{cursor:pointer;color:var(--info);font-size:13.5px;padding:4px 0}.ap-new form{display:grid;gap:6px;margin:6px 0 4px}.ap-new input,.ap-new textarea{font:inherit;font-family:var(--body);font-size:14px;border:2px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}.ap-new textarea{min-height:76px;resize:vertical}.ap-new .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ap-new select{font:inherit;font-size:13px}
+.app{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px;font-family:var(--body)}.app.me{border-color:#e36d72}.app .st i.on{background:var(--good)}.app .hd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}.app .ti{font-family:var(--dot);font-size:15px;margin:4px 0 2px;line-height:1.4}
+.app .st{display:flex;gap:3px;margin:6px 0}.app .st i{flex:1;height:6px;border-radius:3px;background:var(--line)}.app .st i.on{background:#4f8f4a}.app .st i.cur{background:#e6a23c}
+.app p{margin:4px 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.app .ball{font-weight:700}.app .th{border-top:1px dashed var(--line);margin-top:6px;padding-top:4px}.app .th .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:5px;font-size:12.5px;line-height:1.55}.app .th .rep img{width:20px;height:20px;image-rendering:pixelated}.app .th .me{background:var(--bg);border-radius:6px;padding:3px 6px}
+.app textarea{font:inherit;font-family:var(--body);font-size:13.5px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin-top:6px}
+.app .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.app .go button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:5px 10px;cursor:pointer}.app .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
+.app details.olda summary{cursor:pointer;color:var(--sub);font-size:12px}
 </style>
 
 <div class="app">
@@ -252,6 +260,13 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   <div class="cols">
     <div class="colA">
   <section style="order:3" class="box" aria-labelledby="h-work"><h2 id="h-work">📈 そーやんの仕事、どこまで代替できた？ <small id="workCnt"></small></h2><div id="work"><p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p></div></section>
+  <section style="order:3" class="box" aria-labelledby="h-app"><h2 id="h-app">🛠 アプリ制作部 <small id="appCnt"></small></h2>
+    <div class="ap-flow" id="appFlow"></div>
+    <details class="ap-new"><summary>💡 つくってみたいアプリを書く</summary>
+      <form id="appForm"><input id="appTitle" maxlength="80" placeholder="例：マイナビ農業の原稿づくりを楽にするアプリ" aria-label="アプリの名前"><textarea id="appWhy" maxlength="1500" placeholder="どんな手間を減らしたい？　だれが、いつ、どう使う？　ざっくりで大丈夫。" aria-label="どんな手間を減らしたいか"></textarea>
+      <div class="row"><label for="appArea" style="font-size:12px;color:var(--sub)">事業：</label><select id="appArea"><option>マイナビ農業</option><option>YouTube</option><option>コンテンツ全般</option><option>畑</option><option>講座</option><option>会計</option><option>全体</option></select><button type="submit" class="bt">制作部にとどける</button></div></form></details>
+    <div id="apps"><p class="empty">「こんなアプリがあったら」を書くと、ラッコたちが企画→設計→試作まで、そーやんと相談しながら進めます。</p></div>
+  </section>
   <section style="order:3" class="box" aria-labelledby="h-idea"><h2 id="h-idea">💡 ちいかわからの提案 <small id="ideaCnt"></small></h2><div id="ideas"><p class="empty">「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p></div></section>
   <section style="order:4" class="box chat" aria-labelledby="h-chat">
     <h2 id="h-chat">💬 ちいかわに相談 <small id="chatSt"></small></h2>
@@ -1000,8 +1015,47 @@ $('focusBody').addEventListener('click',e=>{const kb=e.target.closest('[data-kin
   if(k==='ok'){FOCUS=null;saveFocus();renderFocus(true)}});
 setInterval(()=>renderFocus(false),1000);addEventListener('scroll',()=>{if(FOCUS&&!FOCUS.doneAt)updPill(focusLeft())},{passive:true});
 
+
+// ---------- アプリ制作部（2026-10-01 そーやんの依頼） ----------
+let APPS=[];
+const APP_ST=[['idea','アイデア'],['plan','企画'],['design','設計'],['build','試作'],['try','試用'],['live','運用']];
+const appStIdx=k=>APP_ST.findIndex(s=>s[0]===k);
+const appMine=a=>a.waiting==='soyan'&&a.stage!=='hold'&&a.stage!=='live';
+function appCard(a){const i=appStIdx(a.stage),lead=a.owner||'rakko';const th=(a.thread||[]).slice(-4);
+  const step=APP_ST.map((s,j)=>`<i class="${j<i?'on':j===i?'cur':''}" title="${s[1]}"></i>`).join('');
+  const ball=a.stage==='hold'?'⏸ 保留中':a.stage==='live'?'✅ 運用中':appMine(a)?'🙋 そーやんの番':'🛠 制作部の番';
+  const ask=appMine(a)&&['plan','design','build','try'].includes(a.stage);
+  return `<div class="app${appMine(a)?' me':''}"><div class="hd"><img src="${ICON[lead]||ICON.rakko}" alt="" style="width:20px;height:20px;image-rendering:pixelated"><b>${esc(NAMES[lead]||'')}</b><span class="chip">${esc(a.area||'全体')}</span><span class="chip">${esc((APP_ST[i]||['','保留'])[1])}</span><span class="ball">${ball}</span></div>
+  <div class="ti">${esc(a.title)}</div>${i>=0?`<div class="st" aria-label="いまの段階：${esc(APP_ST[i][1])}">${step}</div>`:''}
+  ${a.why?`<p>減らしたい手間：${esc(clip(a.why,160))}</p>`:''}${a.summary?`<p>いまの案：${esc(a.summary)}</p>`:''}${a.next?`<p><b>次の一歩：</b>${esc(a.next)}</p>`:''}${a.ask&&appMine(a)?`<p><b>そーやんに聞きたいこと：</b>${esc(a.ask)}</p>`:''}
+  ${safeUrl(a.link)?`<p><a href="${esc(a.link)}" target="_blank" rel="noopener" style="color:var(--info)">${a.stage==='build'||a.stage==='try'||a.stage==='live'?'試作をひらく':'企画・設計（Notion）'} ↗</a></p>`:''}
+  ${th.length?`<div class="th">${th.map(m=>m.who==='soyan'?`<div class="rep me"><img src="${ICON.soyan}" alt=""><div><small style="color:var(--sub)">そーやん・${fmt(m.at)}</small><br>${esc(m.text)}</div></div>`:`<div class="rep"><img src="${ICON[m.who]||ICON.rakko}" alt=""><div><small style="color:var(--sub)">${esc(NAMES[m.who]||m.who)}・${fmt(m.at)}</small><br>${esc(m.text)}</div></div>`).join('')}</div>`:''}
+  <textarea data-apc="${esc(a.id)}" placeholder="ひとこと・直してほしいこと・思いついたこと" aria-label="制作部へのひとこと"></textarea>
+  <div class="go">${ask?`<button type="button" class="y" data-app="${esc(a.id)}" data-k="go">このまま次へ進めて</button>`:''}<button type="button" data-app="${esc(a.id)}" data-k="say">ひとこと送る</button>${a.stage!=='hold'&&a.stage!=='live'?`<button type="button" data-app="${esc(a.id)}" data-k="hold">いったん保留</button>`:a.stage==='hold'?`<button type="button" data-app="${esc(a.id)}" data-k="resume">再開する</button>`:''}</div></div>`}
+function renderApps(){const n=k=>APPS.filter(a=>a.stage===k).length;const mine=APPS.filter(appMine).length;
+  $('appCnt').textContent=APPS.length?`${APPS.length}件${mine?'・そーやんの番 '+mine:''}`:'';
+  $('appFlow').innerHTML=APP_ST.map(([k,l])=>`<span>${l} <b>${n(k)}</b></span>`).join('<span style="border:0;padding:0">→</span>')+(n('hold')?`<span>保留 <b>${n('hold')}</b></span>`:'');
+  const act=APPS.filter(a=>a.stage!=='hold').sort((a,b)=>(appMine(b)-appMine(a))||(appStIdx(b.stage)-appStIdx(a.stage))||((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
+  const hold=APPS.filter(a=>a.stage==='hold');const box=$('apps');const fo=document.activeElement&&box.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA';
+  const drafts={};box.querySelectorAll('textarea[data-apc]').forEach(t=>{if(t.value)drafts[t.dataset.apc]=t.value});if(fo)return;
+  box.innerHTML=APPS.length?act.map(appCard).join('')+(hold.length?`<details class="olda"><summary>保留中 ${hold.length}件</summary>${hold.map(appCard).join('')}</details>`:'')
+    :'<p class="empty">「こんなアプリがあったら」を書くと、ラッコたちが企画→設計→試作まで、そーやんと相談しながら進めます。</p>';
+  for(const id in drafts){const t=box.querySelector(`textarea[data-apc="${CSS.escape(id)}"]`);if(t)t.value=drafts[id]}}
+async function appPatch(id,patch){const a=APPS.find(x=>x.id===id);if(a)Object.assign(a,patch);renderApps();await write('apps',id,patch)}
+$('appForm').addEventListener('submit',async e=>{e.preventDefault();const t=$('appTitle').value.trim();if(!t)return;const a={title:t.slice(0,80),why:$('appWhy').value.trim().slice(0,1500),area:$('appArea').value,stage:'idea',from:'soyan',owner:'rakko',waiting:'team',thread:[],createdAt:Date.now(),updatedAt:Date.now()};
+  $('appTitle').value='';$('appWhy').value='';$('appForm').closest('details').open=false;
+  if(db&&canWrite){try{const ref=await db.collection('apps').add(a);if(!APPS.find(x=>x.id===ref.id)){APPS.push({id:ref.id,...a});renderApps()}}catch(err){APPS.push({id:'local'+Date.now(),...a});renderApps()}}else{APPS.push({id:'local'+Date.now(),...a});renderApps()}
+  ent.rakko.jump=1;floater('🛠',ent.rakko)});
+$('apps').addEventListener('click',e=>{const b=e.target.closest('button[data-app]');if(!b)return;const a=APPS.find(x=>x.id===b.dataset.app);if(!a)return;const k=b.dataset.k;
+  const ta=$('apps').querySelector(`textarea[data-apc="${CSS.escape(a.id)}"]`);const txt=ta?ta.value.trim().slice(0,1500):'';const now=Date.now();
+  const th=(a.thread||[]).slice();if(txt)th.push({who:'soyan',text:txt,at:now});
+  if(k==='say'&&!txt){ta&&ta.focus();return}if(ta)ta.value='';
+  if(k==='say'){if(!txt){ta&&ta.focus();return}appPatch(a.id,{thread:th,waiting:'team',updatedAt:now});floater('💬',ent.rakko)}
+  else if(k==='go'){th.push({who:'soyan',text:'✅ このまま次へ進めて',at:now});appPatch(a.id,{thread:th,go:a.stage,goAt:now,waiting:'team',updatedAt:now});floater('✅',ent.rakko)}
+  else if(k==='hold'){th.push({who:'soyan',text:'⏸ いったん保留',at:now});appPatch(a.id,{thread:th,stage:'hold',holdFrom:a.stage,waiting:'team',updatedAt:now})}
+  else if(k==='resume'){th.push({who:'soyan',text:'▶ 再開する',at:now});appPatch(a.id,{thread:th,stage:a.holdFrom||'idea',waiting:'team',updatedAt:now})}});renderApps();
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-done','h-xc','h-work','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-done','h-xc','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1013,6 +1067,7 @@ const SUMS={
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
  'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':x.k==='f'?(x.hunt?'⚔️':'🥊'):'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
+ 'h-app':()=>{const mine=APPS.filter(appMine);const n=k=>APPS.filter(a=>a.stage===k).length;return APPS.length?chips([['アイデア',n('idea')],['企画・設計',n('plan')+n('design')],['試作・試用',n('build')+n('try'),'#b7791f'],['運用',n('live'),'#4f8f4a']])+(mine.length?`<div class="li">🙋 そーやんの番：${esc(clip(mine[0].title,40))}${mine.length>1?' ほか':''}</div>`:''):'<div class="li">つくってみたいアプリを書くと、制作部が動きます</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
  'h-chat':()=>{const n=(LOGS[chatKey()]||[]).filter(m=>m.role!=='sys').length;return `<div class="li">${esc(NAMES[chatChar])}に相談${n?'・会話 '+n+'件':'（ひらいて質問できます）'}${PEND.length?'　<b>確認待ち '+PEND.length+'件</b>':''}</div>`},
  'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.progress?` <em class="pgc">${+t.progress}%</em>`:''}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
@@ -1077,6 +1132,7 @@ function usageStart(){
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
   db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
   db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
+  db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
   db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
   db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
   db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
