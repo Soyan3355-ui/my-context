@@ -114,13 +114,64 @@
       c.roster = () => sq;
     }
   }
+  // ---------------- regional league: semi-pro clubs, the last stop before the national pyramid ----------------
+  const CLUBS3 = [];
+  function club3(c) { CLUBS3.push(c); c.tier = 'regional'; return c; }
+  club3({ id: 'raiden', boost: 8, name: '雷電エナジーFC', short: '雷電', en: 'RAIDEN', color: '#f0c020', dark: '#b08a10', light: '#fff08a', ink: '#2a2a10',
+    tactic: 'press', planB: 'counter', coach: '総務部長', captain: 'raita', rating: 67, ground: '雷電スタジアム',
+    blurb: '電力会社の実業団。電光石火のショートカウンターで一気に襲いかかる。', shouts: ['送電開始！', '一気に流し込め！', 'ショートさせるな！'] });
+  club3({ id: 'hokuto', boost: 8, name: '北斗大学', short: '北斗大', en: 'HOKUTO', color: '#3a4aa8', dark: '#22307a', light: '#8a9aff', ink: '#10183a',
+    tactic: 'possession', planB: 'press', coach: '教授', captain: 'subaru', rating: 68, ground: '北斗大学陸上競技場',
+    blurb: '大学サッカーの名門。プロ注目の若手がそろう、精密なパスサッカー。', shouts: ['理論通りに！', '美しく崩せ！', '星のように輝け！'] });
+  club3({ id: 'kotobuki', boost: 8, name: '寿製菓FC', short: '寿製菓', en: 'KOTOBUKI', color: '#e86aa0', dark: '#b03a70', light: '#ffb8d8', ink: '#3a0e24',
+    tactic: 'counter', planB: 'possession', coach: '社長', captain: 'mitsu', rating: 66, ground: '寿製菓スタジアム',
+    blurb: 'お菓子メーカーの実業団。甘い顔して守備は固い、鉄壁の堅守速攻。', shouts: ['甘くないぞ！', 'しっかり固めて！', 'ひと口で仕留める！'] });
+  club3({ id: 'kurushima', boost: 9, name: '来島マリナーズ', short: '来島', en: 'KURUSHIMA', color: '#1a8a8a', dark: '#0e5a5a', light: '#7ad8d8', ink: '#062a2a',
+    tactic: 'long', planB: 'press', coach: '船長', captain: 'gou', rating: 67, ground: '来島マリンパーク',
+    blurb: '造船の町のクラブ。荒波のようなロングボールと空中戦で押し切る。', shouts: ['帆を張れ！', '荒波で押し流せ！', '面舵いっぱい！'] });
+  club3({ id: 'akashi', boost: 10, name: '赤石ユナイテッド', short: '赤石U', en: 'AKASHI', color: '#c8102e', dark: '#8a0a1e', light: '#ff6a7a', ink: '#2a0008',
+    tactic: 'possession', planB: 'press', coach: 'GM兼監督', captain: 'ryuji', rating: 72, ground: '赤石フットボールパーク', boss: true,
+    blurb: 'Jリーグ参入を本気で目指すクラブ。元Jリーガーをそろえた、この地域の絶対王者。', shouts: ['ここは通過点だ！', 'Jの基準でやれ！', 'プロの意地を見せろ！'] });
+  const NAMES3 = {
+    raiden: ['検針の針谷', '変電の鳴神', '配電の電', '送電の高圧', '保安の守', '電柱の柱本', '営業の明', '計測の秤', '発電の轟', 'ライタ', '節電の倹'],
+    hokuto: ['主将の北', '理工の鏡', '法学の判', '経済の銭', '文学の詩', '教育の導', 'スバル', '医学の診', '農学の稲', '工学の歯車', '新入生の芽'],
+    kotobuki: ['製造部の窯', '品質の検', 'ミツ', '包装の箱田', '営業の甘利', '企画の新', '工場長の焼', '物流の早', '広報の飴', '経理の算', '試食係の舌'],
+    kurushima: ['溶接の継', '艤装の帆', '塗装の錨', '設計の図', '進水の祝', '甲板の板', '機関の焚', '航海の羅針', '漁協の網', '造船の舳', 'ゴウ'],
+    akashi: ['元J・守護神の堅', '元Jの壁', '元Jの城', '期待の新星', '元J主将の誠', 'ユース上がりの翔', 'リュウジ', '元代表候補の閃', '元Jの技', '点取り屋の轟', '元Jの鷹'],
+  };
+  const CAPTAINS3 = {
+    raiden: { slot: 9, def: { id: 'raita', nick: '電光石火', full: '稲妻 ライタ', trait: '放電ダッシュ', traitDesc: '一瞬の加速で裏を取る。', age: 24, job: '電力会社社員', bio: '社内一の俊足。検針の途中でも全力疾走する。', specialUnlocked: true }, stats: { spd: 84, sht: 74, pas: 52, def: 30, sta: 62 }, look: { style: 'spiky', hair: '#f0c020', hairD: '#b08a10' } },
+    hokuto: { slot: 6, def: { id: 'subaru', nick: '北斗の頭脳', full: '星川 スバル', trait: '精密機械', traitDesc: 'パスがほとんどずれない。', age: 21, job: '大学3年生', bio: 'プロのスカウトも見に来る大学屈指の司令塔。試合が終わるとすぐ論文に戻る。', specialUnlocked: true }, stats: { pas: 86, spd: 62, sht: 60, def: 50, sta: 64 }, look: { style: 'bob', hair: '#1a1a2a', hairD: '#0a0a14' } },
+    kotobuki: { slot: 2, def: { id: 'mitsu', nick: '甘くない壁', full: '甘利 ミツ', trait: '鉄壁', traitDesc: '1対1でほとんど抜かれない。', age: 31, job: '製菓工場の主任', bio: '工場では飴細工の名人。守備では一切の甘さを見せない。', specialUnlocked: true }, stats: { def: 86, spd: 60, sta: 72, pas: 50, sht: 36 }, look: { style: 'ponytail', hair: '#6a4020', hairD: '#4a2a14' } },
+    kurushima: { slot: 10, def: { id: 'gou', nick: '荒波の巨人', full: '剛力 ゴウ', trait: '大波ヘッド', traitDesc: '空中戦とヘディングが無類の強さ。', age: 30, job: '造船所の溶接工', bio: '身長195cm。鉄板を片手で運ぶ怪力。', specialUnlocked: true }, stats: { sht: 80, def: 56, spd: 50, pas: 42, sta: 70 }, look: { style: 'short', body: 'big', hair: '#2a1a24', hairD: '#140c12' } },
+    akashi: { slot: 6, def: { id: 'ryuji', nick: '元Jリーガー', full: '赤城 リュウジ', trait: 'Jの基準', traitDesc: 'すべての能力が高い次元でまとまっている。', age: 31, job: 'クラブ専属（元J1）', bio: 'J1で100試合以上に出た男。「ここは通過点だ」が口ぐせ。', specialUnlocked: true }, stats: { pas: 84, spd: 74, sht: 80, def: 70, sta: 76 }, look: { style: 'pomp', hair: '#2a1a24', hairD: '#140c12' } },
+  };
+  for (const c of CLUBS3) {
+    c.kit = kit(c.color, c.dark, c.light, c.ink, c.ink);
+    c.gen = { names: NAMES3[c.id], captain: CAPTAINS3[c.id] };
+    const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = 82;
+    const sq = squad(c, NAMES3[c.id], c.rating, tacU, CAPTAINS3[c.id]);
+    c.roster = () => sq;
+  }
+
+  // the pyramid, bottom to top. Each step up raises the money, the stat ceiling and the rivals' edge;
+  // JFL / J3 / J2 / J1 slot in here later as further entries with their own club lists
+  const TIERS = [
+    { id: 'district', name: '港湾地区リーグ', label: '地区リーグ', short: '地区', money: 1, tacU: 78 },
+    { id: 'prefecture', name: '県リーグ', label: '県リーグ', short: '県', money: 1.6, tacU: 80 },
+    { id: 'regional', name: '西海地域リーグ', label: '地域リーグ', short: '地域', money: 2.4, tacU: 82 },
+  ];
+  const NEXT_STAGE = 'JFL';
+  const tierIndex = (t) => Math.max(0, TIERS.findIndex((x) => x.id === t));
+  const tierInfo = (t) => TIERS[tierIndex(t)];
   const gatekeeper = () => CLUBS2.find((c) => c.gatekeeper) || CLUBS2[0];
 
   // single round robin: 5 rounds for 6 teams (circle method), Hamakaze meets Yamaoroshi in round 1
   const TEAMS = ['hamakaze', 'shiomi', 'chikurin', 'yukemuri', 'minori', 'yamaoroshi'];
   const TEAMS2 = ['hamakaze', 'kaiyou', 'tekkyo', 'kurogane', 'minatomirai', 'shirasagi'];
-  const teamsForTier = (tier) => (tier === 'prefecture' ? TEAMS2 : TEAMS);
-  const clubsForTier = (tier) => (tier === 'prefecture' ? CLUBS2 : CLUBS);
+  const TEAMS3 = ['hamakaze', 'raiden', 'hokuto', 'kotobuki', 'kurushima', 'akashi'];
+  const teamsForTier = (tier) => (tier === 'regional' ? TEAMS3 : tier === 'prefecture' ? TEAMS2 : TEAMS);
+  const clubsForTier = (tier) => (tier === 'regional' ? CLUBS3 : tier === 'prefecture' ? CLUBS2 : CLUBS);
   function fixtures(teamList) {
     const t = (teamList || TEAMS).slice(), rounds = [];
     for (let r = 0; r < t.length - 1; r++) {
@@ -132,7 +183,7 @@
     // a double round-robin (home and away each), matching the real-world's own season length
     return rounds.concat(rounds.map((r) => r.map((pr) => [pr[1], pr[0]])));
   }
-  const clubById = (id) => CLUBS.find((c) => c.id === id) || CLUBS2.find((c) => c.id === id);
+  const clubById = (id) => CLUBS.find((c) => c.id === id) || CLUBS2.find((c) => c.id === id) || CLUBS3.find((c) => c.id === id);
   const TEAM_NAME = (id) => (id === 'hamakaze' ? 'ハマカゼFC' : clubById(id).name);
   const TEAM_SHORT = (id) => (id === 'hamakaze' ? 'ハマカゼ' : clubById(id).short);
 
@@ -151,8 +202,8 @@
   // Yamaoroshi (the story rival in the district) and Shirasagi (the prefecture gatekeeper) stay put;
   // the other eight are dealt into the two leagues fresh for every new game, re-rated for the level
   // they land in, handed a coach personality, and given a newly generated squad.
-  const ALL = CLUBS.concat(CLUBS2);
-  const DEFAULTS = ALL.map((c) => ({ c, tier: c.tier, rating: c.rating, boost: c.boost, tactic: c.tactic, planB: c.planB }));
+  const ALL = CLUBS.concat(CLUBS2), EVERY = ALL.concat(CLUBS3);
+  const DEFAULTS = EVERY.map((c) => ({ c, tier: c.tier, rating: c.rating, boost: c.boost, tactic: c.tactic, planB: c.planB }));
   const FIXED = { yamaoroshi: 'district', shirasagi: 'prefecture' };
   const COACH_STYLES = [
     { id: 'iron', name: '鉄壁主義', desc: 'とにかく失点しないことが第一。守備陣が分厚い。', tactic: 'counter', planB: 'possession', skew: { DF: { def: 5 }, MF: { def: 3 }, FW: { sht: -2 } } },
@@ -173,7 +224,7 @@
       pref = movable.slice(4).concat(ALL.filter((c) => FIXED[c.id] === 'prefecture'));
       for (const c of dist) if (!FIXED[c.id]) { c.tier = 'district'; c.rating = 52 + Math.floor(rr() * 8); c.boost = 3 + Math.floor(rr() * 3); }
       for (const c of pref) if (!FIXED[c.id]) { c.tier = 'prefecture'; c.rating = 57 + Math.floor(rr() * 9); c.boost = 5 + Math.floor(rr() * 3); }
-      for (const c of ALL) {
+      for (const c of EVERY) {
         if (c.id === 'yamaoroshi') continue; // 鬼瓦監督 is who he is
         const st = COACH_STYLES[Math.floor(rr() * COACH_STYLES.length)];
         c.style = st; c.tactic = st.tactic; c.planB = st.planB;
@@ -184,9 +235,9 @@
     TEAMS.length = 0; TEAMS.push('hamakaze', ...dist.filter((c) => c.id !== 'yamaoroshi').map((c) => c.id), 'yamaoroshi');
     TEAMS2.length = 0; TEAMS2.push('hamakaze', ...pref.filter((c) => c.id !== 'shirasagi').map((c) => c.id), 'shirasagi');
     // fresh squads, built in a fixed order so the same seed always deals the same players
-    for (const c of ALL) {
+    for (const c of EVERY) {
       if (!c.gen) continue;
-      const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = c.tier === 'prefecture' ? 80 : 78;
+      const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = tierInfo(c.tier).tacU;
       const sq = squad(c, c.gen.names, c.rating, tacU, c.gen.captain);
       const skew = (c.style && c.style.skew) || {};
       for (const p of sq) for (const k in (skew[p.pos] || {})) p.stats[k] = Math.max(18, Math.min(92, p.stats[k] + skew[p.pos][k]));
@@ -195,5 +246,5 @@
   }
   const CLUBS_ORDER = [CLUBS.slice(), CLUBS2.slice()];
 
-  window.League = { CLUBS, CLUBS2, ALL_CLUBS: ALL, COACH_STYLES, setupRun, TEAMS, TEAMS2, teamsForTier, clubsForTier, gatekeeper, fixtures, clubById, TEAM_NAME, TEAM_SHORT, simulate };
+  window.League = { CLUBS, CLUBS2, CLUBS3, ALL_CLUBS: EVERY, TIERS, NEXT_STAGE, tierIndex, tierInfo, COACH_STYLES, setupRun, TEAMS, TEAMS2, TEAMS3, teamsForTier, clubsForTier, gatekeeper, fixtures, clubById, TEAM_NAME, TEAM_SHORT, simulate };
 })();

@@ -314,14 +314,16 @@
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
   // level, then eases off hard past it, so a season closes the gap instead of blowing past it forever
   // the hard ceiling on stats and tactic understanding opens up as the club climbs:
-  // district 120 → prefecture 150 → prefecture champions 200. Kept on the peak level reached,
-  // so a relegation never shrinks what the squad has already earned.
+  // district 120 → prefecture 150 → regional (or prefecture champions) 200. Kept on the peak level
+  // reached, so a relegation never shrinks what the squad has already earned. Levels follow the
+  // league pyramid (League.TIERS); tiers added above the last entry here reuse its values.
   const CAP_BY_LEVEL = [120, 150, 200];
-  function capLevel() { return Math.max(State.capLevel || 0, State.tier === 'prefecture' ? 1 : 0); }
-  function statCap() { return CAP_BY_LEVEL[capLevel()]; }
-  function growthTaper(cur) { const top = [82, 105, 135][capLevel()]; return cur < 52 ? 1 : clamp((top - cur) / (top - 44), 0.12, 1); }
+  const lvl = (arr) => arr[Math.min(arr.length - 1, capLevel())];
+  function capLevel() { return Math.max(State.capLevel || 0, League.tierIndex(State.tier)); }
+  function statCap() { return lvl(CAP_BY_LEVEL); }
+  function growthTaper(cur) { const top = lvl([82, 105, 135]); return cur < 52 ? 1 : clamp((top - cur) / (top - 44), 0.12, 1); }
   // tactic understanding eases off near full mastery too, same idea as growthTaper
-  function tacTaper(cur) { const top = [100, 125, 160][capLevel()]; return cur < 65 ? 1 : clamp((top - cur) / (top - 65), 0.1, 1); }
+  function tacTaper(cur) { const top = lvl([100, 125, 160]); return cur < 65 ? 1 : clamp((top - cur) / (top - 65), 0.1, 1); }
   // the squad starts well below the rivals' level by design, but it shouldn't still feel like that
   // past the halfway point of the very first season: a fading catch-up bonus, gone by week 5 of
   // ~10, gets year one close to competitive without touching pace in any season after
@@ -363,18 +365,18 @@
   //  - down in the district league they only chase most of the gap, so it stays winnable
   function rivalLift(club) {
     const m = (State.clubMods || {})[club.id] || { r: 0 };
-    const pref = club.tier === 'prefecture';
+    const ti = League.tierIndex(club.tier), pref = ti >= 1;
     const xi = State.lineup.map((id) => State.roster.find((q) => q.id === id)).filter(Boolean);
     const ours = xi.length ? xi.reduce((a, p) => a + avgStat(p), 0) / xi.length : 50;
     const sq = club.roster(), theirs = sq.reduce((a, p) => a + avgStat(p), 0) / sq.length;
     const h = (State.h2h || {})[club.id], met = h ? h.w + h.d + h.l : 0;
     const growth = (State.leagueWeeks || 0) * 0.25 + met * 1.2;
-    const own = m.r + (pref ? 4 : 0) + (club.gatekeeper ? 4 : 0) + growth;
+    const own = m.r + ti * 4 + (club.gatekeeper || club.boss ? 4 : 0) + growth;
     if (pref) {
-      // the stronger the club on paper, the bigger its edge over us: +2 for the weakest, ~+6 for the gatekeeper
+      // the stronger the club on paper, the bigger its edge over us: +2..+6 in the prefecture league, +4..+8 a level up
       const peers = League.ALL_CLUBS.filter((c) => c.tier === club.tier), lo = Math.min(...peers.map((c) => c.baseRating ?? c.rating)), hi = Math.max(...peers.map((c) => c.baseRating ?? c.rating));
       const rel = hi > lo ? ((club.baseRating ?? club.rating) - lo) / (hi - lo) : 0.5;
-      const edge = 2 + rel * 4 + met * 0.5;
+      const edge = 2 * ti + rel * 4 + met * 0.5;
       return Math.round(Math.max(own, ours + edge - theirs));
     }
     const chase = Math.max(0, ours - (theirs + own)) * 0.75;
@@ -505,7 +507,7 @@
       g.fillStyle = 'rgba(16,24,46,0.45)'; g.fillRect(0, 0, W, H);
       const k = Ease.outBack(clamp(s.t / 0.4, 0, 1));
       panel(g, 30, 14, 420, 30, 'dark');
-      text(g, 'シーズン' + State.seasonNo + '　開幕前　（' + (State.tier === 'prefecture' ? '県リーグ' : '地区リーグ') + '）', W / 2, 20, { size: 14, align: 'center', color: '#ffd24a' });
+      text(g, 'シーズン' + State.seasonNo + '　開幕前　（' + tierLabel(State.tier) + '）', W / 2, 20, { size: 14, align: 'center', color: '#ffd24a' });
       panel(g, 30, 52 + (1 - k) * 10, 420, 196, 'paper');
       if (s.page === 0) {
         text(g, 'ひと冬が過ぎて…　選手たちがひとつ歳をとった', 44, 60, { size: 10, color: '#10304f' });
@@ -2228,9 +2230,14 @@
     shirasagi: [{ who: 'shirou', expr: 'normal', side: 'right', text: '…あなた方の噂は聞いている。負け続けているクラブだと。だが白鷺は静かに、確実に勝つ。' }],
     kurogane: [{ who: 'kurou', expr: 'normal', side: 'right', text: '最下位相手に手加減する気はない。始発から終電まで走り続ける。逃げ場はないと思ってくれ。' }],
     minatomirai: [{ who: 'kai', expr: 'happy', side: 'right', text: 'へえ、あの万年最下位が相手か。……退屈させないでくれよ？' }],
+    raiden: [{ who: 'raita', expr: 'happy', side: 'right', text: '県リーグ上がりの港町クラブ？ いいね、電光石火で感電させてやるよ！' }],
+    hokuto: [{ who: 'subaru', expr: 'normal', side: 'right', text: 'データは揃っています。あなた方の勝率は理論上、低い。…理論通りにいけば、ですが。' }],
+    kotobuki: [{ who: 'mitsu', expr: 'determined', side: 'right', text: 'うちのお菓子は甘いけど、うちの守備は甘くないですよ。' }],
+    kurushima: [{ who: 'gou', expr: 'happy', side: 'right', text: 'ガハハ！ 港町同士、海の男の勝負といこうや！ 空中戦なら負けんぞ！' }],
+    akashi: [{ who: 'ryuji', expr: 'normal', side: 'right', text: 'アマチュアの夢物語は嫌いじゃない。だが、ここはJを目指す場所だ。…通過点にさせてもらう。' }],
   };
-  function leagueName() { return State.tier === 'prefecture' ? '県リーグ' : '港湾地区リーグ'; }
-  function tierLabel(t) { return t === 'prefecture' ? '県リーグ' : '地区リーグ'; }
+  function leagueName() { return League.tierInfo(State.tier).name; }
+  function tierLabel(t) { return League.tierInfo(t).label; }
   // rivalry/history flavor lines shown before kickoff: last season's placing, head-to-head record, table tension
   function rivalryLines(fx, reunion) {
     const opp = fx.opp;
@@ -2958,7 +2965,7 @@
   const RANK_MONEY = [120, 80, 60, 45, 35, 25];
   function SeasonEnd() {
     const s = { t: 0 };
-    const rank = State.rank(), money = Math.round(RANK_MONEY[rank - 1] * (State.tier === 'prefecture' ? 1.6 : 1));
+    const rank = State.rank(), money = Math.round(RANK_MONEY[rank - 1] * League.tierInfo(State.tier).money);
     const wasTier = State.tier;
     const numTeams = League.teamsForTier(wasTier).length;
     s.enter = () => {
@@ -2975,8 +2982,11 @@
       s.t += dt;
       if (s.t > 2 && (okPressed() || (State.auto && s.t > 3))) {
         Sound.play('select');
-        if (rank === 1 && wasTier === 'district') Game.goto(PromotionIntro(), 'iris');
-        else if (wasTier === 'prefecture' && rank === numTeams) Game.goto(RelegationNotice(rank), 'iris');
+        const ti = League.tierIndex(wasTier), top = League.TIERS.length - 1;
+        if (rank === 1 && ti === 0) Game.goto(PromotionIntro(), 'iris');
+        else if (rank === 1 && ti < top) Game.goto(AutoPromotion(rank, wasTier), 'iris');
+        else if (rank === 1) Game.goto(TopTierChampion(rank, wasTier), 'iris');
+        else if (ti >= 1 && rank === numTeams) Game.goto(RelegationNotice(rank, wasTier), 'iris');
         else Game.goto(Celebration(rank), 'iris');
       }
     };
@@ -3160,7 +3170,7 @@
           { who: 'leo', expr: 'happy', text: '当然だろ。オレたちはもう、港町のちっちゃいクラブじゃねぇ。' },
           { who: 'kazuha', expr: 'normal', text: '来シーズンから県リーグ。相手はもっと強くなります。気を引き締めましょう。' },
         ],
-        next: () => Celebration(rank, 'promoted'),
+        next: () => Celebration(rank, 'promoted', 'district'),
       });
     }
     return Dialog({
@@ -3175,24 +3185,58 @@
       next: () => Celebration(rank, 'stayed'),
     });
   }
-  function RelegationNotice(rank) {
+  function RelegationNotice(rank, wasTier) {
+    const from = League.tierInfo(wasTier || State.tier), to = League.TIERS[Math.max(0, League.tierIndex(from.id) - 1)];
     return Dialog({
       bgm: 'hub', crowd: 0, title: '降格',
       bg: (g, t) => drawHarbor(g, t, 'dusk'),
       lines: [
-        { who: 'nagisa', expr: 'sad', text: '監督…。今シーズンは県リーグ最下位でした。' },
-        { who: 'nagisa', expr: 'normal', text: '来シーズンは、地区リーグに降格します。' },
-        { who: 'kazuha', expr: 'determined', text: '悔しいですが、地区でもう一度力をつけて、必ず戻ってきましょう。' },
+        { who: 'nagisa', expr: 'sad', text: '監督…。今シーズンは' + from.label + '最下位でした。' },
+        { who: 'nagisa', expr: 'normal', text: '来シーズンは、' + to.label + 'に降格します。' },
+        { who: 'kazuha', expr: 'determined', text: '悔しいですが、' + to.short + 'でもう一度力をつけて、必ず戻ってきましょう。' },
         { who: 'leo', expr: 'determined', text: 'くそ…！ 絶対すぐ戻ってやる。' },
       ],
-      next: () => { State.tier = 'district'; return Celebration(rank, 'relegated'); },
+      next: () => { State.tier = to.id; return Celebration(rank, 'relegated', from.id); },
     });
   }
-  function Celebration(rank, note) {
+  // champions of a middle league go straight up - no playoff above the district level
+  function AutoPromotion(rank, wasTier) {
+    const from = League.tierInfo(wasTier), to = League.TIERS[League.tierIndex(wasTier) + 1];
+    const boss = League.clubsForTier(to.id).find((c) => c.boss || c.gatekeeper) || League.clubsForTier(to.id)[0];
+    return Dialog({
+      bgm: 'victory', crowd: 0.7, title: to.label + '昇格！',
+      bg: (g, t) => drawHarbor(g, t, 'dusk'),
+      lines: [
+        { who: 'nagisa', expr: 'happy', text: from.label + '優勝…！ 監督、' + to.label + 'への昇格が決まりました！！', fx: 'flash', sfx: 'cheer' },
+        { who: 'otaki', expr: 'happy', text: '港の小っちゃいクラブが、とうとうここまで来たかい…！ 長生きはするもんだねぇ。' },
+        { who: 'kazuha', expr: 'normal', text: to.name + 'は、セミプロや大学の強豪がひしめくリーグです。いちばん上には「' + boss.name + '」。' + boss.blurb },
+        { who: boss.captain, expr: 'normal', side: 'right', text: pick(['港町のクラブか。…ここまで来たことは褒めてやる。だが、ここから先は別世界だ。', '噂は聞いている。…せいぜい、通過点のひとつになってくれ。']) },
+        { who: 'leo', expr: 'determined', text: '別世界上等だ。オレたちの名前、全国に届かせてやる。' },
+      ],
+      next: () => { State.tier = to.id; State.capLevel = Math.max(State.capLevel || 0, League.tierIndex(to.id)); return Celebration(rank, 'promoted', from.id); },
+    });
+  }
+  // the top of what's built so far: a title, and a look at the road beyond
+  function TopTierChampion(rank, wasTier) {
+    const from = League.tierInfo(wasTier);
+    return Dialog({
+      bgm: 'victory', crowd: 0.8, title: from.label + '優勝！',
+      bg: (g, t) => drawHarbor(g, t, 'dusk'),
+      lines: [
+        { who: 'nagisa', expr: 'happy', text: from.name + '、優勝です…！ 監督、私たち、地域の頂点に立ちました！！', fx: 'flash', sfx: 'cheer' },
+        { who: 'kazuha', expr: 'normal', text: 'この上は全国リーグの「' + League.NEXT_STAGE + '」。そしてその先に、J3、J2、J1…。' },
+        { who: 'otaki', expr: 'happy', text: 'いつかこの港から、日本代表が出る日が来るかもしれないねぇ。' },
+        { who: 'leo', expr: 'determined', text: '…来るかも、じゃねぇ。オレたちが行くんだよ。' },
+        { who: 'nagisa', expr: 'normal', text: '（' + League.NEXT_STAGE + 'への挑戦は、これからのアップデートで解放予定です）' },
+      ],
+      next: () => Celebration(rank, 'champion', from.id),
+    });
+  }
+  function Celebration(rank, note, fromTier) {
     const steam = new Particles();
     const top = Object.entries(State.goals || {}).sort((a, b) => b[1] - a[1])[0];
     const topName = top ? (State.roster.find((q) => q.id === top[0]) || { name: '?' }).name : null;
-    const tierLbl = note === 'relegated' ? '県' : note === 'promoted' || note === 'stayed' ? '地区' : (State.tier === 'prefecture' ? '県' : '地区');
+    const played = fromTier || State.tier, tierLbl = League.tierInfo(played).short;
     return Dialog({
       bgm: 'ending', crowd: 0, title: 'シーズン最終節の夜　おタキの屋台',
       bg: (g, t) => {
@@ -3218,9 +3262,10 @@
       },
       lines: [
         { who: 'otaki', expr: 'happy', text: rank === 1 ? '優勝だよ、優勝！ 港町のちっちゃいクラブが、' + tierLbl + 'の一番さ！ たこ焼き、好きなだけお食べ！' : rank <= 3 ? rank + '位！ 上出来じゃないか！ 今夜はたこ焼き、おかわり自由だよ！' : rank + '位か…。でも、みんなよく走ったよ。腹が減っちゃ、来年も勝てないからね！' },
-        note === 'promoted' ? { who: 'otaki', expr: 'happy', text: '来シーズンから県リーグかい…！ 大したもんだよ、ほんとに。' }
+        note === 'promoted' ? { who: 'otaki', expr: 'happy', text: '来シーズンから' + tierLabel(State.tier) + 'かい…！ 大したもんだよ、ほんとに。' }
           : note === 'stayed' ? { who: 'otaki', expr: 'normal', text: '昇格は持ち越しだ。だが、来シーズンまた挑めばいい。' }
-          : note === 'relegated' ? { who: 'otaki', expr: 'sad', text: '県リーグは厳しかったねぇ…。でも、まだ腐っちゃいない。地区でやり直しさ。' } : null,
+          : note === 'relegated' ? { who: 'otaki', expr: 'sad', text: tierLabel(played) + 'は厳しかったねぇ…。でも、まだ腐っちゃいない。' + League.tierInfo(State.tier).short + 'でやり直しさ。' }
+          : note === 'champion' ? { who: 'otaki', expr: 'happy', text: 'この港のクラブが、地域の一番だなんてねぇ…。次は全国だよ、全国！' } : null,
         { who: 'ponta', expr: 'happy', side: 'right', text: 'うおおお！ 監督、オレ、この日のために生きてたっス！' },
         topName ? { who: 'kazuha', expr: 'normal', side: 'right', text: 'チーム得点王は' + topName + '、' + top[1] + '点でした。…記録、ちゃんとつけてますから。' } : { who: 'kazuha', expr: 'sad', side: 'right', text: '今季は得点が少なかったですね。…攻め方、一緒に考えましょう。' },
         { who: 'leo', expr: 'normal', side: 'right', text: rank === 1 ? '…ま、監督のおかげもちょっとはあるんじゃね？' : '来季は、絶対オレが得点王になる。' },

@@ -30,7 +30,7 @@
       this.auto = !!opts.auto;
       this.autoJust = !!opts.autoJust;
       this.homeGame = opts.homeGame; // true / false / undefined (exhibition)
-      this.bigStage = !!(opts.opp && (opts.opp.tier === 'prefecture' || opts.opp.id === 'yamaoroshi' || opts.opp.gatekeeper));
+      this.bigStage = !!(opts.opp && ((opts.opp.tier && opts.opp.tier !== 'district') || opts.opp.id === 'yamaoroshi' || opts.opp.gatekeeper || opts.opp.boss));
       this.talentFired = new Set();
       this.fx = new Particles();
       this.fxTop = new Particles();
