@@ -237,12 +237,20 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .app details.olda summary{cursor:pointer;color:var(--sub);font-size:12px}
 .askb{display:flex;width:fit-content;align-items:center;gap:4px;margin:4px 0 2px;font:inherit;font-size:12px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}.askb img{width:18px;height:18px;image-rendering:pixelated}.askb:hover{border-color:var(--info)}
 .tk .bt-row{margin-top:4px}.tk details.bins summary{cursor:pointer;color:var(--info);font-size:12.5px;font-family:var(--body);padding:3px 0}.tk details.bins textarea{font:inherit;font-family:var(--body);font-size:13px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin:4px 0}.tk .bi{margin-top:5px;font-family:var(--body);font-size:12.5px;line-height:1.55;background:var(--bg);border-radius:6px;padding:4px 7px;overflow-wrap:anywhere}.tk .bi .rp{color:var(--sub)}.tk details.bins .bt{padding:6px 12px}
+body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
+body.arrange .cols>div>section{outline:2px dashed var(--info);outline-offset:-2px}
+.arr{display:none;gap:6px;flex-wrap:wrap;margin-top:6px}body.arrange .arr{display:flex}
+.arr button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:3px 10px;cursor:pointer;min-width:40px}
+.arr button:disabled{opacity:.35;cursor:default}.arr .mv-col{display:none}
+@media (min-width:900px){.arr .mv-col{display:inline-block}}
+.arr-bar{display:none;position:sticky;top:0;z-index:15;background:var(--panel);border:2px solid var(--info);border-radius:10px;padding:8px 12px;margin-top:10px;font-family:var(--body);font-size:13px;gap:8px;align-items:center;flex-wrap:wrap}
+body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:4px 10px;cursor:pointer}.arr-bar button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
 </style>
 
 <div class="app">
   <header>
     <div><h1>ちいかわ株式会社</h1><div class="date" id="date"></div></div>
-    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
+    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
   <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
@@ -259,6 +267,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   <section class="focus" id="focusBox" aria-labelledby="h-focus"><h2 id="h-focus">⏱ 集中タイム <small id="focusSt"></small></h2><div id="focusBody"></div></section>
     </div>
   </div>
+  <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
   <div class="cols">
     <div class="colA">
   <section style="order:3" class="box" aria-labelledby="h-work"><h2 id="h-work">📈 そーやんの仕事、どこまで代替できた？ <small id="workCnt"></small></h2><div id="work"><p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p></div></section>
@@ -1134,11 +1143,43 @@ function usageStart(){
   document.addEventListener('click',tap,true);document.addEventListener('change',tap,true);
   setInterval(useFlush,60000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')useFlush()});addEventListener('pagehide',useFlush)}
 
+
+// ---------- 並べかえ（2026-10-01 そーやんの依頼。並びは閲覧者ごとに保存） ----------
+const LAY={uid:null,ref:null,def:[],cur:[]};
+function laySecs(){return [...document.querySelectorAll('.cols>.colA>section,.cols>.colB>section')]}
+function layKey(sec){return sec.getAttribute('aria-labelledby')}
+function layDefault(){const all=[];[['A','.colA'],['B','.colB']].forEach(([c,sel])=>{document.querySelectorAll('.cols>'+sel+'>section').forEach((s,i)=>all.push({id:layKey(s),col:c,o:+(s.style.order||0),i:all.length}))});
+  return all.sort((a,b)=>a.o-b.o||a.i-b.i).map(x=>({id:x.id,col:x.col}))}
+function layMerge(saved){const ids=new Set(LAY.def.map(x=>x.id));const out=(saved||[]).filter(x=>x&&ids.has(x.id)&&(x.col==='A'||x.col==='B'));const have=new Set(out.map(x=>x.id));
+  LAY.def.forEach((d,i)=>{if(have.has(d.id))return;const prev=LAY.def.slice(0,i).reverse().find(p=>have.has(p.id));const at=prev?out.findIndex(x=>x.id===prev.id)+1:0;out.splice(at,0,{id:d.id,col:d.col});have.add(d.id)});return out}
+function layApply(items){LAY.cur=layMerge(items);const A=document.querySelector('.cols>.colA'),B=document.querySelector('.cols>.colB');const map={};laySecs().forEach(s=>map[layKey(s)]=s);
+  LAY.cur.forEach((x,i)=>{const s=map[x.id];if(!s)return;s.style.order=i;(x.col==='B'?B:A).appendChild(s)});layBtns()}
+const layWide=()=>matchMedia('(min-width:900px)').matches;
+function layNb(i,dir){const c=LAY.cur,w=layWide();for(let j=i+dir;j>=0&&j<c.length;j+=dir){if(!w||c[j].col===c[i].col)return j}return -1}
+function layBtns(){LAY.cur.forEach((x,i)=>{const up=layNb(i,-1)<0,dn=layNb(i,1)<0;const h=document.getElementById(x.id);if(!h)return;const sec=h.closest('section');let bar=sec.querySelector(':scope>.arr');
+  if(!bar){bar=document.createElement('div');bar.className='arr';bar.setAttribute('role','group');bar.setAttribute('aria-label',(h.textContent||'').trim().slice(0,20)+'の並べかえ');h.insertAdjacentElement('afterend',bar)}
+  bar.innerHTML=`<button type="button" data-mv="top" data-id="${x.id}" ${up?'disabled':''} aria-label="いちばん上へ">⤒</button><button type="button" data-mv="up" data-id="${x.id}" ${up?'disabled':''} aria-label="ひとつ上へ">▲</button><button type="button" data-mv="down" data-id="${x.id}" ${dn?'disabled':''} aria-label="ひとつ下へ">▼</button><button type="button" class="mv-col" data-mv="col" data-id="${x.id}">${x.col==='A'?'右の列へ →':'← 左の列へ'}</button>`})}
+function laySave(){const items=LAY.cur.map(x=>({id:x.id,col:x.col}));try{localStorage.setItem('ck-layout',JSON.stringify({items,at:Date.now()}))}catch(e){}
+  if(LAY.ref&&canWrite){LAY.ref.set({items,updatedAt:Date.now()}).catch(()=>{})}}
+function layMove(id,how){const i=LAY.cur.findIndex(x=>x.id===id);if(i<0)return;const a=LAY.cur.slice();const it=a[i];
+  if(how==='up'||how==='down'){const j=layNb(i,how==='up'?-1:1);if(j<0)return;a[i]=a[j];a[j]=it}else if(how==='top'){a.splice(i,1);a.unshift(it)}else if(how==='col'){it.col=it.col==='A'?'B':'A'}
+  layApply(a);laySave();const b=document.querySelector(`.arr button[data-mv="${how==='top'?'up':how}"][data-id="${id}"]`)||document.querySelector(`.arr button[data-id="${id}"]`);if(b&&!b.disabled)b.focus({preventScroll:false});else{const h=document.getElementById(id);h&&h.scrollIntoView({block:'nearest'})}}
+document.addEventListener('click',e=>{const b=e.target.closest('.arr button[data-mv]');if(!b)return;e.preventDefault();e.stopPropagation();layMove(b.dataset.id,b.dataset.mv)},true);
+function laySet(on){document.body.classList.toggle('arrange',on);$('arrBtn').setAttribute('aria-pressed',String(on));$('arrBtn').textContent=on?'並べかえ中…':'並べかえ';if(on)$('arrBar').scrollIntoView({behavior:'smooth',block:'start'})}
+addEventListener('resize',()=>{if(document.body.classList.contains('arrange'))layBtns()});
+$('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contains('arrange')));
+$('arrDone').addEventListener('click',()=>laySet(false));
+$('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
+LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');
+  let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
+  const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
+  else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
   if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}}if(SAMPLE)await chatProbe();chatAvail();renderChatUi();
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
-  try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false}}catch(e){}
+  try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false;layRemote(u)}}catch(e){}
   usageStart();
   const ready={status:false,ex:false};let booted=false;
   function boot(){if(booted||!ready.status||!ready.ex)return;booted=true;
