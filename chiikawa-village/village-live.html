@@ -262,6 +262,27 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 .fin table{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px;font-variant-numeric:tabular-nums}.fin th,.fin td{border-bottom:1px solid var(--line);padding:3px 4px;text-align:right}.fin th:first-child,.fin td:first-child{text-align:left}
 .fin .foot{font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.6}
 .fin .alert{border-left:4px solid var(--warn);padding:4px 8px;margin-top:6px;font-family:var(--body);font-size:12.5px;line-height:1.6;background:color-mix(in srgb,var(--warn) 8%,var(--panel));border-radius:4px}
+.tl .pmn{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;background:var(--bg);border-radius:8px;padding:7px 9px;font-family:var(--body);font-size:13px;line-height:1.6}.tl .pmn img{width:26px;height:26px;image-rendering:pixelated}
+.tl .tabs{display:flex;gap:6px;margin:10px 0 6px}.tl .tabs button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:3px 12px;cursor:pointer}.tl .tabs button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.tl .gh{position:relative;height:18px;margin-left:var(--lw);font-family:var(--body);font-size:11px;color:var(--sub)}.tl .gh span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.tl .gr{display:grid;grid-template-columns:var(--lw) minmax(0,1fr);align-items:center;border-top:1px dashed var(--line);padding:5px 0;cursor:pointer}
+.tl .gl{font-family:var(--body);font-size:12.5px;line-height:1.35;padding-right:8px;min-width:0;overflow-wrap:anywhere}.tl .gl small{display:block;color:var(--sub);font-size:11px}
+.tl .gt{position:relative;height:22px}.tl .gt .bg{position:absolute;inset:9px 0;background:var(--line);opacity:.35;border-radius:2px}
+.tl .bar{position:absolute;top:4px;height:14px;border-radius:4px;background:color-mix(in srgb,var(--sc) 22%,var(--panel));border:1.5px solid var(--sc);overflow:hidden;min-width:6px}.tl .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--sc)}
+.tl .ms{position:absolute;top:2px;width:9px;height:9px;transform:translateX(-50%) rotate(45deg);background:var(--panel);border:1.5px solid var(--ink);top:6px}.tl .ms.done{background:var(--ink)}
+.tl .today{position:absolute;top:0;bottom:0;width:0;border-left:2px solid var(--accent);z-index:2;pointer-events:none}
+.tl .gwrap{position:relative}.tl .gwrap>.today{top:18px}
+.tl .st{font-size:11px;margin-left:4px;white-space:nowrap}.tl .st.ok{color:var(--good)}.tl .st.warn{color:var(--warn)}.tl .st.late{color:var(--bad)}.tl .st.done{color:var(--sub)}
+.tl .gd{grid-column:1/-1;font-family:var(--body);font-size:12.5px;line-height:1.6;background:var(--bg);border-radius:8px;padding:6px 9px;margin-top:5px;cursor:default}.tl .gd ul{margin:2px 0;padding-left:18px}
+.tl .rt{display:grid;grid-template-columns:var(--lw) repeat(var(--nd),minmax(0,1fr)) 44px;align-items:center;gap:2px;font-family:var(--body);font-size:12px}
+.tl .rt .h{font-size:10.5px;color:var(--sub);text-align:center;line-height:1.2}.tl .rt .h.td{color:var(--ink);font-weight:700}
+.tl .rt .n{padding-right:6px;line-height:1.3;min-width:0;overflow-wrap:anywhere}.tl .rt .n small{display:block;color:var(--sub);font-size:10.5px}
+.tl .rt .c{height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.tl .rt .c.ok{background:color-mix(in srgb,var(--good) 30%,var(--panel));color:var(--ink)}.tl .rt .c.part{background:color-mix(in srgb,var(--warn) 30%,var(--panel));color:var(--ink)}.tl .rt .c.miss{background:color-mix(in srgb,var(--bad) 28%,var(--panel));color:var(--ink)}.tl .rt .c.off{background:transparent;color:var(--sub)}.tl .rt .c.fut{background:transparent;border:1px dashed var(--line)}
+.tl .rt .r{text-align:right;font-variant-numeric:tabular-nums;color:var(--sub);font-size:11px}
+.tl .lgd{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:8px}
+.tl .foot{font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:8px}
+@media (max-width:520px){.tl{--lw:96px}}.tl{--lw:150px}
 </style>
 
 <div class="app">
@@ -287,6 +308,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
   <div class="cols">
     <div class="colA">
+  <section style="order:2" class="box tl" aria-labelledby="h-tl"><h2 id="h-tl">🗓 進み具合のタイムライン <small id="tlCnt"></small></h2><div id="tl"><p class="empty">PM の古本屋さんが、プロジェクトとルーティンの進み具合を時系列でここに並べます。</p></div></section>
   <section style="order:3" class="box" aria-labelledby="h-work"><h2 id="h-work">📈 そーやんの仕事、どこまで代替できた？ <small id="workCnt"></small></h2><div id="work"><p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p></div></section>
   <section style="order:3" class="box" aria-labelledby="h-app"><h2 id="h-app">🛠 アプリ制作部 <small id="appCnt"></small></h2>
     <div class="ap-flow" id="appFlow"></div>
@@ -342,7 +364,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <p class="note" id="note"></p>
 </div>
 <script>
-const SPR={"chiikawa": ["....kkk......kkk....", "...kwwwk....kwwwk...", "...kwwwwkkkkwwwwk...", "..kwwwwwwwwwwwwwwk..", ".kwwwwwwwwwwwwwwwwk.", "kwwwwwwwwwwwwwwwwwwk", "kwwwwwwwwwwwwwwwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppwwwwwwwwwwppwwk", "kwwwwwwwwkkwwwwwwwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "hachiware": ["...k............k...", "...kk..........kk...", "...kbk........kbk...", "..kbbbkkkkkkkkbbbk..", ".kbbbbbbbwwbbbbbbbk.", "kbbbbbbbwwwwbbbbbbbk", "kbbbbbbwwwwwwbbbbbbk", "kwbbbbwwwwwwwwbbbbwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppweewwwweewppwwk", "kwwwwwwwkwwkwwwwwwwk", ".kwwwwwwwkkwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "usagi": [".....kkk....kkk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", "....kkyykkkkyykk....", "...kyyyyyyyyyyyyk...", "..kyyyyyyyyyyyyyyk..", ".kyyyyyyyyyyyyyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyppyyykkkkyyyppyk.", ".kyyyyykrrrrkyyyyyk.", "..kyyyyykkkkyyyyyk..", "...kkyyyyyyyyyykk...", "....kyyyyyyyyyyk....", "...kyykyyyyyykyyk...", "....kyyyyyyyyyyk....", "....kyyyyyyyyyyk....", ".....kyyykkyyyk.....", "......kkk..kkk......"], "rakko": ["......kkkkkkkk......", "....kkllllllllkk....", "...kllllllllllllk...", "..kllllllllllllllk..", ".kllllllllllllllllk.", "kllllllllllllllllllk", "kllllleelllleelllllk", "kllllleelllleelllllk", "klllpplLLLLLLlpplllk", "klllllLLLkkLLLlllllk", ".klllllLLLLLLlllllk.", "..kllllllllllllllk..", "...kkllllllllllkk...", "...kllllllllllllk...", "..kllkllllllllkllk..", "...kllllllllllllk...", "...kllllllllllllk...", "....kllllkkllllk....", ".....kkk....kkk....."], "kuri": [".........kk.........", "........kNNk........", ".......kNNNNk.......", ".....kkNNNNNNkk.....", "....kNNNNNNNNNNk....", "...kNNNNNNNNNNNNk...", "..kNNNNNNNNNNNNNNk..", ".kNNNNNNNNNNNNNNNNk.", ".kcccccccccccccccck.", "kcccccccccccccccccck", "kcccceecccccceecccck", "kcccccccccccccccccck", "kccppcccckkccccppcck", "kccccccckcckccccccck", ".kcccccccccccccccck.", "..kcccccccccccccck..", "...kkcccccccccckk...", ".....kkkkkkkkkk.....", "......kk....kk......"], "momonga": ["..kkk..........kkk..", ".kvvvk........kvvvk.", ".kvvvvkkkkkkkkvvvvk.", ".kvvvvvvvvvvvvvvvvk.", "kvvvvvvvvvvvvvvvvvvk", "kvvvvwwwwwwwwwwvvvvk", "kvvwwwwwwwwwwwwwwvvk", "kwwweeewwwwwweeewwwk", "kwwwewewwwwwwewewwwk", "kwwweeewwwwwweeewwwk", "kwwppwwwwkkwwwwppwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "shisa": ["....kkkkkkkkkkkk....", "..kkMMMMMMMMMMMMkk..", ".kMMMMMMMMMMMMMMMMk.", "kMMMMMMMMMMMMMMMMMMk", "kMMMOOOOOOOOOOOOMMMk", "kMMOOOOOOOOOOOOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOppOOkkOOppOOMMk", "kMMOOOOkrrrrkOOOOMMk", "kMMMOOOOOOOOOOOOMMMk", ".kMMMMMMMMMMMMMMMMk.", "..kkMMMMMMMMMMMMkk..", "....kOOOOOOOOOOk....", "...kOOkOOOOOOkOOk...", "....kOOOOOOOOOOk....", "....kOOOOOOOOOOk....", ".....kOOOkkOOOk.....", "......kkk..kkk......"], "soyan": ["......kkkkkkkk......", ".....khhhhhhhhk.....", ".....khhhhhhhhk.....", "....kRRRRRRRRRRk....", ".khhhhhhhhhhhhhhhhk.", ".kkkkkkkkkkkkkkkkkk.", "...kHHHHHHHHHHHHk...", "...kssssssssssssk...", "...ksseesssseessk...", "...ksppssssssppsk...", "...ksssskkkkssssk...", "....kssssssssssk....", "...kggggggggggggk...", "..kggddddddddddggk..", "..kssddddddddddssk..", "...kddddddddddddk...", "....kddddkkddddk....", "....kddddkkddddk....", "....kkkkk..kkkkk...."], "yoroi": [".........RR.........", "........RRR.........", "......kkkkkkkk......", ".....kAAAAAAAAk.....", "....kAAAAAAAAAAk....", "....kAAAAAAAAAAk....", "....kaaaaaaaaaak....", "....kaakkkkkkaak....", "....kaakwkkwkaak....", "....kAAAAAAAAAAk....", "...kkAAAAAAAAAAkk...", "..kAAAkAAAAAAkAAAk..", "..kAAkaaaaaaaakAAk..", "..kAAkaaaYYaaakAAk..", "...kkaaaaaaaaaakk...", "....kAAAAkkAAAAk....", "....kAAAAkkAAAAk....", "....kaaaakkaaaak....", "...kkkkkk..kkkkkk..."]};
+const SPR={"chiikawa": ["....kkk......kkk....", "...kwwwk....kwwwk...", "...kwwwwkkkkwwwwk...", "..kwwwwwwwwwwwwwwk..", ".kwwwwwwwwwwwwwwwwk.", "kwwwwwwwwwwwwwwwwwwk", "kwwwwwwwwwwwwwwwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppwwwwwwwwwwppwwk", "kwwwwwwwwkkwwwwwwwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "hachiware": ["...k............k...", "...kk..........kk...", "...kbk........kbk...", "..kbbbkkkkkkkkbbbk..", ".kbbbbbbbwwbbbbbbbk.", "kbbbbbbbwwwwbbbbbbbk", "kbbbbbbwwwwwwbbbbbbk", "kwbbbbwwwwwwwwbbbbwk", "kwwwwweewwwweewwwwwk", "kwwwwweewwwweewwwwwk", "kwwppweewwwweewppwwk", "kwwwwwwwkwwkwwwwwwwk", ".kwwwwwwwkkwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "usagi": [".....kkk....kkk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", ".....kyk....kyk.....", "....kkyykkkkyykk....", "...kyyyyyyyyyyyyk...", "..kyyyyyyyyyyyyyyk..", ".kyyyyyyyyyyyyyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyyyyeyyyyyyeyyyyk.", ".kyppyyykkkkyyyppyk.", ".kyyyyykrrrrkyyyyyk.", "..kyyyyykkkkyyyyyk..", "...kkyyyyyyyyyykk...", "....kyyyyyyyyyyk....", "...kyykyyyyyykyyk...", "....kyyyyyyyyyyk....", "....kyyyyyyyyyyk....", ".....kyyykkyyyk.....", "......kkk..kkk......"], "rakko": ["......kkkkkkkk......", "....kkllllllllkk....", "...kllllllllllllk...", "..kllllllllllllllk..", ".kllllllllllllllllk.", "kllllllllllllllllllk", "kllllleelllleelllllk", "kllllleelllleelllllk", "klllpplLLLLLLlpplllk", "klllllLLLkkLLLlllllk", ".klllllLLLLLLlllllk.", "..kllllllllllllllk..", "...kkllllllllllkk...", "...kllllllllllllk...", "..kllkllllllllkllk..", "...kllllllllllllk...", "...kllllllllllllk...", "....kllllkkllllk....", ".....kkk....kkk....."], "kuri": [".........kk.........", "........kNNk........", ".......kNNNNk.......", ".....kkNNNNNNkk.....", "....kNNNNNNNNNNk....", "...kNNNNNNNNNNNNk...", "..kNNNNNNNNNNNNNNk..", ".kNNNNNNNNNNNNNNNNk.", ".kcccccccccccccccck.", "kcccccccccccccccccck", "kcccceecccccceecccck", "kcccccccccccccccccck", "kccppcccckkccccppcck", "kccccccckcckccccccck", ".kcccccccccccccccck.", "..kcccccccccccccck..", "...kkcccccccccckk...", ".....kkkkkkkkkk.....", "......kk....kk......"], "momonga": ["..kkk..........kkk..", ".kvvvk........kvvvk.", ".kvvvvkkkkkkkkvvvvk.", ".kvvvvvvvvvvvvvvvvk.", "kvvvvvvvvvvvvvvvvvvk", "kvvvvwwwwwwwwwwvvvvk", "kvvwwwwwwwwwwwwwwvvk", "kwwweeewwwwwweeewwwk", "kwwwewewwwwwwewewwwk", "kwwweeewwwwwweeewwwk", "kwwppwwwwkkwwwwppwwk", ".kwwwwwwwwwwwwwwwwk.", "..kwwwwwwwwwwwwwwk..", "...kkwwwwwwwwwwkk...", "....kwwwwwwwwwwk....", "...kwwkwwwwwwkwwk...", "....kwwwwwwwwwwk....", ".....kwwwkkwwwk.....", "......kkk..kkk......"], "shisa": ["....kkkkkkkkkkkk....", "..kkMMMMMMMMMMMMkk..", ".kMMMMMMMMMMMMMMMMk.", "kMMMMMMMMMMMMMMMMMMk", "kMMMOOOOOOOOOOOOMMMk", "kMMOOOOOOOOOOOOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOOeeOOOOeeOOOMMk", "kMMOOppOOkkOOppOOMMk", "kMMOOOOkrrrrkOOOOMMk", "kMMMOOOOOOOOOOOOMMMk", ".kMMMMMMMMMMMMMMMMk.", "..kkMMMMMMMMMMMMkk..", "....kOOOOOOOOOOk....", "...kOOkOOOOOOkOOk...", "....kOOOOOOOOOOk....", "....kOOOOOOOOOOk....", ".....kOOOkkOOOk.....", "......kkk..kkk......"], "soyan": ["......kkkkkkkk......", ".....khhhhhhhhk.....", ".....khhhhhhhhk.....", "....kRRRRRRRRRRk....", ".khhhhhhhhhhhhhhhhk.", ".kkkkkkkkkkkkkkkkkk.", "...kHHHHHHHHHHHHk...", "...kssssssssssssk...", "...ksseesssseessk...", "...ksppssssssppsk...", "...ksssskkkkssssk...", "....kssssssssssk....", "...kggggggggggggk...", "..kggddddddddddggk..", "..kssddddddddddssk..", "...kddddddddddddk...", "....kddddkkddddk....", "....kddddkkddddk....", "....kkkkk..kkkkk...."], "yoroi": [".........RR.........", "........RRR.........", "......kkkkkkkk......", ".....kAAAAAAAAk.....", "....kAAAAAAAAAAk....", "....kAAAAAAAAAAk....", "....kaaaaaaaaaak....", "....kaakkkkkkaak....", "....kaakwkkwkaak....", "....kAAAAAAAAAAk....", "...kkAAAAAAAAAAkk...", "..kAAAkAAAAAAkAAAk..", "..kAAkaaaaaaaakAAk..", "..kAAkaaaYYaaakAAk..", "...kkaaaaaaaaaakk...", "....kAAAAkkAAAAk....", "....kAAAAkkAAAAk....", "....kaaaakkaaaak....", "...kkkkkk..kkkkkk..."], "kani": ["..kk............kk..", ".kRRk..........kRRk.", "kRkRRk........kRRkRk", "kRk.kk........kk.kRk", ".kRk............kRk.", "..kRk..........kRk..", "...kRkkkkkkkkkkRk...", "...kRRRRRRRRRRRRk...", "..kRRRrRRRRRRrRRRk..", "..kRkkkkRRRRkkkkRk..", "..kRkwekkkkkkwekRk..", "..kRkkkkRRRRkkkkRk..", "..kRpRRRRRRRRRRpRk..", "..kRRRRRRkkRRRRRRk..", "...kRRRRRRRRRRRRk...", "....kkkkkkkkkkkk....", "...kRk..kRRk..kRk...", "..kRk...kRRk...kRk..", "..kk.....kk.....kk.."]};
 const HAPPY={"chiikawa": {"7": "kwwwwwwwwwwwwwwwwwwk", "8": "kwwwwweewwwweewwwwwk", "9": "kwwwwewwewwewwewwwwk", "11": "kwwwwwwwkrrkwwwwwwwk", "16": "..kwwkwwwwwwwwkwwk.."}, "hachiware": {"8": "kwwwwwwwwwwwwwwwwwwk", "9": "kwwwwweewwwweewwwwwk", "10": "kwwppewwewwewwewppwk", "11": "kwwwwwwwkrrkwwwwwwwk", "16": "..kwwkwwwwwwwwkwwk.."}, "usagi": {"9": ".kyyyyeyyyyyyeyyyyk.", "10": ".kyyyeyeyyyyeyeyyyk.", "12": ".kyyyyykrrrrkyyyyyk.", "13": ".kyyyyykrrrrkyyyyyk.", "14": "..kyyyyykkkkyyyyyk..", "16": "..kyykyyyyyyyykyyk.."}};
 const PAL={k:'#3b3533',w:'#ffffff',p:'#f7a7b9',e:'#2a2422',b:'#4b5572',y:'#f5e2a0',r:'#e36d72',
   l:'#e4ebf2',L:'#b8c5d3',N:'#8a5a33',c:'#f4dfae',v:'#cfc5e8',M:'#d98639',O:'#f7c86e',h:'#e9c66b',R:'#c9544b',H:'#4a3a33',s:'#f3cfa6',g:'#6f9f5e',d:'#4f73a8',
@@ -448,27 +470,27 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 
 // ---------- 役割 ----------
 IMG.scoutA=IMG.yoroi;IMG.scoutB=IMG.yoroi;ICON.scoutA=ICON.yoroi;ICON.scoutB=ICON.yoroi;
-const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん（検収）',scoutA:'鎧さん（見回りA）',scoutB:'鎧さん（見回りB）',soyan:'そーやん'};
-const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['参謀（仕組み設計）','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],soyan:['オーナー','#3a3330']};
-const ASK={hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion のプロジェクト管理・議事録・freee・YouTube ネタを見回って、いま動かすとよいタスクの候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'仕事全体の構造を見て、AI で自動化できる大きな流れを提案する（読むだけ）',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
+const NAMES={chiikawa:'ちいかわ',hachiware:'ハチワレ',usagi:'うさぎ',rakko:'ラッコ',kuri:'くりまんじゅう',momonga:'モモンガ',shisa:'シーサー',yoroi:'鎧さん（検収）',scoutA:'鎧さん（見回りA）',scoutB:'鎧さん（見回りB）',kani:'古本屋さん',soyan:'そーやん'};
+const ROLES={hachiware:['司令塔','#3f6fd8'],yoroi:['検収役','#6b7280'],scoutA:['仕事さがし係','#4b7a8c'],scoutB:['仕事さがし係','#4b7a8c'],shisa:['記録監査役','#219384'],usagi:['調査役','#e2604c'],momonga:['制作担当','#9a62d0'],kuri:['成果分析役','#c9851f'],rakko:['参謀（仕組み設計）','#7c63d6'],chiikawa:['郵便・受付係','#e9829b'],kani:['PM（進行管理）','#c9544b'],soyan:['オーナー','#3a3330']};
+const ASK={kani:'プロジェクトとルーティンの進み具合・期限・遅れを見張り、時系列で見せる。週の見通しと、遅れそうなときの立て直し案',hachiware:'計画・割り当て・Notionへの記録・毎日のダイジェスト',yoroi:'できたものを PASS / FAIL / 判定不能 で判定（見回り組が見つけた仕事とは別の目で見る）',scoutA:'メール・予定・Slack を見回って、成果につながる仕事の候補をハチワレに届ける（読むだけ）',scoutB:'Notion のプロジェクト管理・議事録・freee・YouTube ネタを見回って、いま動かすとよいタスクの候補をハチワレに届ける（読むだけ）',shisa:'Notion の記録と実際の進み具合の点検',usagi:'メール・予定・Web・YouTube の調べもの',momonga:'返信・記事・告知・台本の下書き（書き手は1人）',kuri:'会計の照合（freee は読むだけ）と、仕事が成果につながっているかの分析',rakko:'仕事全体の構造を見て、AI で自動化できる大きな流れを提案する（読むだけ）',chiikawa:'ダイジェストと例外カードを届ける／つぶやきを受け取る'};
 const JOIN={usagi:'フェーズ1で加入',momonga:'フェーズ1で加入',kuri:'フェーズ2で加入',rakko:'必要なときだけ招集'};
-const ORDER=['hachiware','scoutA','scoutB','yoroi','shisa','kuri','chiikawa','usagi','momonga','rakko'];
+const ORDER=['hachiware','kani','scoutA','scoutB','yoroi','shisa','kuri','chiikawa','usagi','momonga','rakko'];
 const PLACES={board:{x:30,y:46,face:1,label:'📌 掲示板'},youtube:{x:106,y:58,face:1,label:'🎬 撮影小屋'},kouza:{x:164,y:136,face:-1,label:'🌱 青空教室'},
   kiji:{x:67,y:64,face:1,label:'✍️ 書き物机'},kaikei:{x:166,y:58,face:1,label:'🌰 帳場'},farm:{x:52,y:118,face:-1,label:'🌾 畑'},
-  kenshu:{x:65,y:90,face:1,label:'🛡️ 検収台'},kiroku:{x:48,y:74,face:1,label:'📚 記録の棚'},post:{x:150,y:102,face:-1,label:''}};
+  kenshu:{x:65,y:90,face:1,label:'🛡️ 検収台'},kiroku:{x:48,y:74,face:1,label:'📚 記録の棚'},post:{x:150,y:102,face:-1,label:''},pm:{x:118,y:130,face:1,label:'🗓 進行表'}};
 const BENCH=[[164,84],[180,84],[196,84],[210,84]];
 const PLAY={sand:{x:36,y:174,face:1},swing:{x:85,y:172,face:1},nap:{x:132,y:182,face:1},flowers:{x:170,y:174,face:-1},tea:{x:188,y:186,face:1},pond:{x:168,y:132,face:1},post:{x:150,y:102,face:-1},pose:{x:160,y:170,face:1}};
 const FREE_PREF={usagi:['run','swing','sand','run'],momonga:['pose','flowers','swing'],kuri:['tea','nap','tea'],rakko:['pond','nap','pond'],chiikawa:['post','flowers','nap','sand']};
 const ACT_TEXT={nap:'💤 お昼寝',swing:'🎠 ブランコ',sand:'🏖 砂あそび',flowers:'🌼 お花を見てる',pose:'✨ きめポーズ',tea:'🍵 お茶',pond:'🎣 釣り',run:'🏃 走りまわってる',wander:'🚶 おさんぽ',post:'📮 郵便受けの前'};
-const DEFAULT_PLACE={hachiware:'board',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post',scoutA:'post',scoutB:'kiroku'};
+const DEFAULT_PLACE={hachiware:'board',kani:'pm',yoroi:'kenshu',shisa:'kiroku',chiikawa:'post',scoutA:'post',scoutB:'kiroku'};
 // 見回りルート（x, y, 見ているもの）
 const ROUTES={scoutA:[[150,96,'📮 受信箱'],[118,86,'📅 予定'],[196,110,'💬 Slack'],[58,112,'🌾 畑の予定']],scoutB:[[44,82,'📋 プロジェクト管理'],[160,66,'🌰 freee'],[100,68,'🎬 YouTube ネタ'],[70,70,'✍️ 書きかけ']]};
 const isScout=id=>id==='scoutA'||id==='scoutB';
 const DEPT_PLACE={'全体':'board','YouTube':'youtube','講座':'kouza','記事':'kiji','会計':'kaikei','農園・地域':'farm'};
 const SPEAK={x:140,y:116};
-const AGENTS=['chiikawa','hachiware','usagi','rakko','kuri','momonga','shisa','yoroi','scoutA','scoutB'];
+const AGENTS=['chiikawa','hachiware','kani','usagi','rakko','kuri','momonga','shisa','yoroi','scoutA','scoutB'];
 const $=id=>document.getElementById(id);
-let IDEAS=[],STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
+let TL=null,IDEAS=[],STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
 function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench')}
@@ -490,7 +512,7 @@ function drawChar(id,e,t){const im=IMG[id][e.pose]||IMG[id].idle;let dy=0;
   if(e.gym&&!e.walking){const p=e.punch?3:0;R(ctx,'#d9544b',x+im.width-4+p,y+Math.round(im.height*.55),4,4);R(ctx,'#a93a32',x+im.width-4+p,y+Math.round(im.height*.55)+3,4,1);R(ctx,'#d9544b',x+im.width-9,y+Math.round(im.height*.62),4,4)}
   if(e.st==='home'&&!e.walking&&!isFree(id)){const ph=Math.floor(t*3)%2;
     if(id==='hachiware')ctx.drawImage(P.clip,x+16,y+10+(ph?1:0));
-    if(id==='yoroi')ctx.drawImage(P.clip,x+15,y+10);
+    if(id==='yoroi'||id==='kani')ctx.drawImage(P.clip,x+15,y+10);
     if(id==='shisa')ctx.drawImage(P.book,x+5,y+15+(ph?1:0));
     if(id==='momonga')ctx.drawImage(P.letter,x+6,y+15+(ph?1:0));
     if(id==='usagi')ctx.drawImage(P.book,x+5,y+15);
@@ -527,6 +549,7 @@ function bubbleText(id){const e=ent[id];
   if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
   if(isFree(id)&&id!=='chiikawa')return '';if(id==='chiikawa'&&!scene)return '';
   if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
+  if(id==='kani'&&TL){const n=(TL.projects||[]).filter(p=>p.status==='late'||p.status==='warn').length;if(n)return `🗓 気になる進み ${n}件`;return '🗓 進行表をチェック中'}
   if(isScout(id)){if(e.carry||e.giving)return '📨 おとどけ';return '🔍 '+ROUTES[id][e.ri||0][2]}
   const a=(STATUS.agents||{})[id];return (a&&a.doing)||''}
 function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)return;const placed=[];
@@ -698,7 +721,7 @@ function renderXcs(){const openL=XCS.filter(x=>x.status!=='answered').sort(byTim
   $('xcs').innerHTML=(openL.length?openL.map(x=>xcCard(x,false)).join(''):'<p class="empty">いま判断してほしいことはありません。新しいカードが届くと、ここに出ます。</p>')
     +(doneL.length?`<details class="xdone"${keep?' open':''}><summary>回答済み（${doneL.length}件）を見る</summary>${doneL.map(x=>xcCard(x,true)).join('')}</details>`:'')}
 const LANES=[['review','🛡️ 検収待ち','#b7791f'],['blocked','⛔ ブロック','#c2463d'],['doing','🔨 作業中','#3f6fd8'],['todo','📌 これから','#857a70'],['done','✅ 完了（直近）','#4f8f4a']];
-const OWNER_ID={'ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
+const OWNER_ID={'古本屋さん':'kani','古本屋':'kani','ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
 function boardTalk(b,oid){const who=CHAT_CHARS.includes(oid)?oid:'hachiware';const ins=(b.instructions||[]).slice(-3);
   return `${ins.length?`<div class="bi">${ins.map(x=>`<div><b>✏️ 指示</b>（${fmt(x.at)}）${esc(x.text)}${x.reply?`<br><span class="rp">↳ ${esc(NAMES[x.who]||'')}：${esc(x.reply)}</span>`:x.handled?'':'<br><span class="rp">↳ 次の見回りで対応します</span>'}</div>`).join('')}</div>`:''}
   <div class="bt-row"><button type="button" class="askb" data-bask="${esc(b.id)}"><img src="${ICON[who]}" alt="">${esc(NAMES[who])}に相談</button></div>
@@ -785,8 +808,8 @@ renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle(
 
 
 // ---------- ちいかわに相談（画面の中のチャット） ----------
-let SAMPLE=null;const CHAT_CHARS=['hachiware','usagi','momonga','kuri','rakko','shisa'];
-const CHAT_TONE={hachiware:'落ち着いた司令塔。全体の段取りと優先順位が得意。',usagi:'元気な調査役。調べものと選択肢の洗い出しが得意。',momonga:'ていねいな制作担当。文章や下書きの進め方が得意。',kuri:'まじめな会計担当。お金や数字の整理が得意。',rakko:'落ち着いた参謀。仕事全体の流れを見て、自動化できる構造を見つけるのが得意。',shisa:'記録係。決まったことや抜け漏れの確認が得意。'};
+let SAMPLE=null;const CHAT_CHARS=['hachiware','kani','usagi','momonga','kuri','rakko','shisa'];
+const CHAT_TONE={kani:'落ち着いた一流のプロジェクトマネージャー（古本屋さん）。期限・段取り・優先順位・リスクに強く、遅れを責めずに立て直し案を出す。',hachiware:'落ち着いた司令塔。全体の段取りと優先順位が得意。',usagi:'元気な調査役。調べものと選択肢の洗い出しが得意。',momonga:'ていねいな制作担当。文章や下書きの進め方が得意。',kuri:'まじめな会計担当。お金や数字の整理が得意。',rakko:'落ち着いた参謀。仕事全体の流れを見て、自動化できる構造を見つけるのが得意。',shisa:'記録係。決まったことや抜け漏れの確認が得意。'};
 let chatChar='hachiware',chatBusy=false,chatCtl=null;const LOGS={};
 const chatKey=()=>chatChar+'|'+($('chatTask').value||'');
 const clip=(s,n)=>{s=String(s??'');return s.length>n?s.slice(0,n)+'…':s};
@@ -809,6 +832,7 @@ function chatContext(){const d=STATUS.digest||{};const v=$('chatTask').value;let
   DG.forEach(([k,label])=>{const a=(d[k]||[]).filter(dgVisible);if(a.length)L.push(label.replace(/^\S+\s/,'')+'：'+a.map(x=>clip(dgText(x),90)).join(' / '))});
   if(v.startsWith('b:')&&sel){L.push('\n【相談したいタスク（ボード）】');[['タイトル','title'],['状態','status'],['部門','dept'],['担当','owner'],['自律度','autonomy'],['成果とのつながり','outcome'],['検収','verdict'],['検収メモ','verdictNote'],['証拠','evidence'],['メモ','memo']].forEach(([l,k])=>{if(sel[k])L.push(l+'：'+clip(sel[k],1500))});if(sel.needsApproval)L.push('承認：要（そーやんの承認待ち）');(sel.instructions||[]).slice(-3).forEach(x=>L.push('そーやんの指示（'+fmt(x.at)+'）：'+clip(x.text,300)+(x.reply?'／返事：'+clip(x.reply,200):'')))}
   else if(v.startsWith('t:')){const t=TASKS.find(x=>x.id===v.slice(2));if(t){L.push('\n【相談したいタスク（そーやん自身の仕事）】'+clip(t.title,200));if(t.due)L.push('期限：'+t.due);if(t.progress)L.push('進み具合：'+t.progress+'%'+(t.carried?'（持ち越し）':''));if(t.nextStep)L.push('次の一歩：'+clip(t.nextStep,200));if(t.notionUrl)L.push('Notion：'+t.notionUrl);L.push('このタスクの担当として答える：'+NAMES[chatChar])}}
+  if(chatChar==='kani'&&TL){L.push('\n【古本屋さん（PM）の進行表】'+(TL.pmNote?'見立て：'+clip(TL.pmNote,300):''));(TL.projects||[]).forEach(p=>L.push('・'+clip(p.title,40)+'｜'+(p.status||'')+'｜進み '+(p.progress||0)+'%｜'+(p.start||'?')+'〜'+(p.due||'?')+(p.next?'｜次：'+clip(p.next,60):'')+(p.why?'｜理由：'+clip(p.why,60):'')));(TL.routines||[]).forEach(r=>{const v=Object.entries(r.days||{}).slice(-7).map(([k,x])=>k.slice(5)+':'+x).join(' ');L.push('ルーティン '+r.title+'（'+(r.cadence||'')+'）：'+v)})}
   const open=BOARD.filter(x=>x.status!=='done'&&(!sel||x.id!==sel.id)).slice(0,12).map(x=>'・'+clip(x.title,40)+'（'+x.status+'・'+(x.owner||'')+'）');if(open.length)L.push('\nボードの他のタスク：\n'+open.join('\n'));
   const mine=TASKS.filter(x=>!x.done).slice(0,15).map(x=>'・[id='+x.id+'] '+clip(x.title,70)+(x.due?'（期限 '+x.due+'）':''));if(mine.length)L.push('\nそーやんの未完了の仕事（完了にするときは [id=…] の値を使う）：\n'+mine.join('\n'));
   const xs=XCS.filter(x=>x.status!=='answered').slice(0,5).map(x=>'・'+clip(x.question,80));if(xs.length)L.push('\n判断待ちのカード：\n'+xs.join('\n'));
@@ -1156,8 +1180,48 @@ function renderFin(){const box=$('fin');if(!FIN){return}const f=FIN;$('finAsOf')
     <div class="foot">くりまんじゅうが freee を読むだけで集計（書き込みはしません）。更新：${f.updatedAt?fmt(f.updatedAt):'-'}。毎週月曜と、頼まれたときに更新します。この欄はそーやんだけに見えます。</div>`;
   finLine($('finLine'));finBars($('finBars'))}
 let finRz=0;addEventListener('resize',()=>{clearTimeout(finRz);finRz=setTimeout(()=>{if(FIN&&$('finLine'))renderFin()},200)});
+
+// ---------- 進み具合のタイムライン（2026-10-01 そーやんの依頼。PM の古本屋さんが timeline/now に置く） ----------
+let TL_TAB='p';try{TL_TAB=localStorage.getItem('ck-tltab')||'p'}catch(e){}const TL_OPEN=new Set();
+const ST_LABEL={ok:['✅','順調'],warn:['⚠️','注意'],late:['🔴','遅れ'],done:['🎉','完了']};
+const dnum=d=>{const t=Date.parse(String(d||'')+'T00:00:00+09:00');return isNaN(t)?null:t};
+const md=t=>{const d=new Date(t+9*36e5);return (d.getUTCMonth()+1)+'/'+d.getUTCDate()};
+function tlProjects(){const ps=(TL.projects||[]).slice();const today=dnum(todayKey());const order={late:0,warn:1,ok:2,done:3};ps.sort((a,b)=>(order[a.status]??2)-(order[b.status]??2)||(dnum(a.due)||9e15)-(dnum(b.due)||9e15));
+  const ds=ps.flatMap(p=>[dnum(p.start),dnum(p.due),...(p.milestones||[]).map(m=>dnum(m.d))]).filter(x=>x!=null);
+  let a=Math.min(today-7*864e5,...ds),b=Math.max(today+30*864e5,...ds);a=Math.max(a,today-30*864e5);b=Math.min(b,today+120*864e5);const span=b-a||1;const pct=t=>Math.max(0,Math.min(100,(t-a)/span*100));
+  const ticks=[];{const d=new Date(a+9*36e5);d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+1);for(let t=d.getTime()-9*36e5;t<b;){ticks.push(t);const x=new Date(t+9*36e5);x.setUTCMonth(x.getUTCMonth()+1);t=x.getTime()-9*36e5}}
+  const head=`<div class="gh">${ticks.map(t=>`<span style="left:${pct(t)}%">${new Date(t+9*36e5).getUTCMonth()+1}月</span>`).join('')}<span style="left:${pct(today)}%;color:var(--ink);font-weight:700">今日</span></div>`;
+  const rows=ps.map(p=>{const s=dnum(p.start)??today,e=dnum(p.due)??s;const L=pct(Math.min(s,e)),R=pct(Math.max(s,e));const sc=p.status==='late'?'var(--bad)':p.status==='warn'?'var(--warn)':p.status==='done'?'var(--sub)':'var(--good)';const [ic,lb]=ST_LABEL[p.status]||ST_LABEL.ok;const pr=Math.max(0,Math.min(100,+p.progress||0));
+    const ms=(p.milestones||[]).filter(m=>dnum(m.d)!=null).map(m=>`<span class="ms${m.done?' done':''}" style="left:${pct(dnum(m.d))}%" title="${esc(md(dnum(m.d))+' '+m.label)}"></span>`).join('');
+    const open=TL_OPEN.has(p.id);
+    return `<div class="gr" data-p="${esc(p.id)}" role="button" tabindex="0" aria-expanded="${open}"><div class="gl">${esc(p.title)}<span class="st ${esc(p.status||'ok')}">${ic} ${lb}</span><small>${esc(p.owner||'')}${p.due?'・'+md(dnum(p.due)):''}・${pr}%</small></div>
+      <div class="gt"><div class="bg"></div><div class="bar" style="--sc:${sc};left:${L}%;width:${Math.max(1.5,R-L)}%" title="${esc(p.title)}：${pr}%"><i style="width:${pr}%"></i></div>${ms}</div>
+      ${open?`<div class="gd">${p.why?`<div><b>${ic} ${lb}の理由：</b>${esc(p.why)}</div>`:''}${p.next?`<div><b>次の一歩：</b>${esc(p.next)}</div>`:''}${(p.milestones||[]).length?`<ul>${p.milestones.map(m=>`<li>${m.done?'◆':'◇'} ${esc(md(dnum(m.d)||0))} ${esc(m.label)}${m.done?'（済）':''}</li>`).join('')}</ul>`:''}<div>${safeUrl(p.link)?`<a href="${esc(p.link)}" target="_blank" rel="noopener" style="color:var(--info)">Notion ↗</a>　`:''}<button type="button" class="askb" data-tlask="${esc(p.id)}" style="display:inline-flex"><img src="${ICON.kani}" alt="">古本屋さんに相談</button></div></div>`:''}</div>`}).join('');
+  return `<div class="gwrap">${head}${rows}<div class="today" style="left:calc(var(--lw) + (100% - var(--lw)) * ${pct(today)/100})"></div></div>
+    <div class="lgd"><span>▭ 期間（中の濃い部分＝進み具合）</span><span>◆ 済んだ節目　◇ これからの節目</span><span style="color:var(--accent)">│ 今日</span></div>`}
+function tlRoutines(){const rs=TL.routines||[];const N=innerWidth<520?7:14;const today=dnum(todayKey());const days=[];for(let i=N-1;i>=0;i--)days.push(today-i*864e5);days.push(today+864e5);
+  const key=t=>{const d=new Date(t+9*36e5);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
+  const SYM={ok:'●',part:'◐',miss:'✕',off:'·'};
+  const head=`<div class="h"></div>${days.map(t=>{const d=new Date(t+9*36e5);return `<div class="h${t===today?' td':''}">${d.getUTCDate()}<br>${'日月火水木金土'[d.getUTCDay()]}</div>`}).join('')}<div class="h">達成</div>`;
+  const rows=rs.map(r=>{let ok=0,all=0;const cells=days.map(t=>{const k=key(t);const v=t>today?'fut':((r.days||{})[k]||'off');if(v==='ok'||v==='part'||v==='miss'){all++;if(v==='ok')ok++;if(v==='part')ok+=.5}
+      return `<div class="c ${v}" title="${esc(r.title)} ${md(t)}：${({ok:'できた',part:'一部',miss:'できなかった',off:'予定なし',fut:'これから'})[v]}">${v==='fut'?'':SYM[v]||''}</div>`}).join('');
+    return `<div class="n">${esc(r.title)}<small>${esc(r.cadence||'')}</small></div>${cells}<div class="r">${all?Math.round(ok/all*100)+'%':'−'}</div>`}).join('');
+  return `<div class="rt" style="--nd:${days.length}">${head}${rows}</div><div class="lgd"><span>● できた</span><span>◐ 一部</span><span>✕ できなかった</span><span>· 予定なし</span></div>`}
+function renderTL(){const box=$('tl');if(!TL)return;const ps=TL.projects||[];const n=k=>ps.filter(p=>p.status===k).length;$('tlCnt').textContent=ps.length?`遅れ ${n('late')}・注意 ${n('warn')}・順調 ${n('ok')}`:'';
+  const tab=TL_TAB==='r'?'r':'p';
+  box.innerHTML=`${TL.pmNote?`<div class="pmn"><img src="${ICON.kani}" alt=""><div><b>古本屋さん（PM）</b><br>${esc(TL.pmNote)}</div></div>`:''}
+    <div class="tabs" role="group" aria-label="表示の切り替え"><button type="button" data-tltab="p" aria-pressed="${tab==='p'}">プロジェクト</button><button type="button" data-tltab="r" aria-pressed="${tab==='r'}">毎日・毎週のルーティン</button><button type="button" class="askb" data-tlask="" style="margin-left:auto"><img src="${ICON.kani}" alt="">古本屋さんに相談</button></div>
+    ${tab==='p'?tlProjects():tlRoutines()}<div class="foot">古本屋さんが朝・夕の見回りで更新（最終 ${TL.updatedAt?fmt(TL.updatedAt):'-'}）。行を押すと、理由・次の一歩・節目が見られます。</div>`}
+function askPM(pid){chatChar='kani';renderChatUi();$('chatTask').value='';renderChatLog();setBox('h-chat',true);const p=(TL&&TL.projects||[]).find(x=>x.id===pid);
+  $('chatIn').placeholder=p?`「${clip(p.title,26)}」について古本屋さんに相談（例：間に合う？／何から？）`:'進み具合や段取りを古本屋さんに相談（例：今週は何に集中する？）';if(p&&!$('chatIn').value)$('chatIn').value=`「${p.title}」について。`;
+  $('h-chat').closest('section').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
+$('tl').addEventListener('click',e=>{const tb=e.target.closest('button[data-tltab]');if(tb){TL_TAB=tb.dataset.tltab;try{localStorage.setItem('ck-tltab',TL_TAB)}catch(x){}renderTL();return}
+  const ak=e.target.closest('button[data-tlask]');if(ak){e.stopPropagation();askPM(ak.dataset.tlask);return}if(e.target.closest('a,.gd'))return;
+  const r=e.target.closest('.gr[data-p]');if(r){const id=r.dataset.p;TL_OPEN.has(id)?TL_OPEN.delete(id):TL_OPEN.add(id);renderTL()}});
+$('tl').addEventListener('keydown',e=>{const r=e.target.closest('.gr[data-p]');if(r&&e.target===r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();r.click()}});
+let tlRz=0;addEventListener('resize',()=>{clearTimeout(tlRz);tlRz=setTimeout(()=>{if(TL&&TL_TAB==='r')renderTL()},200)});
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-done','h-xc','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1169,6 +1233,7 @@ const SUMS={
  'h-xc':()=>{const o=XCS.filter(x=>x.status!=='answered').sort(byTime);return o.length?`<div class="li"><b>${o.length}件</b> 待ち：${esc(clip(o[0].question,50))}${o.length>1?' ほか':''}</div>`:'<div class="li">いま判断してほしいことはありません</div>'},
  'h-done':()=>{const L=doneItems(dayStart(0),dayStart(1));const n=k=>L.filter(x=>x.k===k).length;return `<div class="li" style="font-size:15px;letter-spacing:1px">${L.slice(-14).map(x=>x.k==='c'?'🧸':x.k==='j'?'🌷':x.k==='f'?(x.hunt?'⚔️':'🥊'):'🌼').join('')||'🌱'}</div>`+chips([['🌼そーやん',n('s'),'#e6c25a'],['🧸ちいかわ',n('c'),'#8fb0f5'],['🌷判断',n('j'),'#f0a9bd']])},
  'h-work':()=>{const c=workCalc();return WORK.length?`<div class="li"><b>${c.pct}%</b> 代替（月${c.H}hのうち）・推測${c.guess}件</div>`:'<div class="li">棚卸し前です</div>'},
+ 'h-tl':()=>{if(!TL)return '<div class="li">古本屋さんが準備中です</div>';const ps=TL.projects||[];const n=k=>ps.filter(p=>p.status===k).length;const w=ps.filter(p=>p.status==='late'||p.status==='warn').slice(0,2);return chips([['🔴遅れ',n('late'),'#c2463d'],['⚠️注意',n('warn'),'#b7791f'],['✅順調',n('ok'),'#4f8f4a']])+w.map(p=>`<div class="li">${ST_LABEL[p.status][0]} ${esc(clip(p.title,30))}${p.why?'：'+esc(clip(p.why,24)):''}</div>`).join('')},
  'h-fin':()=>{if(!FIN)return '<div class="li">くりまんじゅうが集計中です</div>';const it=((FIN.cash||{}).items||[]).filter(x=>x.fresh&&x.amount>0).reduce((a,x)=>a+x.amount,0);const fc=FIN.forecast||[],l=fc[fc.length-1];return `<div class="li">銀行 <b>${man(it)}万円</b>${l?`・${mLabel(l.m)}末の見込み <b>${man(l.end)}万円</b>`:''}</div>`+((FIN.alerts||[])[0]?`<div class="li">⚠️ ${esc(clip(FIN.alerts[0],44))}</div>`:'')},
  'h-app':()=>{const mine=APPS.filter(appMine);const n=k=>APPS.filter(a=>a.stage===k).length;return APPS.length?chips([['アイデア',n('idea')],['企画・設計',n('plan')+n('design')],['試作・試用',n('build')+n('try'),'#b7791f'],['運用',n('live'),'#4f8f4a']])+(mine.length?`<div class="li">🙋 そーやんの番：${esc(clip(mine[0].title,40))}${mine.length>1?' ほか':''}</div>`:''):'<div class="li">つくってみたいアプリを書くと、制作部が動きます</div>'},
  'h-idea':()=>{const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const nb=o.filter(x=>x.kind==='structure').length;return o.length?`<div class="li"><b>${o.length}件</b>の提案${nb?'（うち🏗仕組み '+nb+'件）':''}：${esc(NAMES[o[0].who]||'')}「${esc(clip(o[0].title,38))}」${o.length>1?' ほか':''}</div>`:'<div class="li">いまの提案はありません（次の見回りで届きます）</div>'},
@@ -1267,6 +1332,7 @@ async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)r
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
   db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
   db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
+  db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?s.data():null;if(TL)renderTL()},()=>{});
   db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
   db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
   db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
