@@ -52,6 +52,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .bub.soyan{background:#fff6d6}.bub.bench{background:#eef0f4;color:#5b6070}
 .bub[data-empty="1"]{opacity:0}
 .plc{position:absolute;transform:translate(-50%,0);transition:opacity .2s;font-size:clamp(8px,1.6vw,9.5px);color:#2f3a24;background:rgba(255,255,255,.55);border-radius:4px;padding:0 3px;pointer-events:none;white-space:nowrap}
+.meettag{position:absolute;z-index:6;left:49.1%;top:23.5%;transform:translateX(-50%);max-width:34%;box-sizing:border-box;font-size:10px;line-height:1.3;color:#fff;background:rgba(40,34,30,.72);border-radius:4px;padding:1px 5px;pointer-events:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-align:center;opacity:.7}.meettag.on{opacity:1;background:rgba(194,70,61,.88)}.meettag[hidden]{display:none}
+@media (min-width:700px){.meettag{font-size:12px}}
 .floater{position:absolute;transform:translate(-50%,-100%);font-size:14px;color:#fff;text-shadow:0 1px 0 #3b3533,1px 0 0 #3b3533,-1px 0 0 #3b3533,0 -1px 0 #3b3533;pointer-events:none;animation:up 1.2s ease-out forwards}
 @keyframes up{to{transform:translate(-50%,-220%);opacity:0}}
 .win{background:var(--win);color:var(--win-ink);border:3px solid #3b3533;border-top:0;border-radius:0 0 6px 6px;padding:12px 14px;min-height:160px;position:relative;box-shadow:inset 0 0 0 3px var(--win-edge)}
@@ -92,7 +94,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .xc .rec{font-size:12px;color:var(--info);margin-top:6px;font-family:var(--body)}
 .xfree{margin-top:8px;font-family:var(--body)}.xfree label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:3px}
 .xfree textarea,.nfree textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-family:var(--body);font-size:14px;line-height:1.55;min-height:48px;resize:vertical;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px}
-.xfrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}.xfrow small{font-size:11.5px;color:var(--sub)}.xfree .btn-s{min-height:36px}
+.xfrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}.xfrow small{font-size:11.5px;color:var(--sub)}.xfree .btn-s{min-height:44px;font-size:13px;padding:6px 12px}
+.xfree textarea::placeholder{color:var(--sub)}@media (max-width:600px){.xfree textarea,.nfree textarea{font-size:16px}}
 .fin ul.cuts{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}.cuts li{border:2px solid var(--line);border-radius:8px;padding:6px 9px;font-family:var(--body);font-size:13px}
 .cuts .ct{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.cuts .cs{color:var(--sub);font-size:12.5px;line-height:1.55;margin-top:2px}
 .cuts .ctag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:99px;padding:0 7px;margin-left:6px;color:var(--sub)}.cuts .ctag.ok{border-color:var(--good);color:var(--good)}
@@ -237,12 +240,12 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .fc-pill.brk{border-color:#8fd18a}
 .ap-flow{display:flex;flex-wrap:wrap;gap:4px;font-size:12px;margin-bottom:6px}.ap-flow span{border:1.5px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--sub)}.ap-flow span b{color:var(--ink)}
 .ap-new summary{cursor:pointer;color:var(--info);font-size:13.5px;padding:4px 0}.ap-new form{display:grid;gap:6px;margin:6px 0 4px}.ap-new input,.ap-new textarea{font:inherit;font-family:var(--body);font-size:14px;border:2px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box}.ap-new textarea{min-height:76px;resize:vertical}.ap-new .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.ap-new select{font:inherit;font-size:13px}
-.app{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px;font-family:var(--body)}.app.me{border-color:#e36d72}.app .st i.on{background:var(--good)}.app .hd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}.app .ti{font-family:var(--dot);font-size:15px;margin:4px 0 2px;line-height:1.4}
-.app .st{display:flex;gap:3px;margin:6px 0}.app .st i{flex:1;height:6px;border-radius:3px;background:var(--line)}.app .st i.on{background:#4f8f4a}.app .st i.cur{background:#e6a23c}
-.app p{margin:4px 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.app .ball{font-weight:700}.app .th{border-top:1px dashed var(--line);margin-top:6px;padding-top:4px}.app .th .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:5px;font-size:12.5px;line-height:1.55}.app .th .rep img{width:20px;height:20px;image-rendering:pixelated}.app .th .me{background:var(--bg);border-radius:6px;padding:3px 6px}
-.app textarea{font:inherit;font-family:var(--body);font-size:13.5px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin-top:6px}
-.app .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.app .go button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:5px 10px;cursor:pointer}.app .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
-.app details.olda summary{cursor:pointer;color:var(--sub);font-size:12px}
+.apc{border:2px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px;font-family:var(--body)}.apc.me{border-color:#e36d72}.apc .st i.on{background:var(--good)}.apc .hd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}.apc .ti{font-family:var(--dot);font-size:15px;margin:4px 0 2px;line-height:1.4}
+.apc .st{display:flex;gap:3px;margin:6px 0}.apc .st i{flex:1;height:6px;border-radius:3px;background:var(--line)}.apc .st i.on{background:#4f8f4a}.apc .st i.cur{background:#e6a23c}
+.apc p{margin:4px 0;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.apc .ball{font-weight:700}.apc .th{border-top:1px dashed var(--line);margin-top:6px;padding-top:4px}.apc .th .rep{display:grid;grid-template-columns:22px minmax(0,1fr);gap:6px;margin-top:5px;font-size:12.5px;line-height:1.55}.apc .th .rep img{width:20px;height:20px;image-rendering:pixelated}.apc .th .me{background:var(--bg);border-radius:6px;padding:3px 6px}
+.apc textarea{font:inherit;font-family:var(--body);font-size:13.5px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin-top:6px}
+.apc .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.apc .go button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:5px 10px;cursor:pointer}.apc .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
+.apc details.olda summary{cursor:pointer;color:var(--sub);font-size:12px}
 .askb{display:flex;width:fit-content;align-items:center;gap:4px;margin:4px 0 2px;font:inherit;font-size:12px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}.askb img{width:18px;height:18px;image-rendering:pixelated}.askb:hover{border-color:var(--info)}
 .tk .bt-row{margin-top:4px}.tk details.bins summary{cursor:pointer;color:var(--info);font-size:12.5px;font-family:var(--body);padding:3px 0}.tk details.bins textarea{font:inherit;font-family:var(--body);font-size:13px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin:4px 0}.tk .bi{margin-top:5px;font-family:var(--body);font-size:12.5px;line-height:1.55;background:var(--bg);border-radius:6px;padding:4px 7px;overflow-wrap:anywhere}.tk .bi .rp{color:var(--sub)}.tk details.bins .bt{padding:6px 12px}
 body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
@@ -325,7 +328,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button">📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
-  <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas></div>
+  <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
     <div class="side">
       <div class="nowbox" id="nowbox"><h2 id="h-now"><button type="button" id="nowBtn" aria-expanded="false" aria-controls="nowList"><span>👀 いまの様子 <small id="nowSum"></small></span><span class="arw" aria-hidden="true">▸</span></button></h2><div id="nowList" hidden></div></div>
   <div class="win" id="win">
@@ -821,8 +824,12 @@ let seen={};try{seen=JSON.parse(localStorage.getItem('ck-seen')||'{}')}catch(e){
 function markSeen(k){seen[k]=1;try{localStorage.setItem('ck-seen',JSON.stringify(seen))}catch(e){}}
 const Q=[];let scene=null,speaker=null,speakerLabel='',speakerIcon='letter',pages=[],pi=0,typing=null,full='';
 function enqueue(s){if(s&&s.pages&&s.pages.length){Q.push(s);if(!scene)nextScene()}}
-function nextScene(){scene=Q.shift()||null;if(!scene){idle();return}pages=scene.pages;pi=0;goPage()}
-function goPage(){const p=pages[pi];if(!p)return;const who=p.who||'chiikawa';
+function nextScene(){scene=Q.shift()||null;meetTag();if(!scene){idle();return}pages=scene.pages;pi=0;goPage()}
+// 会議室の札：いまの会議の議題を見せる（2026-10-02 そーやんのコメント「なんの会議しているか分かると良い」）
+function meetTag(){const el=document.getElementById('meetTag');if(!el)return;if(!BASE){el.hidden=true;return}el.hidden=false;
+  if(scene){const p=pages[pi]||{};const topic=String(p.title||p.head||'').replace(/^[^\p{L}\p{N}]+/u,'');el.classList.add('on');const lb=String(scene.label||'相談').replace(/^[^\p{L}\p{N}]+/u,'');el.textContent=`🗣${pages.length>1?`${pi+1}/${pages.length} `:''}会議中：${lb}${topic?'｜'+topic:''}`}
+  else{el.classList.remove('on');el.textContent='🗣 会議室：いまは空き'}}
+function goPage(){const p=pages[pi];if(!p)return;meetTag();const who=p.who||'chiikawa';
   if(who!==speaker){if(speaker&&ent[speaker].st!=='home')ent[speaker].st='walkOut';speaker=who;speakerLabel=scene.label||'✉️ おとどけ';speakerIcon=scene.icon||'letter';
     ent[who].st='walkIn';setText('','',`（${NAMES[who]}がやってくる…）`,who);$('dActs').innerHTML='';$('more').hidden=true;return}
   showPage()}
@@ -832,18 +839,18 @@ function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'
   typing=setInterval(()=>{n+=2;$('dText').textContent=full.slice(0,n);if(n>=full.length){clearInterval(typing);typing=null;renderActs(true)}},24)}
 function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.innerHTML='';return}let h='';
   const x=p.xid&&XCS.find(c=>c.id===p.xid);
-  if(x&&Array.isArray(x.options))h+=x.options.map(o=>`<button type="button" class="choice" data-act="ans" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}">${esc(o.key)}：${esc(o.label)}</button>`).join('')+`<button type="button" class="choice" data-act="ans" data-k="保留" aria-pressed="${x.answer==='保留'}">保留</button><button type="button" class="choice" data-act="xwrite">✍️ ことばで答える</button>`;
+  if(x&&Array.isArray(x.options))h+=x.options.map(o=>`<button type="button" class="choice" data-act="ans" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}">${esc(o.key)}：${esc(o.label)}</button>`).join('')+`<button type="button" class="choice" data-act="ans" data-k="保留" aria-pressed="${x.answer==='保留'}">保留</button>${x.status!=='answered'?'<button type="button" class="choice" data-act="xwrite">✍️ ことばで答える</button>':''}`;
   const link=safeUrl(p.link);if(link)h+=`<a href="${esc(link)}" target="_blank" rel="noopener">ひらく ↗</a>`;
   h+=p.end?`<button type="button" data-act="close">とじる</button>`:`<button type="button" data-act="next">つぎへ ▶</button>`;a.innerHTML=h;$('more').hidden=!!p.end}
 function next(){if(typing){clearInterval(typing);typing=null;$('dText').textContent=full;renderActs(true);return}
   if(pi<pages.length-1){pi++;goPage()}else endScene()}
 function endScene(){if(!scene)return;if(scene.onEnd)scene.onEnd();if(speaker)ent[speaker].st='walkOut';speaker=null;scene=null;nextScene()}
-function idle(){setText('','','（みんなそれぞれの持ち場で働いている…）\nタップすると、ダイジェストをもう一度きけます。','chiikawa');$('dActs').innerHTML='';$('more').hidden=true}
+function idle(){meetTag();setText('','','（みんなそれぞれの持ち場で働いている…）\nタップすると、ダイジェストをもう一度きけます。','chiikawa');$('dActs').innerHTML='';$('more').hidden=true}
 $('dText').addEventListener('click',()=>{if(scene&&speaker&&ent[speaker].st==='talk')next();else if(!scene)enqueue(digestScene(true))});
 $('dActs').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const act=b.dataset.act,p=pages[pi];
   if(act==='next')next();if(act==='close')endScene();
   if(act==='xwrite'&&p&&p.xid){setBox('h-xc',true);const t=$('xcs').querySelector(`textarea[data-xn="${CSS.escape(p.xid)}"]`);if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus({preventScroll:true})}return}
-  if(act==='ans'&&p&&p.xid){await answer(p.xid,b.dataset.k);renderActs(true);const keep=full;$('dText').textContent=b.dataset.k==='保留'?'わかった…！ またあとで…！':'わかった…！ ハチワレにつたえる…！';setTimeout(()=>{if(!typing&&pages[pi]===p)$('dText').textContent=keep},1500)}});
+  if(act==='ans'&&p&&p.xid){await answer(p.xid,b.dataset.k,xNote($('xcs'),p.xid));renderActs(true);const keep=full;$('dText').textContent=b.dataset.k==='保留'?'わかった…！ またあとで…！':'わかった…！ ハチワレにつたえる…！';setTimeout(()=>{if(!typing&&pages[pi]===p)$('dText').textContent=keep},1500)}});
 const dgText=x=>typeof x==='string'?x:String((x&&x.t)||'');
 const dgVisible=x=>{if(typeof x==='string')return true;if(x.task){const t=TASKS.find(y=>y.id===x.task);if(t&&t.done)return false}if(x.card){const c=XCS.find(y=>y.id===x.card);if(c&&c.status==='answered')return false}return true};
 const DG=[['approvals','🙋 承認待ち','#c2463d'],['blocked','⛔ ブロック','#b7791f'],['redflags','🚩 赤信号','#9a62d0'],['outcomes','🌱 成果の動き','#4f8f4a']];
@@ -863,7 +870,7 @@ function auditScene(a){return {type:'talk',label:'🗂 記録監査',icon:'lette
 async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collection(col).doc(id).update(patch)}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}}}
 function floater(text,e){const f=document.createElement('div');f.className='floater';f.textContent=text;f.style.left=(e.x/W*100)+'%';f.style.top=((e.y-24)/H*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1300)}
 // 判断カードは選択肢に加えて、ことばでも答えられる（2026-10-02 そーやんの依頼）。note は選択肢より優先して読む。k='記述' はことばだけの答え
-async function answer(id,k,note){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};if(note!==undefined)patch.note=String(note).trim().slice(0,2000);Object.assign(x,patch);const ae=document.activeElement;if(ae&&ae.tagName==='TEXTAREA'&&ae.dataset.xn===id)ae.blur();
+async function answer(id,k,note){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};if(note!==undefined)patch.note=String(note).trim().slice(0,2000);Object.assign(x,patch);xBlur(id);
   ent.chiikawa.jump=1;renderXcs();renderDigest();await write('exceptions',id,patch)}
 let MCP=null;const NOTION_TASKS_DS='307a93e4-85ff-819e-a400-000b94b658ff';
 async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;if('done' in patch)patch.doneAt=patch.done?Date.now():0;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();renderDigest();await write('tasks',id,patch);if('done' in patch)syncNotion(t)}
@@ -888,7 +895,7 @@ function xSend(root,id,hint){const v=(xNote(root,id)||'').trim();if(!v){const t=
 $('xcs').addEventListener('click',e=>{const u=e.target.closest('button[data-undo]');if(u){undoAnswer(u.dataset.undo);return}
   const w=e.target.closest('button[data-xsend]');if(w){xSend($('xcs'),w.dataset.xsend,w.parentElement.querySelector('small'));return}
   const b=e.target.closest('button[data-x]');if(b)answer(b.dataset.x,b.dataset.k,xNote($('xcs'),b.dataset.x))});
-async function undoAnswer(id){const x=XCS.find(c=>c.id===id);if(!x||x.handled)return;const patch={answer:'',status:'open'};Object.assign(x,patch);renderXcs();await write('exceptions',id,patch)}
+async function undoAnswer(id){const x=XCS.find(c=>c.id===id);if(!x||x.handled)return;const patch={answer:'',status:'open'};Object.assign(x,patch);xBlur(id);renderXcs();await write('exceptions',id,patch)}
 $('replay').addEventListener('click',()=>enqueue(digestScene(true)));
 let lock=null;$('wake').addEventListener('click',async()=>{try{if(lock){await lock.release();lock=null;$('wake').textContent='💡'}else{lock=await navigator.wakeLock.request('screen');$('wake').textContent='🔆'}}catch(e){lock=null;$('wake').textContent='💡'}});
 
@@ -904,8 +911,12 @@ function xcCard(x,done){return `<div class="xc${done?' done':''}"><div class="q"
     ${x.recommend?`<div class="rec">ハチワレのおすすめ：${esc(x.recommend)}</div>`:''}${x.ifNothing?`<p>何もしない場合：${esc(x.ifNothing)}</p>`:''}
     <div class="xfree"><label for="xn-${esc(x.id)}">ことばで答える（選択肢にないこと・条件・補足）</label><textarea id="xn-${esc(x.id)}" data-xn="${esc(x.id)}" rows="2" maxlength="2000" placeholder="例：A にするけど、11月の入金も見込んでおいて">${esc(x.note||'')}</textarea>
       <div class="xfrow"><button type="button" class="btn-s" data-xsend="${esc(x.id)}">この内容で答える</button><small>選択肢を押すと、ここに書いたこともいっしょに届きます</small></div></div>`}</div>`}
-function renderXcs(){const bx=$('xcs');if(document.activeElement&&bx.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;
-  const drafts={};bx.querySelectorAll('textarea[data-xn]').forEach(t=>{if(t.value!==t.defaultValue)drafts[t.dataset.xn]=t.value});
+// 入力中は描き直さない（下書きを守る）。とばした分は欄から出たときに描き直す
+let xcsStale=false;const xTyping=()=>{const a=document.activeElement;return !!(a&&a.tagName==='TEXTAREA'&&$('xcs').contains(a))};
+function xBlur(id){const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&(a.dataset.xn===id||$('xcs').contains(a)))a.blur();XDROP.add(id)}const XDROP=new Set();
+$('xcs').addEventListener('focusout',e=>{if(e.relatedTarget&&$('xcs').contains(e.relatedTarget))return;setTimeout(()=>{if(xcsStale&&!xTyping())renderXcs()},300)});
+function renderXcs(){const bx=$('xcs');if(xTyping()){xcsStale=true;return}xcsStale=false;
+  const drafts={};bx.querySelectorAll('textarea[data-xn]').forEach(t=>{if(t.value!==t.defaultValue&&!XDROP.has(t.dataset.xn))drafts[t.dataset.xn]=t.value});XDROP.clear();
   renderXcsNow();for(const id in drafts){const t=bx.querySelector(`textarea[data-xn="${CSS.escape(id)}"]`);if(t)t.value=drafts[id]}}
 function renderXcsNow(){const openL=XCS.filter(x=>x.status!=='answered').sort(byTime);const doneL=XCS.filter(x=>x.status==='answered').sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0)).slice(0,8);
   $('xcCnt').textContent=openL.length?`${openL.length}件 待ち`:'';
@@ -1290,7 +1301,7 @@ function appCard(a){const i=appStIdx(a.stage),lead=a.owner||'rakko';const th=(a.
   const step=APP_ST.map((s,j)=>`<i class="${j<i?'on':j===i?'cur':''}" title="${s[1]}"></i>`).join('');
   const ball=a.stage==='hold'?'⏸ 保留中':a.stage==='live'?'✅ 運用中':appMine(a)?'🙋 そーやんの番':'🛠 制作部の番';
   const ask=appMine(a)&&['plan','design','build','try'].includes(a.stage);
-  return `<div class="app${appMine(a)?' me':''}"><div class="hd"><img src="${ICON[lead]||ICON.rakko}" alt="" style="width:20px;height:20px;image-rendering:pixelated"><b>${esc(NAMES[lead]||'')}</b><span class="chip">${esc(a.area||'全体')}</span><span class="chip">${esc((APP_ST[i]||['','保留'])[1])}</span><span class="ball">${ball}</span></div>
+  return `<div class="apc${appMine(a)?' me':''}"><div class="hd"><img src="${ICON[lead]||ICON.rakko}" alt="" style="width:20px;height:20px;image-rendering:pixelated"><b>${esc(NAMES[lead]||'')}</b><span class="chip">${esc(a.area||'全体')}</span><span class="chip">${esc((APP_ST[i]||['','保留'])[1])}</span><span class="ball">${ball}</span></div>
   <div class="ti">${esc(a.title)}</div>${i>=0?`<div class="st" aria-label="いまの段階：${esc(APP_ST[i][1])}">${step}</div>`:''}
   ${a.why?`<p>減らしたい手間：${esc(clip(a.why,160))}</p>`:''}${a.summary?`<p>いまの案：${esc(a.summary)}</p>`:''}${a.next?`<p><b>次の一歩：</b>${esc(a.next)}</p>`:''}${a.ask&&appMine(a)?`<p><b>そーやんに聞きたいこと：</b>${esc(a.ask)}</p>`:''}
   ${safeUrl(a.link)?`<p><a href="${esc(a.link)}" target="_blank" rel="noopener" style="color:var(--info)">${a.stage==='build'||a.stage==='try'||a.stage==='live'?'試作をひらく':'企画・設計（Notion）'} ↗</a></p>`:''}
@@ -1427,7 +1438,7 @@ function renderNews(){const ed=newsEd();const d=new Date(Date.now()+9*36e5);cons
   const open=XCS.filter(x=>x.status!=='answered').sort(byTime);const top=open[0];const dg=STATUS.digest||{};const rf=(dg.redflags||[]).filter(dgVisible).map(dgText),oc=(dg.outcomes||[]).filter(dgVisible).map(dgText);
   let lead;if(top){const rec=String(top.recommend||'').trim().charAt(0);lead=`<div class="kicker">一面　判断してほしいこと${open.length>1?`（ほか ${open.length-1}件）`:''}</div><h3 id="newsTitle">${esc(top.question)}</h3>${top.why?`<p>${esc(top.why)}</p>`:''}
     <div class="opts" role="group" aria-label="こたえ">${(top.options||[]).map(o=>`<button type="button" data-nx="${esc(top.id)}" data-k="${esc(o.key)}" class="${o.key===rec?'rec':''}" aria-pressed="${top.answer===o.key}">${esc(o.key)}　${esc(o.label)}${o.key===rec?'（おすすめ）':''}</button>`).join('')}</div>
-    <div class="nfree"><label for="nn-${esc(top.id)}">ことばで答える（選択肢にないこと・補足）</label><textarea id="nn-${esc(top.id)}" data-xn="${esc(top.id)}" rows="2" maxlength="2000">${esc(top.note||'')}</textarea><div class="xfrow"><button type="button" data-nxsend="${esc(top.id)}">この内容で答える</button><small>選択肢を押すと、書いたこともいっしょに届きます</small></div></div>${top.ifNothing?`<p style="font-size:13px">何もしないと：${esc(top.ifNothing)}</p>`:''}`}
+    <div class="nfree"><label for="nn-${esc(top.id)}">ことばで答える（選択肢にないこと・補足）</label><textarea id="nn-${esc(top.id)}" data-xn="${esc(top.id)}" rows="2" maxlength="2000">${esc(xNote($('xcs'),top.id)??top.note??'')}</textarea><div class="xfrow"><button type="button" data-nxsend="${esc(top.id)}">この内容で答える</button><small>選択肢を押すと、書いたこともいっしょに届きます</small></div></div>${top.ifNothing?`<p style="font-size:13px">何もしないと：${esc(top.ifNothing)}</p>`:''}`}
   else lead=`<div class="kicker">一面</div><h3 id="newsTitle">${esc(rf[0]||'きょう判断してほしいことはありません')}</h3><p>${rf[0]?'くわしくはダイジェストに。':'ちいかわたちは見回りを続けています。'}</p>`;
   const arts=(top?rf.slice(0,2):rf.slice(1,3)).map(t=>({h:'気になること',t})).concat(oc.slice(0,2).map(t=>({h:'うごいたこと',t}))).slice(0,2);
   const subs=arts.length?`<div class="subs">${arts.map(a=>`<div><div class="kicker">${a.h}</div><h4>${esc(clip(a.t,40))}</h4>${a.t.length>40?`<p>${esc(a.t)}</p>`:''}</div>`).join('')}</div>`:'';
