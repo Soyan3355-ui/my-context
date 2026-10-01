@@ -280,6 +280,15 @@
       return { from: c.id, id: q.id, fee: Math.round(a * 0.6), sal: Math.round(a * 0.3), reason: pick(['出場機会を求めている', 'クラブの財政難で放出', '本人が港町に引っ越してきた']) };
     }).filter(Boolean);
   }
+  // how readily each position picks up each stat: a forward drilled in defending still won't
+  // tackle like a centre-back, so team-wide sessions keep players shaped by where they play
+  const POS_APT = {
+    GK: { spd: 0.7, sht: 0.3, pas: 0.7, def: 1.2, sta: 0.8 },
+    DF: { spd: 0.9, sht: 0.5, pas: 0.8, def: 1.2, sta: 1.0 },
+    MF: { spd: 0.9, sht: 0.8, pas: 1.2, def: 0.8, sta: 1.1 },
+    FW: { spd: 1.1, sht: 1.2, pas: 0.7, def: 0.4, sta: 0.9 },
+  };
+  function posApt(p, k) { return (POS_APT[p.pos] || POS_APT.MF)[k] || 1; }
   function avgStat(p) { return (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5; }
   // growth slows down the closer a stat gets to its ceiling, so a season of play doesn't push everyone to S rank
   // rivals settle around the 45-60 range: growth runs at full pace while catching up to that
@@ -358,9 +367,16 @@
     // applied here, read-only, rather than mutating the shared squad array club.roster() returns
     const growth = (State.rivalGrowth && State.rivalGrowth[club.id]) || {};
     const lift = rivalLift(club), cap = statCap();
+    // the squad lift follows our eleven's average, which a couple of star forwards sit far above -
+    // their back line gets extra def/spd sized to that gap so one player can't stroll through every week
+    const xi = State.lineup.map((id) => State.roster.find((q) => q.id === id)).filter(Boolean);
+    const xiAvg = xi.length ? xi.reduce((a, q) => a + avgStat(q), 0) / xi.length : 50;
+    const atk = xi.filter((q) => q.pos === 'FW' || q.pos === 'MF').map((q) => (q.stats.spd + q.stats.sht + q.stats.pas) / 3).sort((a, b) => b - a);
+    const starGap = Math.max(0, (atk[0] || 0) - xiAvg);
     const base = club.roster().map((p, i) => {
       const g = growth[p.id] || {};
-      const grown = Object.assign({}, p, { stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, Math.min(cap, Math.round(v + (g[k] || 0) + lift))])) });
+      const extra = (k) => (p.pos === 'DF' || p.pos === 'GK') && (k === 'def' || k === 'spd') ? starGap * 0.6 : p.pos === 'MF' && k === 'def' ? starGap * 0.35 : 0;
+      const grown = Object.assign({}, p, { stats: Object.fromEntries(Object.entries(p.stats).map(([k, v]) => [k, Math.min(cap, Math.round(v + (g[k] || 0) + lift + extra(k)))])) });
       if (!taken.has(grown.id)) return grown;
       return Object.assign({}, grown, { id: grown.id + '_rep', name: pick(GEN_GIVEN), trait: '', stats: Object.fromEntries(Object.entries(grown.stats).map(([k, v]) => [k, v - 4])), look: Object.assign({}, grown.look, { hair: pick(HAIRS)[0], key: grown.look.key + '_rep' }) });
     });
@@ -1618,7 +1634,7 @@
           // equally; one with named focus players is a real specialization — others still pick
           // something up, but noticeably less, so training the whole squad evenly needs variety
           const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
-          let v = s.pick.gains[k] * mult * bulkMult * focusMult * fatigueMult * (p.growth || 1) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
+          let v = s.pick.gains[k] * mult * bulkMult * focusMult * fatigueMult * (p.growth || 1) * posApt(p, k) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
           v = Math.round(v + rand(-0.3, 0.3));
           // same +2-per-stat ceiling as match growth - a great training session should still feel
           // capped, not like a single session can leapfrog several ranks (a bit higher when several
@@ -2310,7 +2326,7 @@
       let total = 0;
       const catchup = earlyCatchup();
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
+        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * posApt(p, k) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
         // the early catch-up bonus should mean more stats clear the bar in a given match, not any
         // single stat leaping by a huge amount - a +2 ceiling holds regardless of the multiplier
         v = Math.min(v, 2);

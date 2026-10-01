@@ -1236,7 +1236,9 @@
       d.tackCD = rand(0.7, 1.3);
       d.rec.tackle++;
       const cs = this.stat(c, 'spd') * 0.5 + this.stat(c, 'pas') * 0.2 + (c.id === 'yukimaru' ? 14 : 0);
-      let pr = 0.3 + (this.stat(d, 'def') - cs) / 110;
+      // a forward's tackling numbers are mostly pressing nuisance, not a defender's timing
+      const roleDef = { FW: 0.8, MF: 0.92 }[this.role(d)] || 1;
+      let pr = 0.3 + (this.stat(d, 'def') * roleDef - cs) / 110;
       if (this.order[d.team] && this.order[d.team].id === 'defend') pr += 0.1;
       if (d.id === 'tetsuyama' || d.id === 'kotaro') pr += 0.08;
       if (d.id === 'ume') pr += 0.08;
@@ -1248,7 +1250,8 @@
         this.popup(d.x, d.y - 40, 'すべりすぎ！', '#9fdcff', 8); Sound.play('tackle', { vol: 0.5 });
         return;
       }
-      pr = clamp(pr, 0.1, 0.72);
+      // even the best dribbler loses one in five head-on challenges - a 90% ceiling let a single star carry the team
+      pr = clamp(pr, 0.2, 0.72);
       const b = this.ball;
       // tackling from behind risks a foul
       const fx = c.face === 'right' ? 1 : c.face === 'left' ? -1 : 0, fy = c.face === 'down' ? 1 : c.face === 'up' ? -1 : 0;
