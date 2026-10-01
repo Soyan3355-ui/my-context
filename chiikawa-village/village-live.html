@@ -191,6 +191,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .idea .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .idea .go button{font:inherit;font-size:13px;border-radius:8px;padding:6px 12px;cursor:pointer;border:2px solid var(--line);background:var(--bg);color:var(--ink)}
 .idea .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
+.idea .ins{margin-top:8px}.idea .ins summary{cursor:pointer;font-family:var(--body);font-size:12.5px;color:var(--info)}.idea .ins textarea{width:100%;min-height:60px;margin-top:6px;font-family:var(--body);font-size:13.5px;padding:7px 9px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);resize:vertical}
 .note{font-size:11px;color:var(--sub);margin-top:14px;line-height:1.6;font-family:var(--body)}
 .note a{color:var(--info)}
 .wk-big{font-size:28px;font-weight:700}.wk-bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:6px 0}.wk-bar i{display:block;height:100%;background:#4f8f4a}.wk table{width:100%;border-collapse:collapse;font-size:12px}.wk td,.wk th{border-bottom:1px solid var(--line);padding:4px 3px;text-align:left}.wk .num{text-align:right;white-space:nowrap}.wk .warn{font-size:12px;color:#b7791f}
@@ -844,19 +845,20 @@ renderRounds();setInterval(renderRounds,60000);
 // ---------- ちいかわからの提案 ----------
 function ideaCard(x,decided){const r=ROLES[x.who]||['',''];const st={approved:x.kind==='structure'?'承認ずみ（第一歩を次の見回りで）':'承認ずみ（次の見回りで着手）',doing:'作業中',done:'できた',declined:'見送り',later:'あとで'}[x.status]||'';const big=x.kind==='structure';
   const mt=`<div class="mt">${x.effort?`<span class="chip">手間 ${esc(x.effort)}</span>`:''}${x.autonomy?`<span class="chip">${esc(x.autonomy)}</span>`:''}${x.needsApproval?'<span class="chip appr">送信・お金の操作はしません</span>':''}</div>`;
-  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b>${big?'<span class="chip so">仕組み</span>':''}<span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
+  if(decided)return `<div class="idea done"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b>${big?'<span class="chip so">仕組み</span>':''}<span class="chip">${esc(st)}</span></div><div class="ti" style="font-size:13.5px">${esc(x.title)}</div>${x.instruction?`<p>✏️ 指示：${esc(x.instruction)}</p>`:''}${x.result?`<p>${esc(x.result)}</p>`:''}${safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">成果をひらく ↗</a></p>`:''}</div>`;
   const P=(l,v)=>v?`<p><b>${l}</b>${esc(v)}</p>`:'';
   const body=big?P('いまの流れ：',x.current)+P('自動化するとどうなる：',x.after)+P('見込み：',x.saving)+P('必要なもの：',x.needs)+P('リスクと歯止め：',x.risks)+P('小さく試す第一歩：',x.firstStep)+P('担当・承認が要る操作：',x.owners)
     :(x.what?`<p>やること：${esc(x.what)}</p>`:'')+(x.why?`<p>成果とのつながり：${esc(x.why)}</p>`:'')+(x.doneDef?`<p>できあがり：${esc(x.doneDef)}</p>`:'')+mt;
   return `<div class="idea${big?' big':''}"><div class="hd"><img src="${ICON[x.who]||ICON.hachiware}" alt=""><b>${esc(NAMES[x.who]||'')}</b><span class="role" style="--rc:${r[1]}">${esc(r[0])}</span>${big?'<span class="chip so">🏗 仕組みの提案</span>':''}</div><div class="ti">${esc(x.title)}</div>${body}${big&&safeUrl(x.link)?`<p><a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--info)">くわしい資料（Notion）↗</a></p>`:''}
-    <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">${big?'第一歩を始める':'やってもらう'}</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div></div>`}
+    <div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="go">${big?'第一歩を始める':'やってもらう'}</button><button type="button" data-idea="${esc(x.id)}" data-k="later">あとで</button><button type="button" data-idea="${esc(x.id)}" data-k="no">見送る</button></div><details class="ins"><summary>✏️ 指示を書いて頼む</summary><textarea data-ins="${esc(x.id)}" placeholder="例：講座の分だけでいい／金曜までに／○○も入れて" aria-label="指示"></textarea><div class="go"><button type="button" class="y" data-idea="${esc(x.id)}" data-k="ins">この指示で頼む</button></div></details></div>`}
 function renderIdeas(){const o=IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b));const dl=IDEAS.filter(x=>['approved','doing','done','declined'].includes(x.status)).sort((a,b)=>(b.decidedAt||b.createdAt||0)-(a.decidedAt||a.createdAt||0)).slice(0,6);
   $('ideaCnt').textContent=o.length?`${o.length}件`:'';const keep=$('ideas').querySelector('details.xdone')?.open;
   $('ideas').innerHTML=(o.length?o.map(x=>ideaCard(x,false)).join(''):'<p class="empty">いまの提案はありません。「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p>')
    +(dl.length?`<details class="xdone"${keep?' open':''}><summary>これまでの提案（${dl.length}件）を見る</summary>${dl.map(x=>ideaCard(x,true)).join('')}</details>`:'');if(typeof renderSums==='function')renderSums()}
 $('ideas').addEventListener('click',async e=>{const b=e.target.closest('button[data-idea]');if(!b)return;const x=IDEAS.find(i=>i.id===b.dataset.idea);if(!x)return;
-  const k=b.dataset.k;const patch={status:k==='go'?'approved':k==='no'?'declined':'later',decidedAt:Date.now()};Object.assign(x,patch);
-  if(k==='go'){if(ent[x.who])ent[x.who].jump=1;floater('✨',ent[x.who]||ent.hachiware)}renderIdeas();await write('ideas',x.id,patch)});
+  const k=b.dataset.k;let patch={status:k==='go'?'approved':k==='no'?'declined':'later',decidedAt:Date.now()};
+  if(k==='ins'){const ta=$('ideas').querySelector(`textarea[data-ins="${CSS.escape(x.id)}"]`);const v=(ta&&ta.value||'').trim();if(!v){ta&&ta.focus();return}patch={status:'approved',instruction:v.slice(0,800),decidedAt:Date.now()}}Object.assign(x,patch);
+  if(k==='go'||k==='ins'){if(ent[x.who])ent[x.who].jump=1;floater('✨',ent[x.who]||ent.hachiware)}renderIdeas();await write('ideas',x.id,patch)});
 
 
 // ---------- 代替率 ----------
