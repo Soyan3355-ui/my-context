@@ -90,6 +90,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .xc .opt span{font-family:var(--body);font-size:12.5px;line-height:1.55}
 .xc .opt[aria-pressed="true"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,var(--bg))}
 .xc .rec{font-size:12px;color:var(--info);margin-top:6px;font-family:var(--body)}
+.xfree{margin-top:8px;font-family:var(--body)}.xfree label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:3px}
+.xfree textarea,.nfree textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-family:var(--body);font-size:14px;line-height:1.55;min-height:48px;resize:vertical;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px}
+.xfrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px}.xfrow small{font-size:11.5px;color:var(--sub)}.xfree .btn-s{min-height:36px}
+.fin ul.cuts{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}.cuts li{border:2px solid var(--line);border-radius:8px;padding:6px 9px;font-family:var(--body);font-size:13px}
+.cuts .ct{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.cuts .cs{color:var(--sub);font-size:12.5px;line-height:1.55;margin-top:2px}
+.cuts .ctag{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:99px;padding:0 7px;margin-left:6px;color:var(--sub)}.cuts .ctag.ok{border-color:var(--good);color:var(--good)}
+.cutsum{font-family:var(--body);font-size:13px;margin:2px 0 4px;line-height:1.6}
+.xc .xnote{color:var(--ink);border-left:3px solid var(--good);padding-left:8px}
 .lanes{display:grid;gap:10px}
 .lane h3{font-size:12.5px;margin:0 0 4px;color:var(--sub);font-weight:400;display:flex;gap:6px;align-items:center}
 .lane h3 i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c)}
@@ -299,6 +307,8 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 .np .kicker{font-size:12px;letter-spacing:2px}.np h3{font-family:'Shippori Mincho',serif;font-weight:800;font-size:clamp(24px,4.4vw,36px);line-height:1.3;margin:4px 0 8px}
 .np h4{font-family:'Shippori Mincho',serif;font-weight:800;font-size:19px;line-height:1.35;margin:0 0 4px}
 .np p{font-size:14.5px;line-height:1.85;margin:0 0 8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.np .nfree{margin:6px 0 10px}.np .nfree label{display:block;font-size:13px;margin-bottom:3px}.np .nfree textarea{border-color:var(--ink2);background:transparent;color:var(--ink2);border-radius:4px}
+.np .nfree .xfrow small{color:inherit;opacity:.75}.np .nfree button{font:inherit;font-size:14px;padding:8px 14px;border:2px solid var(--ink2);background:transparent;color:var(--ink2);border-radius:4px;cursor:pointer;min-height:44px}
 .np .opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}.np .opts button{font:inherit;font-size:14px;padding:9px 14px;border:2px solid var(--ink2);background:transparent;color:var(--ink2);border-radius:4px;cursor:pointer;min-height:44px}.np .opts button.rec{background:var(--ink2);color:var(--np)}.np .opts button[aria-pressed="true"]{outline:3px solid #b7791f;outline-offset:2px}
 .np .subs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;border-top:1px solid var(--ink2);margin-top:12px;padding-top:12px}@media (max-width:520px){.np .subs{grid-template-columns:1fr}}
 .np .boxx{border:2px solid var(--ink2);padding:10px 12px;margin-bottom:12px}.np .boxx .n{font-family:'Shippori Mincho',serif;font-weight:800;font-size:32px;line-height:1.2;font-variant-numeric:tabular-nums}.np .boxx .s{font-size:12.5px;line-height:1.65}
@@ -822,7 +832,7 @@ function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'
   typing=setInterval(()=>{n+=2;$('dText').textContent=full.slice(0,n);if(n>=full.length){clearInterval(typing);typing=null;renderActs(true)}},24)}
 function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.innerHTML='';return}let h='';
   const x=p.xid&&XCS.find(c=>c.id===p.xid);
-  if(x&&Array.isArray(x.options))h+=x.options.map(o=>`<button type="button" class="choice" data-act="ans" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}">${esc(o.key)}：${esc(o.label)}</button>`).join('')+`<button type="button" class="choice" data-act="ans" data-k="保留" aria-pressed="${x.answer==='保留'}">保留</button>`;
+  if(x&&Array.isArray(x.options))h+=x.options.map(o=>`<button type="button" class="choice" data-act="ans" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}">${esc(o.key)}：${esc(o.label)}</button>`).join('')+`<button type="button" class="choice" data-act="ans" data-k="保留" aria-pressed="${x.answer==='保留'}">保留</button><button type="button" class="choice" data-act="xwrite">✍️ ことばで答える</button>`;
   const link=safeUrl(p.link);if(link)h+=`<a href="${esc(link)}" target="_blank" rel="noopener">ひらく ↗</a>`;
   h+=p.end?`<button type="button" data-act="close">とじる</button>`:`<button type="button" data-act="next">つぎへ ▶</button>`;a.innerHTML=h;$('more').hidden=!!p.end}
 function next(){if(typing){clearInterval(typing);typing=null;$('dText').textContent=full;renderActs(true);return}
@@ -832,6 +842,7 @@ function idle(){setText('','','（みんなそれぞれの持ち場で働いて�
 $('dText').addEventListener('click',()=>{if(scene&&speaker&&ent[speaker].st==='talk')next();else if(!scene)enqueue(digestScene(true))});
 $('dActs').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const act=b.dataset.act,p=pages[pi];
   if(act==='next')next();if(act==='close')endScene();
+  if(act==='xwrite'&&p&&p.xid){setBox('h-xc',true);const t=$('xcs').querySelector(`textarea[data-xn="${CSS.escape(p.xid)}"]`);if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus({preventScroll:true})}return}
   if(act==='ans'&&p&&p.xid){await answer(p.xid,b.dataset.k);renderActs(true);const keep=full;$('dText').textContent=b.dataset.k==='保留'?'わかった…！ またあとで…！':'わかった…！ ハチワレにつたえる…！';setTimeout(()=>{if(!typing&&pages[pi]===p)$('dText').textContent=keep},1500)}});
 const dgText=x=>typeof x==='string'?x:String((x&&x.t)||'');
 const dgVisible=x=>{if(typeof x==='string')return true;if(x.task){const t=TASKS.find(y=>y.id===x.task);if(t&&t.done)return false}if(x.card){const c=XCS.find(y=>y.id===x.card);if(c&&c.status==='answered')return false}return true};
@@ -851,7 +862,8 @@ function auditScene(a){return {type:'talk',label:'🗂 記録監査',icon:'lette
 // ---------- 書き込み ----------
 async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collection(col).doc(id).update(patch)}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}}}
 function floater(text,e){const f=document.createElement('div');f.className='floater';f.textContent=text;f.style.left=(e.x/W*100)+'%';f.style.top=((e.y-24)/H*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1300)}
-async function answer(id,k){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};Object.assign(x,patch);
+// 判断カードは選択肢に加えて、ことばでも答えられる（2026-10-02 そーやんの依頼）。note は選択肢より優先して読む。k='記述' はことばだけの答え
+async function answer(id,k,note){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};if(note!==undefined)patch.note=String(note).trim().slice(0,2000);Object.assign(x,patch);const ae=document.activeElement;if(ae&&ae.tagName==='TEXTAREA'&&ae.dataset.xn===id)ae.blur();
   ent.chiikawa.jump=1;renderXcs();renderDigest();await write('exceptions',id,patch)}
 let MCP=null;const NOTION_TASKS_DS='307a93e4-85ff-819e-a400-000b94b658ff';
 async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;if('done' in patch)patch.doneAt=patch.done?Date.now():0;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();renderDigest();await write('tasks',id,patch);if('done' in patch)syncNotion(t)}
@@ -871,7 +883,11 @@ $('mine').addEventListener('change',e=>{const id=e.target.dataset.t;if(id){const
 $('noteForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('noteIn').value.trim();if(!v)return;const to=$('noteTo').value||'all';const n={text:v.slice(0,2000),to,createdAt:Date.now(),replies:[]};$('noteIn').value='';
   if(db&&canWrite){try{const ref=await db.collection('notes').add(n);if(!NOTES.find(x=>x.id===ref.id)){NOTES.push({id:ref.id,...n});renderNotes()}}catch(err){NOTES.push({id:'local'+Date.now(),...n});renderNotes()}}else{NOTES.push({id:'local'+Date.now(),...n});renderNotes()}
   ent.chiikawa.jump=1;floater('💭',ent.chiikawa)});
-$('xcs').addEventListener('click',e=>{const u=e.target.closest('button[data-undo]');if(u){undoAnswer(u.dataset.undo);return}const b=e.target.closest('button[data-x]');if(b)answer(b.dataset.x,b.dataset.k)});
+const xNote=(root,id)=>{const t=root.querySelector(`textarea[data-xn="${CSS.escape(id)}"]`);return t?t.value:undefined};
+function xSend(root,id,hint){const v=(xNote(root,id)||'').trim();if(!v){const t=root.querySelector(`textarea[data-xn="${CSS.escape(id)}"]`);if(t){t.focus();if(hint)hint.textContent='ここに答えを書いてから押してください'}return null}return answer(id,'記述',v)}
+$('xcs').addEventListener('click',e=>{const u=e.target.closest('button[data-undo]');if(u){undoAnswer(u.dataset.undo);return}
+  const w=e.target.closest('button[data-xsend]');if(w){xSend($('xcs'),w.dataset.xsend,w.parentElement.querySelector('small'));return}
+  const b=e.target.closest('button[data-x]');if(b)answer(b.dataset.x,b.dataset.k,xNote($('xcs'),b.dataset.x))});
 async function undoAnswer(id){const x=XCS.find(c=>c.id===id);if(!x||x.handled)return;const patch={answer:'',status:'open'};Object.assign(x,patch);renderXcs();await write('exceptions',id,patch)}
 $('replay').addEventListener('click',()=>enqueue(digestScene(true)));
 let lock=null;$('wake').addEventListener('click',async()=>{try{if(lock){await lock.release();lock=null;$('wake').textContent='💡'}else{lock=await navigator.wakeLock.request('screen');$('wake').textContent='🔆'}}catch(e){lock=null;$('wake').textContent='💡'}});
@@ -882,11 +898,16 @@ function renderDigest(){const d=STATUS.digest||{};$('dgTime').textContent=STATUS
   $('digest').innerHTML=DG.map(([k,label,c])=>{const arr=(d[k]||[]).filter(dgVisible);return `<div class="dgc" style="--c:${c}"><b>${label}<span>${arr.length}</span></b>${arr.length?`<ul>${arr.map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);return tk?`<li class="dgt"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${esc(dgText(x))}</span></label></li>`:`<li>${esc(dgText(x))}</li>`}).join('')}</ul>`:'<div class="none">なし</div>'}</div>`}).join('')}
 $('digest').addEventListener('change',e=>{const id=e.target.dataset&&e.target.dataset.dgt;if(id&&e.target.checked){setTask(id,{done:true}).then(renderDigest)}});
 function xcCard(x,done){return `<div class="xc${done?' done':''}"><div class="q">${esc(x.question)}</div>${x.why&&!done?`<p>${esc(x.why)}</p>`:''}
-    ${done?`<p>選んだ答え：<b>${esc(x.answer||'')}</b>${x.handled?'（実行のあと）':''}</p>${x.handled?'':`<div style="margin-top:6px"><button type="button" class="btn-s" data-undo="${esc(x.id)}">もどす（選びなおす）</button></div>`}`
+    ${done?`<p>${x.answer==='記述'?'ことばで答えた':`選んだ答え：<b>${esc(x.answer||'')}</b>`}${x.handled?'（実行のあと）':''}</p>${x.note?`<p class="xnote">${x.answer==='記述'?'':'ひとこと：'}${esc(x.note)}</p>`:''}${x.handled?'':`<div style="margin-top:6px"><button type="button" class="btn-s" data-undo="${esc(x.id)}">もどす（選びなおす）</button></div>`}`
     :`<div class="opts">${(x.options||[]).map(o=>`<button type="button" class="opt" data-x="${esc(x.id)}" data-k="${esc(o.key)}" aria-pressed="${x.answer===o.key}"><b>${esc(o.key)}</b><span>${esc(o.label)}${o.detail?`<br><small style="color:var(--sub)">${esc(o.detail)}</small>`:''}</span></button>`).join('')}
     <button type="button" class="opt" data-x="${esc(x.id)}" data-k="保留" aria-pressed="${x.answer==='保留'}"><b>…</b><span>保留（あとで考える）</span></button></div>
-    ${x.recommend?`<div class="rec">ハチワレのおすすめ：${esc(x.recommend)}</div>`:''}${x.ifNothing?`<p>何もしない場合：${esc(x.ifNothing)}</p>`:''}`}</div>`}
-function renderXcs(){const openL=XCS.filter(x=>x.status!=='answered').sort(byTime);const doneL=XCS.filter(x=>x.status==='answered').sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0)).slice(0,8);
+    ${x.recommend?`<div class="rec">ハチワレのおすすめ：${esc(x.recommend)}</div>`:''}${x.ifNothing?`<p>何もしない場合：${esc(x.ifNothing)}</p>`:''}
+    <div class="xfree"><label for="xn-${esc(x.id)}">ことばで答える（選択肢にないこと・条件・補足）</label><textarea id="xn-${esc(x.id)}" data-xn="${esc(x.id)}" rows="2" maxlength="2000" placeholder="例：A にするけど、11月の入金も見込んでおいて">${esc(x.note||'')}</textarea>
+      <div class="xfrow"><button type="button" class="btn-s" data-xsend="${esc(x.id)}">この内容で答える</button><small>選択肢を押すと、ここに書いたこともいっしょに届きます</small></div></div>`}</div>`}
+function renderXcs(){const bx=$('xcs');if(document.activeElement&&bx.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;
+  const drafts={};bx.querySelectorAll('textarea[data-xn]').forEach(t=>{if(t.value!==t.defaultValue)drafts[t.dataset.xn]=t.value});
+  renderXcsNow();for(const id in drafts){const t=bx.querySelector(`textarea[data-xn="${CSS.escape(id)}"]`);if(t)t.value=drafts[id]}}
+function renderXcsNow(){const openL=XCS.filter(x=>x.status!=='answered').sort(byTime);const doneL=XCS.filter(x=>x.status==='answered').sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0)).slice(0,8);
   $('xcCnt').textContent=openL.length?`${openL.length}件 待ち`:'';
   const keep=$('xcs').querySelector('details.xdone')?.open;
   $('xcs').innerHTML=(openL.length?openL.map(x=>xcCard(x,false)).join(''):'<p class="empty">いま判断してほしいことはありません。新しいカードが届くと、ここに出ます。</p>')
@@ -1345,9 +1366,13 @@ function renderFin(){const box=$('fin');if(!FIN){return}const f=FIN;$('finAsOf')
   const al=(f.alerts||[]).map(a=>`<div class="alert">⚠️ ${esc(a)}</div>`).join('');
   const rec=f.recurring||[];const recH=rec.length?`<h3>毎月くり返す入出金 <small>くりまんじゅう調べ</small></h3><ul>${rec.map(r=>`<li>${r.dir==='in'?'⬆︎ 入金':'⬇︎ 出金'}：${esc(r.who)} <span class="amt">${yen(r.amount)}</span>${r.day?`（${esc(r.day)}）`:''}${r.note?` <span style="color:var(--sub)">${esc(r.note)}</span>`:''}</li>`).join('')}</ul>`:'';
   const tbl=`<details><summary>数字の表で見る</summary><table><tr><th>月</th><th>売上</th><th>経費</th><th>銀行の入金</th><th>銀行の出金</th><th>月末残高</th></tr>${[...new Set([...pl.map(p=>p.m),...(f.bank||[]).map(b=>b.m),...fc.map(b=>b.m)])].sort().map(m=>{const p=pl.find(x=>x.m===m)||{},b=(f.bank||[]).find(x=>x.m===m)||fc.find(x=>x.m===m)||{};const isF=fc.some(x=>x.m===m);return `<tr><td>${mLabel(m)}${isF?'（見込み）':''}</td><td>${p.sales!=null?yen(p.sales):'−'}</td><td>${p.expense!=null?yen(p.expense):'−'}</td><td>${b.in!=null?yen(b.in):'−'}</td><td>${b.out!=null?yen(b.out):'−'}</td><td>${b.end!=null?yen(b.end):'−'}</td></tr>`}).join('')}</table></details>`;
+  // 出費の見直し候補（2026-10-02。判断カード B/C に備えてくりまんじゅうが用意。読むだけで調べた候補で、解約などはそーやんが決める）
+  const cu=f.cuts;const cutsH=cu&&(cu.items||[]).length?`<h3>出費の見直し候補 <small>くりまんじゅう調べ${cu.asOf?'・'+esc(String(cu.asOf).slice(5).replace('-','/'))+' 時点':''}</small></h3>${cu.summary?`<p class="cutsum">${esc(cu.summary)}</p>`:''}
+    <ul class="cuts">${cu.items.map(c=>`<li><div class="ct"><b>${esc(c.name)}</b><span class="amt">${c.monthly?'月 '+yen(c.monthly):'−'}</span></div><div class="cs">${esc(c.how||'')}${c.byOct27?'<span class="ctag ok">10/27 までに効く</span>':'<span class="ctag">10/27 には間に合わない</span>'}<span class="ctag">${esc(c.sure||'推測')}</span></div>${c.risk?`<div class="cs">やめたときの困りごと：${esc(c.risk)}</div>`:''}</li>`).join('')}</ul>
+    ${(cu.notes||[]).length?`<details><summary>見直し候補の前提</summary><ul>${cu.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></details>`:''}`:'';
   const notes=(f.notes||[]).length?`<details><summary>前提と注意（推測のところ）</summary><ul>${f.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></details>`:'';
   box.innerHTML=`<div class="tiles">${tiles}</div>${al}<h3>月末の銀行残高 <small>楽天銀行・実線は実績、点線は見込み</small></h3><div class="chart" id="finLine"></div>
-    <h3>月ごとの売上と経費 <span class="lg"><span><i style="background:var(--s1)"></i>売上</span><span><i style="background:var(--s2)"></i>経費</span></span></h3><div class="chart" id="finBars"></div>${recH}${tbl}${notes}
+    <h3>月ごとの売上と経費 <span class="lg"><span><i style="background:var(--s1)"></i>売上</span><span><i style="background:var(--s2)"></i>経費</span></span></h3><div class="chart" id="finBars"></div>${recH}${cutsH}${tbl}${notes}
     <div class="foot">くりまんじゅうが freee を読むだけで集計（書き込みはしません）。更新：${f.updatedAt?fmt(f.updatedAt):'-'}。毎週月曜と、頼まれたときに更新します。この欄はそーやんだけに見えます。</div>`;
   finLine($('finLine'));finBars($('finBars'))}
 let finRz=0;addEventListener('resize',()=>{clearTimeout(finRz);finRz=setTimeout(()=>{if(FIN&&$('finLine'))renderFin()},200)});
@@ -1401,7 +1426,8 @@ function newsEd(){const d=new Date(Date.now()+9*36e5);const m=d.getUTCHours()*60
 function renderNews(){const ed=newsEd();const d=new Date(Date.now()+9*36e5);const date=`${d.getUTCFullYear()}年${d.getUTCMonth()+1}月${d.getUTCDate()}日（${'日月火水木金土'[d.getUTCDay()]}）`;
   const open=XCS.filter(x=>x.status!=='answered').sort(byTime);const top=open[0];const dg=STATUS.digest||{};const rf=(dg.redflags||[]).filter(dgVisible).map(dgText),oc=(dg.outcomes||[]).filter(dgVisible).map(dgText);
   let lead;if(top){const rec=String(top.recommend||'').trim().charAt(0);lead=`<div class="kicker">一面　判断してほしいこと${open.length>1?`（ほか ${open.length-1}件）`:''}</div><h3 id="newsTitle">${esc(top.question)}</h3>${top.why?`<p>${esc(top.why)}</p>`:''}
-    <div class="opts" role="group" aria-label="こたえ">${(top.options||[]).map(o=>`<button type="button" data-nx="${esc(top.id)}" data-k="${esc(o.key)}" class="${o.key===rec?'rec':''}" aria-pressed="${top.answer===o.key}">${esc(o.key)}　${esc(o.label)}${o.key===rec?'（おすすめ）':''}</button>`).join('')}</div>${top.ifNothing?`<p style="font-size:13px">何もしないと：${esc(top.ifNothing)}</p>`:''}`}
+    <div class="opts" role="group" aria-label="こたえ">${(top.options||[]).map(o=>`<button type="button" data-nx="${esc(top.id)}" data-k="${esc(o.key)}" class="${o.key===rec?'rec':''}" aria-pressed="${top.answer===o.key}">${esc(o.key)}　${esc(o.label)}${o.key===rec?'（おすすめ）':''}</button>`).join('')}</div>
+    <div class="nfree"><label for="nn-${esc(top.id)}">ことばで答える（選択肢にないこと・補足）</label><textarea id="nn-${esc(top.id)}" data-xn="${esc(top.id)}" rows="2" maxlength="2000">${esc(top.note||'')}</textarea><div class="xfrow"><button type="button" data-nxsend="${esc(top.id)}">この内容で答える</button><small>選択肢を押すと、書いたこともいっしょに届きます</small></div></div>${top.ifNothing?`<p style="font-size:13px">何もしないと：${esc(top.ifNothing)}</p>`:''}`}
   else lead=`<div class="kicker">一面</div><h3 id="newsTitle">${esc(rf[0]||'きょう判断してほしいことはありません')}</h3><p>${rf[0]?'くわしくはダイジェストに。':'ちいかわたちは見回りを続けています。'}</p>`;
   const arts=(top?rf.slice(0,2):rf.slice(1,3)).map(t=>({h:'気になること',t})).concat(oc.slice(0,2).map(t=>({h:'うごいたこと',t}))).slice(0,2);
   const subs=arts.length?`<div class="subs">${arts.map(a=>`<div><div class="kicker">${a.h}</div><h4>${esc(clip(a.t,40))}</h4>${a.t.length>40?`<p>${esc(a.t)}</p>`:''}</div>`).join('')}</div>`:'';
@@ -1419,7 +1445,8 @@ function openNews(){renderNews();$('news').hidden=false;document.body.style.over
 function closeNews(){$('news').hidden=true;document.body.style.overflow='';$('newsBtn').focus({preventScroll:true})}
 $('newsBtn').addEventListener('click',openNews);
 $('sceneBtn').textContent=BASE?'🏡 村にする':'🛰 基地にする';$('sceneBtn').addEventListener('click',()=>{try{localStorage.setItem('ck-scene',BASE?'village':'base')}catch(e){}location.reload()});
-$('news').addEventListener('click',e=>{if(e.target.id==='news'||e.target.closest('[data-nclose]')){closeNews();return}const b=e.target.closest('button[data-nx]');if(b){answer(b.dataset.nx,b.dataset.k).then(()=>renderNews());renderNews()}});
+$('news').addEventListener('click',e=>{if(e.target.id==='news'||e.target.closest('[data-nclose]')){closeNews();return}const w=e.target.closest('button[data-nxsend]');if(w){const r=xSend($('newsBody'),w.dataset.nxsend,w.parentElement.querySelector('small'));if(r){r.then(()=>renderNews());renderNews()}return}
+  const b=e.target.closest('button[data-nx]');if(b){answer(b.dataset.nx,b.dataset.k,xNote($('newsBody'),b.dataset.nx)).then(()=>renderNews());renderNews()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('news').hidden)closeNews()});
 function newsAuto(n){let seen=true;try{seen=!!localStorage.getItem('ck-news-'+newsEd().key)}catch(e){}if(seen)return;if(scene&&(n||0)<20){setTimeout(()=>newsAuto((n||0)+1),3000);return}openNews()}
 
