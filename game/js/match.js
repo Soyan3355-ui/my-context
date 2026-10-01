@@ -1274,6 +1274,8 @@
           b.vx = Math.cos(a) * 90; b.vy = Math.sin(a) * 90; b.vz = 40; b.last = d;
         }
         if (d.team === 0) this.tick(d.name + '、ボールを奪った！', '#9fdcff');
+        // even a clean challenge can leave a knock - more likely on legs that are running out
+        if (Math.random() < 0.006 + (c.sta < 30 ? 0.006 : 0)) this.injure(c);
       } else {
         d.state = 'down'; d.stT = 0.45; d.vx = (c.x - d.x) * 4; d.vy = (c.y - d.y) * 4;
         d.rec.beaten++;
@@ -1281,6 +1283,18 @@
         if (c.team === 0 && Math.random() < 0.4) this.say(c, pick(['ほいっと！', 'かわした！']), 0.9);
         if (c.team === 0) this.dribbleFlourish(c, d);
       }
+    }
+    // at most one injury per player per match; a tired player picks up knocks more easily
+    injure(c, chanceOnly) {
+      this.injuries = this.injuries || [];
+      if (c.gk || this.injuries.some((x) => x.id === c.id) || this.injuries.length >= 2) return false;
+      const weeks = Math.random() < 0.6 ? 1 : randi(2, 3);
+      c.state = 'down'; c.stT = 2.4;
+      this.injuries.push({ id: c.id, team: c.team, weeks });
+      this.popup(c.x, c.y - 74, '負傷…！', '#e0474c', 11);
+      this.tick(c.name + 'が痛めた様子…全治' + weeks + '週間の見込みです。', '#ffb0a0');
+      if (c.team === 0) this.say(c, pick(['いっ…たぁ…', 'くっ…足が…']), 1.4);
+      return true;
     }
     foul(d, c) {
       c.state = 'down'; c.stT = 0.9;
@@ -1290,14 +1304,7 @@
       this.tick(d.name + 'のファウル。' + (c.team === 0 ? 'ハマカゼ' : this.opp.short) + 'のフリーキック。', '#fff6e0');
       if (d.team === 0) this.say(d, pick(['あっ、ごめん！', 'しまった…']), 1.2);
       // a hard foul occasionally leaves a real injury that outlasts this match, not just a knock
-      if (Math.random() < 0.035) {
-        const weeks = randi(1, 3);
-        c.stT = 2.4;
-        this.injuries = this.injuries || [];
-        this.injuries.push({ id: c.id, team: c.team, weeks });
-        this.popup(c.x, c.y - 74, '負傷…！', '#e0474c', 11);
-        this.tick(c.name + 'が痛めた様子…全治' + weeks + '週間の見込みです。', '#ffb0a0');
-      }
+      if (Math.random() < 0.12) this.injure(c);
       let x = c.x, y = c.y;
       // keep free kicks outside the penalty area for this demo's rules
       const gx = goalX(c.team);

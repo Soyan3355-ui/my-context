@@ -39,7 +39,7 @@
       this.setplay = { unlocked: [], ck: 'std', fk: 'std', lv: 0, prog: 0 };
       this.seasonNo = 1; this.history = []; this.clubMods = {}; this.extraFA = []; this.listed = null; this.bought = [];
       this.h2h = {}; this.lastSeasonRanks = {}; this.promo = null;
-      this.identity = null; this.capLevel = 0; this.faTopUp = null;
+      this.identity = null; this.capLevel = 0; this.faTopUp = null; this.leagueWeeks = 0; this.rivalGrowth = {};
       if (typeof applyClubs === 'function') applyClubs();
     },
     nextSetplay() { return Data.SETPLAY_UNLOCK.find((k) => !this.setplay.unlocked.includes(k)); },
@@ -83,7 +83,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel', 'faTopUp',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'trainFreePick', 'pendingNegotiations', 'rivalGrowth'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'trainFreePick', 'pendingNegotiations', 'rivalGrowth', 'leagueWeeks'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -326,19 +326,29 @@
     return false;
   }
   // how much a rival's whole squad is lifted above its generated base. The squads are built once from
-  // a fixed rating, so without this the league stood still while our own players raced past 100 -
-  // promotion ended up feeling like a formality. Three parts:
-  //  - the club's own off-season strengthening (clubMods, which used to only touch the sim rating)
-  //  - the higher tier simply being a tougher place
-  //  - chasing part of the gap to our starting eleven, so they close in without ever overtaking by default
+  // a fixed rating, so without this the league stood still while our own players raced past 100.
+  //  - everyone keeps improving: a little each league week, and a little more every time they've
+  //    faced us (they study the tape) - so a rematch is always a bit harder than the last meeting
+  //  - in the prefecture league a club's squad average always sits above our starting eleven's, by
+  //    a margin that follows the club's own standing - promotion should feel like climbing a level
+  //  - down in the district league they only chase most of the gap, so it stays winnable
   function rivalLift(club) {
     const m = (State.clubMods || {})[club.id] || { r: 0 };
     const pref = club.tier === 'prefecture';
     const xi = State.lineup.map((id) => State.roster.find((q) => q.id === id)).filter(Boolean);
     const ours = xi.length ? xi.reduce((a, p) => a + avgStat(p), 0) / xi.length : 50;
     const sq = club.roster(), theirs = sq.reduce((a, p) => a + avgStat(p), 0) / sq.length;
-    const own = m.r + (pref ? 4 : 0) + (club.gatekeeper ? 4 : 0);
-    const chase = Math.max(0, ours - (theirs + own)) * (pref ? 0.8 : 0.7);
+    const h = (State.h2h || {})[club.id], met = h ? h.w + h.d + h.l : 0;
+    const growth = (State.leagueWeeks || 0) * 0.25 + met * 1.2;
+    const own = m.r + (pref ? 4 : 0) + (club.gatekeeper ? 4 : 0) + growth;
+    if (pref) {
+      // the stronger the club on paper, the bigger its edge over us: +2 for the weakest, ~+6 for the gatekeeper
+      const peers = League.ALL_CLUBS.filter((c) => c.tier === club.tier), lo = Math.min(...peers.map((c) => c.baseRating ?? c.rating)), hi = Math.max(...peers.map((c) => c.baseRating ?? c.rating));
+      const rel = hi > lo ? ((club.baseRating ?? club.rating) - lo) / (hi - lo) : 0.5;
+      const edge = 2 + rel * 4 + met * 0.5;
+      return Math.round(Math.max(own, ours + edge - theirs));
+    }
+    const chase = Math.max(0, ours - (theirs + own)) * 0.75;
     return Math.round(own + chase);
   }
   // an opponent's eleven for this season: signed players are replaced, and ex-Hamakaze players turn up in the rival's kit
@@ -2708,6 +2718,7 @@
       const p = State.roster.find((q) => q.id === inj.id);
       if (!p) continue;
       p.injuredWeeks = Math.max(p.injuredWeeks || 0, inj.weeks);
+      p.injuredNow = true; // this week's tick shouldn't eat into an injury picked up in this very match
       s.notes.unshift(p.name + 'が負傷…全治' + inj.weeks + '週間の見込みです');
     }
     if ((r.injuries || []).some((inj) => inj.team === 0)) fillLineup();
@@ -2734,6 +2745,7 @@
     // the rest of the league doesn't stand still either - a small, quiet weekly nudge for a
     // random player at a random club, read back in oppRoster() (capped at the current stat cap there).
     State.rivalGrowth = State.rivalGrowth || {};
+    State.leagueWeeks = (State.leagueWeeks || 0) + 1;
     for (const c of League.ALL_CLUBS) {
       if (Math.random() >= 0.4) continue;
       const sq = c.roster();
@@ -2746,7 +2758,7 @@
     }
     State.trained = null;
     State.season.week++;
-    for (const p of State.roster) { tickPotential(p); if (p.injuredWeeks > 0) p.injuredWeeks--; }
+    for (const p of State.roster) { tickPotential(p); if (p.injuredWeeks > 0 && !p.injuredNow) p.injuredWeeks--; delete p.injuredNow; }
     };
     s.enter = () => { s.process(); Sound.bgm('hub'); Sound.crowd(0); };
     s.update = (dt) => {
