@@ -83,7 +83,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel', 'faTopUp',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'pendingNegotiations', 'rivalGrowth'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'trainFreePick', 'pendingNegotiations', 'rivalGrowth'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -536,14 +536,26 @@
 
   // ---------------- generic vertical menu ----------------
   class Menu {
-    constructor(items, x, y, w, h, gap = 4) { this.items = items; this.x = x; this.y = y; this.w = w; this.h = h; this.gap = gap; this.sel = 0; this.lock = 0; }
-    rect(i) { return { x: this.x, y: this.y + i * (this.h + this.gap), w: this.w, h: this.h }; }
+    constructor(items, x, y, w, h, gap = 4) { this.items = items; this.x = x; this.y = y; this.w = w; this.h = h; this.gap = gap; this.sel = 0; this.lock = 0; this.off = 0; }
+    // rows that fit above the bottom of the screen; when the list is longer, the last row becomes
+    // a ▲/▼ pager so every option stays reachable by touch, not just by arrow keys
+    get fit() { return Math.max(1, Math.floor(((this.bottom || H - 4) - this.y + this.gap) / (this.h + this.gap))); }
+    get paged() { return this.items.length > this.fit; }
+    get vis() { return this.paged ? this.fit - 1 : this.items.length; }
+    rect(i) { return { x: this.x, y: this.y + (i - this.off) * (this.h + this.gap), w: this.w, h: this.h }; }
+    pagerRects() { const y = this.y + this.vis * (this.h + this.gap), hw = (this.w - 4) / 2; return { up: { x: this.x, y, w: hw, h: this.h }, down: { x: this.x + hw + 4, y, w: hw, h: this.h } }; }
+    follow() { this.off = clamp(this.off, this.sel - this.vis + 1, this.sel); this.off = clamp(this.off, 0, Math.max(0, this.items.length - this.vis)); }
     update(dt) {
       if (this.lock > 0) { this.lock -= dt; return null; }
       const n = this.items.length;
-      if (Input.hit('up')) { this.sel = (this.sel + n - 1) % n; Sound.play('cursor'); }
-      if (Input.hit('down')) { this.sel = (this.sel + 1) % n; Sound.play('cursor'); }
-      for (let i = 0; i < n; i++) {
+      if (Input.hit('up')) { this.sel = (this.sel + n - 1) % n; Sound.play('cursor'); this.follow(); }
+      if (Input.hit('down')) { this.sel = (this.sel + 1) % n; Sound.play('cursor'); this.follow(); }
+      if (this.paged) {
+        const pr = this.pagerRects();
+        if (E.clickedIn(pr.up) && this.off > 0) { this.off = Math.max(0, this.off - this.vis); this.sel = this.off; Sound.play('cursor'); return null; }
+        if (E.clickedIn(pr.down) && this.off + this.vis < n) { this.off = Math.min(n - this.vis, this.off + this.vis); this.sel = this.off; Sound.play('cursor'); return null; }
+      } else this.off = 0;
+      for (let i = this.off; i < Math.min(n, this.off + this.vis); i++) {
         const r = this.rect(i);
         if (E.hoverIn(r) && Input.mouse.moved && this.sel !== i) { this.sel = i; Sound.play('cursor'); }
         if (E.clickedIn(r)) { this.sel = i; return this.choose(); }
@@ -559,7 +571,15 @@
       return it;
     }
     draw(g) {
+      if (this.paged) {
+        const pr = this.pagerRects(), canUp = this.off > 0, canDown = this.off + this.vis < this.items.length;
+        panel(g, pr.up.x, pr.up.y, pr.up.w, pr.up.h, canUp ? (E.hoverIn(pr.up) ? 'gold' : 'sky') : 'dark');
+        text(g, '▲ 前へ', pr.up.x + pr.up.w / 2, pr.up.y + pr.up.h / 2 - 5, { size: 9, align: 'center', color: canUp ? '#10304f' : '#5a6488' });
+        panel(g, pr.down.x, pr.down.y, pr.down.w, pr.down.h, canDown ? (E.hoverIn(pr.down) ? 'gold' : 'sky') : 'dark');
+        text(g, '▼ ほか' + Math.max(0, this.items.length - this.off - this.vis), pr.down.x + pr.down.w / 2, pr.down.y + pr.down.h / 2 - 5, { size: 9, align: 'center', color: canDown ? '#10304f' : '#5a6488' });
+      }
       this.items.forEach((it, i) => {
+        if (i < this.off || i >= this.off + this.vis) return;
         const r = this.rect(i);
         const sel = this.sel === i;
         const ox = sel ? 4 : 0;
@@ -1404,6 +1424,10 @@
       State.cards[k] = (State.cards[k] || 0) + 1;
       earned.push({ name: CARD_INFO[k].name, reason: '課題：「' + issue.title + '」が見つかりました。ここを鍛えましょう。', type: 'issue', cat: k });
     }
+    // and one wildcard: a random stat's card, so the stock doesn't only ever mirror the same weaknesses
+    const wild = pick(STAT_KEYS);
+    State.cards[wild] = (State.cards[wild] || 0) + 1;
+    earned.push({ name: CARD_INFO[wild].name, reason: 'おまけ：今週はこんな練習もどうですか？', type: 'bonus', cat: wild });
     if (IDENTITIES[State.identity] && r.tacTime) {
       const tot = Object.values(r.tacTime).reduce((a, v) => a + v, 0) || 1;
       const share = (r.tacTime[IDENTITIES[State.identity].tactic] || 0) / tot;
@@ -1428,7 +1452,15 @@
         .concat(SPECIAL_MENUS.filter((sp) => sp.need.every((k) => (State.cards[k] || 0) > 0)).map((sp) => sp.id));
       if (State.trainMenuWeek !== State.season.week) {
         State.trainMenuWeek = State.season.week;
-        State.trainMenuPick = eligible.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+        State.trainMenuPick = eligible.slice().sort(() => Math.random() - 0.5).slice(0, 4);
+        // plus two "基礎練習" sessions on random stats that need no card at all - so whatever the
+        // match reports keep asking for, there's always something different on the board
+        State.trainFreePick = STAT_KEYS.slice().sort(() => Math.random() - 0.5).slice(0, 2);
+      }
+      for (const k of State.trainFreePick || []) {
+        const b = CARD_INFO[k];
+        list.push(Object.assign({}, b, { id: 'free_' + k, label: '基礎' + b.label, sub: b.sub + '（控えめ・カード不要）',
+          gains: Object.fromEntries(Object.entries(b.gains).map(([kk, v]) => [kk, v * 0.6])) }));
       }
       const onBoard = new Set(State.trainMenuPick || []);
       // basic cards: each stat with stock earns its own menu, tagged with how many are left.
@@ -1457,6 +1489,7 @@
       }
       if (State.charEventPick) list.push(State.charEventPick);
       s.menu = new Menu(list.map((tr) => ({ id: tr.id, label: tr.label + (onPolicy(tr) ? '★' : ''), sub: (tr.id === 'tactics' ? '「' + Data.TACTICS[State.tactic].name + '」の理解度↑' : tr.id === 'setplay' ? setplaySub() : tr.sub) + (onPolicy(tr) ? '（方針に合う）' : ''), tr })), 250, 54, 214, 30, 3);
+      s.menu.bottom = 219; // the description panel sits below
     };
     const startMeter = () => { s.meter = { pos: 0, dir: 1, speed: 1.5 + s.tries.length * 0.35, t: 0, res: null, rt: 0, aim: clamp(0.5 + rand(-0.15, 0.15), 0, 1) }; };
     s.update = (dt) => {
@@ -2339,7 +2372,7 @@
     if (r.analysis) {
       s.verdict = analystVerdict(r.analysis, win, lose);
       // earned cards and specific praise always make the cut; issues fill whatever room is left
-      const cardCards = s.cardsEarned.map((c) => ({ kind: 'card', ctype: c.type, cat: c.cat, title: (c.type === 'issue' ? '課題カード' : '収穫カード') + '「' + c.name + '」獲得！', tip: c.reason }));
+      const cardCards = s.cardsEarned.map((c) => ({ kind: 'card', ctype: c.type, cat: c.cat, title: (c.type === 'issue' ? '課題カード' : c.type === 'bonus' ? 'おまけカード' : '収穫カード') + '「' + c.name + '」獲得！', tip: c.reason }));
       const goodCards = r.analysis.good.map((c) => Object.assign({ kind: 'good' }, c));
       const budget = 6;
       s.shownAnalysis = cardCards.concat(goodCards).concat(r.analysis.issues.map((c) => Object.assign({ kind: 'issue' }, c)).slice(0, Math.max(1, budget - cardCards.length - goodCards.length)));
