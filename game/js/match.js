@@ -320,7 +320,7 @@
       if (Input.hit('c6') || E.clickedIn(this.autoJustRect())) {
         this.autoJust = !this.autoJust; Sound.play('cursor');
         if (window.Scenes && Scenes.State && Scenes.State.autoJust !== this.autoJust) Scenes.State.toggleAutoJust();
-        this.toast(this.autoJust ? '自動JUST：ON' : '自動JUST：OFF', '#ffd24a');
+        this.toast(this.autoJust ? '自動JUST：ON（セットプレーのサインもおまかせ）' : '自動JUST：OFF', '#ffd24a');
         return;
       }
       const ords = Data.ORDERS;
@@ -1329,7 +1329,14 @@
         sp.dur = 3.4;
         this.setupSetPlay(sp);
         const opts = this.spOptions(kind);
-        if (team === 0 && !this.auto && opts.length > 1 && this.state === 'play') this.spMenu = { kind, opts, sel: Math.max(0, opts.findIndex((o) => o.id === sp.routine)), t: 0 };
+        if (team === 0 && !this.auto && opts.length > 1 && this.state === 'play') {
+          // with auto-JUST on, the bench reads the situation and calls the signal itself instead of pausing play
+          if (this.autoJust) {
+            const pickO = this.autoRoutine(sp, kind, opts);
+            if (pickO.id !== sp.routine) { sp.routine = pickO.id; this.setupSetPlay(sp); }
+            this.benchBubble[0] = { text: pickO.name + 'でいくぞ！', t: 1.8 };
+          } else this.spMenu = { kind, opts, sel: Math.max(0, opts.findIndex((o) => o.id === sp.routine)), t: 0 };
+        }
         if (team === 0) this.sayNagisa(pick(['チャンスです！', 'ここは決めたいですね！']), 2.2, 'happy');
         else this.sayNagisa(pick(['気をつけてください！', 'しっかり守りましょう！']), 2.2, 'worry');
       }
@@ -1641,6 +1648,20 @@
       this.setupSetPlay(sp);
       sp.t = Math.min(sp.t, sp.dur - 1.1);
       this.benchBubble[0] = { text: m.opts[pickI].name + 'でいくぞ！', t: 1.8 };
+    }
+    // the signal a sensible coach would call here: lean on whatever edge we actually have
+    // (height, pace, a dead-ball striker) with a little variety so it isn't the same call every time
+    autoRoutine(sp, kind, opts) {
+      const att = this.team(0).filter((q) => !q.gk && q.state !== 'down'), def = this.team(1).filter((q) => !q.gk);
+      const top = (arr, f) => arr.reduce((a, q) => Math.max(a, f(q)), 0);
+      const air = top(att, (q) => this.aerial(q)) - top(def, (q) => this.aerial(q));
+      const pace = top(att, (q) => this.stat(q, 'spd')) - def.reduce((a, q) => a + this.stat(q, 'spd'), 0) / Math.max(1, def.length);
+      const shooter = top(att, (q) => this.stat(q, 'sht'));
+      const dG = dist(sp.x, sp.y, goalX(0), CY), central = Math.abs(sp.y - CY) < 120;
+      const score = kind === 'ck'
+        ? { std: 10 + air * 0.3, near: 8 + pace * 0.4, far: 6 + air * 0.6, short: 6 - air * 0.4 }
+        : { std: 12, wall: dG < 230 && central ? (shooter - 55) * 0.5 + 10 : -20, trick: dG < 210 && central ? (shooter - 60) * 0.4 + 8 : -20, lob: dG > 200 ? 6 + air * 0.5 : -10 };
+      return opts.map((o) => ({ o, v: (score[o.id] || 0) + Math.random() * 6 })).sort((a, b) => b.v - a.v)[0].o;
     }
     spRect(i, n) { const w = n > 3 ? 110 : 136, gap = 4, x0 = (W - (w * n + gap * (n - 1))) / 2; return { x: x0 + i * (w + gap), y: 50, w, h: 42 }; }
     drawSpMenu(g) {
@@ -3129,6 +3150,8 @@
             const gx = b.x + b.w - 44 + ki * 22;
             text(g, names[kk], gx, b.y + 2, { size: 7, color: '#9a8e7a' });
             text(g, gr, gx + 9, b.y + 1, { size: 9, color: STAT_GRADE_COL[gr] });
+            const st = [100, 130, 170].filter((t) => v >= t).length; // S★ tiers, as in the squad screens
+            if (st) text(g, st > 1 ? '★' + st : '★', gx + 15, b.y + 1, { size: 6, color: '#ffd24a', outline: '#2a1a24' });
           });
         }
       });

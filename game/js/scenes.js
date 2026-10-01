@@ -503,17 +503,33 @@
   // ability ranks: S 80+ / A 70+ / B 60+ / C 50+ / D 40+ / E 30+ / F below
   const GRADES = [[80, 'S'], [70, 'A'], [60, 'B'], [50, 'C'], [40, 'D'], [30, 'E'], [0, 'F']];
   function grade(v) { return GRADES.find((gr) => v >= gr[0])[1]; }
-  function nextGradeAt(v) { const i = GRADES.findIndex((gr) => v >= gr[0]); return i > 0 ? GRADES[i - 1][0] : null; }
+  // past S the letter stays put and stars stack on top of it, one per tier the stat cap opens up:
+  // S★ 100+, S★★ 130+, S★★★ 170+. Keeps the tile the same width, so it fits everywhere the letter did
+  const STAR_AT = [100, 130, 170];
+  function gradeStars(v) { return STAR_AT.filter((t) => v >= t).length; }
+  function gradeLabel(v) { return grade(v) + '★'.repeat(gradeStars(v)); }
+  function nextGradeAt(v) {
+    const i = GRADES.findIndex((gr) => v >= gr[0]);
+    if (i > 0) return GRADES[i - 1][0];
+    return STAR_AT.find((t) => v < t) || null;
+  }
   const GRADE_COL = { S: '#ffd24a', A: '#e0474c', B: '#f08a3a', C: '#e8c83a', D: '#6cc35a', E: '#4fb4e8', F: '#8a8496' };
   // a rank badge: coloured tile with the letter, sized for lists (10) or detail views (13)
   function drawGrade(g, x, y, v, size = 13) {
     const gr = grade(v), c = GRADE_COL[gr];
-    // beyond the old 99 ceiling: a purple (100+) / rainbow-ish magenta (150+) frame marks it
-    g.fillStyle = v >= 150 ? '#ff5ad8' : v >= 100 ? '#b06ad8' : OUT; g.fillRect(x, y, size, size);
+    const stars = gradeStars(v);
+    // the frame warms up with each star: purple, magenta, then a slow gold shimmer at the top tier
+    g.fillStyle = stars >= 3 ? (Math.sin(Game.time * 4) > 0 ? '#ffd24a' : '#ff8a3a') : stars === 2 ? '#ff5ad8' : stars === 1 ? '#b06ad8' : OUT;
+    g.fillRect(x, y, size, size);
     g.fillStyle = c; g.fillRect(x + 1, y + 1, size - 2, size - 2);
     g.fillStyle = 'rgba(255,255,255,0.45)'; g.fillRect(x + 1, y + 1, size - 2, 1);
     if (gr === 'S') { g.fillStyle = '#ffffff'; g.fillRect(x + 1, y + 1, 2, 2); g.fillRect(x + size - 3, y + size - 3, 2, 2); }
     text(g, gr, x + size / 2, y + (size >= 13 ? 0 : 0), { size: size >= 13 ? 11 : 8, align: 'center', color: '#ffffff', outline: OUT });
+    // stars sit in a row just above the tile, outlined so they read on any panel
+    if (stars) {
+      const fs = size >= 12 ? 8 : 6;
+      text(g, '★'.repeat(stars), x + size / 2, y - fs + 1, { size: fs, align: 'center', color: '#ffe680', outline: OUT });
+    }
   }
   function blink(sp = 5) { return 0.55 + 0.45 * Math.sin(Game.time * sp); }
   function okPressed() { return Input.hit('ok') || Input.mouse.clicked; }
@@ -1203,9 +1219,9 @@
       panel(g, 308, 246, 166, 18, 'dark');
       const avg = (k) => Math.round(State.roster.reduce((a, p) => a + p.stats[k], 0) / State.roster.length);
       const teamAvg = Math.round(STAT_KEYS.reduce((a, k) => a + avg(k), 0) / STAT_KEYS.length);
-      const teamGr = grade(teamAvg);
+      const teamGr = gradeLabel(teamAvg);
       text(g, 'やる気 ' + Math.round(State.avgMorale()) + '　総合', 316, 250, { size: 8, color: '#9fdcff' });
-      text(g, teamGr, 402, 249, { size: 10, color: GRADE_COL[teamGr], outline: OUT });
+      text(g, teamGr, 402, 249, { size: 10, color: GRADE_COL[grade(teamAvg)], outline: OUT });
       if (!s.talk && Input.mouse.active && s.hover) {
         const lbl = s.hover.r ? 'しらべる' : 'はなす';
         const mx = clamp(Input.mouse.x + 8, 0, 250), my = clamp(Input.mouse.y + 8, 0, 250);
@@ -2508,9 +2524,9 @@
           const v = cur.before[k] + up * pk;
           text(g, STAT_NAMES[k], 150, y - 2, { size: 10, color: '#2a1a24' });
           drawGrade(g, 216, y - 3, Math.round(v));
-          if (grade(Math.round(v)) !== grade(cur.before[k])) {
+          if (gradeLabel(Math.round(v)) !== gradeLabel(cur.before[k])) {
             const rk = Ease.outBack(clamp((s.gt - tStart - 0.25) / 0.3, 0, 1));
-            text(g, 'ランクアップ ' + grade(cur.before[k]) + '→' + grade(Math.round(v)) + '！', 324, y - 11 - (1 - rk) * 4, { size: 8, align: 'center', color: '#e0474c', outline: '#fff6e0', alpha: rk });
+            text(g, 'ランクアップ ' + gradeLabel(cur.before[k]) + '→' + gradeLabel(Math.round(v)) + '！', 324, y - 11 - (1 - rk) * 4, { size: 8, align: 'center', color: '#e0474c', outline: '#fff6e0', alpha: rk });
           }
           statBar(g, 234, y, 180, Math.round(v), STAT_COLORS[k], cur.before[k]);
           text(g, String(Math.round(v)), 434, y - 2, { size: 10, align: 'right', color: '#2a1a24' });
