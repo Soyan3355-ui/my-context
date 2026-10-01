@@ -29,6 +29,9 @@
       this.form = [Data.FORMATIONS[opts.formation || 'balance'], Data.FORMATIONS.balance];
       this.auto = !!opts.auto;
       this.autoJust = !!opts.autoJust;
+      this.homeGame = opts.homeGame; // true / false / undefined (exhibition)
+      this.bigStage = !!(opts.opp && (opts.opp.tier === 'prefecture' || opts.opp.id === 'yamaoroshi' || opts.opp.gatekeeper));
+      this.talentFired = new Set();
       this.fx = new Particles();
       this.fxTop = new Particles();
       this.players = [];
@@ -128,6 +131,7 @@
         // a spd bonus here used to let hikaru blow past the back line more than his own pace
         // should allow, on top of the shooting confidence a hyped crowd is meant to represent
         if (id === 'hikaru' && k === 'sht') v += Math.round(this.crowdHype * 4);
+        v = this.talentMod(p, k, v);
       }
       // stats can now climb past the old 99 ceiling (up to 200); every formula here was tuned on
       // a 0-100 scale, so past 100 each point counts for half - still better, never physics-breaking
@@ -836,7 +840,7 @@
       const ord = this.order[t] ? this.order[t].id : null;
       let best = { k: 'drib', s: 30 + this.stat(p, 'spd') * 0.25 - (pressure < 18 ? 22 : 0) + rand(0, 14) + (countering && pressure > 30 ? 20 : 0) - (tac === 'possession' && this.proj(t, p.x) < this.proj(t, CX) + 130 ? 10 : 0) };
       // shoot
-      const range = 100 + this.stat(p, 'sht') * 0.8 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 8 : 0);
+      const range = 100 + this.stat(p, 'sht') * 0.8 + (ord === 'shoot' ? 55 : 0) + (p.id === 'leo' ? 8 : 0) + (p.def && p.def.talent === 'longshot' && this.talent(p, 'longshot') ? 30 : 0);
       const patient = tac === 'possession' && this.noShotT[t] < 20;
       if (dGoal < range * (patient ? 0.85 : 1) && Math.abs(p.y - CY) < 110) {
         let s = 22 + (range - dGoal) * 0.55 + (pressure < 20 ? 10 : 0) + (dGoal < 110 ? 90 : 0) + rand(0, 20);
@@ -1243,6 +1247,7 @@
       if (d.id === 'tetsuyama' || d.id === 'kotaro') pr += 0.08;
       if (d.id === 'ume') pr += 0.08;
       if (this.badge(d, 'tackle')) pr += 0.06;
+      if (d.def && d.def.talent === 'reader' && this.talent(d, 'reader')) pr += 0.07;
       const slide = range > 10;
       if (slide) { d.x = lerp(d.x, c.x, 0.6); d.y = lerp(d.y, c.y, 0.6); }
       if (d.id === 'kawataro' && slide && Math.random() < 0.12) {
@@ -1258,7 +1263,7 @@
       const behind = ((d.x - c.x) * fx + (d.y - c.y) * fy) < -3;
       Sound.play('tackle', { pan: this.pan(d.x) });
       this.fx.burst((d.x + c.x) / 2, (d.y + c.y) / 2, 8, { color: ['#d6ba8c', '#b6966a', '#ffffff'], speedMin: 20, speedMax: 60, lifeMin: 0.2, lifeMax: 0.45, size: 2, flatY: 0.5, up: 10 });
-      if (Math.random() < (behind ? 0.35 : 0.06) * (d.id === 'morio' ? 0.4 : 1)) { this.foul(d, c); return; }
+      if (Math.random() < (behind ? 0.35 : 0.06) * (d.id === 'morio' ? 0.4 : 1) * (d.def && d.def.talent === 'hothead' && this.talent(d, 'hothead') ? 2 : 1)) { this.foul(d, c); return; }
       if (Math.random() < pr) {
         d.rec.tackleOk++;
         if (d.id === 'kawataro' && slide) this.traitPop(d, 'すべりこみ');
@@ -1278,7 +1283,7 @@
         }
         if (d.team === 0) this.tick(d.name + '、ボールを奪った！', '#9fdcff');
         // even a clean challenge can leave a knock - more likely on legs that are running out
-        if (Math.random() < 0.006 + (c.sta < 30 ? 0.006 : 0)) this.injure(c);
+        if (Math.random() < (0.006 + (c.sta < 30 ? 0.006 : 0)) * this.injuryMul(c)) this.injure(c);
       } else {
         d.state = 'down'; d.stT = 0.45; d.vx = (c.x - d.x) * 4; d.vy = (c.y - d.y) * 4;
         d.rec.beaten++;
@@ -1287,6 +1292,7 @@
         if (c.team === 0) this.dribbleFlourish(c, d);
       }
     }
+    injuryMul(c) { return c.def && c.def.talent === 'glass' && this.talent(c, 'glass') ? 2.5 : 1; }
     // at most one injury per player per match; a tired player picks up knocks more easily
     injure(c, chanceOnly) {
       this.injuries = this.injuries || [];
@@ -1307,7 +1313,7 @@
       this.tick(d.name + 'のファウル。' + (c.team === 0 ? 'ハマカゼ' : this.opp.short) + 'のフリーキック。', '#fff6e0');
       if (d.team === 0) this.say(d, pick(['あっ、ごめん！', 'しまった…']), 1.2);
       // a hard foul occasionally leaves a real injury that outlasts this match, not just a knock
-      if (Math.random() < 0.12) this.injure(c);
+      if (Math.random() < 0.12 * this.injuryMul(c)) this.injure(c);
       let x = c.x, y = c.y;
       // keep free kicks outside the penalty area for this demo's rules
       const gx = goalX(c.team);
@@ -1450,7 +1456,27 @@
     // a permanent, quietly-earned specialty (see tryAwakenBadge in scenes.js) — found in play,
     // not trained for, and deliberately modest so it never rivals a real stat difference
     badge(p, id) { return !!(p.def && p.def.badges && p.def.badges.includes(id)); }
-    aerial(p) { return this.stat(p, 'def') * 0.35 + this.stat(p, 'sht') * 0.15 + this.bodyScore(p) * 0.4 + (p.id === 'mask' ? 30 : 0) + (p.id === 'gonzo' ? 25 : 0) + (this.badge(p, 'aerial') ? 16 : 0); }
+    // a hidden talent (see Data.TALENTS); using one marks it for discovery after the match,
+    // and once it's known the player gets a little pop when it kicks in
+    talent(p, id) {
+      if (p.team !== 0 || !p.def || p.def.talent !== id) return false;
+      if (!this.talentFired.has(p.id)) { this.talentFired.add(p.id); if (p.def.talentKnown && Data.TALENTS[id]) this.traitPop(p, Data.TALENTS[id].name); }
+      return true;
+    }
+    talentMod(p, k, v) {
+      const tl = p.def && p.def.talent;
+      if (!tl) return v;
+      const min = this.minute();
+      if (tl === 'clutch' && min >= 70 && (k === 'sht' || k === 'spd') && this.talent(p, tl)) return v + 6;
+      if (tl === 'bigstage' && this.bigStage && this.talent(p, tl)) return v + 5;
+      if (tl === 'homeboy' && this.homeGame === true && this.talent(p, tl)) return v + 5;
+      if (tl === 'away' && this.homeGame === false && this.talent(p, tl)) return v - 5;
+      if (tl === 'slowstart' && this.half === 1 && min < 20 && this.talent(p, tl)) return v - 6;
+      if (tl === 'nerves' && k === 'sht' && min >= 75 && Math.abs(this.score[0] - this.score[1]) <= 1 && this.talent(p, tl)) return v - 8;
+      if (tl === 'lazy' && k === 'def' && this.talent(p, tl)) return v * 0.85;
+      return v;
+    }
+    aerial(p) { return this.stat(p, 'def') * 0.35 + this.stat(p, 'sht') * 0.15 + this.bodyScore(p) * 0.4 + (p.id === 'mask' ? 30 : 0) + (p.id === 'gonzo' ? 25 : 0) + (this.badge(p, 'aerial') ? 16 : 0) + (p.def && p.def.talent === 'header' && this.talent(p, 'header') ? 18 : 0); }
     spOptions(kind) { const un = this.setplay.unlocked || []; return Data.SETPLAYS[kind].filter((r) => r.id === 'std' || un.includes(kind + '_' + r.id)); }
     routineName(kind, id) { const r = Data.SETPLAYS[kind].find((q) => q.id === id); return r ? r.name : ''; }
     dangerousFK(t, x, y) { return Math.abs(goalX(t) - x) < 290 && Math.abs(y - CY) < 190; }
@@ -1742,6 +1768,8 @@
           else if (this.tacOf(p.team) === 'press') drain *= 1.4;
           // stamina burns faster across the board than it used to, so fatigue is a real factor by
           // full time and a substitution (for either side) actually changes something on the pitch
+          if (p.def && p.def.talent === 'engine' && this.talent(p, 'engine')) drain *= 0.7;
+          else if (p.def && p.def.talent === 'heavy' && this.talent(p, 'heavy')) drain *= 1.3;
           p.sta = Math.max(0, p.sta - drain * 1.4);
           // fatigue tells: a breathless line the first time it gets bad, then sweat while it stays low
           if (p.sta < 32 && p.tiredSaid < 1) { p.tiredSaid = 1; this.say(p, pick(['ハァ…ハァ…', 'きつい…', '足が…重い…']), 1.3); }
@@ -2450,7 +2478,7 @@
       }
       const recs = this.players.concat(this.subbedOut).map((p) => ({ id: p.id, name: p.name, team: p.team, rec: p.rec, sta: p.sta }));
       const tot = this.poss[0] + this.poss[1] || 1;
-      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [], rivalTech: this.rivalTechWitnessed, injuries: this.injuries || [] };
+      this.result = { tacTime: Object.assign({}, this.tacTime), analysis: this.analyze(), tstats: this.tstats, tactic: this.tac.slice(), score: this.score.slice(), recs, poss: [this.poss[0] / tot, this.poss[1] / tot], shots: this.shots, onTarget: this.onTarget, goals: this.goalLog || [], rivalTech: this.rivalTechWitnessed, injuries: this.injuries || [], talentFired: [...this.talentFired] };
       if (this.opts.onEnd) this.opts.onEnd(this.result);
     }
 

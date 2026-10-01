@@ -258,7 +258,27 @@
   };
   const SETPLAY_UNLOCK = ['ck_near', 'fk_wall', 'ck_far', 'fk_trick', 'ck_short', 'fk_lob'];
 
-  window.Data = { FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, DRIBBLE_MOVES, HOME_KIT, AWAY_KIT, COMBOS, RIVAL_COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
+  // hidden talents: one per player, dealt fresh every new game and only discovered by playing.
+  // half of them are quirks that cost something - nobody is simply better at everything
+  const TALENTS = {
+    header: { name: 'ヘディングの天才', desc: '空中戦がやたら強い。', good: true },
+    clutch: { name: '勝負強い', desc: '終盤にシュートと足が冴える。', good: true },
+    engine: { name: '鉄の肺', desc: 'スタミナが減りにくい。', good: true },
+    longshot: { name: 'ミドルの名手', desc: '遠目からでも狙える。', good: true },
+    reader: { name: '読みの鋭さ', desc: 'ボールを奪うのが上手い。', good: true },
+    bigstage: { name: '大舞台に強い', desc: '強豪・因縁の相手に燃える。', good: true },
+    homeboy: { name: 'ホームの申し子', desc: 'ホームで全能力アップ。', good: true },
+    latebloom: { name: '遅咲き', desc: '2年目から急成長する。', good: true },
+    glass: { name: 'ガラスの足', desc: 'ケガをしやすい。', good: false },
+    nerves: { name: 'あがり症', desc: '終盤の接戦でシュートが乱れる。', good: false },
+    lazy: { name: 'サボり癖', desc: '守備の力が少し落ちる。', good: false },
+    away: { name: '内弁慶', desc: 'アウェイで全能力ダウン。', good: false },
+    slowstart: { name: 'スロースターター', desc: '序盤20分は動きが重い。', good: false },
+    heavy: { name: 'バテやすい', desc: 'スタミナが減りやすい。', good: false },
+    hothead: { name: '短気', desc: 'ファウルをしやすい。', good: false },
+    earlypeak: { name: '早熟', desc: '2年目から伸び悩む。', good: false },
+  };
+  window.Data = { TALENTS, FREE_AGENTS, HOME, AWAY, FORMATIONS, ORDERS, SPECIALS, DRIBBLE_MOVES, HOME_KIT, AWAY_KIT, COMBOS, RIVAL_COMBOS, DEFAULT_LINEUP, TACTICS, TAC_U, AWAY_TAC_U, MATCHUP, SETPLAYS, SETPLAY_UNLOCK };
   HOME.forEach((p) => { p.tacU = Object.assign({}, TAC_U[p.id]); p.sal = SAL[p.id]; p.local = true; });
   AWAY.forEach((p) => { p.tacU = Object.assign({}, AWAY_TAC_U); });
 })();

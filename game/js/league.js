@@ -68,6 +68,7 @@
   for (const c of CLUBS) {
     c.kit = kit(c.color, c.dark, c.light, c.ink, c.ink);
     if (!c.roster) {
+      c.gen = { names: NAMES[c.id], captain: CAPTAINS[c.id] };
       const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = 78;
       const sq = squad(c, NAMES[c.id], c.rating, tacU, CAPTAINS[c.id]);
       c.roster = () => sq;
@@ -107,6 +108,7 @@
   for (const c of CLUBS2) {
     c.kit = kit(c.color, c.dark, c.light, c.ink, c.ink);
     if (!c.roster) {
+      c.gen = { names: NAMES2[c.id], captain: CAPTAINS2[c.id] };
       const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = 80;
       const sq = squad(c, NAMES2[c.id], c.rating, tacU, CAPTAINS2[c.id]);
       c.roster = () => sq;
@@ -145,5 +147,53 @@
     return [poisson(la), poisson(lb)];
   }
 
-  window.League = { CLUBS, CLUBS2, ALL_CLUBS: CLUBS.concat(CLUBS2), TEAMS, TEAMS2, teamsForTier, clubsForTier, gatekeeper, fixtures, clubById, TEAM_NAME, TEAM_SHORT, simulate };
+  // ---------------- per-run variety: who's in which league, and what kind of coach they have ----------------
+  // Yamaoroshi (the story rival in the district) and Shirasagi (the prefecture gatekeeper) stay put;
+  // the other eight are dealt into the two leagues fresh for every new game, re-rated for the level
+  // they land in, handed a coach personality, and given a newly generated squad.
+  const ALL = CLUBS.concat(CLUBS2);
+  const DEFAULTS = ALL.map((c) => ({ c, tier: c.tier, rating: c.rating, boost: c.boost, tactic: c.tactic, planB: c.planB }));
+  const FIXED = { yamaoroshi: 'district', shirasagi: 'prefecture' };
+  const COACH_STYLES = [
+    { id: 'iron', name: '鉄壁主義', desc: 'とにかく失点しないことが第一。守備陣が分厚い。', tactic: 'counter', planB: 'possession', skew: { DF: { def: 5 }, MF: { def: 3 }, FW: { sht: -2 } } },
+    { id: 'attack', name: '超攻撃的', desc: '点を取られたら取り返せばいい。前線に人数をかける。', tactic: 'press', planB: 'long', skew: { FW: { sht: 5, spd: 2 }, MF: { sht: 2 }, DF: { def: -3 } } },
+    { id: 'gamble', name: 'ギャンブラー', desc: '試合ごとに戦術をがらりと変えてくる。読みにくい。', tactic: 'long', planB: 'press', moody: true, skew: {} },
+    { id: 'artisan', name: '職人肌', desc: '細かいパスを丁寧につなぐ。崩しが上手い。', tactic: 'possession', planB: 'counter', skew: { MF: { pas: 5 }, DF: { pas: 3 } } },
+    { id: 'runner', name: '走り屋', desc: '90分走り切る体力自慢。後半になっても落ちない。', tactic: 'press', planB: 'press', skew: { DF: { sta: 5 }, MF: { sta: 6, spd: 2 }, FW: { sta: 5, spd: 2 } } },
+    { id: 'tower', name: '空中戦信者', desc: '背の高い選手を集めて、放り込みで勝負。', tactic: 'long', planB: 'counter', skew: { DF: { def: 3 }, FW: { sht: 3, sta: 2 } } },
+  ];
+  function setupRun(runSeed) {
+    for (const d of DEFAULTS) { Object.assign(d.c, { tier: d.tier, rating: d.rating, boost: d.boost, tactic: d.tactic, planB: d.planB }); delete d.c.style; delete d.c.baseRating; delete d.c.baseBoost; }
+    let dist = CLUBS_ORDER[0].slice(), pref = CLUBS_ORDER[1].slice();
+    if (runSeed != null) {
+      let rs = runSeed >>> 0 || 1;
+      const rr = () => ((rs = (rs * 1664525 + 1013904223) >>> 0) / 4294967296);
+      const movable = ALL.filter((c) => !FIXED[c.id]).sort(() => rr() - 0.5);
+      dist = movable.slice(0, 4).concat(ALL.filter((c) => FIXED[c.id] === 'district'));
+      pref = movable.slice(4).concat(ALL.filter((c) => FIXED[c.id] === 'prefecture'));
+      for (const c of dist) if (!FIXED[c.id]) { c.tier = 'district'; c.rating = 52 + Math.floor(rr() * 8); c.boost = 3 + Math.floor(rr() * 3); }
+      for (const c of pref) if (!FIXED[c.id]) { c.tier = 'prefecture'; c.rating = 57 + Math.floor(rr() * 9); c.boost = 5 + Math.floor(rr() * 3); }
+      for (const c of ALL) {
+        if (c.id === 'yamaoroshi') continue; // 鬼瓦監督 is who he is
+        const st = COACH_STYLES[Math.floor(rr() * COACH_STYLES.length)];
+        c.style = st; c.tactic = st.tactic; c.planB = st.planB;
+      }
+      seed = (runSeed * 7 + 11) >>> 0;
+    } else seed = 11;
+    CLUBS.length = 0; CLUBS.push(...dist); CLUBS2.length = 0; CLUBS2.push(...pref);
+    TEAMS.length = 0; TEAMS.push('hamakaze', ...dist.filter((c) => c.id !== 'yamaoroshi').map((c) => c.id), 'yamaoroshi');
+    TEAMS2.length = 0; TEAMS2.push('hamakaze', ...pref.filter((c) => c.id !== 'shirasagi').map((c) => c.id), 'shirasagi');
+    // fresh squads, built in a fixed order so the same seed always deals the same players
+    for (const c of ALL) {
+      if (!c.gen) continue;
+      const tacU = { counter: 45, press: 45, long: 45, possession: 45 }; tacU[c.tactic] = c.tier === 'prefecture' ? 80 : 78;
+      const sq = squad(c, c.gen.names, c.rating, tacU, c.gen.captain);
+      const skew = (c.style && c.style.skew) || {};
+      for (const p of sq) for (const k in (skew[p.pos] || {})) p.stats[k] = Math.max(18, Math.min(92, p.stats[k] + skew[p.pos][k]));
+      c.roster = () => sq;
+    }
+  }
+  const CLUBS_ORDER = [CLUBS.slice(), CLUBS2.slice()];
+
+  window.League = { CLUBS, CLUBS2, ALL_CLUBS: ALL, COACH_STYLES, setupRun, TEAMS, TEAMS2, teamsForTier, clubsForTier, gatekeeper, fixtures, clubById, TEAM_NAME, TEAM_SHORT, simulate };
 })();

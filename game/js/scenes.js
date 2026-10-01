@@ -18,7 +18,7 @@
     roster: [], formation: 'balance', trained: null, recruit: null, result: null, growth: null, auto: false, talked: {},
     reset() {
       this.roster = Data.HOME.map((p) => Object.assign({}, p, { stats: Object.assign({}, p.stats), base: Object.assign({}, p.stats) }));
-      for (const p of this.roster) p.potential = initPotential(p);
+      for (const p of this.roster) { p.potential = initPotential(p); dealTalent(p); }
       this.lineup = Data.DEFAULT_LINEUP.slice();
       this.tactic = 'counter';
       this.formation = 'balance'; this.trained = null; this.recruit = null; this.result = null; this.growth = null; this.talked = {};
@@ -26,6 +26,9 @@
       this.charEventWeek = null; this.charEventPick = null;
       this.trainHistory = []; this.trainMenuWeek = null; this.trainMenuPick = null;
       this.tier = 'district';
+      // every new game deals the league afresh: who plays where, coach personalities, rival squads
+      this.runSeed = (Math.random() * 4294967296) >>> 0;
+      League.setupRun(this.runSeed);
       // league season
       const table = {};
       for (const id of League.teamsForTier(this.tier)) table[id] = { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 };
@@ -83,7 +86,7 @@
   const slotKey = (i) => 'hamakaze_fc_save_v1_slot' + i;
   const SAVE_FIELDS = ['roster', 'lineup', 'tactic', 'formation', 'trained', 'talked', 'season', 'budget', 'income', 'morale', 'benchWeeks', 'bonds',
     'freeAgents', 'joined', 'departed', 'applicantWeek', 'staff', 'setplay', 'goals', 'pendingTalk', 'seasonNo', 'history', 'clubMods', 'extraFA', 'listed', 'bought', 'tier', 'h2h', 'lastSeasonRanks', 'promo', 'identity', 'rivalTechSeen', 'capLevel', 'faTopUp',
-    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'trainFreePick', 'pendingNegotiations', 'rivalGrowth', 'leagueWeeks'];
+    'cards', 'policyCards', 'growthLog', 'seasonStartStats', 'trainHistory', 'trainMenuWeek', 'trainMenuPick', 'trainFreePick', 'pendingNegotiations', 'rivalGrowth', 'leagueWeeks', 'runSeed'];
   const Save = {
     _migrated: false,
     migrateOld() {
@@ -120,11 +123,14 @@
       if (!d) return null;
       State.reset();
       for (const k of SAVE_FIELDS) if (d[k] !== undefined) State[k] = d[k];
+      // saves from before the per-run shuffle keep the original league layout
+      State.runSeed = d.runSeed === undefined ? null : d.runSeed;
+      League.setupRun(State.runSeed);
       // older saves used a simpler stat-only identity system; remap to the closest philosophy, or clear it
       const LEGACY_IDENTITY = { speed: 'counter', power: 'long', technique: 'possession', finish: 'press' };
       if (State.identity && !IDENTITIES[State.identity]) State.identity = LEGACY_IDENTITY[State.identity] || null;
       // players bought from rivals in older versions joined without a nickname or trait
-      for (const p of State.roster) withProfile(p);
+      for (const p of State.roster) { withProfile(p); dealTalent(p); }
       for (const x of State.departed || []) if (x && x.p) withProfile(x.p);
       applyClubs();
       State.saveSlot = slot;
@@ -288,6 +294,20 @@
     MF: { spd: 0.9, sht: 0.8, pas: 1.2, def: 0.8, sta: 1.1 },
     FW: { spd: 1.1, sht: 1.2, pas: 0.7, def: 0.4, sta: 0.9 },
   };
+  // one hidden talent per player, unknown until it shows itself in a match (see Data.TALENTS)
+  function dealTalent(p) {
+    if (p.talent !== undefined) return p;
+    const ids = Object.keys(Data.TALENTS), good = ids.filter((id) => Data.TALENTS[id].good), bad = ids.filter((id) => !Data.TALENTS[id].good);
+    p.talent = pick(Math.random() < 0.55 ? good : bad);
+    p.talentKnown = false;
+    return p;
+  }
+  // 遅咲き / 早熟 bend the growth curve across seasons instead of acting in matches
+  function talentGrowth(p) {
+    if (p.talent === 'latebloom') return State.seasonNo === 1 ? 0.8 : 1.5;
+    if (p.talent === 'earlypeak') return State.seasonNo === 1 ? 1.3 : 0.6;
+    return 1;
+  }
   function posApt(p, k) { return (POS_APT[p.pos] || POS_APT.MF)[k] || 1; }
   function avgStat(p) { return (p.stats.spd + p.stats.sht + p.stats.pas + p.stats.def + p.stats.sta) / 5; }
   // growth slows down the closer a stat gets to its ceiling, so a season of play doesn't push everyone to S rank
@@ -1353,12 +1373,20 @@
       const bio = wrap(g, p.bio || '', 204, 9);
       bio.forEach((l, i) => text(g, l, 256 + dx, 56 + i * 13, { size: 9, color: '#2a1a24' }));
       // trait
-      const hasBadges = p.badges && p.badges.length > 0;
-      panel(g, 254 + dx, 100, 210, hasBadges ? 46 : 36, 'gold');
+      const hasBadges = p.badges && p.badges.length > 0, hasTalent = !!p.talent;
+      const extraRows = (hasBadges ? 1 : 0) + (hasTalent ? 1 : 0);
+      panel(g, 254 + dx, 100, 210, 36 + extraRows * 10, 'gold');
       text(g, '特性：' + (p.trait || '―'), 262 + dx, 104, { size: 10, color: '#4a2a10' });
       text(g, p.traitDesc || '', 262 + dx, 117, { size: 8, color: '#6d4f3a' });
+      let ly = 130;
       if (hasBadges) {
-        text(g, '個性：' + p.badges.map((id) => (BADGES[id] ? BADGES[id].name : id) + '◯').join('　'), 262 + dx, 130, { size: 8, color: '#b4471f' });
+        text(g, '個性：' + p.badges.map((id) => (BADGES[id] ? BADGES[id].name : id) + '◯').join('　'), 262 + dx, ly, { size: 8, color: '#b4471f' });
+        ly += 10;
+      }
+      if (hasTalent) {
+        const T = Data.TALENTS[p.talent];
+        if (p.talentKnown && T) text(g, (T.good ? '才能：' : '弱点：') + T.name + '　' + T.desc, 262 + dx, ly, { size: 8, color: T.good ? '#b4471f' : '#3a5f9a' });
+        else text(g, '隠れた才能：？？？（試合で判明するかも）', 262 + dx, ly, { size: 8, color: '#8a7e6a' });
       }
       if (p.potential != null) {
         const pot = Math.round(p.potential);
@@ -1373,7 +1401,7 @@
         }
       }
       // tactic understanding
-      const rowShift = hasBadges ? 10 : 0;
+      const rowShift = extraRows * 10;
       if (p.tacU) Object.keys(Data.TACTICS).forEach((k, i) => {
         const x = 254 + dx + i * 54, T = Data.TACTICS[k];
         text(g, T.short, x, 139 + rowShift, { size: 8, color: '#6d4f3a' });
@@ -1381,8 +1409,9 @@
         if (p.tacU[k] > 100) { g.fillStyle = '#ffd24a'; g.fillRect(x + 28, 142 + rowShift, Math.round(22 * Math.min(100, p.tacU[k] - 100) / 100), 1); }
       });
       // stats
+      const rowGap = extraRows >= 2 ? 17 : 21; // tighten so all five rows still fit under a taller trait box
       STAT_KEYS.forEach((key, i) => {
-        const y = 152 + rowShift + i * 21;
+        const y = 152 + rowShift + i * rowGap;
         const v = p.stats[key];
         const b = p.base ? p.base[key] : v;
         text(g, STAT_NAMES[key], 150 + dx, y, { size: 10, color: '#2a1a24' });
@@ -1634,7 +1663,7 @@
           // equally; one with named focus players is a real specialization — others still pick
           // something up, but noticeably less, so training the whole squad evenly needs variety
           const focusMult = s.pick.focus.length === 0 ? 1 : s.pick.focus.includes(p.id) ? 1.5 : 0.6;
-          let v = s.pick.gains[k] * mult * bulkMult * focusMult * fatigueMult * (p.growth || 1) * posApt(p, k) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
+          let v = s.pick.gains[k] * mult * bulkMult * focusMult * fatigueMult * (p.growth || 1) * posApt(p, k) * talentGrowth(p) * 1.1 * (onPolicy ? 1.2 : 1) * tp * potMult(p) * earlyCatchup();
           v = Math.round(v + rand(-0.3, 0.3));
           // same +2-per-stat ceiling as match growth - a great training session should still feel
           // capped, not like a single session can leapfrog several ranks (a bit higher when several
@@ -2148,6 +2177,8 @@
   // ---------------- VERSUS ----------------
   function Versus() {
     const s = { t: 0, lines: 0 }, fx = State.fixture(), opp = fx.opp;
+    // a gambler coach rolls the dice on a game plan every week
+    if (opp.style && opp.style.moody) opp.tactic = pick(['counter', 'press', 'long', 'possession'].filter((k) => k !== opp.tactic));
     s.enter = () => { Sound.play('chance'); setTimeout(() => { Sound.play('stamp'); Game.addShake(6, 0.4); Game.doFlash(0.6); }, 650); Sound.crowd(0.25); };
     s.update = (dt) => {
       s.t += dt;
@@ -2193,10 +2224,10 @@
     yukemuri: [{ who: 'oyuki', expr: 'normal', side: 'right', text: 'ようこそお越しくださいました、最下位のクラブさん。…ゴール前では、手加減いたしませんよ。' }],
     minori: [{ who: 'gonzo', expr: 'happy', side: 'right', text: 'ガハハ！ 今年も最下位のとこが相手かい。今年は豊作だべ、ボールも米俵みてぇに運んでやる！' }],
     kaiyou: [{ who: 'reon', expr: 'normal', side: 'right', text: '失礼ながら、格下だとは伺っています。海陽学園の伝統、丁寧なパスワークで崩させてもらいます。' }],
-    tekkyo: [{ who: 'daigo', expr: 'determined', side: 'right', text: '毎年最下位のチームだろう？ こっちは就業後もフルパワーだ。県リーグの厳しさ、思い知れ。' }],
+    tekkyo: [{ who: 'daigo', expr: 'determined', side: 'right', text: '毎年最下位のチームだろう？ こっちは就業後もフルパワーだ。現場の厳しさ、思い知れ。' }],
     shirasagi: [{ who: 'shirou', expr: 'normal', side: 'right', text: '…あなた方の噂は聞いている。負け続けているクラブだと。だが白鷺は静かに、確実に勝つ。' }],
     kurogane: [{ who: 'kurou', expr: 'normal', side: 'right', text: '最下位相手に手加減する気はない。始発から終電まで走り続ける。逃げ場はないと思ってくれ。' }],
-    minatomirai: [{ who: 'kai', expr: 'happy', side: 'right', text: 'へえ、あの万年最下位が地区リーグ上がりか。……退屈させないでくれよ？' }],
+    minatomirai: [{ who: 'kai', expr: 'happy', side: 'right', text: 'へえ、あの万年最下位が相手か。……退屈させないでくれよ？' }],
   };
   function leagueName() { return State.tier === 'prefecture' ? '県リーグ' : '港湾地区リーグ'; }
   function tierLabel(t) { return t === 'prefecture' ? '県リーグ' : '地区リーグ'; }
@@ -2204,6 +2235,7 @@
   function rivalryLines(fx, reunion) {
     const opp = fx.opp;
     const L = [];
+    if (opp.style) L.push({ who: 'kazuha', expr: 'normal', text: '相手の監督は「' + opp.style.name + '」タイプ。' + opp.style.desc + (opp.style.moody ? '今日は「' + Data.TACTICS[opp.tactic].name + '」で来そうです。' : '') });
     const lr = (State.lastSeasonRanks || {})[opp.id];
     if (lr) L.push({ who: 'kazuha', expr: 'normal', text: opp.short + 'は昨シーズン、' + tierLabel(lr.tier) + lr.rank + '位でした。' });
     const h = (State.h2h || {})[opp.id];
@@ -2277,7 +2309,7 @@
     return new Match({
       opp: fx.opp, away: opp.roster, reunion: opp.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
       formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
-      bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
+      bench: State.roster.filter((p) => !State.lineup.includes(p.id)), homeGame: !!fx.home,
       onEnd: (r) => { State.result = r; if (r.rivalTech) State.rivalTechSeen = r.rivalTech; Game.goto(Result(r), 'iris'); },
     });
   }
@@ -2326,7 +2358,7 @@
       let total = 0;
       const catchup = earlyCatchup();
       for (const k of STAT_KEYS) {
-        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * posApt(p, k) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
+        let v = Math.floor((exp[k] / 9) * (p.growth || 1) * posApt(p, k) * talentGrowth(p) * growthTaper(p.stats[k]) * potMult(p) * catchup + Math.random() * 0.5);
         // the early catch-up bonus should mean more stats clear the bar in a given match, not any
         // single stat leaping by a huge amount - a +2 ceiling holds regardless of the multiplier
         v = Math.min(v, 2);
@@ -2738,6 +2770,20 @@
       s.notes.unshift(p.name + 'が負傷…全治' + inj.weeks + '週間の見込みです');
     }
     if ((r.injuries || []).some((inj) => inj.team === 0)) fillLineup();
+    // hidden talents come to light through play: likely when it actually mattered today, now and then otherwise
+    // at most two a week, so discovering the squad stretches across the season
+    const fired = new Set(r.talentFired || []);
+    let found = 0;
+    for (const id of played.slice().sort(() => Math.random() - 0.5)) {
+      const p = State.roster.find((q) => q.id === id);
+      if (!p || !p.talent || p.talentKnown || found >= 2) continue;
+      if (Math.random() < (fired.has(id) ? 0.3 : 0.06)) {
+        found++;
+        p.talentKnown = true;
+        const T = Data.TALENTS[p.talent];
+        s.notes.unshift(T.good ? p.name + 'の隠れた才能が判明！「' + T.name + '」' : p.name + 'の意外な弱点が判明…「' + T.name + '」');
+      }
+    }
     // a transfer negotiation started before this match resolves now - the outcome was already
     // decided when it began, this is just when the club hears back
     for (const neg of (State.pendingNegotiations || [])) {
@@ -2822,6 +2868,7 @@
     const p = Object.assign({}, def, { stats: Object.assign({}, def.stats), base: Object.assign({}, def.stats), tacU: Object.assign({}, def.tacU || { counter: 45, press: 45, long: 45, possession: 45 }), look: def.pos === 'GK' ? Object.assign({}, Data.HOME[0].look, kitLook, { shirt: '#8fd14f', shirtD: '#5a9e2e', shirtL: '#c8f08a', key: 'signed_' + def.id }) : kitLook, bench: true, joined: from || 'free' });
     p.local = !!def.local; p.growth = def.growth || 1; p.sal = def.sal || 15;
     p.potential = initPotential(p);
+    delete p.talent; dealTalent(p);
     State.roster.push(p);
     State.morale[p.id] = 70; State.benchWeeks[p.id] = 0;
     for (const q of State.roster) if (q.id !== p.id) State.addBond(p.id, q.id, 0);
