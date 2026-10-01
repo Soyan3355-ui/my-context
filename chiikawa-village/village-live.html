@@ -158,6 +158,26 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .ci-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);font-family:var(--body)}
 .ci-note{width:100%;font-family:var(--body);font-size:14px;padding:7px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin-top:6px}
 .ci-row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.md{--m1:#e36d72;--m2:#2a78d6;--m3:#4f8f4a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .md{--m1:#f08a8f;--m2:#5aa0f0;--m3:#79b874}}:root[data-theme="dark"] .md{--m1:#f08a8f;--m2:#5aa0f0;--m3:#79b874}
+.md-tabs{display:flex;gap:6px;align-items:center;margin:2px 0 4px}.md-tabs button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:99px;background:var(--bg);color:var(--ink);padding:5px 14px;cursor:pointer;min-height:36px}.md-tabs button[aria-pressed="true"]{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg));font-weight:700}.md-tabs span{margin-left:auto;font-size:11.5px;color:var(--sub);font-family:var(--body)}
+.ci-scale.face button{font-size:20px;padding:3px 0}.md-sub{font-family:var(--body);font-size:12px;color:var(--sub);margin-top:10px;border-top:2px solid var(--line);padding-top:6px}
+.md-x{border:2px dashed var(--line);border-radius:10px;padding:8px 10px;margin-top:10px}.md-x .lb{font-size:13px}.md-x .lb small{font-size:11px;color:var(--sub)}.md-x .q{font-family:var(--body);font-size:14px;margin:4px 0 6px}
+.md-xo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.md-xo button{font:inherit;font-family:var(--body);font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:8px 6px;cursor:pointer;min-height:40px}.md-xo button[aria-pressed="true"]{border-color:#9a62d0;background:color-mix(in srgb,#9a62d0 16%,var(--bg));font-weight:700}
+.md-res{font-family:var(--body);font-size:13px;line-height:1.6;margin:8px 0 0;color:var(--ink)}
+.md .chart svg{display:block;width:100%;overflow:visible}.md .chart text{font-family:var(--body);font-size:10.5px;fill:var(--sub)}.md .chart .grid{stroke:var(--line);stroke-width:1}
+.md-lg{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--body);font-size:12px;margin-top:12px}.md-lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}.md-lg small{margin-left:auto;color:var(--sub)}
+.md-strip{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:3px;margin:4px 0 0 26px}.md-strip span{height:6px;border-radius:2px;background:var(--line)}.md-strip span.h{background:color-mix(in srgb,var(--good) 45%,var(--line))}.md-strip span.b{background:var(--good)}
+.md-say{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;margin-top:10px;font-family:var(--body);font-size:12.5px;line-height:1.65;background:var(--bg);border-radius:8px;padding:7px 9px}.md-say img{width:26px;height:26px;image-rendering:pixelated}.md-say small{color:var(--sub)}
+.md-hist{margin-top:8px}.md-hist summary{cursor:pointer;font-family:var(--body);font-size:12.5px;color:var(--sub)}
+.hr-lead{font-family:var(--body);font-size:12.5px;color:var(--sub);line-height:1.6;margin:2px 0 8px}.hr-list{display:grid;gap:8px}
+.hr-p{border:2px solid var(--line);border-radius:10px;padding:8px 10px;font-family:var(--body);font-size:13px;line-height:1.6}.hr-h{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.hr-h b{font-size:14.5px}
+.hr-r{margin:2px 0;color:var(--sub);font-size:12.5px}.hr-f{background:var(--bg);border-radius:8px;padding:6px 8px;margin-top:4px;font-size:12.5px}.hr-f.none,.hr-wait{color:var(--sub);font-size:12px}
+.hr-an{display:grid;grid-template-columns:26px minmax(0,1fr);gap:8px;margin-top:6px}.hr-an img{width:24px;height:24px;image-rendering:pixelated}.hr-an small{color:var(--sub)}
+.hr-ed,.hr-add{margin-top:6px}.hr-ed summary,.hr-add summary{cursor:pointer;color:var(--sub);font-size:12.5px;font-family:var(--body)}.hr-ed label,.hr-add label{display:block;font-family:var(--body);font-size:12.5px;margin-top:6px}
+.hr-ed input,.hr-add input{display:block;width:100%;box-sizing:border-box;font:inherit;font-family:var(--body);font-size:14px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;margin-top:2px;min-height:40px}
+@media (max-width:600px){.hr-ed input,.hr-add input{font-size:16px}}.hr-btns{display:flex;gap:8px;margin-top:8px}.hr-btns .btn-s,.hr-add .btn-s{min-height:40px;margin-top:8px}
+.md-nudge{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;font:inherit;font-size:14px;border:2px solid #3b3533;border-radius:99px;background:#fff6e0;color:#3b3533;padding:9px 16px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;min-height:44px}.md-nudge[hidden]{display:none}
 .ci-hist{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--body);font-size:12.5px;font-variant-numeric:tabular-nums}
 .ci-hist th,.ci-hist td{border-top:1px dashed var(--line);padding:4px 2px;text-align:center}
 .ci-hist th{color:var(--sub);font-weight:400}
@@ -328,7 +348,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button">📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
-  <div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
+  <button type="button" class="md-nudge" id="mdNudge" hidden></button><div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
     <div class="side">
       <div class="nowbox" id="nowbox"><h2 id="h-now"><button type="button" id="nowBtn" aria-expanded="false" aria-controls="nowList"><span>👀 いまの様子 <small id="nowSum"></small></span><span class="arw" aria-hidden="true">▸</span></button></h2><div id="nowList" hidden></div></div>
   <div class="win" id="win">
@@ -379,12 +399,14 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
       <div class="row"><label for="noteTo" style="font-size:12px;color:var(--sub)">だれに：</label><select id="noteTo"></select><button type="submit" class="bt">とどける</button></div></form>
     <div id="notes"></div>
   </section>
-  <section style="order:8" class="box" aria-labelledby="h-ci"><h2 id="h-ci">🌱 きょうのふりかえり <small id="ciDate"></small></h2>
+  <section style="order:8" class="box md" aria-labelledby="h-ci"><h2 id="h-ci">🌱 こころとからだの記録 <small id="ciDate"></small></h2>
+    <div class="md-tabs" id="mdTabs" role="group" aria-label="朝と夜"><button type="button" data-slot="am">🌅 朝</button><button type="button" data-slot="pm">🌙 夜</button><span>担当：ちいかわ</span></div>
     <div id="ciForm"></div>
     <input class="ci-note" id="ciNote" placeholder="ひとこと（書きたいときだけ）" aria-label="ひとこと" autocomplete="off">
     <div class="ci-row"><button type="button" class="bt" id="ciSave" style="padding:6px 14px">記録する</button><small id="ciMsg" style="color:var(--sub);font-family:var(--body)"></small></div>
-    <table class="ci-hist" id="ciHist" hidden></table>
+    <div id="mdViz"></div>
   </section>
+  <section style="order:10" class="box hrb" aria-labelledby="h-hr"><h2 id="h-hr">🧑‍🤝‍🧑 人事部 <small>担当：ラッコ・そーやんだけに見えます</small></h2><div id="hr"></div></section>
   <section style="order:10" class="box" aria-labelledby="h-rs"><h2 id="h-rs">👥 役割名簿</h2><div class="roster" id="roster"></div>
     <h2 style="margin-top:14px">📋 常時発注リスト <small>確認なしで進める仕事</small></h2><ul class="so-list" id="standing"></ul></section>
     </div>
@@ -938,9 +960,10 @@ $('board').addEventListener('click',async e=>{const a=e.target.closest('button[d
   ta.value='';const ins=(b.instructions||[]).concat([{text:txt,at:Date.now(),handled:false}]);b.instructions=ins;b.insAt=Date.now();if(ta){ta.blur();ta.closest('details').open=false}renderBoard();floater('✏️',ent[CHAT_CHARS.includes(OWNER_ID[b.owner])?OWNER_ID[b.owner]:'hachiware']||ent.hachiware);
   await write('board',id,{instructions:ins,insAt:b.insAt})});
 function renderBoard(){const n=s=>BOARD.filter(b=>b.status===s).length;$('bdCnt').textContent=BOARD.length?`作業中 ${n('doing')}・検収待ち ${n('review')}・完了 ${n('done')}`:'';
-  if(!BOARD.length){$('board').innerHTML='<p class="empty">ハチワレが起票したタスクがここに並びます。</p>';return}
+  if(!BOARD.length){$('board').innerHTML='<p class="empty">ハチワレが起票したタスクがここに並びます。</p>';return}if(!BOARD.some(b=>b.status!=='done')){$('board').innerHTML='<p class="empty">いま動いているタスクはありません（終わったものは「きょうの成果」に出ます）。</p>';return}
   const bx=$('board');if(document.activeElement&&bx.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;const drafts={},opened={};bx.querySelectorAll('textarea[data-bins]').forEach(t=>{if(t.value)drafts[t.dataset.bins]=t.value});bx.querySelectorAll('details.bins[open]').forEach(d=>opened[d.dataset.b]=1);
-  $('board').innerHTML=LANES.map(([s,label,c])=>{let arr=BOARD.filter(b=>b.status===s).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));if(s==='done')arr=arr.slice(0,5);if(!arr.length)return '';
+  // 終わったタスクはボードに出さない（2026-10-02 そーやんのコメント）。完了は件数と「きょうの成果」で見る
+  $('board').innerHTML=LANES.filter(([s])=>s!=='done').map(([s,label,c])=>{let arr=BOARD.filter(b=>b.status===s).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));if(s==='done')arr=arr.slice(0,5);if(!arr.length)return '';
     return `<div class="lane"><h3><i style="--c:${c}"></i>${label}（${arr.length}）</h3>${arr.map(b=>{const oid=OWNER_ID[b.owner]||b.owner;const v=b.verdict&&b.verdict!=='未'?b.verdict:'';
       const vc=v==='PASS'?'pass':v==='FAIL'?'fail':v?'inc':'';const link=safeUrl(b.link),nl=safeUrl(b.notionUrl);
       return `<div class="tk"><img src="${ICON[oid]||ICON.hachiware}" alt="${esc(b.owner||'')}"><div style="min-width:0"><div class="t">${esc(b.title)}</div>
@@ -989,22 +1012,135 @@ function renderNow(){const rows=[];const tk=TASKS.filter(x=>!x.done).sort(byTime
 function setNow(open){$('nowList').hidden=!open;$('nowBtn').setAttribute('aria-expanded',String(open));if(open)renderNow();try{localStorage.setItem('ck-now',open?'1':'0')}catch(e){}}
 $('nowBtn').addEventListener('click',()=>setNow($('nowList').hidden));
 setInterval(renderNow,1500);
-// ---------- きょうのふりかえり ----------
+// ---------- こころとからだの記録（2026-10-02 そーやんのコメント。担当はちいかわ） ----------
+// 朝と夜に選択式で答える。毎回ちがう「きょうの一問」（あそびの心理テストなど）つき。中身はそーやんだけの場所 data/users/<id>/mind に置く
+// 仕事の3問（楽・助かった・楽しい）とひとことは、これまでどおり共有の checkins にも入れる（見回りが読む）
 const CIQ=[['easy','😌 仕事が楽になった？','しんどい','楽'],['helped','🙏 助かったと思えた？','いまいち','とても'],['fun','🎵 楽しく仕事できた？','つまらない','楽しい']];
 const todayKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-let ciDraft={};
-function renderCheckinForm(){const k=todayKey();const cur=CHECKINS.find(c=>c.id===k)||{};$('ciDate').textContent=k.slice(5).replace('-','/')+(cur.savedAt?' 記録済み':'');
-  CIQ.forEach(([q])=>{if(ciDraft[q]==null&&cur[q]!=null)ciDraft[q]=cur[q]});if(!$('ciNote').value&&cur.note&&!ciDraft._noteTouched)$('ciNote').value=cur.note;
-  $('ciForm').innerHTML=CIQ.map(([q,label,lo,hi])=>`<div class="ci-q"><div class="lb">${label}</div><div class="ci-scale" role="group" aria-label="${esc(label)}">${[1,2,3,4,5].map(n=>`<button type="button" data-q="${q}" data-n="${n}" aria-pressed="${ciDraft[q]===n}">${n}</button>`).join('')}</div><div class="ci-ends"><span>${lo}</span><span>${hi}</span></div></div>`).join('');
-  const hist=CHECKINS.slice().sort((a,b)=>a.id<b.id?1:-1).slice(0,7);
-  if(hist.length){$('ciHist').hidden=false;$('ciHist').innerHTML='<tr><th>日付</th><th>楽</th><th>助かった</th><th>楽しい</th><th style="text-align:left">ひとこと</th></tr>'+hist.map(c=>`<tr><td>${esc(c.id.slice(5).replace('-','/'))}</td><td>${c.easy??'-'}</td><td>${c.helped??'-'}</td><td>${c.fun??'-'}</td><td class="n">${esc(c.note||'')}</td></tr>`).join('')}}
-$('ciForm').addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(!b)return;ciDraft[b.dataset.q]=+b.dataset.n;renderCheckinForm()});
-$('ciNote').addEventListener('input',()=>{ciDraft._noteTouched=true});
-$('ciSave').addEventListener('click',async()=>{const k=todayKey();const data={date:k,note:$('ciNote').value.trim().slice(0,500),savedAt:Date.now()};CIQ.forEach(([q])=>{if(ciDraft[q]!=null)data[q]=ciDraft[q]});
-  if(CIQ.every(([q])=>data[q]==null)&&!data.note){$('ciMsg').textContent='どれか1つ選んでね';return}
-  const i=CHECKINS.findIndex(c=>c.id===k);if(i>=0)CHECKINS[i]={...CHECKINS[i],...data};else CHECKINS.push({id:k,...data});renderCheckinForm();
-  $('ciMsg').textContent='記録しました。ハチワレが次の見回りで読みます';ORDER.slice(0,3).forEach(id=>ent[id].jump=1);floater('🌱',ent.soyan);
-  if(db&&canWrite){try{await db.collection('checkins').doc(k).set(data)}catch(err){$('ciMsg').textContent='この画面では保存できませんでした'}}});
+const dKey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const FACES=['😣','😟','😐','🙂','😄'];
+const MQ={am:[['sleep','😴 よく眠れた？','ぜんぜん','ぐっすり'],['body','💪 からだの調子は？','重い','軽い'],['mood','🌤 いまの気分は？','しずみ気味','ごきげん',1],['energy','🔋 きょうのエネルギーは？','からっぽ','満タン']],
+  pm:[['energy','🔋 いまの元気の残りは？','へとへと','まだ元気'],['mood','🌙 いまの気分は？','しずみ気味','ごきげん',1],['full','🌱 きょうの充実感は？','うすい','たっぷり']]};
+// きょうの一問（日付で回る）。t:'test' はあそびの心理テスト（当たるも八卦）。t:'ask' はふりかえりの選択
+const MQX={am:[
+ {t:'test',q:'森の小道で最初に出会った動物は？',o:[['うさぎ','きょうは身軽さが味方。思いついたら小さく試すと流れに乗れそう'],['くま','どっしりモード。大事な1つに腰をすえると力が出る日'],['小鳥','人とのやりとりで運が動く日。ひと声かけてみて'],['鹿','感受性が冴えてる日。気になったことはメモに残しておこう']]},
+ {t:'test',q:'目の前に扉が3つ。どれを開ける？',o:[['木の扉','手ざわりのある仕事（畑・道具）で整う日'],['ガラスの扉','見通しを立てると安心できる日。まず段取りを書き出そう'],['鉄の扉','手ごわい1件に挑むと、あとが軽くなる日'],['開けずに休む','きょうは「やらないこと」を決めるのが一番の近道']]},
+ {t:'test',q:'朝ごはんに1つだけ選ぶなら？',o:[['おにぎり','基本に忠実が吉。いつもの段取りで十分うまくいく'],['パン','新しい組み合わせが光る日。ちょっとした工夫を'],['みそ汁','からだの声を聞く日。ペースはゆっくりめで'],['くだもの','気分転換がカギ。外の空気を吸う時間をつくって']]},
+ {t:'test',q:'空に浮かんでいる雲のかたちは？',o:[['わたあめ','やさしい気持ちが伝わる日。お礼を1つ伝えてみて'],['くじら','大きな流れを考えるのに向く日'],['ひこうき','スピード勝負の日。短く区切ると進む'],['なにも見えない快晴','頭がすっきり。決めごとに向いてる']]},
+ {t:'ask',q:'きょういちばん力を使いそうなのは？',o:[['人と会う'],['作業・手を動かす'],['考えごと・書きもの'],['移動']]},
+ {t:'ask',q:'きょうの自分に一番ほしいのは？',o:[['時間'],['集中'],['休み'],['だれかの助け']]},
+ {t:'test',q:'畑で最初に目に入ったのは？',o:[['芽','始めるのに良い日。小さな一歩をきょうのうちに'],['実','仕上げ・回収の日。終わりかけのものを閉じよう'],['草','見落としに気づける日。気になる1件を確認して'],['土','土台づくりの日。仕組みや段取りに手を入れると効く']]},
+ {t:'ask',q:'起きてすぐ頭に浮かんだのは？',o:[['仕事のこと'],['家族のこと'],['畑・自然のこと'],['なにも浮かばなかった']]},
+ {t:'test',q:'手紙が届いた。封筒の色は？',o:[['白','まっさらな気持ちで向き合える日。新しい話に耳を'],['赤','情熱の日。やりたいことを口に出すと動き出す'],['緑','調和の日。チームに任せると楽になる'],['金','ごほうびの日。小さく自分をほめて']]},
+ {t:'ask',q:'いまの体で一番気になるところは？',o:[['肩・首'],['腰'],['目'],['とくになし']]},
+ {t:'test',q:'鳥になって飛ぶなら、どこへ？',o:[['海','気持ちを広げたい日。視野を外に向けると答えが見える'],['山','ひとりで考える時間が実を結ぶ日'],['街','人の中で刺激をもらうと冴える日'],['自分の畑','足元の大切さに気づく日。いつもの場所で整う']]},
+ {t:'ask',q:'きょうの天気、気分に近いのは？',o:[['☀️ 晴れ'],['⛅ くもり時々晴れ'],['☁️ くもり'],['🌧 雨']]}],
+ pm:[
+ {t:'ask',q:'きょういちばんうれしかったのは？',o:[['人とのこと'],['仕事が進んだ'],['畑・自然'],['ひとりの時間']]},
+ {t:'test',q:'夜空に見つけた星の色は？',o:[['青','冷静な判断ができた日。あしたも同じペースで'],['黄','人を明るくした日。その笑顔、ちゃんと届いてる'],['赤','がんばった日かもね。あしたは1つ減らしてもOK'],['白','心がしずかな日。よく休めそう']]},
+ {t:'ask',q:'きょう手放したいものは？',o:[['あせり'],['心配ごと'],['やり残し'],['とくになし']]},
+ {t:'test',q:'お風呂に1つ入れるなら？',o:[['ゆず','気分のリセットが必要。好きな香りで切り替えて'],['入浴剤（ミルク）','自分へのやさしさが足りてないサインかもね。甘くしてOK'],['なにも入れない','シンプルが心地いい日。予定を足しすぎないで'],['アヒルのおもちゃ','遊び心が回復のカギ。くだらないことで笑おう']]},
+ {t:'ask',q:'きょうの自分に点をつけるなら？',o:[['よくやった'],['まあまあ'],['ふつう'],['ゆるしてあげたい']]},
+ {t:'ask',q:'あしたの朝、最初にしたいのは？',o:[['ゆっくり寝る'],['畑に出る'],['すぐ仕事'],['だれかと話す']]},
+ {t:'test',q:'帰り道で拾った石のかたちは？',o:[['まんまる','気持ちがまるく収まった日'],['とがってる','引っかかりが残ってるのかも。ひとことメモに書いて手放そう'],['ハート','だれかの思いやりを受け取った日'],['平たい','安定の1日。こういう日が土台になる']]},
+ {t:'ask',q:'きょう一番つかれたのは？',o:[['からだ'],['頭'],['気持ち'],['つかれてない']]},
+ {t:'test',q:'夢に出てきそうなのは？',o:[['広い草原','のびのびしたい気持ち。週末は外へ'],['にぎやかな市場','アイデアがたまってる。朝に書き出すと吉'],['しずかな図書館','情報を整理したい合図。ひとつ片付けて眠ろう'],['田んぼ','実りを感じた日。続けてきたことに自信を']]},
+ {t:'ask',q:'きょう「ありがとう」を言いたい相手は？',o:[['家族'],['仲間・スタッフ'],['受講生・お客さん'],['自分']]},
+ {t:'ask',q:'寝る前の気持ちに近い色は？',o:[['🟦 青'],['🟩 緑'],['🟨 黄'],['⬛ 灰']]},
+ {t:'test',q:'森の小屋で見つけたものは？',o:[['ランプ','先の見通しがほしい合図。あしたの1つ目だけ決めて寝よう'],['毛布','休息が最優先。きょうは早めに'],['地図','新しい道が気になってる。メモに残して'],['日記','ふりかえる力が強い日。ひとことを書くと整う']]}]};
+const hashN=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h};
+const mqxFor=(slot,k)=>{const L=MQX[slot];return L[hashN(k+slot)%L.length]};
+let MIND={uid:null,ref:null,data:null},mdSlot=null,mdDraft={};
+function slotNow(){const h=new Date().getHours();if(h<4){const d=new Date(Date.now()-864e5);return {slot:'pm',k:dKey(d)}}return {slot:h<16?'am':'pm',k:todayKey()}}
+const mDay=k=>((MIND.data&&MIND.data.days)||{})[k]||{};
+function mdNudge(){const el=$('mdNudge');if(!el)return;const {slot,k}=slotNow();if(!MIND.uid&&slot==='am'){el.hidden=true;return}const done=MIND.uid?mDay(k)[slot]:(slot==='pm'&&CHECKINS.find(c=>c.id===k&&c.savedAt));
+  if(done){el.hidden=true;return}el.hidden=false;el.textContent=slot==='am'?'🌅 朝のこころチェック（30秒）':'🌙 夜のこころチェック（1分）'}
+function renderCheckinForm(){const now=slotNow();if(!mdSlot)mdSlot=now;const {slot,k}=mdSlot;const day=mDay(k);const cur=day[slot]||{};const ci=CHECKINS.find(c=>c.id===k)||{};
+  $('ciDate').textContent=k.slice(5).replace('-','/')+(cur.at||(slot==='pm'&&ci.savedAt)?' '+(slot==='am'?'朝':'夜')+'は記録済み':'');
+  document.querySelectorAll('#mdTabs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.slot===slot)));
+  const qs=MQ[slot].concat(slot==='pm'?CIQ.map(q=>[...q,0,1]):[]);
+  qs.forEach(([q,,, ,, work])=>{const src=work?ci:cur;if(mdDraft[q]==null&&src[q]!=null)mdDraft[q]=src[q]});
+  const x=mqxFor(slot,k);if(mdDraft._x==null&&cur.x&&cur.x.q===x.q)mdDraft._x=cur.x.a;
+  let h=qs.map(([q,label,lo,hi,face,work],i)=>`${work&&i===MQ[slot].length?'<div class="md-sub">しごとのふりかえり（ちいかわたちも読みます）</div>':''}<div class="ci-q"><div class="lb">${label}</div><div class="ci-scale${face?' face':''}" role="group" aria-label="${esc(label)}">${[1,2,3,4,5].map(n=>`<button type="button" data-q="${q}" data-n="${n}" aria-pressed="${mdDraft[q]===n}"${face?` aria-label="${n}"`:''}>${face?FACES[n-1]:n}</button>`).join('')}</div><div class="ci-ends"><span>${lo}</span><span>${hi}</span></div></div>`).join('');
+  const xa=mdDraft._x;const res=x.t==='test'&&xa!=null?x.o[xa][1]:'';
+  h+=`<div class="md-x"><div class="lb">✨ きょうの一問${x.t==='test'?' <small>あそびの心理テスト</small>':''}</div><div class="q">${esc(x.q)}</div><div class="md-xo" role="group" aria-label="${esc(x.q)}">${x.o.map((o,i)=>`<button type="button" data-x="${i}" aria-pressed="${xa===i}">${esc(o[0])}</button>`).join('')}</div>${res?`<p class="md-res">🔮 ${esc(res)} <small>※あそびです</small></p>`:''}</div>`;
+  $('ciForm').innerHTML=h;
+  const nt=$('ciNote');nt.placeholder=slot==='am'?'ひとこと（書きたいときだけ・そーやんだけに見えます）':'ひとこと（書きたいときだけ・ちいかわたちも読みます）';
+  if(!mdDraft._noteTouched)nt.value=slot==='am'?(cur.note||''):(ci.note||'');
+  renderMindViz();mdNudge()}
+$('mdTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-slot]');if(!b)return;const k=mdSlot?mdSlot.k:todayKey();mdSlot={slot:b.dataset.slot,k:b.dataset.slot==='pm'&&slotNow().slot==='pm'?slotNow().k:k};mdDraft={};renderCheckinForm()});
+$('ciForm').addEventListener('click',e=>{const b=e.target.closest('button[data-q]');if(b){mdDraft[b.dataset.q]=+b.dataset.n;renderCheckinForm();return}const x=e.target.closest('button[data-x]');if(x){mdDraft._x=+x.dataset.x;renderCheckinForm()}});
+$('ciNote').addEventListener('input',()=>{mdDraft._noteTouched=true});
+$('ciSave').addEventListener('click',async()=>{const {slot,k}=mdSlot||slotNow();const note=$('ciNote').value.trim().slice(0,500);const rec={at:Date.now()};
+  MQ[slot].forEach(([q])=>{if(mdDraft[q]!=null)rec[q]=mdDraft[q]});const x=mqxFor(slot,k);if(mdDraft._x!=null)rec.x={q:x.q,a:mdDraft._x,ans:x.o[mdDraft._x][0]};if(slot==='am'&&note)rec.note=note;
+  const work={};if(slot==='pm')CIQ.forEach(([q])=>{if(mdDraft[q]!=null)work[q]=mdDraft[q]});
+  if(Object.keys(rec).length<2&&!Object.keys(work).length&&!note){$('ciMsg').textContent='どれか1つ選んでね';return}
+  if(slot==='am'&&!MIND.uid){$('ciMsg').textContent='朝の記録は、ログインすると保存できます';return}
+  if(MIND.uid&&!MIND.loaded){$('ciMsg').textContent='これまでの記録を読みこみ中…。少し待ってからもう一度押してね';return}
+  if(MIND.uid){const d=MIND.data||{days:{}};d.days=d.days||{};d.days[k]={...(d.days[k]||{}),[slot]:{...((d.days[k]||{})[slot]||{}),...rec}};d.updatedAt=Date.now();MIND.data=d;
+    if(canWrite)MIND.ref.set(d).catch(()=>{$('ciMsg').textContent='この画面では保存できませんでした'})}
+  if(slot==='pm'&&(Object.keys(work).length||note)){const data={date:k,note,savedAt:Date.now(),...work};const i=CHECKINS.findIndex(c=>c.id===k);if(i>=0)CHECKINS[i]={...CHECKINS[i],...data};else CHECKINS.push({id:k,...data});
+    if(db&&canWrite){try{await db.collection('checkins').doc(k).set(data)}catch(err){$('ciMsg').textContent='この画面では保存できませんでした'}}}
+  mdDraft={};renderCheckinForm();$('ciMsg').textContent=slot==='am'?'記録したよ…！ いってらっしゃい…！（ちいかわ）':'記録したよ…！ きょうもおつかれさま…！（ちいかわ）';ent.chiikawa&&(ent.chiikawa.jump=1);floater('🌱',ent.soyan)});
+$('mdNudge').addEventListener('click',()=>{mdSlot=slotNow();mdDraft={};setBox('h-ci',true);renderCheckinForm();const s=$('h-ci').closest('section');s.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{const b=$('ciForm').querySelector('button');b&&b.focus({preventScroll:true})},400)});
+// 見える化：直近14日の気分・元気・睡眠と、ちいかわのみたて
+function renderMindViz(){const el=$('mdViz');if(!el)return;const days=(MIND.data&&MIND.data.days)||{};const ks=[];for(let i=13;i>=0;i--)ks.push(dKey(new Date(Date.now()-i*864e5)));
+  const avg=a=>{const v=a.filter(x=>x!=null);return v.length?v.reduce((s,x)=>s+x,0)/v.length:null};
+  const rows=ks.map(k=>{const d=days[k]||{},a=d.am||{},p=d.pm||{},c=CHECKINS.find(x=>x.id===k)||{};return {k,mood:avg([a.mood,p.mood]),energy:avg([a.energy,p.energy]),sleep:a.sleep??null,full:p.full??null,fun:c.fun??null,am:!!a.at,pm:!!(p.at||c.savedAt)}});
+  const has=rows.some(r=>r.mood!=null||r.energy!=null||r.sleep!=null);
+  if(!MIND.uid){el.innerHTML='<p class="empty">こころの記録は、ログインしているそーやんだけの場所に保存されます。</p>';return}
+  if(!has){el.innerHTML='<p class="empty">朝と夜に答えると、ここに気分・元気・睡眠の流れが出ます（ちいかわが見ています）。</p>';return}
+  const W=Math.max(280,el.clientWidth||320),H=150,L=26,R=8,T=10,B=22;const x=i=>L+(W-L-R)*i/(rows.length-1),y=v=>T+(H-T-B)*(1-(v-1)/4);
+  const S=[['mood','気分','var(--m1)'],['energy','元気','var(--m2)'],['sleep','睡眠','var(--m3)']];
+  let g=[1,3,5].map(v=>`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('');
+  rows.forEach((r,i)=>{if(i%2===0||i===rows.length-1)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${+r.k.slice(8)}</text>`});
+  S.forEach(([f,,c])=>{let d='',pen=false;rows.forEach((r,i)=>{if(r[f]==null){pen=false;return}d+=(pen?'L':'M')+x(i).toFixed(1)+' '+y(r[f]).toFixed(1)+' ';pen=true});
+    g+=`<path d="${d}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`+rows.map((r,i)=>r[f]==null?'':`<circle cx="${x(i)}" cy="${y(r[f])}" r="2.6" fill="${c}"><title>${r.k.slice(5)} ${S.find(s=>s[0]===f)[1]} ${r[f].toFixed(1)}</title></circle>`).join('')});
+  const strip=rows.map(r=>`<span title="${r.k.slice(5)}" class="${r.am&&r.pm?'b':r.am||r.pm?'h':''}"></span>`).join('');
+  const w7=rows.slice(7),p7=rows.slice(0,7);const m7=avg(w7.map(r=>r.mood)),mp=avg(p7.map(r=>r.mood));const e7=avg(w7.map(r=>r.energy));
+  const hi=rows.filter(r=>r.sleep!=null&&r.mood!=null);const gs=avg(hi.filter(r=>r.sleep>=4).map(r=>r.mood)),bs=avg(hi.filter(r=>r.sleep<=2).map(r=>r.mood));
+  const low=w7.slice(-3).filter(r=>r.mood!=null&&r.mood<=2).length;const recs=rows.filter(r=>r.am||r.pm).length;
+  const says=[];if(m7!=null)says.push(`この7日の気分は平均 ${m7.toFixed(1)}${mp!=null?`（その前の7日 ${mp.toFixed(1)}${m7-mp>=0.5?'・上向き':m7-mp<=-0.5?'・下向き':'・横ばい'}）`:''}`);
+  if(e7!=null)says.push(`元気の平均は ${e7.toFixed(1)}`);if(gs!=null&&bs!=null)says.push(`よく眠れた日の気分は ${gs.toFixed(1)}、眠れなかった日は ${bs.toFixed(1)}`);
+  if(low>=2)says.push('ここ数日、気分がしずみ気味…。予定をひとつ減らしてもいいよ…');says.push(`記録した日 ${recs}/14日`);
+  const an=MIND.data&&MIND.data.analysis;
+  el.innerHTML=`<div class="md-lg">${S.map(([,n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join('')}<small>直近14日（1〜5）</small></div><div class="chart"><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="直近14日の気分・元気・睡眠の流れ">${g}</svg></div>
+    <div class="md-strip" aria-label="記録した日（濃い＝朝夜とも）">${strip}</div>
+    <div class="md-say"><img src="${ICON.chiikawa}" alt=""><div><b>ちいかわのみたて</b><br>${says.map(esc).join('<br>')}</div></div>
+    ${an&&an.text?`<div class="md-say an"><img src="${ICON.chiikawa}" alt=""><div><b>今週のふりかえり</b> <small>${an.at?fmt(an.at):''}</small><br>${esc(an.text).replace(/\n/g,'<br>')}</div></div>`:''}
+    <details class="md-hist"><summary>これまでの記録</summary><table class="ci-hist" id="ciHist"></table></details>`;
+  const hist=ks.slice().reverse().map(k=>({k,d:days[k]||{},c:CHECKINS.find(x=>x.id===k)||{}})).filter(r=>r.d.am||r.d.pm||r.c.savedAt);
+  $('ciHist').innerHTML='<tr><th>日付</th><th>睡眠</th><th>気分 朝/夜</th><th>元気 朝/夜</th><th>充実</th><th>楽・助・楽</th><th style="text-align:left">一問</th></tr>'+hist.map(({k,d,c})=>{const a=d.am||{},p=d.pm||{};return `<tr><td>${k.slice(5).replace('-','/')}</td><td>${a.sleep??'-'}</td><td>${a.mood?FACES[a.mood-1]:'-'}/${p.mood?FACES[p.mood-1]:'-'}</td><td>${a.energy??'-'}/${p.energy??'-'}</td><td>${p.full??'-'}</td><td>${c.easy??'-'}・${c.helped??'-'}・${c.fun??'-'}</td><td class="n">${esc([a.x&&a.x.ans,p.x&&p.x.ans].filter(Boolean).join('／'))}</td></tr>`}).join('')}
+let mdRz=0;addEventListener('resize',()=>{clearTimeout(mdRz);mdRz=setTimeout(renderMindViz,200)});
+setInterval(()=>{const n=slotNow();if(mdSlot&&!document.activeElement.closest?.('section.md')&&(n.slot!==mdSlot.slot||n.k!==mdSlot.k)&&!Object.keys(mdDraft).length){mdSlot=n;renderCheckinForm()}else mdNudge()},60000);
+// ---------- 人事部（2026-10-02 そーやんの依頼。担当はラッコ） ----------
+// 関わっている人の名簿と、マヤ暦（13の月の暦・Dreamspell）と数秘術によるキャラの見立て、仕事の割り振り・関わり方の提案
+// 実在の人の情報なので、そーやんだけの場所 data/users/<id>/people に置く。占いは参考で、人の評価や決めつけには使わない
+const SEALS=[['赤い竜','はじまり・育む','新しく始める役、面倒見・受け入れる場づくり'],['白い風','伝える・共感','言葉にする役、気持ちを汲む連絡・発信'],['青い夜','夢・豊かさ','構想を描く役、ひとりで深める時間が力に'],['黄色い種','気づき・開花','学びを形にする役、じっくり育てる長期の仕事'],['赤い蛇','生命力・情熱','体を動かす現場、熱量の要る立ち上げ'],['白い世界の橋渡し','つなぐ・手放す','人と人・組織をつなぐ窓口、調整役'],['青い手','癒やす・体験','手を動かす実作業、体験を通した教え'],['黄色い星','美・調和','見た目や質を整える仕上げ、デザイン'],['赤い月','流れ・浄化','新しい流れをつくる、使命感で動く改革役'],['白い犬','誠実・家族愛','仲間を支える役、信頼が要る継続の仕事'],['青い猿','遊び心・ひらめき','楽しさを生む企画、場を明るくする'],['黄色い人','自由・知恵','自分で考えて進める裁量のある仕事'],['赤い空歩く人','探究・奉仕','人の役に立つ現場、教える・案内する'],['白い魔法使い','受容・時間','約束を守る継続業務、聞き役'],['青い鷲','俯瞰・ビジョン','全体を見渡す計画、分析・戦略'],['黄色い戦士','挑戦・問い','難題の突破、質を問い直すチェック役'],['赤い地球','共鳴・舵取り','チームのかじ取り、流れを合わせる'],['白い鏡','秩序・映す','ルールづくり、記録・整理・点検'],['青い嵐','変容・巻き込み','変化を起こす、周りを巻き込む推進役'],['黄色い太陽','光・無条件の愛','場の中心、みんなを照らすリーダー役']];
+const TONES=['決める（目的）','分ける（挑戦）','つなぐ（奉仕）','形にする（定める）','中心に立つ（輝く）','バランス（平等）','集中（調律）','調和（信頼）','根気（意図）','実現（顕現）','解放（手放す）','協力（安定）','超える（持続）'];
+const NUM={1:'切りひらく・自立',2:'支える・調和',3:'表現する・楽しむ',4:'土台をつくる・堅実',5:'自由・変化に強い',6:'愛情・面倒見',7:'探究・ひとりで深める',8:'実行・成果を出す',9:'使命・人のために',11:'直感・ひらめき',22:'大きな仕組みをつくる',33:'無償の愛・癒やし'};
+function mayaKin(iso){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');if(!m)return null;const t=Date.UTC(+m[1],+m[2]-1,+m[3]),ref=Date.UTC(2013,6,26);
+  const a=Math.min(t,ref),b=Math.max(t,ref);let n=Math.round((b-a)/864e5);for(let y=new Date(a).getUTCFullYear();y<=new Date(b).getUTCFullYear();y++){if((y%4===0&&y%100!==0)||y%400===0){const f=Date.UTC(y,1,29);if(f>=a&&f<b)n--}}
+  if(t<ref)n=-n;const k=(((164-1+n)%260)+260)%260+1;return {kin:k,seal:(k-1)%20,tone:(k-1)%13,wave:(Math.floor((k-1)/13)*13)%20}}
+function lifePath(iso){const d=(iso||'').replace(/\D/g,'');if(d.length!==8)return null;let s=[...d].reduce((a,c)=>a+ +c,0);const first=s;while(s>9&&![11,22,33].includes(s))s=[...String(s)].reduce((a,c)=>a+ +c,0);return {n:s,raw:first}}
+let PEOPLE={ref:null,data:null},hrOpen=new Set();
+function hrCard(p){const k=mayaKin(p.birth),lp=lifePath(p.birth);const an=((PEOPLE.data&&PEOPLE.data.analysis)||{})[p.id]||{};
+  const fort=k?`<div class="hr-f"><b>マヤ暦</b> KIN${k.kin}　太陽の紋章 <b>${SEALS[k.seal][0]}</b>（${SEALS[k.seal][1]}）／ウェイブスペル ${SEALS[k.wave][0]}／銀河の音 ${k.tone+1}「${TONES[k.tone]}」<br><b>数秘</b> ${lp?`${lp.raw}/${lp.n}「${NUM[lp.n]||''}」`:'-'}<br><b>向いていそうな役</b>：${esc(SEALS[k.seal][2])}</div>`:`<div class="hr-f none">誕生日を入れると、マヤ暦と数秘の見立てが出ます</div>`;
+  return `<div class="hr-p" data-pid="${esc(p.id)}"><div class="hr-h"><b>${esc(p.name)}</b><span class="chip">${esc(p.rel||'')}</span>${p.me?'<span class="chip">本人</span>':''}</div>${p.role?`<p class="hr-r">${esc(p.role)}</p>`:''}${fort}
+    ${an.work||an.how?`<div class="hr-an"><img src="${ICON.rakko}" alt=""><div>${an.work?`<b>お願いすると良さそうな仕事</b><br>${esc(an.work)}<br>`:''}${an.how?`<b>関わり方</b><br>${esc(an.how)}`:''}${an.at?`<br><small>ラッコ ${fmt(an.at)}・占いは参考です</small>`:''}</div></div>`:(k?'<p class="hr-wait">ラッコが次の見回りで、仕事の割り振りと関わり方の案を書きます</p>':'')}
+    <details class="hr-ed"${hrOpen.has(p.id)?' open':''} data-pid="${esc(p.id)}"><summary>なおす</summary><label>誕生日 <input type="date" data-hf="birth" value="${esc(p.birth||'')}"></label><label>関係 <input data-hf="rel" value="${esc(p.rel||'')}" maxlength="40"></label><label>いま一緒にやっていること <input data-hf="role" value="${esc(p.role||'')}" maxlength="200"></label>
+      <div class="hr-btns"><button type="button" class="btn-s" data-hsave="${esc(p.id)}">保存</button>${p.me?'':`<button type="button" class="btn-s" data-hdel="${esc(p.id)}">名簿から外す</button>`}</div></details></div>`}
+function renderHR(){const el=$('hr');if(!el)return;if(!PEOPLE.ref){el.innerHTML='<p class="empty">人事部の名簿は、ログインしているそーやんだけの場所に置かれます。</p>';return}
+  if(document.activeElement&&el.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')return;
+  const ps=(PEOPLE.data&&PEOPLE.data.people)||[];const no=ps.filter(p=>!p.birth).length;
+  el.innerHTML=`<p class="hr-lead">マヤ暦と数秘術で、関わる人の持ち味を見立て、仕事の頼み方・関わり方を考えます（占いは参考。決めつけには使いません）。${no?`<br>誕生日が未入力：${no}人`:''}</p><div class="hr-list">${ps.map(hrCard).join('')||'<p class="empty">まだ名簿がありません</p>'}</div>
+    <details class="hr-add"><summary>＋ 人を足す</summary><label>名前 <input id="hrName" maxlength="40"></label><label>関係 <input id="hrRel" maxlength="40" placeholder="スタッフ・協力者・家族 など"></label><label>誕生日 <input id="hrBirth" type="date"></label><button type="button" class="btn-s" id="hrAdd">足す</button></details>`}
+async function hrSave(ps){if(!PEOPLE.loaded)return;const d=PEOPLE.data||{};d.people=ps;d.updatedAt=Date.now();PEOPLE.data=d;renderHR();if(canWrite&&PEOPLE.ref)try{await PEOPLE.ref.set(d)}catch(e){}}
+$('hr').addEventListener('click',e=>{const ps=((PEOPLE.data&&PEOPLE.data.people)||[]).slice();
+  const sv=e.target.closest('[data-hsave]');if(sv){const id=sv.dataset.hsave,box=sv.closest('details');const p=ps.find(x=>x.id===id);if(!p)return;box.querySelectorAll('[data-hf]').forEach(i=>p[i.dataset.hf]=i.value.trim());hrOpen.delete(id);document.activeElement.blur&&document.activeElement.blur();hrSave(ps);return}
+  const dl=e.target.closest('[data-hdel]');if(dl){hrSave(ps.filter(x=>x.id!==dl.dataset.hdel));return}
+  if(e.target.id==='hrAdd'){const n=$('hrName').value.trim();if(!n)return;ps.push({id:'p'+Date.now().toString(36),name:n.slice(0,40),rel:$('hrRel').value.trim().slice(0,40),birth:$('hrBirth').value,role:''});document.activeElement.blur&&document.activeElement.blur();hrSave(ps)}});
+$('hr').addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.hr-ed')){if(d.open)hrOpen.add(d.dataset.pid);else hrOpen.delete(d.dataset.pid)}},true);
 function renderTrial(){const t=STATUS.trial;const el=$('trial');if(!t){el.hidden=true;return}el.hidden=false;
   el.innerHTML=`🎯 <b>${esc(t.title||'')}</b><small>${esc(t.period||'')}${t.note?'　'+esc(t.note):''}</small>`}
 renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle();renderNow();let _nw=false;try{_nw=localStorage.getItem('ck-now')==='1'}catch(e){}setNow(_nw);
@@ -1478,7 +1614,7 @@ function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER)
   if(rm){const y=roomTop(rm.r),w=rm.x1-rm.x;ctx.fillRect(rm.x-2,y-2,w+4,1);ctx.fillRect(rm.x-2,y+38,w+4,1);ctx.fillRect(rm.x-2,y-2,1,41);ctx.fillRect(rm.x1+1,y-2,1,41)}
   else{const b={field:[2,18,66,26],meadow:[168,18,54,26],gate:[104,6,62,38]}[HOVER];if(b){ctx.fillRect(b[0],b[1],b[2],1);ctx.fillRect(b[0],b[1]+b[3],b[2],1);ctx.fillRect(b[0],b[1],1,b[3]);ctx.fillRect(b[0]+b[2],b[1],1,b[3])}}}
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1498,8 +1634,9 @@ const SUMS={
  'h-mine':()=>{const u=TASKS.filter(x=>!x.done).sort(byTime);return u.length?u.slice(0,3).map(t=>`<div class="li"><label><input type="checkbox" data-sumt="${esc(t.id)}" aria-label="できた：${esc(t.title)}"><span>${esc(clip(t.title,46))}${t.progress?` <em class="pgc">${+t.progress}%</em>`:''}${t.due?` <em class="due">期限 ${esc(String(t.due).slice(5).replace('-','/'))}</em>`:''}</span></label></div>`).join('')+(u.length>3?`<div class="li">ほか ${u.length-3}件</div>`:''):'<div class="li">未完了のタスクはありません</div>'},
  'h-nt':()=>{const w=NOTES.filter(n=>!(n.replies||[]).length&&!n.fromChat).length;const l=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${NOTES.length}件・返事待ち <b>${w}</b>件${l?'<br>最新：'+esc(clip(l.text.replace(/\n+/g,' '),40)):''}</div>`},
  'h-bd':()=>{const n=s=>BOARD.filter(b=>b.status===s).length;return chips([['検収待ち',n('review'),'#b7791f'],['ブロック',n('blocked'),'#c2463d'],['作業中',n('doing'),'#3f6fd8'],['これから',n('todo'),'#857a70'],['完了',n('done'),'#4f8f4a']])},
- 'h-ci':()=>{const k=todayKey(),c=CHECKINS.find(x=>x.id===k);return `<div class="li">${c&&c.savedAt?'きょうは記録ずみ（楽 '+(c.easy??'-')+'・助かった '+(c.helped??'-')+'・楽しい '+(c.fun??'-')+'）':'きょうのふりかえりは まだ です'}</div>`},
+ 'h-ci':()=>{const {slot,k}=slotNow();const d=mDay(k);const a=d.am||{},p=d.pm||{};return `<div class="li">朝 ${a.at?'✅ '+(a.mood?FACES[a.mood-1]:''):'まだ'}・夜 ${p.at?'✅ '+(p.mood?FACES[p.mood-1]:''):'まだ'}${(slot==='am'&&!a.at)||(slot==='pm'&&!p.at)?'　← いま答えられます':''}</div>`},
  'h-au':()=>{const a=AUDITS.slice().sort(byTime).pop();return `<div class="li">${a?esc(clip((a.title||'今週の点検')+'：'+(a.result||'-'),50)):'まだ点検はありません（毎週月曜）'}</div>`},
+ 'h-hr':()=>{const ps=(PEOPLE.data&&PEOPLE.data.people)||[];return `<div class="li">${ps.length}人${ps.filter(p=>!p.birth).length?`・誕生日の未入力 ${ps.filter(p=>!p.birth).length}人`:''}</div>`},
  'h-rs':()=>{const act=ORDER.filter(id=>agentState(id)==='active').length,bn=ORDER.filter(id=>agentState(id)==='bench').length;return chips([['稼働',act,'#4f8f4a'],['控え',bn,'#857a70'],['常時発注',(STATUS.standing||[]).length,'#3f6fd8']])},
  'h-dc':()=>{const l=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];return `<div class="li">${l?'最新：'+esc(clip(l.title,50)):'まだありません'}</div>`}};
 function setBox(id,open,noSave){const h=document.getElementById(id);if(!h)return;const sec=h.closest('section'),body=sec.querySelector(':scope>.bx-body'),sum=sec.querySelector(':scope>.bx-sum');if(!body)return;
@@ -1565,7 +1702,7 @@ $('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contain
 $('arrDone').addEventListener('click',()=>laySet(false));
 $('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
 LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
-async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin()},()=>{});
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin()},()=>{});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});MIND.uid=id;MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
