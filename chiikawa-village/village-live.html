@@ -236,6 +236,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .app .go{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.app .go button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:5px 10px;cursor:pointer}.app .go button.y{border-color:var(--good);background:color-mix(in srgb,var(--good) 16%,var(--bg))}
 .app details.olda summary{cursor:pointer;color:var(--sub);font-size:12px}
 .askb{display:flex;width:fit-content;align-items:center;gap:4px;margin:4px 0 2px;font:inherit;font-size:12px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}.askb img{width:18px;height:18px;image-rendering:pixelated}.askb:hover{border-color:var(--info)}
+.tk .bt-row{margin-top:4px}.tk details.bins summary{cursor:pointer;color:var(--info);font-size:12.5px;font-family:var(--body);padding:3px 0}.tk details.bins textarea{font:inherit;font-family:var(--body);font-size:13px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin:4px 0}.tk .bi{margin-top:5px;font-family:var(--body);font-size:12.5px;line-height:1.55;background:var(--bg);border-radius:6px;padding:4px 7px;overflow-wrap:anywhere}.tk .bi .rp{color:var(--sub)}.tk details.bins .bt{padding:6px 12px}
 </style>
 
 <div class="app">
@@ -671,15 +672,29 @@ function renderXcs(){const openL=XCS.filter(x=>x.status!=='answered').sort(byTim
     +(doneL.length?`<details class="xdone"${keep?' open':''}><summary>回答済み（${doneL.length}件）を見る</summary>${doneL.map(x=>xcCard(x,true)).join('')}</details>`:'')}
 const LANES=[['review','🛡️ 検収待ち','#b7791f'],['blocked','⛔ ブロック','#c2463d'],['doing','🔨 作業中','#3f6fd8'],['todo','📌 これから','#857a70'],['done','✅ 完了（直近）','#4f8f4a']];
 const OWNER_ID={'ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
+function boardTalk(b,oid){const who=CHAT_CHARS.includes(oid)?oid:'hachiware';const ins=(b.instructions||[]).slice(-3);
+  return `${ins.length?`<div class="bi">${ins.map(x=>`<div><b>✏️ 指示</b>（${fmt(x.at)}）${esc(x.text)}${x.reply?`<br><span class="rp">↳ ${esc(NAMES[x.who]||'')}：${esc(x.reply)}</span>`:x.handled?'':'<br><span class="rp">↳ 次の見回りで対応します</span>'}</div>`).join('')}</div>`:''}
+  <div class="bt-row"><button type="button" class="askb" data-bask="${esc(b.id)}"><img src="${ICON[who]}" alt="">${esc(NAMES[who])}に相談</button></div>
+  <details class="bins" data-b="${esc(b.id)}"><summary>✏️ 指示を書く</summary><textarea data-bins="${esc(b.id)}" maxlength="1500" placeholder="例：講座の分だけでいい／金曜までに／この方向で直して" aria-label="このタスクへの指示"></textarea><button type="button" class="bt" data-bk="ins" data-b="${esc(b.id)}">この指示でお願い</button></details>`}
+function askBoard(id){const b=BOARD.find(x=>x.id===id);if(!b)return;const oid=OWNER_ID[b.owner]||b.owner;chatChar=CHAT_CHARS.includes(oid)?oid:'hachiware';renderChatUi();const sel=$('chatTask');sel.value='b:'+id;
+  if(sel.value!=='b:'+id){sel.insertAdjacentHTML('beforeend',`<option value="b:${esc(id)}">ボード：${esc(clip(b.title,40))}</option>`);sel.value='b:'+id;sel.dataset.h=''}
+  renderChatLog();setBox('h-chat',true);$('chatIn').placeholder=`「${clip(b.title,30)}」について${NAMES[chatChar]}に相談（例：いまどこまで？／この方向でいい？）`;
+  $('h-chat').closest('section').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
+$('board').addEventListener('click',async e=>{const a=e.target.closest('button[data-bask]');if(a){e.preventDefault();askBoard(a.dataset.bask);return}
+  const k=e.target.closest('button[data-bk="ins"]');if(!k)return;const id=k.dataset.b,b=BOARD.find(x=>x.id===id);const ta=$('board').querySelector(`textarea[data-bins="${CSS.escape(id)}"]`);const txt=ta?ta.value.trim().slice(0,1500):'';if(!b||!txt){ta&&ta.focus();return}
+  ta.value='';const ins=(b.instructions||[]).concat([{text:txt,at:Date.now(),handled:false}]);b.instructions=ins;b.insAt=Date.now();if(ta){ta.blur();ta.closest('details').open=false}renderBoard();floater('✏️',ent[CHAT_CHARS.includes(OWNER_ID[b.owner])?OWNER_ID[b.owner]:'hachiware']||ent.hachiware);
+  await write('board',id,{instructions:ins,insAt:b.insAt})});
 function renderBoard(){const n=s=>BOARD.filter(b=>b.status===s).length;$('bdCnt').textContent=BOARD.length?`作業中 ${n('doing')}・検収待ち ${n('review')}・完了 ${n('done')}`:'';
   if(!BOARD.length){$('board').innerHTML='<p class="empty">ハチワレが起票したタスクがここに並びます。</p>';return}
+  const bx=$('board');if(document.activeElement&&bx.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')return;const drafts={},opened={};bx.querySelectorAll('textarea[data-bins]').forEach(t=>{if(t.value)drafts[t.dataset.bins]=t.value});bx.querySelectorAll('details.bins[open]').forEach(d=>opened[d.dataset.b]=1);
   $('board').innerHTML=LANES.map(([s,label,c])=>{let arr=BOARD.filter(b=>b.status===s).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));if(s==='done')arr=arr.slice(0,5);if(!arr.length)return '';
     return `<div class="lane"><h3><i style="--c:${c}"></i>${label}（${arr.length}）</h3>${arr.map(b=>{const oid=OWNER_ID[b.owner]||b.owner;const v=b.verdict&&b.verdict!=='未'?b.verdict:'';
       const vc=v==='PASS'?'pass':v==='FAIL'?'fail':v?'inc':'';const link=safeUrl(b.link),nl=safeUrl(b.notionUrl);
       return `<div class="tk"><img src="${ICON[oid]||ICON.hachiware}" alt="${esc(b.owner||'')}"><div style="min-width:0"><div class="t">${esc(b.title)}</div>
       <div class="meta">${b.dept?`<span class="chip">${esc(b.dept)}</span>`:''}${b.autonomy?`<span class="chip">${esc(b.autonomy)}</span>`:''}${b.standing?'<span class="chip so">常時発注</span>':''}${b.needsApproval?'<span class="chip appr">要承認</span>':''}${v?`<span class="chip ${vc}">検収 ${esc(v)}</span>`:''}</div>
       ${b.outcome?`<p>成果とのつながり：${esc(b.outcome)}</p>`:''}${b.verdictNote?`<p>🛡️ ${esc(b.verdictNote)}</p>`:''}${b.evidence?`<p>証拠：${esc(b.evidence)}</p>`:''}
-      ${link||nl?`<p>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">成果物をひらく ↗</a>`:''}${link&&nl?'　':''}${nl?`<a href="${esc(nl)}" target="_blank" rel="noopener">Notion ↗</a>`:''}</p>`:''}</div></div>`}).join('')}</div>`}).join('')}
+      ${link||nl?`<p>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">成果物をひらく ↗</a>`:''}${link&&nl?'　':''}${nl?`<a href="${esc(nl)}" target="_blank" rel="noopener">Notion ↗</a>`:''}</p>`:''}${boardTalk(b,oid)}</div></div>`}).join('')}</div>`}).join('');
+  for(const id in opened){const d=bx.querySelector(`details.bins[data-b="${CSS.escape(id)}"]`);if(d)d.open=true}for(const id in drafts){const t=bx.querySelector(`textarea[data-bins="${CSS.escape(id)}"]`);if(t){t.value=drafts[id];t.closest('details').open=true}}}
 function renderAudit(){const a=AUDITS.slice().sort(byTime).pop();if(!a)return;$('auTime').textContent=fmt(a.createdAt);
   const sec=(h,v)=>v?`<h4>${h}</h4><p>${esc(v)}</p>`:'';
   $('audit').innerHTML=`<div class="t" style="font-size:14px">${esc(a.title||'今週の点検')}：<b>${esc(a.result||'-')}</b></div>${sec('まとめ',a.summary)}${sec('食い違い',a.mismatches)}${sec('記録漏れ',a.missing)}${sec('鮮度',a.freshness)}${sec('構成',a.structure)}${sec('修正案',a.fixes)}
@@ -765,7 +780,7 @@ function chatContext(){const d=STATUS.digest||{};const v=$('chatTask').value;let
   if(STATUS.trial)L.push('いまの最優先の成果：'+clip(STATUS.trial.title,80)+'（'+clip(STATUS.trial.period,40)+'）');
   if((STATUS.standing||[]).length)L.push('常時発注（確認なしで進める仕事）：'+STATUS.standing.map(s=>clip(s.title,40)).join('／'));
   DG.forEach(([k,label])=>{const a=(d[k]||[]).filter(dgVisible);if(a.length)L.push(label.replace(/^\S+\s/,'')+'：'+a.map(x=>clip(dgText(x),90)).join(' / '))});
-  if(v.startsWith('b:')&&sel){L.push('\n【相談したいタスク（ボード）】');[['タイトル','title'],['状態','status'],['部門','dept'],['担当','owner'],['自律度','autonomy'],['成果とのつながり','outcome'],['検収','verdict'],['検収メモ','verdictNote'],['証拠','evidence'],['メモ','memo']].forEach(([l,k])=>{if(sel[k])L.push(l+'：'+clip(sel[k],1500))});if(sel.needsApproval)L.push('承認：要（そーやんの承認待ち）')}
+  if(v.startsWith('b:')&&sel){L.push('\n【相談したいタスク（ボード）】');[['タイトル','title'],['状態','status'],['部門','dept'],['担当','owner'],['自律度','autonomy'],['成果とのつながり','outcome'],['検収','verdict'],['検収メモ','verdictNote'],['証拠','evidence'],['メモ','memo']].forEach(([l,k])=>{if(sel[k])L.push(l+'：'+clip(sel[k],1500))});if(sel.needsApproval)L.push('承認：要（そーやんの承認待ち）');(sel.instructions||[]).slice(-3).forEach(x=>L.push('そーやんの指示（'+fmt(x.at)+'）：'+clip(x.text,300)+(x.reply?'／返事：'+clip(x.reply,200):'')))}
   else if(v.startsWith('t:')){const t=TASKS.find(x=>x.id===v.slice(2));if(t){L.push('\n【相談したいタスク（そーやん自身の仕事）】'+clip(t.title,200));if(t.due)L.push('期限：'+t.due);if(t.progress)L.push('進み具合：'+t.progress+'%'+(t.carried?'（持ち越し）':''));if(t.nextStep)L.push('次の一歩：'+clip(t.nextStep,200));if(t.notionUrl)L.push('Notion：'+t.notionUrl);L.push('このタスクの担当として答える：'+NAMES[chatChar])}}
   const open=BOARD.filter(x=>x.status!=='done'&&(!sel||x.id!==sel.id)).slice(0,12).map(x=>'・'+clip(x.title,40)+'（'+x.status+'・'+(x.owner||'')+'）');if(open.length)L.push('\nボードの他のタスク：\n'+open.join('\n'));
   const mine=TASKS.filter(x=>!x.done).slice(0,15).map(x=>'・[id='+x.id+'] '+clip(x.title,70)+(x.due?'（期限 '+x.due+'）':''));if(mine.length)L.push('\nそーやんの未完了の仕事（完了にするときは [id=…] の値を使う）：\n'+mine.join('\n'));
