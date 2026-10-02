@@ -226,6 +226,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .msg .who img{width:16px;height:16px;image-rendering:pixelated}
 .msg.sys{justify-self:center;max-width:100%;font-size:12px;color:var(--sub);background:transparent;border:1.5px dashed var(--line);text-align:center}.pend{display:grid;gap:6px;margin:0 0 8px}.pend .pd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--body);font-size:13px;border:2px solid var(--good);border-radius:10px;padding:6px 10px;background:color-mix(in srgb,var(--good) 10%,var(--bg))}.due{font-family:var(--body);font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
 .focus.fold #focusBody{display:none}.focus.fold{padding-bottom:8px}.focus h2{display:flex;align-items:center;gap:4px}.fold-btn{font:inherit;background:none;border:0;padding:4px 6px;min-height:32px;cursor:pointer;color:inherit}
+.vci{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-family:var(--body);font-size:13px;line-height:1.5;padding:4px 0;border-top:1px dashed var(--line)}.vci .ty{font-size:11px;border:1.5px solid var(--line);border-radius:999px;padding:0 7px}.vci .st{font-size:11px;color:var(--sub);margin-left:auto}
 .chips{display:flex;flex-wrap:wrap;gap:6px;justify-self:start;margin:2px 0}.chip{font:inherit;font-size:13px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:#fff6d6;color:#3a3330;cursor:pointer}.chip:hover{border-color:#e0b64a}
 .msg.err{border-color:var(--bad);color:var(--bad)}
 .box>h2[role=button]{cursor:pointer;user-select:none}.box>h2 .arw{color:var(--sub);transition:transform .2s;margin-left:auto;flex:none}.box>h2[aria-expanded="true"] .arw{transform:rotate(90deg)}
@@ -390,6 +391,13 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
   <div class="cols">
     <div class="colA">
+    <section style="order:0" class="box" aria-labelledby="h-vc">
+    <h2 id="h-vc">🎤 つぶやき受信箱 <small id="vcCnt"></small></h2>
+    <form class="notef" id="vcForm"><textarea id="vcIn" placeholder="思いついたこと、やらなきゃ、仕事のやり方。キーボードのマイクで話してもOK。" aria-label="つぶやき（受信箱）"></textarea>
+      <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="bt" id="vcMic" hidden>🎤 話す</button><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
+      <small id="vcMsg" role="status" style="color:var(--sub);font-family:var(--body)"></small></form>
+    <div id="vcList"></div>
+  </section>
   <section style="order:2" class="box tl" aria-labelledby="h-tl"><h2 id="h-tl">🗓 進み具合のタイムライン <small id="tlCnt"></small></h2><div id="tl"><p class="empty">PM の古本屋さんが、プロジェクトとルーティンの進み具合を時系列でここに並べます。</p></div></section>
   <section style="order:3" class="box" aria-labelledby="h-work"><h2 id="h-work">📈 そーやんの仕事、どこまで代替できた？ <small id="workCnt"></small></h2><div id="work"><p class="empty">仕事の棚卸しができると、ここに代替率が出ます。</p></div></section>
   <section style="order:3" class="box" aria-labelledby="h-app"><h2 id="h-app">🛠 アプリ制作部 <small id="appCnt"></small></h2>
@@ -1342,6 +1350,42 @@ $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctr
 $('chatStop').addEventListener('click',()=>{if(chatCtl)chatCtl.abort()});
 $('chatSave').addEventListener('click',chatSave);
 $('chatClear').addEventListener('click',()=>{if(chatBusy)return;delete LOGS[chatKey()];$('chatNote').textContent='';renderChatLog();chatPersist()});
+// ---- つぶやき受信箱（音声入力→分類→そーやんだけの場所→見回りが Notion の受信箱／タスク／仕事ログへ）----
+const VOICE={ref:null,data:null,loaded:false,busy:false};const VC_TYPES=['メモ','アイデア','日記','タスク','仕事ログ'];
+function vcPrompt(text,hint){const jd=new Date(Date.now()+9*36e5).toISOString().slice(0,16).replace('T',' ');return `あなたは個人の音声メモを整理するアシスタントです。入力は音声入力のため、誤変換や言い淀みを含みます。意味を保ったまま自然な日本語に直してください。内容を判定し、次のJSONだけを出力してください。説明文やコードブロックは不要です。
+{"type":"メモ | アイデア | 日記 | タスク | 仕事ログ","title":"30文字以内の見出し","summary":"1〜2文の要約","tags":["最大3個"],"task":{"title":"タスク名（タスクでなければ空文字）","due":"YYYY-MM-DD（言及がなければ空文字）","priority":"高 | 中 | 低"},"worklog":{"name":"作業名（仕事ログでなければ空文字）","field":"米作り道場 | YouTube | マイナビ原稿 | 経理 | 畑作業 | その他","steps":"手順を箇条書きで。話された順に、抜けは補わず書く","tips":"コツ・注意点・判断基準","tools":"使うもの"}}
+判定ルール：hint が work の場合、type は必ず「仕事ログ」。hint が auto の場合、「〜やらなきゃ」「〜する」など未来の行動なら「タスク」、作業のやり方・手順・段取りの説明なら「仕事ログ」。タスクと仕事ログの両方が含まれる場合は主な方を type にして、もう一方の欄も埋める。日付は captured_at（日本時間）を基準に解釈する。話されていないことは作らない。不明な項目は空文字にする。
+hint: ${hint}
+captured_at: ${jd}
+本文:
+${text}`}
+function vcParse(t){try{const m=/\{[\s\S]*\}/.exec(String(t||''));const d=m?JSON.parse(m[0]):{};const tk=d.task||{},wl=d.worklog||{};
+  return {type:VC_TYPES.includes(d.type)?d.type:'メモ',title:clip(d.title||'',40),summary:clip(d.summary||'',300),tags:(Array.isArray(d.tags)?d.tags:[]).slice(0,3).map(x=>clip(x,20)),
+    task:{title:clip(tk.title||'',120),due:/^\d{4}-\d{2}-\d{2}$/.test(tk.due||'')?tk.due:'',priority:['高','中','低'].includes(tk.priority)?tk.priority:'中'},
+    worklog:{name:clip(wl.name||'',80),field:clip(wl.field||'その他',20),steps:clip(wl.steps||'',1500),tips:clip(wl.tips||'',800),tools:clip(wl.tools||'',300)}}}catch(e){return null}}
+function vcItems(){return (VOICE.data&&Array.isArray(VOICE.data.items))?VOICE.data.items:[]}
+function renderVoice(){const el=$('vcList');if(!el)return;const L=vcItems().slice(0,6);const wait=vcItems().filter(x=>!x.handled).length;$('vcCnt').textContent=wait?`見回り待ち ${wait}件`:'';
+  el.innerHTML=L.length?L.map(x=>`<div class="vci"><span class="ty">${esc(x.type||'メモ')}</span><span>${esc(x.title||clip(x.text,30))}</span><span class="st">${x.handled?'✅ Notion に入った':'⏳ 見回り待ち'}</span></div>`).join(''):(VOICE.loaded?'<p class="empty">まだありません。話してみてね。</p>':'<p class="empty">よみこみ中…</p>')}
+async function vcSend(){if(VOICE.busy)return;const ta=$('vcIn'),text=ta.value.trim(),msg=$('vcMsg');if(!text)return;
+  if(!VOICE.ref||!MIND.uid){msg.textContent='ログインすると使えます（そーやんだけの場所に残すため）';return}
+  if(!canWrite){msg.textContent='この画面では保存できません';return}
+  if(!VOICE.loaded){msg.textContent='よみこみ中です。少し待ってからもう一度押してね';return}
+  VOICE.busy=true;$('vcSend').disabled=true;const hint=$('vcWork').checked?'work':'auto';msg.textContent=SAMPLE?'整理しています…':'保存しています…';
+  const it={id:'v'+Date.now().toString(36),at:Date.now(),text:text.slice(0,2000),hint,type:hint==='work'?'仕事ログ':'メモ',title:clip(text.replace(/\s+/g,' '),30),summary:'',tags:[],task:{title:'',due:'',priority:'中'},worklog:{name:'',field:'その他',steps:'',tips:'',tools:''},handled:false};
+  try{
+    if(SAMPLE){try{const r=await Promise.race([SAMPLE([{role:'user',content:vcPrompt(it.text,hint)}],{cache:false,modelTier:'default'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),25000))]);const p=vcParse(r&&r.text);if(p){Object.assign(it,p);if(hint==='work')it.type='仕事ログ';if(!it.title)it.title=clip(text,30)}}catch(e){}}
+    const old=vcItems();const keep=old.filter(x=>!x.handled).slice(0,60).concat(old.filter(x=>x.handled).slice(0,30));
+    if(it.task.title){try{const r=await addTaskFromChat(it.task.title,it.task.due);if(!/^すでに/.test(r||''))it.taskAdded=true}catch(e){}}
+    await VOICE.ref.set({items:[it,...keep],updatedAt:Date.now()});
+    ta.value='';$('vcWork').checked=false;msg.textContent=`入れたよ：${it.type}「${it.title}」${it.taskAdded?'（タスクにも追加）':''}`;
+  }catch(e){msg.textContent='保存できませんでした。文はそのまま残してあります。もう一度押してね'}
+  finally{VOICE.busy=false;$('vcSend').disabled=false}}
+renderVoice();
+$('vcForm').addEventListener('submit',e=>{e.preventDefault();vcSend()});
+(function(){const R=window.SpeechRecognition||window.webkitSpeechRecognition,b=$('vcMic');if(!R||!b)return;b.hidden=false;let rec=null;
+  b.addEventListener('click',()=>{if(rec){try{rec.stop()}catch(e){}return}try{rec=new R();rec.lang='ja-JP';rec.interimResults=false;rec.continuous=true;
+    rec.onresult=ev=>{let t='';for(let i=ev.resultIndex;i<ev.results.length;i++)if(ev.results[i].isFinal)t+=ev.results[i][0].transcript;if(t){const ta=$('vcIn');ta.value=(ta.value?ta.value+' ':'')+t}};
+    rec.onerror=()=>{$('vcMsg').textContent='マイクが使えませんでした。キーボードのマイクで話してね'};rec.onend=()=>{rec=null;b.textContent='🎤 話す'};rec.start();b.textContent='⏹ とめる'}catch(e){rec=null;$('vcMsg').textContent='マイクが使えませんでした。キーボードのマイクで話してね'}})})();
 async function chatProbe(){try{const l=await SAMPLE.limits();CHAT_TOOLS_OK=!!(l&&l.tools&&MCP);if(l&&l.tools&&l.tools.maxCount)CHAT_TOOL_MAX=l.tools.maxCount}catch(e){CHAT_TOOLS_OK=false}}
 function chatAvail(){const ok=!!SAMPLE;$('chatIn').disabled=!ok;$('chatSend').disabled=!ok||chatBusy;$('chatSt').textContent=ok?'':'（いまは使えません）';if(!ok)$('chatNote').textContent='この画面では相談が使えません。Claude のアプリかブラウザで開くと使えます。';else if($('chatNote').textContent.startsWith('この画面では相談が使えません'))$('chatNote').textContent=''}
 renderChatUi();chatAvail();
@@ -1788,7 +1832,7 @@ function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER)
   const set=on=>{f.classList.toggle('fold',on);b.setAttribute('aria-expanded',String(!on));b.querySelector('.arw').textContent=on?'▸':'▾'};
   const b=document.createElement('button');b.type='button';b.className='fold-btn';b.setAttribute('aria-controls','focusBody');b.innerHTML='<span class="arw" aria-hidden="true">▸</span> ';h.insertBefore(b,h.firstChild);
   set(v==='1');b.addEventListener('click',()=>{const on=!f.classList.contains('fold');set(on);try{localStorage.setItem('ck-focusfold',on?'1':'0')}catch(e){}})})();
-const BOXES=['h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-vc','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1824,7 +1868,7 @@ function initBoxes(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!
   const arw=document.createElement('span');arw.className='arw';arw.setAttribute('aria-hidden','true');arw.textContent='▸';h.appendChild(arw);h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-controls',id+'-body');body.id=id+'-body';
   const tog=()=>setBox(id,body.hidden);h.addEventListener('click',e=>{if(e.target.closest('a,input,select,textarea'))return;tog()});h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog()}});
   sum.addEventListener('click',e=>{if(e.target.closest('input,label,a,button'))return;setBox(id,true)});
-  setBox(id,!!BOXST[id],true)});renderSums()}
+  setBox(id,id in BOXST?!!BOXST[id]:id==='h-vc',true)});renderSums()}
 initBoxes();setInterval(renderSums,1500);
 $('boxAll').addEventListener('click',()=>{const anyClosed=BOXES.some(id=>document.getElementById(id).getAttribute('aria-expanded')!=='true');BOXES.forEach(id=>setBox(id,anyClosed,true));saveBox();setNow(anyClosed);$('boxAll').textContent=anyClosed?'全部たたむ':'全部ひらく'});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(t.dataset.sumt&&t.checked){setTask(t.dataset.sumt,{done:true}).then(renderSums)}
@@ -1878,7 +1922,7 @@ $('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contain
 $('arrDone').addEventListener('click',()=>laySet(false));
 $('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
 LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
-async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin();renderQuest()},()=>{});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin();renderQuest()},()=>{});VOICE.ref=db.doc('data/users/'+id+'/voice');VOICE.ref.onSnapshot(s=>{VOICE.data=s.exists?s.data():null;VOICE.loaded=true;renderVoice()},()=>{VOICE.loaded=true;renderVoice()});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
