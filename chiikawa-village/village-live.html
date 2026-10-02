@@ -231,13 +231,49 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 /* 会話ビュー（既定）：判断・会話・つぶやきだけを出す。「ぜんぶの画面」で元の画面 */
 .simple .top>.stage,.simple .top .side>.nowbox,.simple .top .side>.win,.simple .top .side>.focus,.simple .arr-bar,.simple .md-nudge[hidden]{display:none!important}
 .simple .top{display:block}.simple .top .side{display:block}
-.simple .cols{display:flex;flex-direction:column}.simple .cols .colA,.simple .cols .colB{display:contents}
+.simple .cols{display:flex;flex-direction:column;align-items:stretch}.simple .cols .colA,.simple .cols .colB{display:contents}
 .simple .cols .box:not([aria-labelledby="h-vc"]):not([aria-labelledby="h-xc"]):not([aria-labelledby="h-chat"]):not([aria-labelledby="h-ci"]){display:none}
 .simple .box[aria-labelledby="h-xc"]{order:-30!important}.simple .box[aria-labelledby="h-chat"]{order:-20!important}.simple .box[aria-labelledby="h-vc"]{order:-10!important}.simple .box[aria-labelledby="h-ci"]{order:10!important}
 .simple #xcs>.xc:not(:first-child),.simple #xcs>details.xdone{display:none}
 .simple .chat-log{max-height:58vh;min-height:140px}
 .simple header .hud>*:not(#simpleBtn):not(#newsBtn){display:none}
 .cw .bdg{display:inline-block;min-width:16px;padding:0 4px;margin-left:4px;border-radius:999px;background:#e0674c;color:#fff;font-size:11px;line-height:16px;text-align:center}
+
+/* LINE 風の社内チャット */
+.chat-list,.chat-head{display:none}
+.simple .chat-list{display:block}
+.simple .chat .chat-who,.simple .chat .bx-body>.row{display:none}
+@media (max-width:899px){
+ .simple .chat[data-view="list"] .bx-body>:not(.chat-list){display:none}
+ .simple .chat[data-view="thread"] .chat-list{display:none}
+ .simple .chat[data-view="thread"] .chat-head{display:flex}}
+@media (min-width:900px){
+ .simple .chat .bx-body{display:grid;grid-template-columns:300px minmax(0,1fr);gap:0 14px;grid-template-areas:"list head" "list log" "list pend" "list form" "list note";align-items:start}
+ .simple .chat .chat-list{grid-area:list;max-height:72vh;overflow:auto}
+ .simple .chat .chat-head{display:flex;grid-area:head}.simple .chat #chatLog{grid-area:log}.simple .chat #chatPend{grid-area:pend}.simple .chat #chatForm{grid-area:form}.simple .chat #chatNote{grid-area:note}
+ .cback{display:none}}
+.crow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;font:inherit;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 6px;cursor:pointer;color:inherit}
+.crow.on{background:rgba(120,120,120,.12)}.crow img{width:44px;height:44px;border-radius:50%;image-rendering:pixelated;background:var(--panel);flex:none}
+.cmid{display:flex;flex-direction:column;min-width:0;flex:1;font-family:var(--body)}.cmid b{font-size:14px}.csn{font-size:12.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cwk{font-size:11px;color:var(--info)}
+.cside{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:11px;color:var(--sub);min-width:38px}
+.bdg{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:#e0674c;color:#fff;font-size:11px;line-height:18px;text-align:center;font-style:normal}
+.cprog{margin:0 0 6px;border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px;font-family:var(--body)}.cprog summary{cursor:pointer;display:flex;gap:8px;justify-content:space-between;list-style:none}.cp{display:flex;gap:6px;align-items:center;padding:3px 0}.cp small{margin-left:auto;color:var(--sub)}
+.d{width:9px;height:9px;border-radius:50%;background:#4f8f4a;flex:none}.d.late{background:#c2463d}.d.warn{background:#d9a31f}.d.done{background:#9a928a}
+.chat-head{align-items:center;gap:8px;padding:6px 2px;border-bottom:1px solid var(--line);font-family:var(--body)}.chat-head img{width:32px;height:32px;border-radius:50%;image-rendering:pixelated}.hn{display:flex;flex-direction:column}.hn small{color:var(--sub);font-size:11px}
+.cback{font-size:28px;line-height:1;background:none;border:0;padding:0 10px 4px 2px;min-height:40px;cursor:pointer;color:inherit}.htk{margin-left:auto;font-size:11px;color:var(--sub)}.htk button{background:none;border:0;color:inherit;cursor:pointer}
+.chat-log{background:#e9f0f6;border-radius:12px;padding:10px}
+.mrow{display:flex;align-items:flex-end;gap:6px;margin:3px 0}.mrow.me{justify-content:flex-end}
+.mrow .mt{font-size:10px;color:#7d8791;white-space:nowrap;margin-bottom:2px}
+.mrow.ai .av{width:34px;height:34px;border-radius:50%;image-rendering:pixelated;background:var(--panel);align-self:flex-start}
+.mrow.ai .mcol{max-width:78%;min-width:0}.mrow .nm{font-size:11px;color:#6a7580;margin:0 0 1px 2px;font-family:var(--body)}
+.mrow .msg{border:0;border-radius:16px;padding:8px 12px;max-width:100%;color:#2b2623}
+.mrow .msg.me{background:#a8e58c;color:#1f2d17;border-bottom-right-radius:4px;max-width:78%}
+.mrow .msg.ai{background:#fff;border-bottom-left-radius:4px;box-shadow:0 1px 0 rgba(0,0,0,.06)}
+.mrow .msg.err{outline:1.5px solid var(--bad)}
+.unrd{text-align:center;font-size:11px;color:#6a7580;background:rgba(0,0,0,.06);border-radius:999px;padding:3px 0;margin:10px 0}
+.simple #chatIn{min-height:46px;border-radius:22px;padding:10px 14px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chat-log{background:#1f262d}:root:not([data-theme="light"]) .mrow .msg.ai{background:#33302d;color:#f3ebe3}:root:not([data-theme="light"]) .mrow .msg.me{background:#3f7a37;color:#f3ebe3}:root:not([data-theme="light"]) .mrow .nm,:root:not([data-theme="light"]) .unrd{color:#b3a79c}}
+:root[data-theme="dark"] .chat-log{background:#1f262d}:root[data-theme="dark"] .mrow .msg.ai{background:#33302d;color:#f3ebe3}:root[data-theme="dark"] .mrow .msg.me{background:#3f7a37;color:#f3ebe3}
 .chips-on .md-nudge{display:none!important}.chips{display:flex;flex-wrap:wrap;gap:6px;justify-self:start;margin:2px 0}.chip{font:inherit;font-size:13px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:#fff6d6;color:#3a3330;cursor:pointer}.chip:hover{border-color:#e0b64a}
 .msg.err{border-color:var(--bad);color:var(--bad)}
 .box>h2[role=button]{cursor:pointer;user-select:none}.box>h2 .arw{color:var(--sub);transition:transform .2s;margin-left:auto;flex:none}.box>h2[aria-expanded="true"] .arw{transform:rotate(90deg)}
@@ -421,6 +457,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <section style="order:3" class="box" aria-labelledby="h-idea"><h2 id="h-idea">💡 ちいかわからの提案 <small id="ideaCnt"></small></h2><div id="ideas"><p class="empty">「これを自分たちでやりましょうか」という提案が、見回りのたびにここに届きます。</p></div></section>
   <section style="order:4" class="box chat" aria-labelledby="h-chat">
     <h2 id="h-chat">💬 社内チャット <small id="chatSt"></small></h2>
+    <div class="chat-list" id="chatList"></div><div class="chat-head" id="chatHead"></div>
     <div class="chat-who" id="chatWho" role="group" aria-label="相談相手"></div>
     <div class="row" style="margin-top:8px"><label for="chatTask" style="font-size:12px;color:var(--sub)">タスク：</label><select id="chatTask" class="chat-sel"></select></div>
     <div class="chat-log" id="chatLog" aria-live="polite"></div>
@@ -1215,17 +1252,45 @@ function renderChatUi(){
   const html='<option value="">（タスクを決めずに相談）</option>'+ts.map(x=>`<option value="${esc(x.v)}">${esc(x.src)}：${esc(clip(x.t,40))}</option>`).join('');
   if(sel.dataset.h!==html){sel.innerHTML=html;sel.dataset.h=html;sel.value=ts.some(x=>x.v===cur)?cur:''}
   $('chatSave').textContent='決めたことを残す（そーやんだけ）';
-  renderChatLog()}
+  if(CHAT_SHOWN===null)CHAT_SHOWN=chatChar;else if(chatChar!==CHAT_SHOWN){UNR={id:chatChar,n:unreadOf(chatChar)};CHAT_SHOWN=chatChar;CHAT_VIEW='thread'}
+  const sec=$('chatLog').closest('section');if(sec)sec.dataset.view=chatViewIsThread()?'thread':'list';
+  renderChatList();renderChatHead();renderChatLog()}
 const OPT_RE=/(?:^|\n)\s*選択肢\s*[:：]\s*([^\n]+)\s*$/;
 function chatOpts(c){const m=OPT_RE.exec(String(c||''));if(!m)return {text:String(c||''),opts:[]};const opts=m[1].split(/\s*[|｜]\s*/).map(x=>x.trim()).filter(Boolean).slice(0,4);return {text:String(c).slice(0,m.index).trimEnd(),opts}}
 var CHIPS_ON=false,CHAT_SEEN=false;function syncChips(){document.body.classList.toggle('chips-on',CHIPS_ON&&CHAT_SEEN)}
 try{new IntersectionObserver(es=>{CHAT_SEEN=es.some(x=>x.isIntersecting);syncChips()}).observe($('chatLog'))}catch(e){}
-function renderChatLog(){const log=LOGS[chatKey()]||[];const el=$('chatLog');{const sig=JSON.stringify([chatKey(),chatBusy,log.map(m=>[m.role,m.who,m.content,m.partial,m.err])]);if(el.dataset.sig===sig&&el.childElementCount)return;el.dataset.sig=sig}
-  el.innerHTML=log.length?log.map(m=>m.role==='sys'?`<div class="msg sys">${esc(m.content)}</div>`:m.role==='user'?`<div class="msg me">${esc(m.content)}</div>`:`<div class="msg ai${m.err?' err':''}"><div class="who"><img src="${ICON[m.who]||ICON.chiikawa}" alt="">${esc(NAMES[m.who]||'')}${m.partial?'（とちゅう）':''}</div>${esc(chatOpts(m.content).text)}</div>`).join('')
-    :`<p class="empty">なかま全員がいる1つの部屋です。いまは${esc(NAMES[chatChar])}（${esc(ROLES[chatChar][0])}）が答えます。だれに聞いても話はつながっていて、会社のいまの状況メモ・決定記録・これまでの会話を読んでから答えます。</p>`;
+var CHAT_VIEW='list',CHAT_SHOWN=null,UNR={id:'',n:0},CHSEEN=null;
+const chatWide=()=>matchMedia('(min-width:900px)').matches;
+const chatViewIsThread=()=>!document.body.classList.contains('simple')||chatWide()||CHAT_VIEW==='thread';
+const asstN=id=>threadOf(id).filter(m=>m.role==='assistant'&&!m.partial&&!m.err).length;
+function chSeenInit(){if(CHSEEN)return;let o=null;try{o=JSON.parse(localStorage.getItem('ck-chseen')||'null')}catch(e){}if(o&&typeof o==='object'){CHSEEN=o;return}if(!chatLoaded)return;CHSEEN={};CHAT_CHARS.forEach(id=>CHSEEN[id]=asstN(id));chSeenSave()}
+function chSeenSave(){try{localStorage.setItem('ck-chseen',JSON.stringify(CHSEEN))}catch(e){}}
+function markSeen(id){chSeenInit();if(!CHSEEN)return;const n=asstN(id);if(CHSEEN[id]!==n){CHSEEN[id]=n;chSeenSave();renderChatList()}}
+const unreadOf=id=>{chSeenInit();return CHSEEN?Math.max(0,asstN(id)-(CHSEEN[id]||0)):0};
+function openThread(id){UNR={id,n:unreadOf(id)};chatChar=id;CHAT_SHOWN=id;CHAT_VIEW='thread';$('chatNote').textContent='';renderChatUi()}
+function renderChatList(){const el=$('chatList');if(!el)return;
+  const rows=CHAT_CHARS.map(id=>{const t=threadOf(id).filter(m=>m.role!=='sys');const last=t[t.length-1];return {id,last,u:unreadOf(id),at:last&&last.at||0,idx:CHAT_CHARS.indexOf(id)}}).sort((a,b)=>(b.u>0)-(a.u>0)||(b.at-a.at)||a.idx-b.idx);
+  const wn={};BOARD.filter(x=>x.status!=='done').forEach(x=>{const o=OWNER_ID[x.owner];if(o)wn[o]=(wn[o]||0)+1});
+  const ps=(TL&&TL.projects)||[];const cn=k=>ps.filter(p=>p.status===k).length;
+  const prog=TL?`<details class="cprog"${CPROG_OPEN?' open':''}><summary>🗂 プロジェクトの進み <span>🔴${cn('late')} ⚠️${cn('warn')} ✅${cn('ok')}${cn('done')?` 🏁${cn('done')}`:''}</span></summary>${ps.slice().sort((a,b)=>({late:0,warn:1,ok:2,done:3}[a.status]??2)-({late:0,warn:1,ok:2,done:3}[b.status]??2)).slice(0,8).map(p=>`<div class="cp"><i class="d ${esc(p.status||'ok')}"></i><span>${esc(clip(p.title,28))}</span><small>${esc(p.due?String(p.due).slice(5).replace('-','/'):'')}</small></div>`).join('')}</details>`:'<div class="cprog"><summary>🗂 プロジェクトの進み：古本屋さんが準備中</summary></div>';
+  el.innerHTML=prog+rows.map(r=>{const sn=r.last?clip(chatOpts(r.last.content).text.replace(/\s+/g,' '),30):'話しかける';return `<button type="button" class="crow${r.id===chatChar?' on':''}" data-open="${r.id}"><img src="${ICON[r.id]}" alt=""><span class="cmid"><b>${esc(NAMES[r.id])}</b><span class="csn">${esc((r.last&&r.last.role==='user'?'あなた：':'')+sn)}</span>${wn[r.id]?`<small class="cwk">進行中の仕事 ${wn[r.id]}</small>`:''}</span><span class="cside"><time>${r.last&&r.last.at?hhmm(r.last.at):''}</time>${r.u?`<i class="bdg">${r.u}</i>`:''}</span></button>`}).join('')}
+var CPROG_OPEN=false;
+function renderChatHead(){const el=$('chatHead');if(!el)return;const sel=$('chatTask');const tk=sel&&sel.value?clip((sel.selectedOptions[0]||{}).textContent||'',26):'';
+  el.innerHTML=`<button type="button" class="cback" data-back="1" aria-label="一覧にもどる">‹</button><img src="${ICON[chatChar]}" alt=""><span class="hn"><b>${esc(NAMES[chatChar])}</b><small>${esc(ROLES[chatChar][0])}</small></span>${tk?`<span class="htk">📎 ${esc(tk)} <button type="button" data-untask="1" aria-label="タスクの指定をはずす">✕</button></span>`:''}`}
+function threadOf(id){const log=LOGS[chatKey()]||[];const out=[];log.forEach((m,i)=>{let to=m.to;if((m.role==='user'||m.role==='sys')&&!to){const nx=log.slice(i+1).find(x=>x.role==='assistant'&&x.who);to=nx?nx.who:'asuka'}if(m.role==='assistant'?m.who===id:to===id)out.push(m)});return out}
+const hhmm=t=>{if(!t)return '';const d=new Date(t+9*36e5),p=n=>String(n).padStart(2,'0');return ymd(t)===ymd(Date.now())?p(d.getUTCHours())+':'+p(d.getUTCMinutes()):(d.getUTCMonth()+1)+'/'+d.getUTCDate()};
+function renderChatLog(){const log=threadOf(chatChar);const el=$('chatLog');{const sig=JSON.stringify([chatKey(),chatChar,chatBusy,log.map(m=>[m.role,m.who,m.content,m.partial,m.err,m.at])]);if(el.dataset.sig===sig&&el.childElementCount)return;el.dataset.sig=sig}
+  const un=(UNR.id===chatChar&&UNR.n>0)?UNR.n:0;let ai=0;const na=log.filter(m=>m.role==='assistant'&&!m.partial&&!m.err).length;
+  el.innerHTML=log.length?log.map(m=>{const tm=m.at?`<time class="mt">${hhmm(m.at)}</time>`:'';
+    if(m.role==='sys')return `<div class="msg sys">${esc(m.content)}</div>`;
+    if(m.role==='user')return `<div class="mrow me">${tm}<div class="msg me">${esc(m.content)}</div></div>`;
+    let dv='';if(!m.partial&&!m.err){ai++;if(un&&ai===na-un+1)dv='<div class="unrd">ここから未読メッセージ</div>'}
+    return `${dv}<div class="mrow ai"><img class="av" src="${ICON[m.who]||ICON.chiikawa}" alt=""><div class="mcol"><div class="nm">${esc(NAMES[m.who]||'')}${m.partial?'（とちゅう）':''}</div><div class="msg ai${m.err?' err':''}">${esc(chatOpts(m.content).text)}</div></div>${tm}</div>`}).join('')
+    :`<p class="empty">${esc(NAMES[chatChar])}（${esc(ROLES[chatChar][0])}）と話せます。ほかの担当と話したことも、会社のいまの状況メモ・決定記録も読んだうえで答えるので、同じ説明はいりません。</p>`;
   {const last=log[log.length-1];if(last&&last.role==='assistant'&&!last.partial&&!last.err&&!chatBusy){const o=chatOpts(last.content).opts;if(o.length)el.insertAdjacentHTML('beforeend','<div class="chips" role="group" aria-label="こたえをえらぶ">'+o.map(x=>`<button type="button" class="chip" data-opt="${esc(x)}">${esc(x)}</button>`).join('')+'</div>')}}
   CHIPS_ON=!!el.querySelector('.chips');syncChips();
-  el.scrollTop=el.scrollHeight;$('chatSave').disabled=!log.some(m=>m.role==='assistant'&&!m.err)}
+  el.scrollTop=el.scrollHeight;$('chatSave').disabled=!log.some(m=>m.role==='assistant'&&!m.err);
+  if(chatViewIsThread())markSeen(chatChar)}
 function chatContext(){const d=STATUS.digest||{};const v=$('chatTask').value;let sel=null;
   if(v.startsWith('b:'))sel=BOARD.find(x=>x.id===v.slice(2));
   const _j=new Date(Date.now()+9*36e5),_w='日月火水木金土'[_j.getUTCDay()];const L=[];L.push('きょうの日付（日本時間）：'+todayKey()+'（'+_w+'曜日）');
@@ -1277,7 +1342,7 @@ function chatErr(e){const c=(e&&e.code)||'upstream_error';return {not_granted:'C
 let PEND=[],CHAT_TOOLS_OK=false,CHAT_TOOL_MAX=8;
 const NOTION_ME='user://cae27df0-ea49-4bf6-a66c-7354c5b49298';
 const normT=t=>String(t||'').replace(/[\s　（）()「」、。・]/g,'').toLowerCase();
-function sysLine(text){const key=chatKey();(LOGS[key]=LOGS[key]||[]).push({role:'sys',content:text});if(chatKey()===key)renderChatLog()}
+function sysLine(text){const key=chatKey();(LOGS[key]=LOGS[key]||[]).push({role:'sys',content:text,to:chatChar,at:Date.now()});if(chatKey()===key)renderChatLog()}
 function renderPend(){const el=$('chatPend');el.hidden=!PEND.length;el.innerHTML=PEND.map((p,i)=>p.kind==='patrol'?`<div class="pd"><span>📮 見回りに頼む？<details><summary>${esc(clip(p.text,60))}</summary><div style="white-space:pre-wrap">${esc(p.text)}</div></details></span><span><button type="button" class="bt" data-pd="ok" data-i="${i}" style="padding:4px 10px">頼む</button> <button type="button" class="btn-s" data-pd="no" data-i="${i}">やめる</button></span></div>`:`<div class="pd"><span>「${esc(clip(p.title,50))}」を完了にする？</span><span><button type="button" class="bt" data-pd="ok" data-i="${i}" style="padding:4px 10px">完了にする</button> <button type="button" class="btn-s" data-pd="no" data-i="${i}">やめる</button></span></div>`).join('')}
 async function notionCreateTask(title,due){if(!MCP)return null;
   const j=due?Math.round((Date.parse(due+'T00:00:00+09:00')-Date.parse(todayKey()+'T00:00:00+09:00'))/864e5):9;
@@ -1332,19 +1397,19 @@ $('chatPend').addEventListener('click',async e=>{const b=e.target.closest('butto
 let chatSaveT=0,chatLoaded=false;const LOGAT={};function chatPersist(){if(!MIND.uid||!db||!canWrite||!chatLoaded)return;clearTimeout(chatSaveT);chatSaveT=setTimeout(()=>{
   // 文書の上限（256KiB）に届かないよう、全体を約180KB までにする（新しく話したキーを優先し、古い発言から削る）
   const keys=Object.keys(LOGS).filter(k=>k==='room'&&LOGS[k].length).sort((a,b)=>(LOGAT[b]||0)-(LOGAT[a]||0));const o={};let bytes=0;const enc=new TextEncoder();
-  for(const k of keys){const a=LOGS[k].filter(m=>!m.partial&&!m.err).slice(-40).map(m=>({role:m.role,who:m.who||'',content:String(m.content).slice(0,3000)}));while(a.length){const b=enc.encode(JSON.stringify(a)).length;if(bytes+b<=180000){o[k]=a;bytes+=b;break}a.shift()}if(bytes>=180000)break}
+  for(const k of keys){const a=LOGS[k].filter(m=>!m.partial&&!m.err).slice(-40).map(m=>({role:m.role,who:m.who||'',to:m.to||'',at:m.at||0,content:String(m.content).slice(0,3000)}));while(a.length){const b=enc.encode(JSON.stringify(a)).length;if(bytes+b<=180000){o[k]=a;bytes+=b;break}a.shift()}if(bytes>=180000)break}
   const at={};for(const k in o)at[k]=LOGAT[k]||0;db.doc('data/users/'+MIND.uid+'/chat').set({logs:o,at,updatedAt:Date.now()}).catch(()=>{$('chatNote').textContent='会話を保存できませんでした（この画面のあいだは残ります）'})},800)}
 async function chatLoad(){if(!MIND.uid||!db)return;try{chatLoaded=false;const sn=await db.doc('data/users/'+MIND.uid+'/chat').get();const sd=sn&&sn.exists?sn.data():{};const o=sd.logs||{};Object.assign(LOGAT,sd.at||{},{...LOGAT});for(const k in o){if(k!=='room')continue;if(!LOGS[k]||!LOGS[k].length)LOGS[k]=(o[k]||[]).map(m=>({...m}))}renderChatLog()}catch(e){}chatLoaded=true}
 async function chatSend(){if(chatBusy||!SAMPLE)return;const txt=$('chatIn').value.trim();if(!txt)return;const key=chatKey(),who=chatChar;
   if(LOGS[key]&&Object.isFrozen(LOGS[key]))LOGS[key]=LOGS[key].map(m=>({...m}));
-  const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000)});$('chatIn').value='';
-  const ans={role:'assistant',who,content:'かんがえ中…',partial:true};log.push(ans);chatBusy=true;CHAT_WHO=who;$('chatSend').disabled=true;$('chatStop').hidden=false;renderChatLog();ent[who].jump=.8;
+  const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000),to:who,at:Date.now()});$('chatIn').value='';UNR={id:'',n:0};
+  const ans={role:'assistant',who,at:Date.now(),content:'かんがえ中…',partial:true};log.push(ans);chatBusy=true;CHAT_WHO=who;$('chatSend').disabled=true;$('chatStop').hidden=false;renderChatLog();ent[who].jump=.8;
   const turns=log.filter(m=>m!==ans&&!m.err&&m.role!=='sys').slice(-30).map(m=>({role:m.role,content:m.role==='assistant'&&m.who&&m.who!==who?'（'+NAMES[m.who]+'の発言）'+m.content:m.content}));{const enc=new TextEncoder();let tot=turns.reduce((a,t)=>a+enc.encode(t.content).length,0);while(turns.length>1&&tot>110000){tot-=enc.encode(turns[0].content).length;turns.shift()}}while(turns.length&&turns[0].role!=='user')turns.shift();
   chatCtl=new AbortController();
   try{const r=await SAMPLE([{role:'user',content:chatRules()},...turns],{cache:false,signal:chatCtl.signal,modelTier:$('chatDeep').checked?'complex':'default',...(CHAT_TOOLS_OK?{tools:chatToolList()}:{}),onText:({text})=>{ans.content=text;if(chatKey()===key)renderChatLog()}});
     ans.content=r.text+(r.truncated?'\n（ここで途切れました。続きを聞いてね）':'');ans.partial=false;ent[who].jump=1;floater('💬',ent[who])}
-  catch(e){const m=chatErr(e);if(e&&e.text){ans.content=e.text;ans.partial=true}else{log.splice(log.indexOf(ans),1);if(m)log.push({role:'assistant',who,content:m,err:true})}
-    if(e&&e.text&&m)log.push({role:'assistant',who,content:m,err:true});
+  catch(e){const m=chatErr(e);if(e&&e.text){ans.content=e.text;ans.partial=true}else{log.splice(log.indexOf(ans),1);if(m)log.push({role:'assistant',who,at:Date.now(),content:m,err:true})}
+    if(e&&e.text&&m)log.push({role:'assistant',who,at:Date.now(),content:m,err:true});
     if(e&&(e.code==='not_granted'||e.code==='sampling_disabled'||e.code==='not_declared'))$('chatNote').textContent=chatErr(e)}
   finally{chatBusy=false;CHAT_WHO=null;chatCtl=null;$('chatSend').disabled=false;$('chatStop').hidden=true;renderChatLog();chatPersist()}}
 // 部屋の会話は、お金・人のことも混ざるので、残す先はいつも「そーやんだけの場所」（talks）。新しいほうから最大12発言・4000字
@@ -1358,6 +1423,8 @@ async function chatSave(){const key=chatKey(),log=(LOGS[key]||[]).filter(m=>!m.e
     {const enc=new TextEncoder();const sz=()=>enc.encode(JSON.stringify(d.items)).length;while(d.items.length>1&&sz()>180000){const i=d.items.findIndex(x=>x.handled);d.items.splice(i>=0?i:0,1)}}d.updatedAt=Date.now();
     await ref.set(d);$('chatNote').textContent='そーやんだけの場所に残しました。次の見回りで、アスカたちが決まったことを反映します。'}catch(e){$('chatNote').textContent='保存できませんでした。'}finally{delete btn.dataset.busy}
   floater('📝',ent[chatChar])}
+$('chatList').addEventListener('click',e=>{const d=e.target.closest('details.cprog');if(d&&e.target.closest('summary')){setTimeout(()=>{CPROG_OPEN=d.open},0);return}const b=e.target.closest('button[data-open]');if(!b||chatBusy)return;openThread(b.dataset.open);const l=$('chatLog');if(l)l.scrollIntoView({block:'nearest'})});
+$('chatHead').addEventListener('click',e=>{if(e.target.closest('[data-back]')){CHAT_VIEW='list';UNR={id:'',n:0};renderChatUi();return}if(e.target.closest('[data-untask]')){$('chatTask').value='';renderChatUi()}});
 $('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
 $('chatTask').addEventListener('change',()=>{if(!chatBusy){$('chatNote').textContent='';renderChatLog()}});
 $('chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend()});
@@ -1370,7 +1437,7 @@ $('chatLog').addEventListener('click',e=>{const b=e.target.closest('button[data-
 $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();chatSend()}});
 $('chatStop').addEventListener('click',()=>{if(chatCtl)chatCtl.abort()});
 $('chatSave').addEventListener('click',chatSave);
-$('chatClear').addEventListener('click',()=>{if(chatBusy)return;delete LOGS[chatKey()];$('chatNote').textContent='';renderChatLog();chatPersist()});
+$('chatClear').addEventListener('click',()=>{if(chatBusy)return;{const t=new Set(threadOf(chatChar));LOGS[chatKey()]=(LOGS[chatKey()]||[]).filter(m=>!t.has(m))}$('chatNote').textContent='';renderChatLog();chatPersist()});
 // ---- つぶやき受信箱（音声入力→分類→そーやんだけの場所→見回りが Notion の受信箱／タスク／仕事ログへ）----
 const VOICE={ref:null,data:null,loaded:false,busy:false};const VC_TYPES=['メモ','アイデア','日記','タスク','仕事ログ'];
 function vcPrompt(text,hint){const jd=new Date(Date.now()+9*36e5).toISOString().slice(0,16).replace('T',' ');return `あなたは個人の音声メモを整理するアシスタントです。入力は音声入力のため、誤変換や言い淀みを含みます。意味を保ったまま自然な日本語に直してください。内容を判定し、次のJSONだけを出力してください。説明文やコードブロックは不要です。
