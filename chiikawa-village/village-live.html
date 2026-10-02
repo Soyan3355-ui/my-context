@@ -193,6 +193,11 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .qg{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n),minmax(22px,30px));gap:4px;align-items:center;font-size:13px}.qt{line-height:1.35;padding:2px 0}.qt small{font-size:11px}
 .qc{height:24px;border-radius:2px;background:var(--qline);display:flex;align-items:center;justify-content:center;font-size:13px}.qc.h{background:none;height:auto;font-size:11px;color:var(--qs);line-height:1.2;text-align:center}.qc.now{outline:2px solid #ffd84a;outline-offset:-2px}.qc.h.now{outline:0;color:#ffd84a}
 .qc.off{background:none;color:var(--qs)}.qc.ok{background:#3f7a3a}.qc.part{background:#7a6a2a}.qc.miss{background:#8a3a3a}.qlg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--qs);margin-top:8px}
+.tkh{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:baseline;font-family:var(--body);font-size:14px}.tkh b{font-size:20px}.tkh .warn{color:var(--warn,#b7791f)}.tkh .bad{color:var(--bad,#c2463d)}.tkh small,.tkq{color:var(--sub);font-size:12px}
+.tkbar{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0}.tkbar i{display:block;height:100%;background:var(--good,#4f8f4a)}.tkbar.s{height:8px;margin:0}
+.tkd{display:grid;gap:4px;margin-top:6px}.tkr{display:grid;grid-template-columns:42px minmax(0,1fr) 52px;gap:8px;align-items:center;font-family:var(--body);font-size:12.5px}.tkr small{grid-column:2/4;color:var(--sub);font-size:11px;margin-top:-2px}.tkr span:last-of-type{text-align:right}
+.tkf{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:10px}.tkf label{font-family:var(--body);font-size:12.5px}.tkf input{display:block;font:inherit;font-size:16px;font-family:var(--body);border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;margin-top:2px;width:150px;min-height:40px;box-sizing:border-box}.tkf .btn-s{min-height:40px}
+.tkn{font-family:var(--body);font-size:11.5px;color:var(--sub);line-height:1.6;margin:8px 0 0}
 .md-nudge{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;font:inherit;font-size:14px;border:2px solid #3b3533;border-radius:99px;background:#fff6e0;color:#3b3533;padding:9px 16px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;min-height:44px}.md-nudge[hidden]{display:none}
 .ci-hist{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--body);font-size:12.5px;font-variant-numeric:tabular-nums}
 .ci-hist th,.ci-hist td{border-top:1px dashed var(--line);padding:4px 2px;text-align:center}
@@ -380,6 +385,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   </div>
   <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
   <section class="box qbox" aria-labelledby="h-quest"><h2 id="h-quest">⚔️ クエスト <small>きょうやること・ルーティン</small></h2><div id="quest"><p class="empty">ルーティンを読みこみ中…</p></div></section>
+  <section class="box" aria-labelledby="h-tok"><h2 id="h-tok">🔋 トークン <small>見回りが数えます</small></h2><div id="tok"><p class="empty">見回りが集計すると、ここに出ます。</p></div></section>
   <div class="cols">
     <div class="colA">
   <section style="order:2" class="box tl" aria-labelledby="h-tl"><h2 id="h-tl">🗓 進み具合のタイムライン <small id="tlCnt"></small></h2><div id="tl"><p class="empty">PM の古本屋さんが、プロジェクトとルーティンの進み具合を時系列でここに並べます。</p></div></section>
@@ -1660,6 +1666,18 @@ $('quest').addEventListener('change',async e=>{const id=e.target.dataset&&e.targ
   if(!db||!canWrite){QUESTS[key]=cur;renderQuest();$('quest').insertAdjacentHTML('beforeend','<p class="qe" role="status">この画面ではチェックを保存できません</p>');return}
   try{await db.collection('quests').doc(key).set({done,updatedAt:Date.now()})}catch(x){QUESTS[key]=cur;renderQuest();$('quest').insertAdjacentHTML('beforeend','<p class="qe" role="status">保存できませんでした</p>')}});
 let qRz=0,QDAY='';addEventListener('resize',()=>{clearTimeout(qRz);qRz=setTimeout(renderQuest,200)});setInterval(()=>{if(ymd(Date.now())!==QDAY)renderQuest()},60000);
+// ---------- トークン（2026-10-02 そーやんの依頼：消費量を自動で把握しながら働く）----------
+// 見回りが chiikawa-village/tools/token_report.py で会話ログから集計し、共有の tokens/now に入れる。契約の上限は見えないので、目安の予算（budget.perDay）を人が入れてくらべる
+let TOK=null;const tn=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?Math.round(n/1e3)+'K':String(n||0);
+function renderTok(){const el=$('tok');if(!el)return;if(!TOK||!TOK.days){el.innerHTML='<p class="empty">見回りが集計すると、ここに出ます。</p>';return}
+  const ks=Object.keys(TOK.days).sort();const used=k=>(TOK.days[k].output||0)+(TOK.days[k].fresh||0);const mx=Math.max(1,...ks.map(used));const bud=TOK.budget&&TOK.budget.perDay;const td=todayKey();const tu=TOK.days[td]?used(td):0;
+  const pct=bud?Math.round(tu/bud*100):null;
+  el.innerHTML=`<div class="tkh"><span>きょう <b>${tn(tu)}</b></span>${bud?`<span class="${pct>=100?'bad':pct>=80?'warn':''}">目安 ${tn(bud)} の ${pct}%</span>`:'<span class="tkq">目安の予算がまだありません</span>'}${TOK.at?`<small>${fmt(TOK.at)} 時点</small>`:''}</div>
+    ${bud?`<div class="tkbar" role="img" aria-label="きょうの使用量 ${pct}%"><i style="width:${Math.min(100,pct)}%"></i></div>`:''}
+    <div class="tkd">${ks.map(k=>{const u=used(k),d=TOK.days[k];return `<div class="tkr"><span>${k.slice(5).replace('-','/')}</span><div class="tkbar s"><i style="width:${Math.round(u/mx*100)}%"></i></div><span>${tn(u)}</span><small>うち子ども ${tn(d.sub||0)}・呼び出し ${d.calls||0}</small></div>`}).join('')}</div>
+    <form class="tkf" id="tokF"><label>1日の目安（トークン） <input id="tokB" inputmode="numeric" placeholder="例：8000000" value="${bud||''}"></label><button type="button" class="btn-s" id="tokS">決める</button></form>
+    <p class="tkn">数えているのは「出力＋新しく読んだ入力」（キャッシュの読み出しは軽いので別）。契約の上限の残りは、ここからは見えません。目安は、Claude の利用状況の画面を見ながら決めてね。目安の8割を超えたら、見回りは重い調べものや検収の再実行をあとに回します。</p>`}
+$('tok').addEventListener('click',async e=>{if(e.target.id!=='tokS')return;const v=Math.round(+String($('tokB').value).replace(/[^\d]/g,''));if(!v||!db||!canWrite)return;TOK={...TOK,budget:{perDay:v,setAt:Date.now()}};renderTok();try{await db.doc('tokens/now').update({budget:{perDay:v,setAt:Date.now()}})}catch(x){}});
 // ---------- 進み具合のタイムライン（2026-10-01 そーやんの依頼。PM の古本屋さんが timeline/now に置く） ----------
 let TL_TAB='r';try{TL_TAB=localStorage.getItem('ck-tltab')||'r'}catch(e){}const TL_OPEN=new Set();
 const ST_LABEL={ok:['✅','順調'],warn:['⚠️','注意'],late:['🔴','遅れ'],done:['🎉','完了']};
@@ -1750,7 +1768,7 @@ function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER)
   if(rm){const y=roomTop(rm.r),w=rm.x1-rm.x;ctx.fillRect(rm.x-2,y-2,w+4,1);ctx.fillRect(rm.x-2,y+38,w+4,1);ctx.fillRect(rm.x-2,y-2,1,41);ctx.fillRect(rm.x1+1,y-2,1,41)}
   else{const b={field:[2,18,66,26],meadow:[168,18,54,26],gate:[104,6,62,38]}[HOVER];if(b){ctx.fillRect(b[0],b[1],b[2],1);ctx.fillRect(b[0],b[1]+b[3],b[2],1);ctx.fillRect(b[0],b[1],1,b[3]);ctx.fillRect(b[0]+b[2],b[1],1,b[3])}}}
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-quest','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-tok','h-quest','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1772,6 +1790,7 @@ const SUMS={
  'h-bd':()=>{const n=s=>BOARD.filter(b=>b.status===s).length;return chips([['検収待ち',n('review'),'#b7791f'],['ブロック',n('blocked'),'#c2463d'],['作業中',n('doing'),'#3f6fd8'],['これから',n('todo'),'#857a70'],['完了',n('done'),'#4f8f4a']])},
  'h-ci':()=>{const {slot,k}=slotNow();const d=mDay(k);const a=d.am||{},p=d.pm||{};return `<div class="li">朝 ${a.at?'✅ '+(a.mood?FACES[a.mood-1]:''):'まだ'}・夜 ${p.at?'✅ '+(p.mood?FACES[p.mood-1]:''):'まだ'}${(slot==='am'&&!a.at)||(slot==='pm'&&!p.at)?'　← いま答えられます':''}</div>`},
  'h-au':()=>{const a=AUDITS.slice().sort(byTime).pop();return `<div class="li">${a?esc(clip((a.title||'今週の点検')+'：'+(a.result||'-'),50)):'まだ点検はありません（毎週月曜）'}</div>`},
+ 'h-tok':()=>{if(!TOK||!TOK.days)return '<div class="li">集計待ち</div>';const td=todayKey(),d=TOK.days[td],u=d?(d.output||0)+(d.fresh||0):0,b=TOK.budget&&TOK.budget.perDay;return `<div class="li">きょう ${tn(u)}${b?'（目安の '+Math.round(u/b*100)+'%）':''}</div>`},
  'h-quest':()=>{let qs=[];try{qs=qToday()}catch(e){}const l=qs.filter(q=>!q.done).length;return `<div class="li">⚔️ のこりの クエスト <b>${l}</b>／${qs.length}</div>`},
  'h-hr':()=>{const ps=(PEOPLE.data&&PEOPLE.data.people)||[];return `<div class="li">${ps.length}人${ps.filter(p=>!p.birth).length?`・誕生日の未入力 ${ps.filter(p=>!p.birth).length}人`:''}</div>`},
  'h-rs':()=>{const act=ORDER.filter(id=>agentState(id)==='active').length,bn=ORDER.filter(id=>agentState(id)==='bench').length;return chips([['稼働',act,'#4f8f4a'],['控え',bn,'#857a70'],['常時発注',(STATUS.standing||[]).length,'#3f6fd8']])},
@@ -1864,6 +1883,7 @@ async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)r
   db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
   db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
   db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?s.data():null;if(TL)renderTL();renderQuest()},()=>{});
+  db.doc('tokens/now').onSnapshot(s=>{TOK=s.exists?s.data():null;renderTok()},()=>{});
   db.collection('quests').onSnapshot(s=>{QUESTS={};s.docs.forEach(d=>QUESTS[d.id]=d.data());renderQuest()},()=>{});
   db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
   db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
