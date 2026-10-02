@@ -372,6 +372,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <div class="top">
   <button type="button" class="md-nudge" id="mdNudge" hidden></button><div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
     <div class="side">
+  <section class="box" aria-labelledby="h-done"><h2 id="h-done">🎉 きょうの成果 <small id="doneCnt"></small></h2><div id="done"><p class="empty">きょう終わった仕事が、ここにお花になって咲きます。</p></div></section>
       <div class="nowbox" id="nowbox"><h2 id="h-now"><button type="button" id="nowBtn" aria-expanded="false" aria-controls="nowList"><span>👀 いまの様子 <small id="nowSum"></small></span><span class="arw" aria-hidden="true">▸</span></button></h2><div id="nowList" hidden></div></div>
   <div class="win" id="win">
     <div class="tag"><img id="tagImg" alt=""><span id="tagName">ちいかわ</span><span class="role" id="tagRole"></span></div>
@@ -434,7 +435,6 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     </div>
     <div class="colB">
   <section style="order:1" class="box" aria-labelledby="h-dg"><h2 id="h-dg">📬 きょうのダイジェスト <small id="dgTime"></small></h2><div class="rounds" id="rounds" aria-live="off"></div><div class="dg" id="digest"></div><div class="trial" id="trial" hidden></div></section>
-  <section style="order:1" class="box" aria-labelledby="h-done"><h2 id="h-done">🎉 きょうの成果 <small id="doneCnt"></small></h2><div id="done"><p class="empty">きょう終わった仕事が、ここにお花になって咲きます。</p></div></section>
   <section style="order:2" class="box" aria-labelledby="h-xc"><h2 id="h-xc">🃏 判断してほしいこと <small id="xcCnt"></small></h2><div id="xcs"><p class="empty">判断が必要なことがあると、ちいかわが例外カードを届けます。</p></div></section>
   <section style="order:2" class="box fin" aria-labelledby="h-fin"><h2 id="h-fin">💰 お金の見通し <small id="finAsOf"></small></h2><div id="fin"><p class="empty">くりまんじゅうが freee を読んで、残高・売上と経費・これからの見込みをここに出します（そーやんだけに見えます）。</p></div></section>
   <section style="order:7" class="box" aria-labelledby="h-bd"><h2 id="h-bd">📋 タスクボード <small id="bdCnt"></small></h2><div class="lanes" id="board"><p class="empty">ハチワレが起票したタスクがここに並びます。</p></div></section>
