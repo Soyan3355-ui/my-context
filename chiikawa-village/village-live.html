@@ -1168,7 +1168,7 @@ $('ciSave').addEventListener('click',async()=>{const {slot,k}=mdSlot||slotNow();
   if(Object.keys(rec).length<2&&!Object.keys(work).length&&!note){$('ciMsg').textContent='どれか1つ選んでね';return}
   if(slot==='am'&&!MIND.uid){$('ciMsg').textContent='朝の記録は、ログインすると保存できます';return}
   if(MIND.uid&&!MIND.loaded){$('ciMsg').textContent='これまでの記録を読みこみ中…。少し待ってからもう一度押してね';return}
-  if(MIND.uid){const d=MIND.data||{days:{}};d.days=d.days||{};d.days[k]={...(d.days[k]||{}),[slot]:{...((d.days[k]||{})[slot]||{}),...rec}};d.updatedAt=Date.now();MIND.data=d;
+  if(MIND.uid){const d=JSON.parse(JSON.stringify(MIND.data||{days:{}}));d.days=d.days||{};d.days[k]={...(d.days[k]||{}),[slot]:{...((d.days[k]||{})[slot]||{}),...rec}};d.updatedAt=Date.now();MIND.data=d;
     if(canWrite)MIND.ref.set(d).catch(()=>{$('ciMsg').textContent='この画面では保存できませんでした'})}
   if(slot==='pm'&&(Object.keys(work).length||note)){const data={date:k,note,savedAt:Date.now(),...work};const i=CHECKINS.findIndex(c=>c.id===k);if(i>=0)CHECKINS[i]={...CHECKINS[i],...data};else CHECKINS.push({id:k,...data});
     if(db&&canWrite){try{await db.collection('checkins').doc(k).set(data)}catch(err){$('ciMsg').textContent='この画面では保存できませんでした'}}}
@@ -1226,7 +1226,7 @@ function renderHR(){const el=$('hr');if(!el)return;if(!PEOPLE.ref){el.innerHTML=
   const ps=(PEOPLE.data&&PEOPLE.data.people)||[];const no=ps.filter(p=>!p.birth).length;
   el.innerHTML=`<p class="hr-lead">マヤ暦と数秘術で、関わる人の持ち味を見立て、仕事の頼み方・関わり方を考えます（占いは参考。決めつけには使いません）。${no?`<br>誕生日が未入力：${no}人`:''}</p><div class="hr-list">${ps.map(hrCard).join('')||'<p class="empty">まだ名簿がありません</p>'}</div>
     <details class="hr-add"><summary>＋ 人を足す</summary><label>名前 <input id="hrName" maxlength="40"></label><label>関係 <input id="hrRel" maxlength="40" placeholder="スタッフ・協力者・家族 など"></label><label>誕生日 <input id="hrBirth" type="date"></label><button type="button" class="btn-s" id="hrAdd">足す</button></details>`}
-async function hrSave(ps){if(!PEOPLE.loaded)return;const d=PEOPLE.data||{};d.people=ps;d.updatedAt=Date.now();PEOPLE.data=d;renderHR();if(canWrite&&PEOPLE.ref)try{await PEOPLE.ref.set(d)}catch(e){}}
+async function hrSave(ps){if(!PEOPLE.loaded)return;const d={...(PEOPLE.data||{})};d.people=ps;d.updatedAt=Date.now();PEOPLE.data=d;renderHR();if(canWrite&&PEOPLE.ref)try{await PEOPLE.ref.set(d)}catch(e){}}
 $('hr').addEventListener('click',e=>{const ps=((PEOPLE.data&&PEOPLE.data.people)||[]).slice();
   const sv=e.target.closest('[data-hsave]');if(sv){const id=sv.dataset.hsave,box=sv.closest('details');const p=ps.find(x=>x.id===id);if(!p)return;box.querySelectorAll('[data-hf]').forEach(i=>p[i.dataset.hf]=i.value.trim());hrOpen.delete(id);document.activeElement.blur&&document.activeElement.blur();hrSave(ps);return}
   const dl=e.target.closest('[data-hdel]');if(dl){hrSave(ps.filter(x=>x.id!==dl.dataset.hdel));return}
