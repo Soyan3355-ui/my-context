@@ -1281,7 +1281,7 @@ function renderChatList(){const el=$('chatList');if(!el)return;
   el.innerHTML=prog+gh+rows.map(r=>{const pn=r.id==='kani'?pmItems().filter(x=>!TQ.skip.has(tqKey(x))).length:0;const sn=pn?`🗓 気になる進みが ${pn}件あるよ`:r.last?clip(chatOpts(r.last.content).text.replace(/\s+/g,' '),30):'話しかける';return `<button type="button" class="crow${r.id===chatChar&&!CHAT_TODAY&&!CHAT_GRP?' on':''}" data-open="${r.id}"><img src="${ICON[r.id]}" alt=""><span class="cmid"><b>${esc(NAMES[r.id])}</b><span class="csn">${esc((r.last&&r.last.role==='user'?'あなた：':'')+sn)}</span>${wn[r.id]?`<small class="cwk">進行中の仕事 ${wn[r.id]}</small>`:''}</span><span class="cside"><time>${r.last&&r.last.at?hhmm(r.last.at):''}</time>${r.u?`<i class="bdg">${r.u}</i>`:''}</span></button>`}).join('')}
 var CPROG_OPEN=false;
 // ---- 📣 きょうのお願い：そーやんがやること（判断カード・検収待ち・自分の仕事）を、ハチワレが1件ずつ会話で声かけする ----
-var CHAT_TODAY=false;const TQ={log:[],skip:new Set(),auto:false,busy:false,sig:''};
+var CHAT_TODAY=false;const TQ={edits:{},log:[],skip:new Set(),auto:false,busy:false,sig:''};
 const MAIL={items:[],col:null,loaded:false};
 async function mailWrite(id,patch){if(!MAIL.col||!canWrite)return false;try{await MAIL.col.doc(id).update(patch);const m=MAIL.items.find(x=>x.id===id);if(m)Object.assign(m,patch);return true}catch(e){return false}}
 const tqKey=i=>i.k+':'+i.id;
@@ -1330,7 +1330,7 @@ function renderToday(){const el=$('chatLog');const items=todayItems();const cur=
 function topicPush(key,role,text,who){const k=chatKey();if(LOGS[k]&&Object.isFrozen(LOGS[k]))LOGS[k]=LOGS[k].map(m=>({...m}));const log=LOGS[k]=LOGS[k]||[];
   log.push(role==='user'?{role:'user',content:String(text).slice(0,2000),to:'g:'+key,at:Date.now()}:{role:'assistant',who:who||'hachiware',grp:'g:'+key,content:String(text).slice(0,2000),at:Date.now()});LOGAT[k]=Date.now();chatPersist()}
 async function todayAct(a,k,label){if(TQ.busy||!CHAT_GRP)return;const g=grpOf(CHAT_GRP);if(!g||!g.open)return;const it=g.it,key=CHAT_GRP,sp=spkOf(it);TQ.busy=true;
-  if(a==='mok'){const ta=$('mdDraft');if(ta){const v=ta.value.trim();if(v&&v!==it.m.draft){it.m.draft=v;it.m._edited=v}}}
+  if(a==='mok'){const ta=$('mdDraft');const v=((ta?ta.value:TQ.edits[it.id])||'').trim();if(v&&v!==it.m.draft)TQ.edits[it.id]=v;else delete TQ.edits[it.id]}
   topicPush(key,'user',label);renderChatLog();
   let ack='';let toList=false;
   try{
@@ -1343,7 +1343,7 @@ async function todayAct(a,k,label){if(TQ.busy||!CHAT_GRP)return;const g=grpOf(CH
       else if(a==='pmok'){ack='うん、今週もいっしょにがんばろ'}
       else{ack='わかった、あとでまた聞くね';toList=true}}
     else if(it.k==='mail'){
-      if(a==='mok'){const patch={status:'approved',approvedAt:Date.now()};if(it.m._edited){patch.draft=it.m._edited;patch.revisedAt=Date.now()}if(!(await mailWrite(it.id,patch)))throw 0;ack=it.m._edited?'直した内容で、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）':'OK、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）'}
+      if(a==='mok'){const ed=TQ.edits[it.id];const patch={status:'approved',approvedAt:Date.now()};if(ed){patch.draft=ed;patch.revisedAt=Date.now()}if(!(await mailWrite(it.id,patch)))throw 0;delete TQ.edits[it.id];ack=ed?'直した内容で、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）':'OK、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）'}
       else if(a==='mno'){if(!(await mailWrite(it.id,{status:'skipped',skippedAt:Date.now()})))throw 0;ack='返信しないことにしたよ'}
       else if(a==='mfix'){TQ.reviseKey=key;ack='どう直す？ ことばで教えてね（例：もう少しやわらかく／日程を来週にして）。上の下書きは、そのまま直接書き換えてもOKだよ'}
       else{ack='わかった、あとでまた聞くね';toList=true}}
@@ -1368,9 +1368,9 @@ async function todayAct(a,k,label){if(TQ.busy||!CHAT_GRP)return;const g=grpOf(CH
 function topicSend(){if(!CHAT_GRP)return null;const g=grpOf(CHAT_GRP);if(!g||!g.open)return null;const it=g.it,key=CHAT_GRP,ta=$('chatIn'),text=ta.value.trim();if(!text)return null;
   if(it.k==='mail'&&TQ.reviseKey===key){if(TQ.busy)return Promise.resolve();TQ.reviseKey='';ta.value='';return (async()=>{TQ.busy=true;topicPush(key,'user',text);renderChatLog();let ack='';
     try{if(!SAMPLE){ack='いまは直せないみたい…上の下書きを直接書き換えるか、Gmail の下書きで直してね'}else{
-      const cur=($('mdDraft')&&$('mdDraft').value.trim())||it.m.draft;
+      const cur=($('mdDraft')&&$('mdDraft').value.trim())||TQ.edits[it.id]||it.m.draft;
       const r=await Promise.race([SAMPLE([{role:'user',content:`次のメール返信の下書きを、指示どおりに直してください。直した本文だけを出力してください（説明やあいさつは不要）。事実や日付、金額は、指示がない限り変えないでください。\n\n【相手のメール】${clip(it.m.original||it.m.summary,1200)}\n\n【いまの下書き】\n${cur}\n\n【直す指示】${text}`}],{cache:false,modelTier:'default'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);
-      const nd=String(r&&r.text||'').trim().slice(0,3000);if(!nd)throw 0;if(!(await mailWrite(it.id,{draft:nd,status:'revised',revisedAt:Date.now()})))throw 0;delete it.m._edited;ack='直したよ。上の下書きを見てね。もう少し直すなら、そのまま書き換えるか、また指示してね'}}
+      const nd=String(r&&r.text||'').trim().slice(0,3000);if(!nd)throw 0;if(!(await mailWrite(it.id,{draft:nd,status:'revised',revisedAt:Date.now()})))throw 0;delete TQ.edits[it.id];ack='直したよ。上の下書きを見てね。もう少し直すなら、そのまま書き換えるか、また指示してね'}}
     catch(e){ack='うまく直せなかった…もう一度ことばで教えてね'}
     topicPush(key,'assistant',ack,spkOf(it));TQ.busy=false;renderChatUi()})()}
   if(it.k==='card'&&TQ.answerKey===key){if(TQ.busy)return Promise.resolve();TQ.answerKey='';ta.value='';return (async()=>{TQ.busy=true;topicPush(key,'user',text);renderChatLog();let ack='';
@@ -1406,7 +1406,7 @@ function grpIntro(){const g=grpOf(CHAT_GRP);if(!g)return '<p class="empty">こ�
   const row=(inner)=>`<div class="mrow ai"><img class="av" src="${ICON[sp]}" alt=""><div class="mcol"><div class="nm">${esc(NAMES[sp])}</div>${inner}</div></div>`;
   if(it.k==='mail'){const mm=it.m;const orig=mm.original?clip(mm.original,1200):clip(mm.summary,300)+'\n（元の本文はまだ取り込めていません。Gmail で確認してね）';
     const head=`✉️ ${clip(mm.from,24)}${/(さん|先生|様)$/.test(mm.from||'')?'':'さん'}からメール「${clip(mm.subject,40)}」${mm.risk?'\n⚠️ お金や約束のことが入っています。内容をよく見てね':''}\n\n【相手のメール】${mm.originalAt?'（'+hhmm(mm.originalAt)+'）':''}\n${orig}`;
-    const dr=g.open?`<div class="msg ai draftwrap"><div class="draftlab">【返信の下書き】直接書き換えてOK</div><textarea id="mdDraft" class="draftbox" rows="9" maxlength="3000" aria-label="返信の下書き">${esc(mm.draft||'')}</textarea><div class="draftlab">この内容で返信していい？</div></div>`:`<div class="msg ai">【返信の下書き】\n${esc(clip(mm.draft,900))}</div>`;
+    const dr=g.open?`<div class="msg ai draftwrap"><div class="draftlab">【返信の下書き】直接書き換えてOK</div><textarea id="mdDraft" class="draftbox" rows="9" maxlength="3000" aria-label="返信の下書き">${esc(TQ.edits[mm.id]!=null?TQ.edits[mm.id]:(mm.draft||''))}</textarea><div class="draftlab">この内容で返信していい？</div></div>`:`<div class="msg ai">【返信の下書き】\n${esc(clip(mm.draft,900))}</div>`;
     return row(`<div class="msg ai">${esc(head)}</div>`)+`<div class="mrow ai"><span class="av"></span><div class="mcol">${dr}</div></div>`+(g.open?`<div class="chips" role="group" aria-label="こたえをえらぶ">${[{a:'mok',t:'この内容でOK'},{a:'mfix',t:'AIに直してもらう'},{a:'mno',t:'返信しない'},{a:'later',t:'あとで'}].map(c=>`<button type="button" class="chip" data-tq="${c.a}" data-k="">${esc(c.t)}</button>`).join('')}</div>`:'')}
   const chips=g.open?m.chips.concat(it.k==='card'?[{a:'ctext',t:'ことばで答える'},{a:'cask',t:'相談したい'}]:[]):[];
   return row(`<div class="msg ai">${esc(m.text)}</div>`)+(chips.length?`<div class="chips" role="group" aria-label="こたえをえらぶ">${chips.map(c=>`<button type="button" class="chip" data-tq="${c.a}" data-k="${esc(c.k||'')}">${esc(c.t)}</button>`).join('')}</div>`:'')}
@@ -1415,7 +1415,7 @@ function renderChatHead(){const el=$('chatHead');if(!el)return;if(CHAT_GRP&&!CHA
   el.innerHTML=`<button type="button" class="cback" data-back="1" aria-label="一覧にもどる">‹</button><img src="${ICON[chatChar]}" alt=""><span class="hn"><b>${esc(NAMES[chatChar])}</b><small>${esc(ROLES[chatChar][0])}</small></span>${tk?`<span class="htk">📎 ${esc(tk)} <button type="button" data-untask="1" aria-label="タスクの指定をはずす">✕</button></span>`:''}`}
 function threadOf(id){const log=LOGS[chatKey()]||[];const out=[];log.forEach((m,i)=>{let to=m.to;if((m.role==='user'||m.role==='sys')&&!to){const nx=log.slice(i+1).find(x=>x.role==='assistant'&&x.who);to=nx?nx.who:'asuka'}if(id.startsWith('g:')?(m.role==='assistant'?m.grp===id:to===id):(m.role==='assistant'?(m.who===id&&!m.grp):to===id))out.push(m)});return out}
 const hhmm=t=>{if(!t)return '';const d=new Date(t+9*36e5),p=n=>String(n).padStart(2,'0');return ymd(t)===ymd(Date.now())?p(d.getUTCHours())+':'+p(d.getUTCMinutes()):(d.getUTCMonth()+1)+'/'+d.getUTCDate()};
-function renderChatLog(){if(CHAT_TODAY){renderToday();return}if(document.activeElement&&document.activeElement.id==='mdDraft')return;const log=threadOf(curThread());const el=$('chatLog');{const sig=JSON.stringify([chatKey(),curThread(),CHAT_GRP?(()=>{const g=grpOf(CHAT_GRP);return g?[g.open,g.it.m?g.it.m.draft:'',g.it.m?g.it.m.status:'',g.it.x?g.it.x.status:'']:0})():0,chatBusy,UNR.id===curThread()?UNR.n:0,log.map(m=>[m.role,m.who,m.content,m.partial,m.err,m.at])]);if(el.dataset.sig===sig&&el.childElementCount)return;el.dataset.sig=sig}
+function renderChatLog(){if(CHAT_TODAY){renderToday();return}if(document.activeElement&&document.activeElement.id==='mdDraft')return;const log=threadOf(curThread());const el=$('chatLog');{const sig=JSON.stringify([chatKey(),curThread(),CHAT_GRP?(()=>{const g=grpOf(CHAT_GRP);return g?[g.open,g.it.m?g.it.m.draft:'',g.it.m?g.it.m.status:'',g.it.m?(TQ.edits[g.it.id]||''):'',g.it.x?g.it.x.status:'']:0})():0,chatBusy,UNR.id===curThread()?UNR.n:0,log.map(m=>[m.role,m.who,m.content,m.partial,m.err,m.at])]);if(el.dataset.sig===sig&&el.childElementCount)return;el.dataset.sig=sig}
   const un=(UNR.id===curThread()&&UNR.n>0)?UNR.n:0;let ai=0;const na=log.filter(m=>m.role==='assistant'&&!m.partial&&!m.err).length;
   const pre=CHAT_GRP?grpIntro():'';
   el.innerHTML=pre+(log.length?log.map(m=>{const tm=m.at?`<time class="mt">${hhmm(m.at)}</time>`:'';
@@ -1575,6 +1575,7 @@ $('chatHead').addEventListener('click',e=>{if(e.target.closest('[data-back]')){C
 $('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;CHAT_GRP=null;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
 $('chatTask').addEventListener('change',()=>{if(!chatBusy){$('chatNote').textContent='';renderChatLog()}});
 $('chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend()});
+$('chatLog').addEventListener('input',e=>{if(e.target&&e.target.id==='mdDraft'&&CHAT_GRP){const g=grpOf(CHAT_GRP);if(g&&g.it.k==='mail')TQ.edits[g.it.id]=e.target.value}});
 $('chatLog').addEventListener('click',e=>{const tq=e.target.closest('button[data-tq]');if(tq){todayAct(tq.dataset.tq,tq.dataset.k,tq.textContent.trim());return}const b=e.target.closest('button[data-opt]');if(!b)return;const note=$('chatNote');
   if(!SAMPLE){note.textContent='いまはチャットが使えないので、ボタンでは送れません（画面を開き直してみてね）';return}
   if(chatBusy){note.textContent='いま返事を待っています。終わってからもう一度押してね';return}
