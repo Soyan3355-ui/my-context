@@ -527,7 +527,8 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
   3. 送るのは `status:'approved'` のものだけ（`approvedAt` が入っている）。`status:'revised'`（直したあと、まだOKされていない）や `pending` は**送らない**。`approved` のうち `revisedAt` があるものは、直した本文が `draft` に入っているので、先に `draft` の本文で Gmail の下書きを更新（update_draft）してから送る。送れたら `status:'sent'`、`sentAt` を入れる。送れなかったら `status:'pending'` に戻し、例外カードで知らせる。**そーやんが OK を押したもの以外は、絶対に送らない。**
   - 画面が書くフィールド：`draft`、`status`、`revisedAt`（直したとき）、`approvedAt`（OK）、`skippedAt`（返信しない）。
   4. `status:'skipped'` や、7日以上たった `pending` は、`status:'closed'` にして画面に出さない。
-  5. 更新は必ず `if_version` つき。画面（そーやん）も同じドキュメントを書く（draft・status）ので、読み直してから書く。
+  5. Gmail の下書きを直すときは `update_draft` を使わない（元のスレッドから外れ、引用も消えることを 10/2 に確認）。`delete_draft` で消して、`replyToMessageId` つきで `create_draft` し直し、`draftId` を書き換える。
+  6. 更新は必ず `if_version` つき。画面（そーやん）も同じドキュメントを書く（draft・status）ので、読み直してから書く。
 - 画面側（済み）：`pending`／`revised` のものが「きょうのお願い」の先頭に出る。「直したい」→ことばで指示 → 画面の Claude が下書きを書き直して `status:'revised'`。「OK」→ `status:'approved'`。
 - 例外カードにはしない（会話で1件ずつ聞くため）。ただし `risk:true` のものは、画面で「⚠️ お金や約束のことが入っています」と出る。
 
