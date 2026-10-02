@@ -1253,7 +1253,7 @@ function renderChatUi(){
   if(sel.dataset.h!==html){sel.innerHTML=html;sel.dataset.h=html;sel.value=ts.some(x=>x.v===cur)?cur:''}
   $('chatSave').textContent='決めたことを残す（そーやんだけ）';
   if(CHAT_SHOWN===null)CHAT_SHOWN=chatChar;else if(chatChar!==CHAT_SHOWN){CHAT_TODAY=false;UNR={id:chatChar,n:unreadOf(chatChar)};CHAT_SHOWN=chatChar;CHAT_VIEW='thread'}
-  if(!TQ.auto&&document.body.classList.contains('simple')&&(XCS.length||TASKS.length||BOARD.length)){TQ.auto=true;if(todayItems().length){CHAT_TODAY=true;CHAT_VIEW='thread'}}
+  if(!TQ.auto&&document.body.classList.contains('simple')&&(XCS.length||TASKS.length||BOARD.length||MAIL.items.length)){TQ.auto=true;if(todayItems().length){CHAT_TODAY=true;CHAT_VIEW='thread'}}
   const sec=$('chatLog').closest('section');if(sec)sec.dataset.view=chatViewIsThread()?'thread':'list';
   renderChatList();renderChatHead();renderChatLog()}
 const OPT_RE=/(?:^|\n)\s*選択肢\s*[:：]\s*([^\n]+)\s*$/;
@@ -1279,14 +1279,18 @@ function renderChatList(){const el=$('chatList');if(!el)return;
 var CPROG_OPEN=false;
 // ---- 📣 きょうのお願い：そーやんがやること（判断カード・検収待ち・自分の仕事）を、ハチワレが1件ずつ会話で声かけする ----
 var CHAT_TODAY=false;const TQ={log:[],skip:new Set(),auto:false,busy:false,sig:''};
+const MAIL={items:[],col:null,loaded:false};
+async function mailWrite(id,patch){if(!MAIL.col||!canWrite)return false;try{await MAIL.col.doc(id).update(patch);const m=MAIL.items.find(x=>x.id===id);if(m)Object.assign(m,patch);return true}catch(e){return false}}
 const tqKey=i=>i.k+':'+i.id;
 function todayItems(){const it=[];
+  MAIL.items.filter(m=>m.status==='pending'||m.status==='revised').sort((a,b)=>(a.receivedAt||0)-(b.receivedAt||0)).forEach(m=>it.push({k:'mail',id:m.id,m}));
   XCS.filter(x=>x.status!=='answered').sort(byTime).forEach(x=>it.push({k:'card',id:x.id,x}));
   BOARD.filter(b=>b.status==='review').forEach(b=>it.push({k:'rev',id:b.id,b}));
   TASKS.filter(t=>!t.done).slice().sort((a,b)=>(a.due?dnum(a.due):9e15)-(b.due?dnum(b.due):9e15)||(a.createdAt||0)-(b.createdAt||0)).forEach(t=>it.push({k:'task',id:t.id,t}));
   return it.filter(i=>!TQ.skip.has(tqKey(i)))}
 const mdOf=d=>d?String(d).slice(5).replace('-','/'):'';
 function todayMsg(it){
+  if(it.k==='mail'){const m=it.m;return {text:`✉️ ${clip(m.from,24)}さんからメール「${clip(m.subject,40)}」\n${clip(m.summary,160)}${m.risk?'\n⚠️ お金や約束のことが入っています。内容をよく見てね':''}\n\n返信の下書き：\n${clip(m.draft,900)}\n\nこの内容で返信していい？`,chips:[{a:'mok',t:'この内容でOK'},{a:'mfix',t:'直したい'},{a:'mno',t:'返信しない'},{a:'later',t:'あとで'}]}}
   if(it.k==='card'){const x=it.x;return {text:x.question+(x.why?'\n'+clip(x.why,110):''),chips:[...(x.options||[]).slice(0,3).map(o=>({a:'ans',k:o.key,t:o.key+'　'+clip(o.label,18)})),{a:'ans',k:'保留',t:'保留（あとで）'}]}}
   if(it.k==='rev'){return {text:`「${clip(it.b.title,40)}」ができたよ。確認してくれる？`,chips:[{a:'ok',t:'OK、完了にする'},{a:'fix',t:'直してほしい'},{a:'later',t:'あとで'}]}}
   const t=it.t;const od=t.due&&dnum(t.due)<dnum(todayKey());
@@ -1302,7 +1306,12 @@ function renderToday(){const el=$('chatLog');const items=todayItems();const cur=
 async function todayAct(a,k,label){if(TQ.busy)return;const it=todayItems()[0];if(!it)return;TQ.busy=true;TQ.log.push({who:'me',text:label});renderToday();
   let ack='';const skip=()=>TQ.skip.add(tqKey(it));
   try{
-    if(it.k==='card'){if((await answer(it.id,k,undefined))===false)throw 0;skip();ack=k==='保留'?'保留にしたよ。あとで聞くね':'決めたよ。ありがとう！'}
+    if(it.k==='mail'){const id=it.id;
+      if(a==='mok'){if(!(await mailWrite(id,{status:'approved',approvedAt:Date.now()})))throw 0;skip();ack='OK、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）'}
+      else if(a==='mno'){if(!(await mailWrite(id,{status:'skipped',skippedAt:Date.now()})))throw 0;skip();ack='返信しないことにしたよ'}
+      else if(a==='mfix'){ack='どう直す？ ことばで教えてね（例：もう少しやわらかく／日程を来週にして）';TQ.log.push({who:'ai',text:ack});TQ.busy=false;renderToday();return}
+      else{skip();ack='わかった、あとでまた聞くね'}}
+    else if(it.k==='card'){if((await answer(it.id,k,undefined))===false)throw 0;skip();ack=k==='保留'?'保留にしたよ。あとで聞くね':'決めたよ。ありがとう！'}
     else if(it.k==='rev'){if(a==='ok'){if(!(await write('board',it.id,{status:'done'})))throw 0;skip();ack='完了にしたよ！'}else if(a==='fix'){skip();CHAT_TODAY=false;askBoard(it.id);sysLine(`「${clip(it.b.title,30)}」の直してほしいところを、ここで話してね`);TQ.busy=false;return}else{skip();ack='わかった、あとでまた聞くね'}}
     else{const t=it.t;
       if(a==='done'){if((await setTask(it.id,{done:true}))===false)throw 0;skip();ack='おつかれさま！'}
@@ -1313,6 +1322,12 @@ async function todayAct(a,k,label){if(TQ.busy)return;const it=todayItems()[0];if
   }catch(e){ack='うまく保存できなかった…あとでもう一度やってみてね'}
   TQ.log.push({who:'ai',text:ack});if(TQ.log.length>40)TQ.log=TQ.log.slice(-40);TQ.busy=false;renderToday();renderChatList()}
 async function todaySend(){const ta=$('chatIn'),text=ta.value.trim();if(!text)return;const it=todayItems()[0];
+  if(it&&it.k==='mail'){ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();
+    try{if(!SAMPLE){TQ.log.push({who:'ai',text:'いまは直せないみたい…Gmail の下書きで直してね'})}else{
+      const r=await Promise.race([SAMPLE([{role:'user',content:`次のメール返信の下書きを、指示どおりに直してください。直した本文だけを出力してください（説明やあいさつは不要）。事実や日付、金額は、指示がない限り変えないでください。\n\n【もとのメール】${clip(it.m.summary,300)}\n\n【いまの下書き】\n${it.m.draft}\n\n【直す指示】${text}`}],{cache:false,modelTier:'default'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);
+      const nd=String(r&&r.text||'').trim().slice(0,3000);if(!nd)throw 0;if(!(await mailWrite(it.id,{draft:nd,status:'revised',revisedAt:Date.now()})))throw 0;TQ.log.push({who:'ai',text:'直したよ。この内容でどう？'})}}
+    catch(e){TQ.log.push({who:'ai',text:'うまく直せなかった…もう一度ことばで教えてね'})}
+    TQ.busy=false;renderToday();renderChatList();return}
   if(it&&it.k==='card'){ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();try{if((await answer(it.id,'記述',text))===false)throw 0;TQ.skip.add(tqKey(it));TQ.log.push({who:'ai',text:'ことばで受け取ったよ。ありがとう！'})}catch(e){TQ.log.push({who:'ai',text:'うまく保存できなかった…あとでもう一度やってみてね'})}TQ.busy=false;renderToday();renderChatList();return}
   if(it&&(it.k==='task'||it.k==='rev')){const id=it.id,k=it.k;CHAT_TODAY=false;TQ.skip.add(tqKey(it));if(k==='rev')askBoard(id);else{const sel=$('chatTask');if(!sel.querySelector(`option[value="t:${CSS.escape(id)}"]`)){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(id)}">そーやんの仕事：${esc(clip(it.t.title,40))}</option>`);sel.dataset.h=''}sel.value='t:'+id;openThread('hachiware')}
     ta.value=text;return chatSend()}
@@ -2062,7 +2077,7 @@ $('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contain
 $('arrDone').addEventListener('click',()=>laySet(false));
 $('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
 LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
-async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin();renderQuest()},()=>{});VOICE.ref=db.doc('data/users/'+id+'/voice');VOICE.ref.onSnapshot(s=>{VOICE.data=s.exists?s.data():null;VOICE.loaded=true;renderVoice()},()=>{VOICE.loaded=true;renderVoice()});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin();renderQuest()},()=>{});try{MAIL.col=db.collection('data/users/'+id+'/maildrafts/items');MAIL.col.onSnapshot(s=>{MAIL.items=s.docs.map(d=>({id:d.id,...d.data()}));MAIL.loaded=true;if(typeof renderChatList==='function')try{renderChatList();if(CHAT_TODAY)renderToday()}catch(e){}},()=>{MAIL.loaded=true})}catch(e){}VOICE.ref=db.doc('data/users/'+id+'/voice');VOICE.ref.onSnapshot(s=>{VOICE.data=s.exists?s.data():null;VOICE.loaded=true;renderVoice()},()=>{VOICE.loaded=true;renderVoice()});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
