@@ -274,7 +274,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .simple #chatIn{min-height:46px;border-radius:22px;padding:10px 14px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chat-log{background:#1f262d}:root:not([data-theme="light"]) .mrow .msg.ai{background:#33302d;color:#f3ebe3}:root:not([data-theme="light"]) .mrow .msg.me{background:#3f7a37;color:#f3ebe3}:root:not([data-theme="light"]) .mrow .nm,:root:not([data-theme="light"]) .unrd{color:#b3a79c}}
 :root[data-theme="dark"] .chat-log{background:#1f262d}:root[data-theme="dark"] .mrow .msg.ai{background:#33302d;color:#f3ebe3}:root[data-theme="dark"] .mrow .msg.me{background:#3f7a37;color:#f3ebe3}
-.chips-on .md-nudge{display:none!important}.chips{display:flex;flex-wrap:wrap;gap:6px;justify-self:start;margin:2px 0}.chip{font:inherit;font-size:13px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:#fff6d6;color:#3a3330;cursor:pointer}.chip:hover{border-color:#e0b64a}
+.tk .meta .dept{font-size:11px;color:var(--sub);align-self:center}.chips-on .md-nudge{display:none!important}.chips{display:flex;flex-wrap:wrap;gap:6px;justify-self:start;margin:2px 0}.chip{font:inherit;font-size:13px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:#fff6d6;color:#3a3330;cursor:pointer}.chip:hover{border-color:#e0b64a}
 .msg.err{border-color:var(--bad);color:var(--bad)}
 .box>h2[role=button]{cursor:pointer;user-select:none}.box>h2 .arw{color:var(--sub);transition:transform .2s;margin-left:auto;flex:none}.box>h2[aria-expanded="true"] .arw{transform:rotate(90deg)}
 .box>h2[role=button]:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:6px}
@@ -1058,7 +1058,7 @@ function renderBoard(){const n=s=>BOARD.filter(b=>b.status===s).length;$('bdCnt'
     return `<div class="lane"><h3><i style="--c:${c}"></i>${label}（${arr.length}）</h3>${arr.map(b=>{const oid=OWNER_ID[b.owner]||b.owner;const v=b.verdict&&b.verdict!=='未'?b.verdict:'';
       const vc=v==='PASS'?'pass':v==='FAIL'?'fail':v?'inc':'';const link=safeUrl(b.link),nl=safeUrl(b.notionUrl);
       return `<div class="tk"><img src="${ICON[oid]||ICON.hachiware}" alt="${esc(b.owner||'')}"><div style="min-width:0"><div class="t">${esc(b.title)}</div>
-      <div class="meta">${b.dept?`<span class="chip">${esc(b.dept)}</span>`:''}${b.autonomy?`<span class="chip">${esc(b.autonomy)}</span>`:''}${b.standing?'<span class="chip so">常時発注</span>':''}${b.needsApproval?'<span class="chip appr">要承認</span>':''}${v?`<span class="chip ${vc}">検収 ${esc(v)}</span>`:''}</div>
+      <div class="meta">${b.dept?`<span class="dept">${esc(b.dept)}</span>`:''}${b.standing?'<span class="chip so">常時発注</span>':''}${b.needsApproval?'<span class="chip appr">要承認</span>':''}${v?`<span class="chip ${vc}">検収 ${esc(v)}</span>`:''}</div>
       ${b.outcome?`<p>成果とのつながり：${esc(b.outcome)}</p>`:''}${b.verdictNote?`<p>🛡️ ${esc(b.verdictNote)}</p>`:''}${b.evidence?`<p>証拠：${esc(b.evidence)}</p>`:''}
       ${link||nl?`<p>${link?`<a href="${esc(link)}" target="_blank" rel="noopener">成果物をひらく ↗</a>`:''}${link&&nl?'　':''}${nl?`<a href="${esc(nl)}" target="_blank" rel="noopener">Notion ↗</a>`:''}</p>`:''}${boardTalk(b,oid)}</div></div>`}).join('')}</div>`}).join('');
   for(const id in opened){const d=bx.querySelector(`details.bins[data-b="${CSS.escape(id)}"]`);if(d)d.open=true}for(const id in drafts){const t=bx.querySelector(`textarea[data-bins="${CSS.escape(id)}"]`);if(t){t.value=drafts[id];t.closest('details').open=true}}}
