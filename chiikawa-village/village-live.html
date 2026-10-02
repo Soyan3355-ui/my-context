@@ -384,7 +384,6 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     </div>
   </div>
   <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
-  <section class="box qbox" aria-labelledby="h-quest"><h2 id="h-quest">⚔️ クエスト <small>きょうやること・ルーティン</small></h2><div id="quest"><p class="empty">ルーティンを読みこみ中…</p></div></section>
   <section class="box" aria-labelledby="h-tok"><h2 id="h-tok">🔋 トークン <small>見回りが数えます</small></h2><div id="tok"><p class="empty">見回りが集計すると、ここに出ます。</p></div></section>
   <div class="cols">
     <div class="colA">
@@ -1657,8 +1656,8 @@ function renderQuest(){const el=$('quest');if(!el)return;const fq=document.activ
     ${rows.map(r=>`<div class="qt">${esc(r.title)}${(r.kind||'')==='system'?' <small>🤖</small>':''}</div>${cols.map((c,i)=>{const v=qState(r,kind,c);return `<div class="qc ${v}${i===cols.length-1?' now':''}" title="${esc(r.title)}">${SY[v]||''}</div>`}).join('')}`).join('')}</div>`:'<p class="qe">この周期の クエストは まだ ありません</p>';
   const tabs=`<div class="qtabs" role="group" aria-label="周期">${[['d','デイリー'],['w','ウィークリー'],['m','マンスリー']].map(([k,l])=>`<button type="button" data-qt="${k}" aria-pressed="${kind===k}">${l}</button>`).join('')}</div>`;
   el.innerHTML=`<div class="qwrap"><div class="qcol">${hero}${todayL}</div><div class="qb qmain"><div class="qh">${{d:'デイリー',w:'ウィークリー',m:'マンスリー'}[kind]}クエスト（ルーティン）</div>${tabs}${grid}<div class="qlg"><span>○ できた</span><span>△ 一部</span><span>× できなかった</span><span>🤖 ちいかわ株式会社の見回り</span></div><div class="qe">れんぞく達成で なかまが レベルアップ（チェックは見回りがタイムラインに反映します）</div></div></div>`;if(fq){const f=el.querySelector(fq);f&&f.focus({preventScroll:true})}}
-$('quest').addEventListener('click',e=>{const b=e.target.closest('button[data-qt]');if(b){Q_TAB=b.dataset.qt;try{localStorage.setItem('ck-qtab',Q_TAB)}catch(x){}renderQuest()}});
-$('quest').addEventListener('change',async e=>{const id=e.target.dataset&&e.target.dataset.q;if(!id)return;const on=e.target.checked;
+if($('quest'))$('quest').addEventListener('click',e=>{const b=e.target.closest('button[data-qt]');if(b){Q_TAB=b.dataset.qt;try{localStorage.setItem('ck-qtab',Q_TAB)}catch(x){}renderQuest()}});
+if($('quest'))$('quest').addEventListener('change',async e=>{const id=e.target.dataset&&e.target.dataset.q;if(!id)return;const on=e.target.checked;
   if(id.startsWith('t:')){if(on){await setTask(id.slice(2),{done:true});floater('⚔️',ent.soyan)}renderQuest();return}
   const q=qToday().find(x=>x.id===id);if(!q)return;const t=Date.now();const key=q.kind==='w'?wkKey(t):q.kind==='m'?moKey(t):'q'+ymd(t);
   const cur=QUESTS[key]||{done:{}};const done={...(cur.done||{})};if(on)done[q.rid]=Date.now();else delete done[q.rid];QUESTS[key]={...cur,done};renderQuest();
@@ -1768,7 +1767,7 @@ function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER)
   if(rm){const y=roomTop(rm.r),w=rm.x1-rm.x;ctx.fillRect(rm.x-2,y-2,w+4,1);ctx.fillRect(rm.x-2,y+38,w+4,1);ctx.fillRect(rm.x-2,y-2,1,41);ctx.fillRect(rm.x1+1,y-2,1,41)}
   else{const b={field:[2,18,66,26],meadow:[168,18,54,26],gate:[104,6,62,38]}[HOVER];if(b){ctx.fillRect(b[0],b[1],b[2],1);ctx.fillRect(b[0],b[1]+b[3],b[2],1);ctx.fillRect(b[0],b[1],1,b[3]);ctx.fillRect(b[0]+b[2],b[1],1,b[3])}}}
 // ---------- 小さい表示 ⇔ ひらいた表示 ----------
-const BOXES=['h-tok','h-quest','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-tok','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
@@ -1884,7 +1883,7 @@ async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)r
   db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
   db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?s.data():null;if(TL)renderTL();renderQuest()},()=>{});
   db.doc('tokens/now').onSnapshot(s=>{TOK=s.exists?s.data():null;renderTok()},()=>{});
-  db.collection('quests').onSnapshot(s=>{QUESTS={};s.docs.forEach(d=>QUESTS[d.id]=d.data());renderQuest()},()=>{});
+  // クエスト欄は廃止（2026-10-02）
   db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
   db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
   db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
