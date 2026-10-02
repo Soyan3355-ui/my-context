@@ -53,6 +53,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .bub{position:absolute;transform:translate(-50%,-100%);background:var(--bub);color:var(--bub-ink);border:1.5px solid #3b3533;border-radius:6px;padding:0 4px;font-size:clamp(8.5px,1.9vw,10px);line-height:1.35;white-space:nowrap;max-width:32%;overflow:hidden;text-overflow:ellipsis;pointer-events:none;transition:opacity .25s,left .8s ease,top .8s ease}
 .bub.soyan{background:#fff6d6}.bub.bench{background:#eef0f4;color:#5b6070}
 .bub[data-empty="1"]{opacity:0}
+.bub[data-think="1"]{font-style:italic;border-style:dashed}
 .plc{position:absolute;transform:translate(-50%,0);transition:opacity .2s;font-size:clamp(8px,1.6vw,9.5px);color:#2f3a24;background:rgba(255,255,255,.55);border-radius:4px;padding:0 3px;pointer-events:none;white-space:nowrap}
 .meettag{position:absolute;z-index:6;left:49.1%;top:23.5%;transform:translateX(-50%);max-width:34%;box-sizing:border-box;font-size:10px;line-height:1.3;color:#fff;background:rgba(40,34,30,.72);border-radius:4px;padding:1px 5px;pointer-events:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-align:center;opacity:.7}.meettag.on{opacity:1;background:rgba(194,70,61,.88)}.meettag[hidden]{display:none}
 @media (min-width:700px){.meettag{font-size:12px}}
@@ -573,6 +574,9 @@ const $=id=>document.getElementById(id);
 let TL=null,IDEAS=[],STATUS={},BOARD=[],XCS=[],AUDITS=[],DECS=[],NOTES=[],TASKS=[],CHECKINS=[],db=null,canWrite=true;
 const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
+var CHAT_WHO=null;const WORK_FRESH=45*60000;
+function isWorking(id){if(id==='chiikawa'||id==='soyan')return true;const a=(STATUS.agents||{})[id];if(!a||a.state!=='active')return false;const at=a.at||STATUS.updatedAt||0;return Date.now()-at<WORK_FRESH}
+function isShown(id){if(id==='chiikawa'||id==='soyan')return true;const e=ent[id];if(!e)return true;return isWorking(id)||e.st!=='home'||!!e.gym||!!e.hunt||CHAT_WHO===id||(e.jump>0)}
 function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench')}
 function homeOf(id){if(isFree(id)){const e=ent[id];if(e&&e.act)return {x:e.act.x,y:e.act.y,face:e.act.face||1};return {x:PLAY.sand.x,y:PLAY.sand.y,face:1}}
   const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
@@ -767,6 +771,7 @@ if(BASE){ROOMS.filter(r=>r.k!=='rest').forEach(r=>{const l=document.createElemen
 const benchLabel=document.createElement('div');benchLabel.className='plc bench-sign';stage.appendChild(benchLabel);LABELS.push({el:benchLabel,x:BASE?105:112,y:BASE?roomTop(3)+1:152,always:true});
 function bubbleText(id){const e=ent[id];
   if(e&&e.hidden)return '';
+  if(e&&!isShown(id))return '';
   if(e&&e.gym)return e.gymTxt||'🥊';
   if(e&&e.hunt)return '⚔️ 討伐にいってくる！';
   if(id==='soyan'&&focusOn())return '🔥 集中：'+clip(FOCUS.title,14);
@@ -774,6 +779,7 @@ function bubbleText(id){const e=ent[id];
   if(e.st==='walkIn'||e.st==='arrive')return speakerLabel||'✉️ おとどけ';
   if(e.st==='talk')return '';if(e.st==='walkOut')return '🚶 もどる';
   if(isFree(id)&&id!=='chiikawa')return '';if(id==='chiikawa'&&!scene)return '';
+  {const a0=(STATUS.agents||{})[id];if(a0&&a0.thought&&isWorking(id))return '💭 '+a0.thought}
   if(id==='yoroi'){const n=BOARD.filter(b=>b.status==='review').length;if(n)return `🛡️ 検収待ち ${n}件`}
   if(id==='kani'&&TL){const gr=TL.goal?tlRate(TL.goal.windowDays||28):null;if(gr&&gr.pct!=null&&gr.pct<(TL.goal.target||90))return `🎯 ルーティン ${gr.pct}%（目標 ${TL.goal.target||90}%）`;const n=(TL.projects||[]).filter(p=>p.status==='late'||p.status==='warn').length;if(n)return `🗓 気になる進み ${n}件`;return '🗓 進行表をチェック中'}
   if(isScout(id)){if(e.carry||e.giving)return '📨 おとどけ';return '🔍 '+ROUTES[id][e.ri||0][2]}
@@ -784,7 +790,7 @@ function placeBubbles(){const sw=stage.clientWidth,sh=stage.clientHeight;if(!sw)
   const order=Object.keys(BUB).sort((a,b)=>(a==='soyan')-(b==='soyan')||(ent[b].y-ent[a].y));
   const sprites=Object.keys(ent).filter(k=>ent[k].top!==undefined).map(k=>{const e=ent[k];return {id:k,l:e.left/W*sw,r:(e.left+e.w)/W*sw,t:e.bt/H*sh,b:e.y/H*sh}});
   const area=(a,b)=>Math.max(0,Math.min(a.r,b.r)-Math.max(a.l,b.l))*Math.max(0,Math.min(a.b,b.b)-Math.max(a.t,b.t));
-  for(const id of order){const e=ent[id],b=BUB[id];const txt=bubbleText(id);if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';
+  for(const id of order){const e=ent[id],b=BUB[id];const txt=bubbleText(id);if(b.textContent!==txt)b.textContent=txt;b.dataset.empty=txt?'0':'1';b.dataset.think=txt.startsWith('💭')?'1':'0';
     if(!txt||e.top===undefined)continue;const bw=b.offsetWidth,bh=b.offsetHeight;const cx=Math.round(e.x/4)*4/W*sw,top=(Math.round(e.bt/2)*2-2)/H*sh;
     let best=null;
     for(const lift of [0,bh+2,2*(bh+2)])for(const dx of [0,bw*0.35,-bw*0.35,bw*0.6,-bw*0.6]){
@@ -852,7 +858,7 @@ function update(dt){AGENTS.concat('soyan').forEach(id=>{const e=ent[id];e.t+=dt;
     else if(e.st==='home'){const gs=GYM_ON()?gymSlot(id):-1,hs=HUNT_ON()?huntSlot(id):-1;if(hs>=0)huntBrain(id,e,dt,hs);else if(gs>=0)gymBrain(id,e,dt,gs);else{if(e.gym){e.gym=false;e.punch=false;e.act=null}if(e.hunt||e.hidden){e.hunt=false;e.hidden=false;e.act=null;e.jump=1;e.loot=T+10;if(BASE){e.x=170;e.y=44}else{e.x=226;e.y=79}}if(isScout(id))scoutBrain(id,e,dt);else if(isFree(id))freeBrain(id,e,dt);else workBrain(id,e,dt)}}});
   const s=ent.soyan;if(TASKS.some(x=>!x.done)){s.pose=Math.floor(T/0.45)%2?'idle':'idle';if(s.t%2.2<dt)emit(BASE?94:114,BASE?70:96,'#8fd18a',1,{vy:-6,life:.8,spread:2})}}
 function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage(P.weed,x,y));if(BASE)drawMonsters(t);
-  const list=Object.entries(ent).filter(([id,e])=>!e.hidden).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:BASE?86.5:110.5,f:()=>drawDesk(t)});if(GYM_ON())list.push({y:BASE?171:170,f:()=>drawBag(t)});if(HUNT_ON())list.push({y:BASE?43:84,f:()=>drawHuntSign(t)});
+  const list=Object.entries(ent).filter(([id,e])=>{if(!e.hidden&&!isShown(id)){e.top=undefined;return false}return !e.hidden}).map(([id,e])=>({y:e.y,f:()=>drawChar(id,e,t)}));list.push({y:BASE?86.5:110.5,f:()=>drawDesk(t)});if(GYM_ON())list.push({y:BASE?171:170,f:()=>drawBag(t)});if(HUNT_ON())list.push({y:BASE?43:84,f:()=>drawHuntSign(t)});
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());drawParts(dt);
   AGENTS.forEach(id=>{const e=ent[id];if(e.top===undefined)return;
     if(e.st==='walkIn'||e.st==='arrive')ctx.drawImage(speakerIcon==='bulb'?P.bulb:P.letter,Math.round(e.x-4),e.top-9);
@@ -1297,7 +1303,7 @@ let chatSaveT=0,chatLoaded=false;const LOGAT={};function chatPersist(){if(!MIND.
 async function chatLoad(){if(!MIND.uid||!db)return;try{chatLoaded=false;const sn=await db.doc('data/users/'+MIND.uid+'/chat').get();const sd=sn&&sn.exists?sn.data():{};const o=sd.logs||{};Object.assign(LOGAT,sd.at||{},{...LOGAT});for(const k in o){if(k!=='room')continue;if(!LOGS[k]||!LOGS[k].length)LOGS[k]=o[k]}renderChatLog()}catch(e){}chatLoaded=true}
 async function chatSend(){if(chatBusy||!SAMPLE)return;const txt=$('chatIn').value.trim();if(!txt)return;const key=chatKey(),who=chatChar;
   const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000)});$('chatIn').value='';
-  const ans={role:'assistant',who,content:'かんがえ中…',partial:true};log.push(ans);chatBusy=true;$('chatSend').disabled=true;$('chatStop').hidden=false;renderChatLog();ent[who].jump=.8;
+  const ans={role:'assistant',who,content:'かんがえ中…',partial:true};log.push(ans);chatBusy=true;CHAT_WHO=who;$('chatSend').disabled=true;$('chatStop').hidden=false;renderChatLog();ent[who].jump=.8;
   const turns=log.filter(m=>m!==ans&&!m.err&&m.role!=='sys').slice(-30).map(m=>({role:m.role,content:m.role==='assistant'&&m.who&&m.who!==who?'（'+NAMES[m.who]+'の発言）'+m.content:m.content}));{const enc=new TextEncoder();let tot=turns.reduce((a,t)=>a+enc.encode(t.content).length,0);while(turns.length>1&&tot>110000){tot-=enc.encode(turns[0].content).length;turns.shift()}}while(turns.length&&turns[0].role!=='user')turns.shift();
   chatCtl=new AbortController();
   try{const r=await SAMPLE([{role:'user',content:chatRules()},...turns],{cache:false,signal:chatCtl.signal,modelTier:$('chatDeep').checked?'complex':'default',...(CHAT_TOOLS_OK?{tools:chatToolList()}:{}),onText:({text})=>{ans.content=text;if(chatKey()===key)renderChatLog()}});
@@ -1305,7 +1311,7 @@ async function chatSend(){if(chatBusy||!SAMPLE)return;const txt=$('chatIn').valu
   catch(e){const m=chatErr(e);if(e&&e.text){ans.content=e.text;ans.partial=true}else{log.splice(log.indexOf(ans),1);if(m)log.push({role:'assistant',who,content:m,err:true})}
     if(e&&e.text&&m)log.push({role:'assistant',who,content:m,err:true});
     if(e&&(e.code==='not_granted'||e.code==='sampling_disabled'||e.code==='not_declared'))$('chatNote').textContent=chatErr(e)}
-  finally{chatBusy=false;chatCtl=null;$('chatSend').disabled=false;$('chatStop').hidden=true;renderChatLog();chatPersist()}}
+  finally{chatBusy=false;CHAT_WHO=null;chatCtl=null;$('chatSend').disabled=false;$('chatStop').hidden=true;renderChatLog();chatPersist()}}
 // 部屋の会話は、お金・人のことも混ざるので、残す先はいつも「そーやんだけの場所」（talks）。新しいほうから最大12発言・4000字
 async function chatSave(){const key=chatKey(),log=(LOGS[key]||[]).filter(m=>!m.err&&!m.partial);if(!log.length)return;
   if(!MIND.uid||!db){$('chatNote').textContent='ログインしていないため、残せません（会話はこの画面のあいだは残ります）。';return}
