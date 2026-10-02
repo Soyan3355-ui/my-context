@@ -1345,7 +1345,7 @@ async function todayAct(a,k,label){if(TQ.busy||!CHAT_GRP)return;const g=grpOf(CH
       else if(a==='pmok'){ack='うん、今週もいっしょにがんばろ'}
       else{ack='わかった、あとでまた聞くね';toList=true}}
     else if(it.k==='mail'){
-      if(a==='mok'){const ed=TQ.edits[it.id];const patch={status:'approved',approvedAt:Date.now()};if(ed){patch.draft=ed;patch.revisedAt=Date.now()}if(!(await mailWrite(it.id,patch)))throw 0;delete TQ.edits[it.id];ack=ed?'直した内容で、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）':'OK、返信の準備をしたよ。次の見回りで送るね（急ぐときは Gmail の下書きから送ってもOK）'}
+      if(a==='mok'){const ed=TQ.edits[it.id];const patch={status:'approved',approvedAt:Date.now()};if(ed){patch.draft=ed;patch.revisedAt=Date.now()}if(!(await mailWrite(it.id,patch)))throw 0;delete TQ.edits[it.id];ack=ed?'直した内容でOKにしたよ。見回りが Gmail の下書きを用意するから、送るのは Gmail からお願い（急ぐときは、いまある下書きを直して送ってもOK）':'OKにしたよ。見回りが Gmail の下書きを用意するから、送るのは Gmail からお願い（急ぐときは、いまある下書きから送ってもOK）'}
       else if(a==='mno'||a==='mdone'){if(!(await mailWrite(it.id,{status:'skipped',skippedAt:Date.now()})))throw 0;ack=a==='mdone'?'返信なしで、この用件を閉じたよ':'返信しないことにしたよ'}
       else if(a==='mfix'){TQ.reviseKey=key;ack='どう直す？ ことばで教えてね（例：もう少しやわらかく／日程を来週にして）。上の下書きは、そのまま直接書き換えてもOKだよ'}
       else{ack='わかった、あとでまた聞くね';toList=true}}
