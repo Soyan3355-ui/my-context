@@ -227,6 +227,17 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .msg.sys{justify-self:center;max-width:100%;font-size:12px;color:var(--sub);background:transparent;border:1.5px dashed var(--line);text-align:center}.pend{display:grid;gap:6px;margin:0 0 8px}.pend .pd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--body);font-size:13px;border:2px solid var(--good);border-radius:10px;padding:6px 10px;background:color-mix(in srgb,var(--good) 10%,var(--bg))}.due{font-family:var(--body);font-size:11px;color:var(--warn);border:1.5px solid var(--warn);border-radius:999px;padding:0 6px;margin-left:4px;white-space:nowrap}
 .focus.fold #focusBody{display:none}.focus.fold{padding-bottom:8px}.focus h2{display:flex;align-items:center;gap:4px}.fold-btn{font:inherit;background:none;border:0;padding:4px 6px;min-height:32px;cursor:pointer;color:inherit}
 .vci{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-family:var(--body);font-size:13px;line-height:1.5;padding:4px 0;border-top:1px dashed var(--line)}.vci .ty{font-size:11px;border:1.5px solid var(--line);border-radius:999px;padding:0 7px}.vci .st{font-size:11px;color:var(--sub);margin-left:auto}
+
+/* 会話ビュー（既定）：判断・会話・つぶやきだけを出す。「ぜんぶの画面」で元の画面 */
+.simple .top>.stage,.simple .top .side>.nowbox,.simple .top .side>.win,.simple .top .side>.focus,.simple .arr-bar,.simple .md-nudge[hidden]{display:none!important}
+.simple .top{display:block}.simple .top .side{display:block}
+.simple .cols{display:flex;flex-direction:column}.simple .cols .colA,.simple .cols .colB{display:contents}
+.simple .cols .box:not([aria-labelledby="h-vc"]):not([aria-labelledby="h-xc"]):not([aria-labelledby="h-chat"]):not([aria-labelledby="h-ci"]){display:none}
+.simple .box[aria-labelledby="h-xc"]{order:-30!important}.simple .box[aria-labelledby="h-chat"]{order:-20!important}.simple .box[aria-labelledby="h-vc"]{order:-10!important}.simple .box[aria-labelledby="h-ci"]{order:10!important}
+.simple #xcs>.xc:not(:first-child),.simple #xcs>details.xdone{display:none}
+.simple .chat-log{max-height:58vh;min-height:140px}
+.simple header .hud>*:not(#simpleBtn):not(#newsBtn){display:none}
+.cw .bdg{display:inline-block;min-width:16px;padding:0 4px;margin-left:4px;border-radius:999px;background:#e0674c;color:#fff;font-size:11px;line-height:16px;text-align:center}
 .chips-on .md-nudge{display:none!important}.chips{display:flex;flex-wrap:wrap;gap:6px;justify-self:start;margin:2px 0}.chip{font:inherit;font-size:13px;min-height:40px;padding:6px 12px;border:2px solid var(--line);border-radius:999px;background:#fff6d6;color:#3a3330;cursor:pointer}.chip:hover{border-color:#e0b64a}
 .msg.err{border-color:var(--bad);color:var(--bad)}
 .box>h2[role=button]{cursor:pointer;user-select:none}.box>h2 .arw{color:var(--sub);transition:transform .2s;margin-left:auto;flex:none}.box>h2[aria-expanded="true"] .arw{transform:rotate(90deg)}
@@ -370,7 +381,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 <div class="app">
   <header>
     <div><h1>ちいかわ株式会社</h1><div class="date" id="date"></div></div>
-    <div class="hud"><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button">📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
+    <div class="hud"><button class="btn-s" id="simpleBtn" type="button" aria-pressed="true">📋 ぜんぶの画面</button><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button">📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
   <button type="button" class="md-nudge" id="mdNudge" hidden></button><div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
@@ -1198,7 +1209,8 @@ const chatKey=()=>'room';
 const clip=(s,n)=>{s=String(s??'');return s.length>n?s.slice(0,n)+'…':s};
 function chatTasks(){const b=BOARD.filter(x=>x.status!=='done').map(x=>({v:'b:'+x.id,t:x.title,src:'ボード'}));const m=TASKS.filter(x=>!x.done).map(x=>({v:'t:'+x.id,t:x.title,src:'そーやんの仕事'}));return b.concat(m)}
 function renderChatUi(){
-  $('chatWho').innerHTML=CHAT_CHARS.map(id=>`<button type="button" data-c="${id}" aria-pressed="${id===chatChar}"><img src="${ICON[id]}" alt="">${esc(NAMES[id])}</button>`).join('');
+  $('chatWho').classList.add('cw');const wn={};BOARD.filter(x=>x.status!=='done').forEach(x=>{const o=OWNER_ID[x.owner];if(o)wn[o]=(wn[o]||0)+1});
+  $('chatWho').innerHTML=CHAT_CHARS.map(id=>`<button type="button" data-c="${id}" aria-pressed="${id===chatChar}"><img src="${ICON[id]}" alt="">${esc(NAMES[id])}${wn[id]?`<span class="bdg" title="進行中の仕事">${wn[id]}</span>`:''}</button>`).join('');
   const sel=$('chatTask'),cur=sel.value;const ts=chatTasks();
   const html='<option value="">（タスクを決めずに相談）</option>'+ts.map(x=>`<option value="${esc(x.v)}">${esc(x.src)}：${esc(clip(x.t,40))}</option>`).join('');
   if(sel.dataset.h!==html){sel.innerHTML=html;sel.dataset.h=html;sel.value=ts.some(x=>x.v===cur)?cur:''}
@@ -1883,6 +1895,11 @@ function initBoxes(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!
   sum.addEventListener('click',e=>{if(e.target.closest('input,label,a,button'))return;setBox(id,true)});
   setBox(id,id in BOXST?!!BOXST[id]:id==='h-vc',true)});renderSums()}
 initBoxes();setInterval(renderSums,1500);
+// ---- 会話ビュー（既定）／ぜんぶの画面 ----
+(function(){let v='1';try{v=localStorage.getItem('ck-simple')||'1'}catch(e){}const b=$('simpleBtn');if(!b)return;
+  const set=on=>{document.body.classList.toggle('simple',on);b.setAttribute('aria-pressed',String(on));b.textContent=on?'📋 ぜんぶの画面':'🗨 会話にもどる';if(on){try{setBox('h-xc',true,true);setBox('h-chat',true,true)}catch(e){}}};
+  window.__setSimple=set;set(v==='1');b.addEventListener('click',()=>{const on=!document.body.classList.contains('simple');set(on);try{localStorage.setItem('ck-simple',on?'1':'0')}catch(e){}window.scrollTo(0,0)})})();
+
 $('boxAll').addEventListener('click',()=>{const anyClosed=BOXES.some(id=>document.getElementById(id).getAttribute('aria-expanded')!=='true');BOXES.forEach(id=>setBox(id,anyClosed,true));saveBox();setNow(anyClosed);$('boxAll').textContent=anyClosed?'全部たたむ':'全部ひらく'});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;if(t.dataset.sumt&&t.checked){setTask(t.dataset.sumt,{done:true}).then(renderSums)}
   else if(t.dataset.dgt&&t.checked&&t.closest('.bx-sum')){setTask(t.dataset.dgt,{done:true}).then(()=>{renderDigest();renderSums()})}});
