@@ -520,7 +520,7 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
 
 ## メールの返信：下書きを作って、社内チャットで「こう返信していい？」と聞く（2026-10-02 そーやんの依頼）
 - 流れ：見回り（朝・夕）が、返信が要るメールの Gmail 下書きを作る → そーやんだけの場所に「返信案」を置く → 画面の社内チャット「📣 きょうのお願い」で、ハチワレが1件ずつ「この内容で返信していい？」と聞く → そーやんが OK／直したい／返信しない／あとで を選ぶ → OK のものを、次の見回りが送る。
-- 置き場所（そーやんだけ。共有の場所にはメール本文・相手の名前・金額を書かない）：ArtifactData の collection `data/users/me/maildrafts/items`、1通につき1ドキュメント（doc_id は `m-<Gmail のスレッドID>`）。形：`{from, subject, summary(1〜2文), draft(返信の本文), threadId, draftId, replyToMessageId(返信先のメッセージID), to(宛先のアドレス), receivedAt(ms), risk(お金・約束・個人情報・断りを含むなら true), status:'pending'}`。
+- 置き場所（そーやんだけ。共有の場所にはメール本文・相手の名前・金額を書かない）：ArtifactData の collection `data/users/me/maildrafts/items`、1通につき1ドキュメント（doc_id は `m-<Gmail のスレッドID>`）。形：`{from, subject, summary(1〜2文), original(相手のメールの本文。引用や署名の長い部分は省いて、1200字まで。**必ず入れる**。そーやんが元のメールを見ないと返事の可否を決められないため。2026-10-02 指摘), originalFrom, originalAt(ms), draft(返信の本文), threadId, draftId, replyToMessageId(返信先のメッセージID), to(宛先のアドレス), receivedAt(ms), risk(お金・約束・個人情報・断りを含むなら true), status:'pending'}`。
 - 見回りがやること（既存の常時発注「未返信メールの仕分けと返信の下書き」：1日10通まで）：
   1. 未返信で返信が要るメールを拾い、Gmail に下書き（create_draft。元のスレッドへの返信）を作る。本文はそーやんの口調で短く、わからないこと（日程・金額）は決めつけず「確認して改めてご連絡します」の形にする。
   2. 同じスレッドの `maildrafts/items` がまだなければ、上の形で新しく作る（`status:'pending'`）。すでにあるものは触らない。
