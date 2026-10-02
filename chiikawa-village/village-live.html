@@ -1042,7 +1042,7 @@ function boardTalk(b,oid){const who=CHAT_CHARS.includes(oid)?oid:'hachiware';con
   return `${ins.length?`<div class="bi">${ins.map(x=>`<div><b>✏️ 指示</b>（${fmt(x.at)}）${esc(x.text)}${x.reply?`<br><span class="rp">↳ ${esc(NAMES[x.who]||'')}：${esc(x.reply)}</span>`:x.handled?'':'<br><span class="rp">↳ 次の見回りで対応します</span>'}</div>`).join('')}</div>`:''}
   <div class="bt-row"><button type="button" class="askb" data-bask="${esc(b.id)}"><img src="${ICON[who]}" alt="">${esc(NAMES[who])}に相談</button></div>
   <details class="bins" data-b="${esc(b.id)}"><summary>✏️ 指示を書く</summary><textarea data-bins="${esc(b.id)}" maxlength="1500" placeholder="例：講座の分だけでいい／金曜までに／この方向で直して" aria-label="このタスクへの指示"></textarea><button type="button" class="bt" data-bk="ins" data-b="${esc(b.id)}">この指示でお願い</button></details>`}
-function askBoard(id){const b=BOARD.find(x=>x.id===id);if(!b)return;const oid=OWNER_ID[b.owner]||b.owner;chatChar=CHAT_CHARS.includes(oid)?oid:'hachiware';renderChatUi();const sel=$('chatTask');sel.value='b:'+id;
+function askBoard(id){const b=BOARD.find(x=>x.id===id);if(!b)return;const oid=OWNER_ID[b.owner]||b.owner;CHAT_GRP=null;chatChar=CHAT_CHARS.includes(oid)?oid:'hachiware';renderChatUi();const sel=$('chatTask');sel.value='b:'+id;
   if(sel.value!=='b:'+id){sel.insertAdjacentHTML('beforeend',`<option value="b:${esc(id)}">ボード：${esc(clip(b.title,40))}</option>`);sel.value='b:'+id;sel.dataset.h=''}
   renderChatLog();setBox('h-chat',true);$('chatIn').placeholder=`「${clip(b.title,30)}」について${NAMES[chatChar]}に相談（例：いまどこまで？／この方向でいい？）`;
   $('h-chat').closest('section').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
@@ -1073,7 +1073,7 @@ function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
 const OWNER_KW=[['kuri',/freee|請求|入金|経理|会計|税|申告|月次|支払|領収|お金/],['momonga',/原稿|記事|マイナビ|下書き|台本|執筆|文章|YouTube|動画|撮影|ネタ/],['shisa',/講座|受講|申込|欠席|寺子屋|カレッジ|議事録|記録|コエテコ/],['usagi',/調べ|土壌|検体|比較|候補|リサーチ/],['rakko',/仕組み|自動化|アプリ|設計/]];
 function taskOwner(t){if(t.owner&&CHAT_CHARS.includes(t.owner))return t.owner;const s=String(t.title||'');for(const [id,re] of OWNER_KW)if(re.test(s))return id;return 'hachiware'}
-function askAbout(id){const t=TASKS.find(x=>x.id===id);if(!t)return;chatChar=taskOwner(t);renderChatUi();const sel=$('chatTask');sel.value='t:'+id;if(sel.value!=='t:'+id){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(id)}">そーやんの仕事：${esc(clip(t.title,40))}</option>`);sel.value='t:'+id;sel.dataset.h=''}
+function askAbout(id){const t=TASKS.find(x=>x.id===id);if(!t)return;CHAT_GRP=null;chatChar=taskOwner(t);renderChatUi();const sel=$('chatTask');sel.value='t:'+id;if(sel.value!=='t:'+id){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(id)}">そーやんの仕事：${esc(clip(t.title,40))}</option>`);sel.value='t:'+id;sel.dataset.h=''}
   renderChatLog();setBox('h-chat',true);$('chatIn').placeholder=`「${clip(t.title,30)}」について${NAMES[chatChar]}に聞きたいこと（例：どこから手をつける？）`;
   const sec=$('h-chat').closest('section');sec.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
 function renderMine(){const ts=TASKS.slice().sort((a,b)=>(!!a.done-!!b.done)||byTime(a,b));const nu=t=>safeUrl(t.notionUrl);
@@ -1268,7 +1268,7 @@ const asstN=id=>threadOf(id).filter(m=>m.role==='assistant'&&!m.partial&&!m.err)
 function chSeenInit(){if(CHSEEN)return;let o=null;try{o=JSON.parse(localStorage.getItem('ck-chseen')||'null')}catch(e){}if(o&&typeof o==='object'){CHSEEN=o;return}if(!chatLoaded)return;CHSEEN={};CHAT_CHARS.forEach(id=>CHSEEN[id]=asstN(id));chSeenSave()}
 function chSeenSave(){try{localStorage.setItem('ck-chseen',JSON.stringify(CHSEEN))}catch(e){}}
 function markSeen(id){chSeenInit();if(!CHSEEN)return;const n=asstN(id);if(CHSEEN[id]!==n){CHSEEN[id]=n;chSeenSave();renderChatList()}}
-const unreadOf=id=>{chSeenInit();return CHSEEN?Math.max(0,asstN(id)-(CHSEEN[id]||0)):0};
+const unreadOf=id=>{chSeenInit();if(CHSEEN&&id.startsWith('g:')&&CHSEEN[id]===undefined&&chatLoaded){CHSEEN[id]=asstN(id);chSeenSave()}return CHSEEN?Math.max(0,asstN(id)-(CHSEEN[id]||0)):0};
 function openThread(id){CHAT_GRP=null;CHAT_TODAY=false;UNR={id,n:unreadOf(id)};chatChar=id;CHAT_SHOWN=id;CHAT_VIEW='thread';$('chatNote').textContent='';renderChatUi()}
 function renderChatList(){const el=$('chatList');if(!el)return;
   const rows=CHAT_CHARS.map(id=>{const t=threadOf(id).filter(m=>m.role!=='sys');const last=t[t.length-1];return {id,last,u:unreadOf(id),at:last&&last.at||0,idx:CHAT_CHARS.indexOf(id)}}).sort((a,b)=>(b.u>0)-(a.u>0)||(b.at-a.at)||a.idx-b.idx);
@@ -1362,7 +1362,7 @@ function grpList(){return ((TL&&TL.projects)||[]).filter(p=>p.status!=='done').m
 function grpOf(pid){const p=((TL&&TL.projects)||[]).find(x=>x.id===pid);return p?{id:p.id,p}:null}
 function grpResponderBase(g){const o=OWNER_ID[g.p.owner]||g.p.owner;return CHAT_CHARS.includes(o)&&o!=='kani'?o:'kani'}
 function grpMembers(g){const o=grpResponderBase(g);return o==='kani'?[NAMES.kani]:[NAMES.kani,NAMES[o]]}
-function grpResponder(g,txt){const m=/[@＠]\s*([^\s、，,。:：]+)/.exec(txt||'');if(m){const id=CHAT_CHARS.find(c=>NAMES[c]===m[1]||NAMES[c].startsWith(m[1])||m[1].startsWith(NAMES[c]));if(id)return id}return grpResponderBase(g)}
+function grpResponder(g,txt){const m=/[@＠]\s*([^\s、，,。:：]+)/.exec(txt||'');if(m&&m[1].length>=2){const id=CHAT_CHARS.find(c=>NAMES[c]===m[1]||NAMES[c].startsWith(m[1])||m[1].startsWith(NAMES[c]));if(id)return id}return grpResponderBase(g)}
 function grpIntro(){const g=grpOf(CHAT_GRP);if(!g)return '<p class="empty">このプロジェクトは見つかりません。</p>';const p=g.p;
   return `<div class="mrow ai"><img class="av" src="${ICON.kani}" alt=""><div class="mcol"><div class="nm">${esc(NAMES.kani)}</div><div class="msg ai">${esc(`「${clip(p.title,40)}」のグループだよ。いまは${({late:'遅れ',warn:'ちょっと注意',ok:'順調',done:'完了'})[p.status]||'-'}${p.due?`（期限 ${mdOf(p.due)}）`:''}。${p.next?`\n次の一手：${clip(p.next,100)}`:''}${p.why?`\n${clip(p.why,120)}`:''}\n何から話す？`)}</div></div></div><div class="chips" role="group" aria-label="はじめかた">${['今日やることを決める','止まっている理由を整理する','次の期限を見直す'].map(x=>`<button type="button" class="chip" data-opt="${esc(x)}">${esc(x)}</button>`).join('')}</div>`}
 function openGroup(pid){const g=grpOf(pid);if(!g)return;CHAT_TODAY=false;CHAT_GRP=pid;chatChar=grpResponderBase(g);CHAT_SHOWN=chatChar;UNR={id:'g:'+pid,n:unreadOf('g:'+pid)};CHAT_VIEW='thread';$('chatNote').textContent='';renderChatUi()}
@@ -1519,7 +1519,7 @@ $('chatList').addEventListener('click',e=>{const d=e.target.closest('details.cpr
   const tb=e.target.closest('button[data-today]');if(tb){CHAT_TODAY=true;CHAT_VIEW='thread';UNR={id:'',n:0};CHAT_SHOWN=chatChar;$('chatNote').textContent='';renderChatUi();const l=$('chatLog');if(l)l.scrollIntoView({block:'nearest'});return}
   const b=e.target.closest('button[data-open]');if(!b||chatBusy)return;openThread(b.dataset.open);const l=$('chatLog');if(l)l.scrollIntoView({block:'nearest'})});
 $('chatHead').addEventListener('click',e=>{if(e.target.closest('[data-back]')){CHAT_VIEW='list';UNR={id:'',n:0};renderChatUi();return}if(e.target.closest('[data-untask]')){$('chatTask').value='';renderChatUi()}});
-$('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
+$('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;CHAT_GRP=null;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
 $('chatTask').addEventListener('change',()=>{if(!chatBusy){$('chatNote').textContent='';renderChatLog()}});
 $('chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend()});
 $('chatLog').addEventListener('click',e=>{const tq=e.target.closest('button[data-tq]');if(tq){todayAct(tq.dataset.tq,tq.dataset.k,tq.textContent.trim());return}const b=e.target.closest('button[data-opt]');if(!b)return;const note=$('chatNote');
@@ -1850,7 +1850,7 @@ function renderFin(){const box=$('fin');if(!FIN){return}const f=FIN;$('finAsOf')
     <div class="fin-talk"><button type="button" class="bt" id="finTalk">🌰 くりまんじゅうと話して決める</button><small>この欄の数字を見ながら相談できます（そーやんだけ）</small></div>
     <div class="foot">くりまんじゅうが freee を読むだけで集計（書き込みはしません）。更新：${f.updatedAt?fmt(f.updatedAt):'-'}。毎週月曜と、頼まれたときに更新します。この欄はそーやんだけに見えます。</div>`;
   finLine($('finLine'));finBars($('finBars'))}
-$('fin').addEventListener('click',e=>{if(e.target.id!=='finTalk'||chatBusy)return;chatChar='kuri';$('chatTask').value='';renderChatUi();setBox('h-chat',true);
+$('fin').addEventListener('click',e=>{if(e.target.id!=='finTalk'||chatBusy)return;CHAT_GRP=null;chatChar='kuri';$('chatTask').value='';renderChatUi();setBox('h-chat',true);
   $('chatIn').placeholder='お金のことをくりまんじゅうに相談（例：10/23 の振込、どうしたらいい？）';const sec=$('h-chat').closest('section');sec.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)});
 let finRz=0;addEventListener('resize',()=>{clearTimeout(finRz);finRz=setTimeout(()=>{if(FIN&&$('finLine'))renderFin()},200)});
 
