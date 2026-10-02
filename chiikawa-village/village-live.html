@@ -576,8 +576,10 @@ const byTime=(a,b)=>(a.createdAt||0)-(b.createdAt||0);
 function agentState(id){if(id==='chiikawa')return 'active';const a=(STATUS.agents||{})[id];return (a&&a.state)||(DEFAULT_PLACE[id]?'active':'bench')}
 var CHAT_WHO=null;const WORK_FRESH=45*60000;
 function isWorking(id){if(id==='chiikawa'||id==='soyan')return true;const a=(STATUS.agents||{})[id];if(!a||a.state!=='active')return false;const at=a.at||STATUS.updatedAt||0;return Date.now()-at<WORK_FRESH}
-function isShown(id){if(id==='chiikawa'||id==='soyan')return true;const e=ent[id];if(!e)return true;return isWorking(id)||e.st!=='home'||!!e.gym||!!e.hunt||CHAT_WHO===id||(e.jump>0)}
-function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench')}
+function workedToday(id){const a=(STATUS.agents||{})[id];if(!a)return false;const t=a.at||(a.state==='active'?STATUS.updatedAt:0);return !!t&&ymd(t)===ymd(Date.now())}
+function offDuty(id){return id!=='chiikawa'&&id!=='soyan'&&!isWorking(id)&&workedToday(id)}
+function isShown(id){if(id==='chiikawa'||id==='soyan')return true;const e=ent[id];if(!e)return true;return isWorking(id)||workedToday(id)||e.st!=='home'||!!e.gym||!!e.hunt||CHAT_WHO===id||(e.jump>0)}
+function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench'||offDuty(id))}
 function homeOf(id){if(isFree(id)){const e=ent[id];if(e&&e.act)return {x:e.act.x,y:e.act.y,face:e.act.face||1};return {x:PLAY.sand.x,y:PLAY.sand.y,face:1}}
   const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
 
@@ -813,14 +815,18 @@ function drawParts(dt){for(let i=PARTS.length-1;i>=0;i--){const p=PARTS[i];p.lif
 const rnd2=(a,b)=>a+Math.random()*(b-a);
 function freeBrain(id,e,dt){
   if(!e.act||e.act.until<T){const pref=FREE_PREF[id]||['wander'];const kind=Math.random()<.25?'wander':pref[Math.floor(Math.random()*pref.length)];
+    let kind2=kind;if(BASE&&id!=='chiikawa'){const r=Math.random();kind2=r<.3?'train':r<.55?'farm':kind}
+    if(kind2!==kind){const tr=kind2==='train';e.act={kind:kind2,until:T+rnd2(9,15),x:tr?rnd2(172,202):rnd2(16,70),y:tr?172:60,face:tr?(Math.random()<.5?1:-1):1}}else{
     const base=PLAY[kind];e.act={kind,until:T+rnd2(8,14),x:base?base.x+rnd2(-4,4):(BASE?rnd2(FREE_AREA.x0,FREE_AREA.x1):rnd2(14,210)),y:base?base.y+rnd2(-2,2):(BASE?FREE_AREA.y:rnd2(160,186)),face:base?base.face:1};if(kind==='run'){e.act.x=BASE?rnd2(FREE_AREA.x0,FREE_AREA.x1):rnd2(14,210);e.act.y=BASE?FREE_AREA.y:rnd2(158,186)}
-    if(id==='chiikawa'&&kind==='post'){e.act.x=PLAY.post.x;e.act.y=PLAY.post.y}}
+    if(id==='chiikawa'&&kind==='post'){e.act.x=PLAY.post.x;e.act.y=PLAY.post.y}}}
   const a=e.act;const sp=a.kind==='run'?40:16;const arrived=stepTo(e,a.x,a.y,dt,sp);e.walking=!arrived;
   if(!arrived){e.pose='idle';e.napping=false;return}
   e.face=a.face;e.napping=false;
   switch(a.kind){
     case 'run':a.x=BASE?rnd2(FREE_AREA.x0,FREE_AREA.x1):rnd2(14,210);a.y=BASE?FREE_AREA.y:rnd2(158,186);if(Math.random()<.3)e.jump=.8;break;
     case 'nap':e.napping=true;e.pose=HAPPY[id]?'happy':'idle';if(e.t%1.4<dt)emit(e.x+4,e.y-20,'',1,{z:1,vy:-5,vx:3,spread:1,life:1.6});break;
+    case 'train':e.pose=Math.floor(T/.4)%2?'work':'idle';if(e.t%0.8<dt){e.jump=.5;emit(e.x+(e.face>0?10:-10),e.y-14,'#ffffff',2,{life:.5,spread:6})}break;
+    case 'farm':e.pose=Math.floor(T/.5)%2?'work':'idle';if(e.t%0.7<dt)emit(e.x+8,e.y-3,'#8fd18a',2,{vy:-8,life:.6,spread:4});break;
     case 'swing':e.x=a.x+Math.sin(T*3)*3;e.pose='idle';break;
     case 'sand':e.pose=Math.floor(T/.5)%2?'work':'idle';if(e.t%0.7<dt)emit(e.x+6,e.y-4,'#d9b870',2,{vy:-10,life:.5});break;
     case 'flowers':e.pose='idle';if(e.t%2.5<dt){e.jump=.5;emit(e.x,e.y-20,'#ffd84a',3,{life:.8})}break;
