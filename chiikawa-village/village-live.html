@@ -1265,7 +1265,7 @@ function chatToolList(){const all=[...(MCP?readTools():[]),
    inputSchema:{type:'object',properties:{title:{type:'string'},due:{type:'string',description:'YYYY-MM-DD'}},required:['title']},
    execute:async input=>addTaskFromChat(input.title,input.due)}];
   // 一度に渡せる道具の数には上限がある。優先順に並べて上限までにする（くりまんじゅうは freee を前に）
-  const pr=['complete_task','add_task',...(chatChar==='kuri'?['freee_get']:[]),'gmail_search','gmail_read','notion_search','request_approval','ask_patrol','calendar_events','notion_read','freee_get'];
+  const pr=['complete_task','add_task',...(chatChar==='kuri'||chatChar==='asuka'?['freee_get']:[]),'gmail_search','gmail_read','notion_search','request_approval','ask_patrol','calendar_events','notion_read','freee_get'];
   const seen=new Set();const out=[];pr.forEach(n=>{const t=all.find(x=>x.name===n);if(t&&!seen.has(n)){seen.add(n);out.push(t)}});return out.slice(0,CHAT_TOOL_MAX||8)}
 $('chatPend').addEventListener('click',async e=>{const b=e.target.closest('button[data-pd]');if(!b)return;const p=PEND[+b.dataset.i];if(!p)return;PEND.splice(+b.dataset.i,1);renderPend();
   if(p.kind==='patrol'){if(b.dataset.pd!=='ok'){sysLine('（見回りには頼みませんでした）');return}const n={text:'【社内チャットから見回りへの依頼／'+NAMES[p.who]+'】\n'+p.text,to:p.who,createdAt:Date.now(),replies:[],fromChat:true,request:true};
@@ -1295,7 +1295,9 @@ async function chatSave(){const key=chatKey(),log=(LOGS[key]||[]).filter(m=>!m.e
   if(!canWrite){$('chatNote').textContent='この画面では保存できません。';return}const btn=$('chatSave');if(btn.dataset.busy)return;btn.dataset.busy='1';
   const sel=$('chatTask');const tl=sel.value?(sel.options[sel.selectedIndex].textContent):'';
   let body=log.slice(-12).map(m=>(m.role==='user'?'そーやん：':m.role==='sys'?'（画面）':NAMES[m.who]+'：')+m.content).join('\n');if(body.length>4000)body='…'+body.slice(-4000);
-  try{const ref=db.doc('data/users/'+MIND.uid+'/talks');const sn=await ref.get();const d=sn&&sn.exists?sn.data():{items:[]};d.items=(d.items||[]).concat([{at:Date.now(),who:chatChar,topic:chatChar==='kuri'?'お金':'チャット',task:tl,text:body,handled:false}]).slice(-50);d.updatedAt=Date.now();
+  try{const ref=db.doc('data/users/'+MIND.uid+'/talks');const sn=await ref.get();const d=sn&&sn.exists?sn.data():{items:[]};d.items=(d.items||[]).concat([{at:Date.now(),who:chatChar,topic:chatChar==='kuri'?'お金':'チャット',task:tl,text:body,handled:false}]);
+    // 文書の上限（256KiB）に収めるため、約180KB を超えたら、見回りが読み終えた（handled）古いものから消す
+    {const enc=new TextEncoder();const sz=()=>enc.encode(JSON.stringify(d.items)).length;while(d.items.length>1&&sz()>180000){const i=d.items.findIndex(x=>x.handled);d.items.splice(i>=0?i:0,1)}}d.updatedAt=Date.now();
     await ref.set(d);$('chatNote').textContent='そーやんだけの場所に残しました。次の見回りで、アスカたちが決まったことを反映します。'}catch(e){$('chatNote').textContent='保存できませんでした。'}finally{delete btn.dataset.busy}
   floater('📝',ent[chatChar])}
 $('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
