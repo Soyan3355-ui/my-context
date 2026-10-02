@@ -1000,7 +1000,7 @@ function renderXcsNow(){const openL=XCS.filter(x=>x.status!=='answered').sort(by
   $('xcs').innerHTML=(openL.length?openL.map(x=>xcCard(x,false)).join(''):'<p class="empty">いま判断してほしいことはありません。新しいカードが届くと、ここに出ます。</p>')
     +(doneL.length?`<details class="xdone"${keep?' open':''}><summary>回答済み（${doneL.length}件）を見る</summary>${doneL.map(x=>xcCard(x,true)).join('')}</details>`:'')}
 const LANES=[['review','🛡️ 検収待ち','#b7791f'],['blocked','⛔ ブロック','#c2463d'],['doing','🔨 作業中','#3f6fd8'],['todo','📌 これから','#857a70'],['done','✅ 完了（直近）','#4f8f4a']];
-const OWNER_ID={'アスカ':'asuka','古本屋さん':'kani','古本屋':'kani','ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','くりまんじゅう':'kuri','そーやん':'soyan'};
+const OWNER_ID={'アスカ':'asuka','古本屋さん':'kani','古本屋':'kani','ハチワレ':'hachiware','うさぎ':'usagi','モモンガ':'momonga','鎧さん':'yoroi','鎧さん（検収）':'yoroi','鎧さん（見回りA）':'scoutA','鎧さん（見回りB）':'scoutB','シーサー':'shisa','ラッコ':'rakko','参謀ラッコ':'rakko','くりまんじゅう':'kuri','そーやん':'soyan'};
 function boardTalk(b,oid){const who=CHAT_CHARS.includes(oid)?oid:'hachiware';const ins=(b.instructions||[]).slice(-3);
   return `${ins.length?`<div class="bi">${ins.map(x=>`<div><b>✏️ 指示</b>（${fmt(x.at)}）${esc(x.text)}${x.reply?`<br><span class="rp">↳ ${esc(NAMES[x.who]||'')}：${esc(x.reply)}</span>`:x.handled?'':'<br><span class="rp">↳ 次の見回りで対応します</span>'}</div>`).join('')}</div>`:''}
   <div class="bt-row"><button type="button" class="askb" data-bask="${esc(b.id)}"><img src="${ICON[who]}" alt="">${esc(NAMES[who])}に相談</button></div>
