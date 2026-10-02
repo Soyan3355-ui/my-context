@@ -189,9 +189,9 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .qi{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;align-items:start;padding:6px 0;border-top:1px dashed var(--qline);cursor:pointer}.qi:first-of-type{border-top:0}
 .qi input{width:20px;height:20px;margin:1px 0 0;accent-color:#8fd18a}.qi b{font-weight:400;font-size:14px;display:block;line-height:1.4}.qi small{display:block;line-height:1.45}.qi.dn b{text-decoration:line-through;color:var(--qs)}
 .qtabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}.qtabs button{font:inherit;font-size:13px;border:2px solid var(--qi);background:var(--qb);color:var(--qi);border-radius:4px;padding:5px 10px;cursor:pointer;min-height:36px}.qtabs button[aria-pressed="true"]{background:var(--qi);color:var(--qb)}
-.qg{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n),minmax(24px,30px));gap:4px;align-items:center;font-size:13px}.qt{line-height:1.35;padding:2px 0}.qt small{font-size:11px}
+.qg{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--n),minmax(22px,30px));gap:4px;align-items:center;font-size:13px}.qt{line-height:1.35;padding:2px 0}.qt small{font-size:11px}
 .qc{height:24px;border-radius:2px;background:var(--qline);display:flex;align-items:center;justify-content:center;font-size:13px}.qc.h{background:none;height:auto;font-size:11px;color:var(--qs);line-height:1.2;text-align:center}.qc.now{outline:2px solid #ffd84a;outline-offset:-2px}.qc.h.now{outline:0;color:#ffd84a}
-.qc.ok{background:#3f7a3a}.qc.part{background:#7a6a2a}.qc.miss{background:#8a3a3a}.qlg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--qs);margin-top:8px}
+.qc.off{background:none;color:var(--qs)}.qc.ok{background:#3f7a3a}.qc.part{background:#7a6a2a}.qc.miss{background:#8a3a3a}.qlg{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--qs);margin-top:8px}
 .md-nudge{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:30;font:inherit;font-size:14px;border:2px solid #3b3533;border-radius:99px;background:#fff6e0;color:#3b3533;padding:9px 16px;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer;min-height:44px}.md-nudge[hidden]{display:none}
 .ci-hist{width:100%;border-collapse:collapse;margin-top:12px;font-family:var(--body);font-size:12.5px;font-variant-numeric:tabular-nums}
 .ci-hist th,.ci-hist td{border-top:1px dashed var(--line);padding:4px 2px;text-align:center}
@@ -1608,21 +1608,27 @@ const qCad=c=>{c=String(c||'');if(/毎日|毎夕|毎朝/.test(c))return 'd';if(/
 const jd=t=>new Date(t+9*36e5);const ymd=t=>{const d=jd(t);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
 const wkKey=t=>{const d=jd(t);const day=(d.getUTCDay()+6)%7;const mon=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-day);return 'w'+ymd(mon-9*36e5)};
 const moKey=t=>'m'+ymd(t).slice(0,7);
-// きょうが当番の日か（曜日・月のどのあたりか）
-function qDueToday(r){const c=String(r.cadence||'');const k=qCad(c);const d=jd(Date.now());if(k==='d')return true;
-  if(k==='w'){const m=c.match(/([月火水木金土日])曜/);if(m)return '日月火水木金土'[d.getUTCDay()]===m[1]||(/土日/.test(c)&&[0,6].includes(d.getUTCDay()));if(/土日/.test(c))return [0,6].includes(d.getUTCDay());return false}
+// 当番の判定：その周期の「始まりの日」から週末・月末まで、終わるまで出し続ける（2026-10-02 鎧さんの指摘）
+const qUntil=r=>{const m=String(r.cadence||'').match(/(\d{1,2})\/(\d{1,2})まで/);if(!m)return null;const y=jd(Date.now()).getUTCFullYear();return Date.UTC(y,+m[1]-1,+m[2])-9*36e5+864e5};
+// 隔週：起点（「初回M/D」か、days の最初の ok）から数えて、休みの週かどうか
+function qOffWeek(r,t){if(!/隔週/.test(String(r.cadence||'')))return false;let a=null;const m=String(r.cadence).match(/初回(\d{1,2})\/(\d{1,2})/);
+  if(m)a=Date.UTC(jd(t).getUTCFullYear(),+m[1]-1,+m[2])-9*36e5;else{const ks=Object.entries(r.days||{}).filter(([,v])=>v==='ok'||v==='part').map(([k])=>dnum(k)).filter(x=>x!=null).sort((x,y)=>x-y);if(ks.length)a=ks[0]}
+  if(a==null)return false;const wk=x=>Math.floor((dnum(wkKey(x).slice(1))+9*36e5)/(7*864e5));return (wk(t)-wk(a))%2!==0}
+function qDueToday(r){const c=String(r.cadence||'');const k=qCad(c);const t=Date.now();const d=jd(t);const u=qUntil(r);if(u&&t>=u)return false;if(k==='d')return true;
+  if(k==='w'){if(qOffWeek(r,t))return false;const dow=(d.getUTCDay()+6)%7;const ds=[...c.matchAll(/([月火水木金土日])(?=曜|日|\s|$)/g)].map(x=>'月火水木金土日'.indexOf(x[1])).filter(x=>x>=0);
+    if(/土日/.test(c))ds.push(5);const start=ds.length?Math.min(...ds):0;return dow>=start}
   const dd=d.getUTCDate(),last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();
-  if(/1日/.test(c))return dd<=3;if(/初/.test(c))return dd<=5;if(/末/.test(c))return dd>=last-4;if(/下旬/.test(c))return dd>=21;if(/中旬/.test(c))return dd>=11&&dd<=20;if(/上旬/.test(c))return dd<=10;return false}
+  const start=/末/.test(c)?last-4:/下旬/.test(c)?21:/中旬/.test(c)?11:1;return dd>=start}
 // 期間（日・週・月）の状態：timeline の記録とそーやんのチェックを合わせる
 function qState(r,kind,t){const days=r.days||{};const mine=QUESTS[kind==='d'?'q'+ymd(t):kind==='w'?wkKey(t):moKey(t)]||{};if(mine.done&&mine.done[r.id])return 'ok';
-  if(kind==='d')return days[ymd(t)]||'';const inP=k=>kind==='w'?wkKey(dnum(k))===wkKey(t):moKey(dnum(k))===moKey(t);
+  if(kind==='d')return days[ymd(t)]||'';if(kind==='w'&&qOffWeek(r,t))return 'off';const inP=k=>kind==='w'?wkKey(dnum(k))===wkKey(t):moKey(dnum(k))===moKey(t);
   const vs=Object.entries(days).filter(([k])=>dnum(k)!=null&&inP(k)).map(([,v])=>v);if(vs.includes('ok'))return 'ok';if(vs.includes('part'))return 'part';if(vs.includes('miss'))return 'miss';return ''}
 function qToday(){const t=Date.now();const rs=((TL&&TL.routines)||[]).filter(r=>(r.kind||'system')==='work'&&r.id!=='mail_reply'&&qDueToday(r));
   const L=rs.map(r=>{const kind=qCad(r.cadence);const st=qState(r,kind,t);return {id:'r:'+r.id,rid:r.id,kind,title:r.title,sub:(r.cadence||'')+(r.who?'・'+r.who:''),done:st==='ok',tag:{d:'デイリー',w:'ウィークリー',m:'マンスリー'}[kind]}});
   const ml=STATUS.mail;if(ml&&ml.needReply!=null){L.unshift({id:'mail',title:'📮 メールの返事'+(ml.needReply?`（あと ${ml.needReply}通）`:''),sub:(ml.items||[]).slice(0,3).map(x=>clip(x.t||'',28)).join('／')||'見回りが返事の要るメールを数えます',done:!ml.needReply||!!((QUESTS['q'+ymd(t)]||{}).done||{}).mail_reply,tag:'デイリー',kind:'d',rid:'mail_reply'})}
-  const td=todayKey();TASKS.filter(x=>!x.done&&x.due&&x.due<=td).slice(0,6).forEach(x=>L.push({id:'t:'+x.id,tid:x.id,title:x.title,sub:x.due<td?'期限すぎ（'+x.due.slice(5).replace('-','/')+'）':'きょうが期限',done:false,tag:'タスク'}));
+  const td=ymd(Date.now());TASKS.filter(x=>!x.done&&x.due&&x.due<=td).slice(0,6).forEach(x=>L.push({id:'t:'+x.id,tid:x.id,title:x.title,sub:x.due<td?'期限すぎ（'+x.due.slice(5).replace('-','/')+'）':'きょうが期限',done:false,tag:'タスク'}));
   return L}
-function renderQuest(){const el=$('quest');if(!el)return;const t=Date.now();const td=ymd(t);
+function renderQuest(){const el=$('quest');if(!el)return;const fq=document.activeElement&&el.contains(document.activeElement)?(document.activeElement.dataset.q?'[data-q="'+CSS.escape(document.activeElement.dataset.q)+'"]':document.activeElement.dataset.qt?'[data-qt="'+document.activeElement.dataset.qt+'"]':null):null;QDAY=ymd(Date.now());const t=Date.now();const td=ymd(t);
   const done=doneItems(dayStart(0),dayStart(1));const pass=BOARD.filter(b=>b.verdict==='PASS'&&(b.doneAt||0)>=dayStart(0)).length;
   const bank=FIN?((FIN.cash||{}).items||[]).filter(x=>x.fresh&&x.amount>0).reduce((a,x)=>a+x.amount,0):null;
   const qs=qToday();const left=qs.filter(q=>!q.done).length;
@@ -1631,24 +1637,25 @@ function renderQuest(){const el=$('quest');if(!el)return;const t=Date.now();cons
     <div class="qr" style="margin-top:6px">けいけんち +${pass} <small>（検収 PASS）</small></div></div>`;
   const todayL=`<div class="qb"><div class="qh">きょうの クエスト</div>${qs.length?qs.map(q=>`<label class="qi${q.done?' dn':''}"><input type="checkbox" data-q="${esc(q.id)}"${q.done?' checked':''}${q.id==='mail'&&STATUS.mail&&STATUS.mail.needReply===0?' disabled':''}><span><b>${esc(q.title)}</b><small>${esc(q.tag)}${q.sub?'・'+esc(q.sub):''}</small></span></label>`).join(''):'<p class="qe">きょうの クエストは ありません</p>'}</div>`;
   // 表
-  const rs=((TL&&TL.routines)||[]).filter(r=>(r.kind||'system')==='work'||Q_TAB==='d');const kind=Q_TAB;
-  const cols=[];const N=innerWidth<520?5:7;
+  const rs=((TL&&TL.routines)||[]).filter(r=>(r.kind||'system')==='work'||Q_TAB!=='m');const kind=Q_TAB;
+  const cols=[];const N=7;
   if(kind==='d'){for(let i=N-1;i>=0;i--)cols.push(t-i*864e5)}else if(kind==='w'){for(let i=5;i>=0;i--)cols.push(t-i*7*864e5)}else{const d=jd(t);for(let i=5;i>=0;i--)cols.push(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()-i,15)-9*36e5)}
-  const lab=c=>kind==='d'?'日月火水木金土'[jd(c).getUTCDay()]+'<br>'+jd(c).getUTCDate():kind==='w'?(()=>{const s=wkKey(c).slice(6).split('-');return +s[0]+'/'+ +s[1]+'〜'})():(jd(c).getUTCMonth()+1)+'月';
-  const rows=rs.filter(r=>qCad(r.cadence)===kind||(kind==='d'&&(r.kind||'system')==='system'&&qCad(r.cadence)==='d'));
-  const SY={ok:'○',part:'△',miss:'×'};
+  const lab=c=>kind==='d'?'日月火水木金土'[jd(c).getUTCDay()]+'<br>'+jd(c).getUTCDate():kind==='w'?(()=>{const s=wkKey(c).slice(6).split('-');return +s[0]+'/<br>'+ +s[1]})():(jd(c).getUTCMonth()+1)+'月';
+  const rows=rs.filter(r=>qCad(r.cadence)===kind);
+  const SY={ok:'○',part:'△',miss:'×',off:'－'};
   const grid=rows.length?`<div class="qg" style="--n:${cols.length}"><div></div>${cols.map((c,i)=>`<div class="qc h${i===cols.length-1?' now':''}">${lab(c)}</div>`).join('')}
     ${rows.map(r=>`<div class="qt">${esc(r.title)}${(r.kind||'')==='system'?' <small>🤖</small>':''}</div>${cols.map((c,i)=>{const v=qState(r,kind,c);return `<div class="qc ${v}${i===cols.length-1?' now':''}" title="${esc(r.title)}">${SY[v]||''}</div>`}).join('')}`).join('')}</div>`:'<p class="qe">この周期の クエストは まだ ありません</p>';
   const tabs=`<div class="qtabs" role="group" aria-label="周期">${[['d','デイリー'],['w','ウィークリー'],['m','マンスリー']].map(([k,l])=>`<button type="button" data-qt="${k}" aria-pressed="${kind===k}">${l}</button>`).join('')}</div>`;
-  el.innerHTML=`<div class="qwrap"><div class="qcol">${hero}${todayL}</div><div class="qb qmain"><div class="qh">${{d:'デイリー',w:'ウィークリー',m:'マンスリー'}[kind]}クエスト（ルーティン）</div>${tabs}${grid}<div class="qlg"><span>○ できた</span><span>△ 一部</span><span>× できなかった</span><span>🤖 ちいかわ株式会社の見回り</span></div><div class="qe">れんぞく達成で なかまが レベルアップ（チェックは見回りがタイムラインに反映します）</div></div></div>`}
+  el.innerHTML=`<div class="qwrap"><div class="qcol">${hero}${todayL}</div><div class="qb qmain"><div class="qh">${{d:'デイリー',w:'ウィークリー',m:'マンスリー'}[kind]}クエスト（ルーティン）</div>${tabs}${grid}<div class="qlg"><span>○ できた</span><span>△ 一部</span><span>× できなかった</span><span>🤖 ちいかわ株式会社の見回り</span></div><div class="qe">れんぞく達成で なかまが レベルアップ（チェックは見回りがタイムラインに反映します）</div></div></div>`;if(fq){const f=el.querySelector(fq);f&&f.focus({preventScroll:true})}}
 $('quest').addEventListener('click',e=>{const b=e.target.closest('button[data-qt]');if(b){Q_TAB=b.dataset.qt;try{localStorage.setItem('ck-qtab',Q_TAB)}catch(x){}renderQuest()}});
 $('quest').addEventListener('change',async e=>{const id=e.target.dataset&&e.target.dataset.q;if(!id)return;const on=e.target.checked;
   if(id.startsWith('t:')){if(on){await setTask(id.slice(2),{done:true});floater('⚔️',ent.soyan)}renderQuest();return}
   const q=qToday().find(x=>x.id===id);if(!q)return;const t=Date.now();const key=q.kind==='w'?wkKey(t):q.kind==='m'?moKey(t):'q'+ymd(t);
   const cur=QUESTS[key]||{done:{}};const done={...(cur.done||{})};if(on)done[q.rid]=Date.now();else delete done[q.rid];QUESTS[key]={...cur,done};renderQuest();
   if(on){ent.soyan&&(ent.soyan.jump=1);floater('⚔️',ent.soyan)}
-  if(db&&canWrite){try{await db.collection('quests').doc(key).set({done,updatedAt:Date.now()})}catch(x){}}});
-let qRz=0;addEventListener('resize',()=>{clearTimeout(qRz);qRz=setTimeout(renderQuest,200)});
+  if(!db||!canWrite){QUESTS[key]=cur;renderQuest();$('quest').insertAdjacentHTML('beforeend','<p class="qe" role="status">この画面ではチェックを保存できません</p>');return}
+  try{await db.collection('quests').doc(key).set({done,updatedAt:Date.now()})}catch(x){QUESTS[key]=cur;renderQuest();$('quest').insertAdjacentHTML('beforeend','<p class="qe" role="status">保存できませんでした</p>')}});
+let qRz=0,QDAY='';addEventListener('resize',()=>{clearTimeout(qRz);qRz=setTimeout(renderQuest,200)});setInterval(()=>{if(ymd(Date.now())!==QDAY)renderQuest()},60000);
 // ---------- 進み具合のタイムライン（2026-10-01 そーやんの依頼。PM の古本屋さんが timeline/now に置く） ----------
 let TL_TAB='r';try{TL_TAB=localStorage.getItem('ck-tltab')||'r'}catch(e){}const TL_OPEN=new Set();
 const ST_LABEL={ok:['✅','順調'],warn:['⚠️','注意'],late:['🔴','遅れ'],done:['🎉','完了']};
@@ -1828,7 +1835,7 @@ $('arrBtn').addEventListener('click',()=>laySet(!document.body.classList.contain
 $('arrDone').addEventListener('click',()=>laySet(false));
 $('arrReset').addEventListener('click',()=>{layApply(LAY.def);laySave()});
 LAY.def=layDefault();{let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}layApply(loc&&loc.items||LAY.def)}
-async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin()},()=>{});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
+async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)return;LAY.uid=id;LAY.ref=db.doc('data/users/'+id+'/layout');db.doc('data/users/'+id+'/finance').onSnapshot(s=>{FIN=s.exists?s.data():null;if(FIN)renderFin();renderQuest()},()=>{});PEOPLE.ref=db.doc('data/users/'+id+'/people');PEOPLE.ref.onSnapshot(s=>{PEOPLE.data=s.exists?s.data():null;PEOPLE.loaded=true;renderHR()},()=>{});db.doc('data/users/'+id+'/brief').onSnapshot(s=>{BRIEF.mine=s.exists?s.data():null},()=>{});MIND.uid=id;setTimeout(chatLoad,0);MIND.ref=db.doc('data/users/'+id+'/mind');MIND.ref.onSnapshot(s=>{MIND.data=s.exists?s.data():null;MIND.loaded=true;if(!document.activeElement.closest?.('section.md'))renderCheckinForm();else{renderMindViz();mdNudge()}},()=>{});renderCheckinForm();
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
