@@ -980,13 +980,13 @@ function auditScene(a){return {type:'talk',label:'🗂 記録監査',icon:'lette
   ...(a.fixes?[{who:'shisa',head:'修正案',text:a.fixes}]:[]),{who:'shisa',text:'以上です！ 引き続き、ていねいに見ていきます。',end:true}]}}
 
 // ---------- 書き込み ----------
-async function write(col,id,patch){if(!db||!canWrite)return;try{await db.collection(col).doc(id).update(patch)}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}}}
+async function write(col,id,patch){if(!db||!canWrite)return false;try{await db.collection(col).doc(id).update(patch);return true}catch(e){if(e&&e.code==='invalid_argument'){canWrite=false;$('note').textContent='この画面では保存できません。'}return false}}
 function floater(text,e){const f=document.createElement('div');f.className='floater';f.textContent=text;f.style.left=(e.x/W*100)+'%';f.style.top=((e.y-24)/H*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1300)}
 // 判断カードは選択肢に加えて、ことばでも答えられる（2026-10-02 そーやんの依頼）。note は選択肢より優先して読む。k='記述' はことばだけの答え
 async function answer(id,k,note){const x=XCS.find(c=>c.id===id);if(!x)return;const patch={answer:k,answeredAt:Date.now(),status:k==='保留'?'open':'answered'};if(note!==undefined)patch.note=String(note).trim().slice(0,2000);Object.assign(x,patch);xBlur(id);
-  ent.chiikawa.jump=1;renderXcs();renderDigest();await write('exceptions',id,patch)}
+  ent.chiikawa.jump=1;renderXcs();renderDigest();return await write('exceptions',id,patch)}
 let MCP=null;const NOTION_TASKS_DS='307a93e4-85ff-819e-a400-000b94b658ff';
-async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;if('done' in patch)patch.doneAt=patch.done?Date.now():0;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();renderDigest();await write('tasks',id,patch);if('done' in patch)syncNotion(t)}
+async function setTask(id,patch){const t=TASKS.find(x=>x.id===id);if(!t)return;if('done' in patch)patch.doneAt=patch.done?Date.now():0;Object.assign(t,patch);if(patch.done){ent.soyan.jump=1;floater('✨',ent.soyan);ORDER.slice(0,3).forEach(k=>ent[k].jump=1)}renderMine();renderDigest();const ok=await write('tasks',id,patch);if(ok&&'done' in patch)syncNotion(t);return ok}
 async function syncNotion(t){const set=async p=>{Object.assign(t,p);renderMine();await write('tasks',t.id,p)};
   if(!t.notionId){await set({sync:'none'});$('mNote').textContent=t.done?'このタスクは Notion にまだないので、次の見回りで作ってから完了にします':'';return}
   if(!MCP){await set({sync:'pending'});return}
@@ -1302,18 +1302,18 @@ function renderToday(){const el=$('chatLog');const items=todayItems();const cur=
 async function todayAct(a,k,label){if(TQ.busy)return;const it=todayItems()[0];if(!it)return;TQ.busy=true;TQ.log.push({who:'me',text:label});renderToday();
   let ack='';const skip=()=>TQ.skip.add(tqKey(it));
   try{
-    if(it.k==='card'){await answer(it.id,k,undefined);skip();ack=k==='保留'?'保留にしたよ。あとで聞くね':'決めたよ。ありがとう！'}
-    else if(it.k==='rev'){if(a==='ok'){await write('board',it.id,{status:'done'});skip();ack='完了にしたよ！'}else if(a==='fix'){skip();CHAT_TODAY=false;askBoard(it.id);sysLine(`「${clip(it.b.title,30)}」の直してほしいところを、ここで話してね`);TQ.busy=false;return}else{skip();ack='わかった、あとでまた聞くね'}}
+    if(it.k==='card'){if((await answer(it.id,k,undefined))===false)throw 0;skip();ack=k==='保留'?'保留にしたよ。あとで聞くね':'決めたよ。ありがとう！'}
+    else if(it.k==='rev'){if(a==='ok'){if(!(await write('board',it.id,{status:'done'})))throw 0;skip();ack='完了にしたよ！'}else if(a==='fix'){skip();CHAT_TODAY=false;askBoard(it.id);sysLine(`「${clip(it.b.title,30)}」の直してほしいところを、ここで話してね`);TQ.busy=false;return}else{skip();ack='わかった、あとでまた聞くね'}}
     else{const t=it.t;
-      if(a==='done'){await setTask(it.id,{done:true});skip();ack='おつかれさま！'}
-      else if(a==='today'){await setTask(it.id,{due:todayKey()});skip();ack='きょうの分にしたよ。がんばって！'}
-      else if(a==='week'){const d=new Date(dnum(todayKey())+7*864e5+9*36e5);const nd=d.toISOString().slice(0,10);await setTask(it.id,{due:nd});skip();ack=`${mdOf(nd)} に回したよ`}
+      if(a==='done'){if((await setTask(it.id,{done:true}))===false)throw 0;skip();ack='おつかれさま！'}
+      else if(a==='today'){if((await setTask(it.id,{due:todayKey()}))===false)throw 0;skip();ack='きょうの分にしたよ。がんばって！'}
+      else if(a==='week'){const d=new Date(dnum(todayKey())+7*864e5+9*36e5);const nd=d.toISOString().slice(0,10);if((await setTask(it.id,{due:nd}))===false)throw 0;skip();ack=`${mdOf(nd)} に回したよ`}
       else if(a==='help'){skip();CHAT_TODAY=false;const sel=$('chatTask');if(!sel.querySelector(`option[value="t:${CSS.escape(it.id)}"]`)){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(it.id)}">そーやんの仕事：${esc(clip(t.title,40))}</option>`);sel.dataset.h=''}sel.value='t:'+it.id;openThread('hachiware');sysLine(`「${clip(t.title,30)}」を手伝います。どこから始める？`);TQ.busy=false;return}
       else{skip();ack='わかった、あとでまた聞くね'}}
   }catch(e){ack='うまく保存できなかった…あとでもう一度やってみてね'}
   TQ.log.push({who:'ai',text:ack});if(TQ.log.length>40)TQ.log=TQ.log.slice(-40);TQ.busy=false;renderToday();renderChatList()}
 async function todaySend(){const ta=$('chatIn'),text=ta.value.trim();if(!text)return;const it=todayItems()[0];
-  if(it&&it.k==='card'){ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();try{await answer(it.id,'記述',text);TQ.skip.add(tqKey(it));TQ.log.push({who:'ai',text:'ことばで受け取ったよ。ありがとう！'})}catch(e){TQ.log.push({who:'ai',text:'うまく保存できなかった…あとでもう一度やってみてね'})}TQ.busy=false;renderToday();renderChatList();return}
+  if(it&&it.k==='card'){ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();try{if((await answer(it.id,'記述',text))===false)throw 0;TQ.skip.add(tqKey(it));TQ.log.push({who:'ai',text:'ことばで受け取ったよ。ありがとう！'})}catch(e){TQ.log.push({who:'ai',text:'うまく保存できなかった…あとでもう一度やってみてね'})}TQ.busy=false;renderToday();renderChatList();return}
   if(it&&(it.k==='task'||it.k==='rev')){const id=it.id,k=it.k;CHAT_TODAY=false;TQ.skip.add(tqKey(it));if(k==='rev')askBoard(id);else{const sel=$('chatTask');if(!sel.querySelector(`option[value="t:${CSS.escape(id)}"]`)){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(id)}">そーやんの仕事：${esc(clip(it.t.title,40))}</option>`);sel.dataset.h=''}sel.value='t:'+id;openThread('hachiware')}
     ta.value=text;return chatSend()}
   ta.value=text;CHAT_TODAY=false;openThread('hachiware');return chatSend()}
@@ -2007,7 +2007,7 @@ function initBoxes(){BOXES.forEach(id=>{const h=document.getElementById(id);if(!
 initBoxes();setInterval(renderSums,1500);
 // ---- 会話ビュー（既定）／ぜんぶの画面 ----
 (function(){let v='1';try{v=localStorage.getItem('ck-simple')||'1'}catch(e){}const b=$('simpleBtn');if(!b)return;
-  const set=on=>{document.body.classList.toggle('simple',on);b.setAttribute('aria-pressed',String(on));b.textContent=on?'📋 ぜんぶの画面':'🗨 会話にもどる';if(on){try{setBox('h-xc',true,true);setBox('h-chat',true,true)}catch(e){}}};
+  const set=on=>{document.body.classList.toggle('simple',on);b.setAttribute('aria-pressed',String(on));if(!on&&typeof CHAT_TODAY!=='undefined'&&CHAT_TODAY){CHAT_TODAY=false;try{renderChatUi()}catch(e){}}b.textContent=on?'📋 ぜんぶの画面':'🗨 会話にもどる';if(on){try{setBox('h-xc',true,true);setBox('h-chat',true,true)}catch(e){}}};
   window.__setSimple=set;set(v==='1');b.addEventListener('click',()=>{const on=!document.body.classList.contains('simple');set(on);try{localStorage.setItem('ck-simple',on?'1':'0')}catch(e){}window.scrollTo(0,0)})})();
 
 $('boxAll').addEventListener('click',()=>{const anyClosed=BOXES.some(id=>document.getElementById(id).getAttribute('aria-expanded')!=='true');BOXES.forEach(id=>setBox(id,anyClosed,true));saveBox();setNow(anyClosed);$('boxAll').textContent=anyClosed?'全部たたむ':'全部ひらく'});
