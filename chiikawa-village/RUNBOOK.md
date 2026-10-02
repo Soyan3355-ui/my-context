@@ -524,7 +524,8 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
 - 見回りがやること（既存の常時発注「未返信メールの仕分けと返信の下書き」：1日10通まで）：
   1. 未返信で返信が要るメールを拾い、Gmail に下書き（create_draft。元のスレッドへの返信）を作る。本文はそーやんの口調で短く、わからないこと（日程・金額）は決めつけず「確認して改めてご連絡します」の形にする。
   2. 同じスレッドの `maildrafts/items` がまだなければ、上の形で新しく作る（`status:'pending'`）。すでにあるものは触らない。
-  3. `status:'approved'` のもの：下書きを送る。`status:'revised'` だったものは、先に `draft` の本文で Gmail の下書きを更新（update_draft）してから送る。送れたら `status:'sent'`、`sentAt` を入れる。送れなかったら `status:'pending'` に戻し、例外カードで知らせる。**そーやんが OK を押したもの以外は、絶対に送らない。**
+  3. 送るのは `status:'approved'` のものだけ（`approvedAt` が入っている）。`status:'revised'`（直したあと、まだOKされていない）や `pending` は**送らない**。`approved` のうち `revisedAt` があるものは、直した本文が `draft` に入っているので、先に `draft` の本文で Gmail の下書きを更新（update_draft）してから送る。送れたら `status:'sent'`、`sentAt` を入れる。送れなかったら `status:'pending'` に戻し、例外カードで知らせる。**そーやんが OK を押したもの以外は、絶対に送らない。**
+  - 画面が書くフィールド：`draft`、`status`、`revisedAt`（直したとき）、`approvedAt`（OK）、`skippedAt`（返信しない）。
   4. `status:'skipped'` や、7日以上たった `pending` は、`status:'closed'` にして画面に出さない。
   5. 更新は必ず `if_version` つき。画面（そーやん）も同じドキュメントを書く（draft・status）ので、読み直してから書く。
 - 画面側（済み）：`pending`／`revised` のものが「きょうのお願い」の先頭に出る。「直したい」→ことばで指示 → 画面の Claude が下書きを書き直して `status:'revised'`。「OK」→ `status:'approved'`。

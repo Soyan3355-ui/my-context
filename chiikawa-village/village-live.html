@@ -1322,7 +1322,7 @@ async function todayAct(a,k,label){if(TQ.busy)return;const it=todayItems()[0];if
   }catch(e){ack='うまく保存できなかった…あとでもう一度やってみてね'}
   TQ.log.push({who:'ai',text:ack});if(TQ.log.length>40)TQ.log=TQ.log.slice(-40);TQ.busy=false;renderToday();renderChatList()}
 async function todaySend(){const ta=$('chatIn'),text=ta.value.trim();if(!text)return;const it=todayItems()[0];
-  if(it&&it.k==='mail'){ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();
+  if(it&&it.k==='mail'){if(TQ.busy)return;ta.value='';TQ.log.push({who:'me',text});TQ.busy=true;renderToday();
     try{if(!SAMPLE){TQ.log.push({who:'ai',text:'いまは直せないみたい…Gmail の下書きで直してね'})}else{
       const r=await Promise.race([SAMPLE([{role:'user',content:`次のメール返信の下書きを、指示どおりに直してください。直した本文だけを出力してください（説明やあいさつは不要）。事実や日付、金額は、指示がない限り変えないでください。\n\n【もとのメール】${clip(it.m.summary,300)}\n\n【いまの下書き】\n${it.m.draft}\n\n【直す指示】${text}`}],{cache:false,modelTier:'default'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),30000))]);
       const nd=String(r&&r.text||'').trim().slice(0,3000);if(!nd)throw 0;if(!(await mailWrite(it.id,{draft:nd,status:'revised',revisedAt:Date.now()})))throw 0;TQ.log.push({who:'ai',text:'直したよ。この内容でどう？'})}}
