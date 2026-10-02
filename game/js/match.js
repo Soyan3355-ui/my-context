@@ -133,9 +133,17 @@
         if (id === 'hikaru' && k === 'sht') v += Math.round(this.crowdHype * 4);
         v = this.talentMod(p, k, v);
       }
+      // playing hurt: a knock costs a little, a serious injury (while still waiting for the sub) a lot
+      if (p.hurt) v *= p.hurt.serious ? 0.55 : 0.85;
       // stats can now climb past the old 99 ceiling (up to 200); every formula here was tuned on
       // a 0-100 scale, so past 100 each point counts for half - still better, never physics-breaking
-      return v <= 100 ? v : 100 + (v - 100) * 0.5;
+      v = v <= 100 ? v : 100 + (v - 100) * 0.5;
+      // pace gets a second, lower ceiling: speed feeds running speed, tackling, dribbling and runs in behind
+      // all at once, so on top of the shared soft cap it's compressed again above 90. With 200 pace
+      // the side effectively runs ~15% faster than a 100 one, not ~28% - a flat out sprinter still
+      // matters, but can't turn every match into a track meet
+      if (k === 'spd' && v > 90) v = 90 + (v - 90) * 0.5;
+      return v;
     }
     tacOf(t) { return this.tac[t]; }
     oppStyle() { const c = this.opp; return [c.ink, c.color, c.dark, c.light]; }
@@ -1298,11 +1306,16 @@
       this.injuries = this.injuries || [];
       if (c.gk || this.injuries.some((x) => x.id === c.id) || this.injuries.length >= 2) return false;
       const weeks = Math.random() < 0.6 ? 1 : randi(2, 3);
-      c.state = 'down'; c.stT = 2.4;
+      // severity decides what happens next: a knock (1 week) can be played through at reduced pace,
+      // a real injury (2+ weeks) means he has to come off at the next stoppage
+      const serious = weeks >= 2;
+      c.hurt = { weeks, serious };
+      c.state = 'down'; c.stT = serious ? 3.2 : 2.4;
       this.injuries.push({ id: c.id, team: c.team, weeks });
       this.popup(c.x, c.y - 74, '負傷…！', '#e0474c', 11);
       this.tick(c.name + 'が痛めた様子…全治' + weeks + '週間の見込みです。', '#ffb0a0');
-      if (c.team === 0) this.say(c, pick(['いっ…たぁ…', 'くっ…足が…']), 1.4);
+      this.tick(serious ? c.name + 'は動けそうにない。次にプレーが止まったら交代します。' : c.name + 'は痛みをこらえてプレーを続けるようだ。', '#ffb0a0');
+      if (c.team === 0) this.say(c, serious ? pick(['だめだ…走れない…', 'くっ…ここまでか…']) : pick(['いっ…たぁ…', 'まだ…いける…！']), 1.6);
       return true;
     }
     foul(d, c) {
@@ -3045,7 +3058,21 @@
       if (this.state !== 'play') this.applySubs();
       else { pn.msg = { text: '次にプレーが止まったら交代します', t: 0 }; this.tick('ハマカゼ、選手交代の準備。', '#c9d6e6'); }
     }
+    // a seriously hurt player of ours is taken off at the next stoppage if there is a sub left and a fit
+    // player on the bench; otherwise he has to play on (and the ticker says so, once)
+    queueInjurySubs() {
+      for (const p of this.team(0)) {
+        if (!p.hurt || !p.hurt.serious || p.gk || p.hurt.noSub || this.subQueue.some((q) => q.outId === p.id)) continue;
+        const role = this.role(p), avg = (d) => ((d.stats.spd + d.stats.sht + d.stats.pas + d.stats.def + d.stats.sta) / 5);
+        const cand = this.bench.filter((d) => d.pos !== 'GK').sort((a, c) => ((c.pos === role) - (a.pos === role)) || avg(c) - avg(a))[0];
+        if (this.subsLeft <= 0 || !cand) { p.hurt.noSub = true; this.tick(p.name + 'は交代できず、痛みをこらえて続行…', '#ffb0a0'); continue; }
+        this.subsLeft--;
+        this.bench.splice(this.bench.indexOf(cand), 1);
+        this.subQueue.push({ outId: p.id, inDef: cand, at: this.clock + (this.half - 1) * 1000, injury: true });
+      }
+    }
     applySubs() {
+      this.queueInjurySubs();
       if (!this.subQueue.length) return;
       for (const q of this.subQueue) {
         const idx = this.players.findIndex((p) => p.team === 0 && p.id === q.outId);
@@ -3060,9 +3087,9 @@
         if (this.sp && this.sp.target === old) this.sp.target = null;
         if (this.ball.pass && this.ball.pass.to === old) this.ball.pass.to = np;
         this.subbedOut.push(old);
-        this.toast('交代　' + old.name + ' → ' + np.name, '#9fdcff');
+        this.toast((q.injury ? '負傷交代　' : '交代　') + old.name + ' → ' + np.name, '#9fdcff');
         this.cutin = { id: np.id, expr: 'determined', t: 0, dur: 2.2, text: '「' + (q.inDef.nick || '') + '」' + np.name, color: '#2f86c4' };
-        this.tick('選手交代。' + old.name + 'に代わって、「' + (q.inDef.nick || '') + '」' + np.name + '！', '#9fdcff');
+        this.tick((q.injury ? '負傷により選手交代。' : '選手交代。') + old.name + 'に代わって、「' + (q.inDef.nick || '') + '」' + np.name + '！', '#9fdcff');
         this.say(np, pick(['いってきます！', 'まかせて！', '出番だ！']), 1.4);
       }
       Sound.play('whistle', { vol: 0.6 });
@@ -3092,12 +3119,13 @@
     // rather than every frame, and capped at the same 3 changes the human gets
     // decided during play (oppWantsSub), but only carried out at the next stoppage
     applyOppSub() {
-      if (!this.oppWantsSub) return;
+      const hurt = this.team(1).find((p) => !p.gk && p.hurt && p.hurt.serious);
+      if (!this.oppWantsSub && !hurt) return;
       this.oppWantsSub = false;
       if (this.oppSubsLeft <= 0) return;
       if (!this.oppBench) this.oppBench = this.benchFor(this.opp);
       if (!this.oppBench.length) return;
-      const tired = this.team(1).filter((p) => !p.gk && p.sta < 30).sort((a, c) => a.sta - c.sta)[0];
+      const tired = hurt || this.team(1).filter((p) => !p.gk && p.sta < 30).sort((a, c) => a.sta - c.sta)[0];
       if (!tired) return;
       const idx = this.players.indexOf(tired);
       const inDef = this.oppBench.shift();
@@ -3106,7 +3134,7 @@
       this.players[idx] = np;
       if (this.ball.owner === tired) this.ball.owner = null;
       this.oppSubsLeft--;
-      this.toast(this.opp.short + '、交代　' + tired.name + ' → ' + np.name, '#ff9a8a');
+      this.toast(this.opp.short + (tired.hurt ? '、負傷交代　' : '、交代　') + tired.name + ' → ' + np.name, '#ff9a8a');
     }
     drawPanel(g) {
       const pn = this.panel, r = this.panelRects();

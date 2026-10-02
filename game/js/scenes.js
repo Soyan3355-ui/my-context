@@ -1974,11 +1974,12 @@
         return base + (State.morale[p.id] ?? 60) * 0.15;
       };
       const used = new Set();
-      const gk = State.roster.filter((p) => p.pos === 'GK').sort((a, c) => (c.stats.def + c.stats.sta) - (a.stats.def + a.stats.sta))[0];
+      const fitOnly = (arr) => { const ok = arr.filter((p) => !(p.injuredWeeks > 0)); return ok.length ? ok : arr; };
+      const gk = fitOnly(State.roster.filter((p) => p.pos === 'GK')).sort((a, c) => (c.stats.def + c.stats.sta) - (a.stats.def + a.stats.sta))[0];
       const lineup = [gk ? gk.id : State.lineup[0]];
       if (gk) used.add(gk.id);
       for (const role of roles) {
-        const pool = State.roster.filter((p) => !used.has(p.id) && p.pos !== 'GK');
+        const pool = fitOnly(State.roster.filter((p) => !used.has(p.id) && p.pos !== 'GK'));
         const same = pool.filter((p) => p.pos === role).sort((a, c) => fit(c, role) - fit(a, role));
         const next = same[0] || pool.sort((a, c) => fit(c, role) - fit(a, role))[0];
         if (next) { used.add(next.id); lineup.push(next.id); }
@@ -2309,14 +2310,17 @@
   let _boards = null;
   function boardsCache() { return _boards || (_boards = Art.buildBoards()); }
 
+  // injured players can't play: the eleven is topped up from the fit squad, and only fit players sit on the bench
+  const fitBench = () => State.roster.filter((p) => !State.lineup.includes(p.id) && !(p.injuredWeeks > 0));
   function startMatch() {
+    fillLineup();
     const fx = State.fixture();
     const opp = oppRoster(fx.opp);
     const morale = 0.94 + 0.12 * (State.avgMorale() / 100) + (fx.home ? 0.03 * State.localRatio() : 0);
     return new Match({
       opp: fx.opp, away: opp.roster, reunion: opp.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
       formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust, home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
-      bench: State.roster.filter((p) => !State.lineup.includes(p.id)), homeGame: !!fx.home,
+      bench: fitBench(), homeGame: !!fx.home,
       onEnd: (r) => { State.result = r; if (r.rivalTech) State.rivalTechSeen = r.rivalTech; Game.goto(Result(r), 'iris'); },
     });
   }
@@ -2893,7 +2897,7 @@
       const fit = (q) => !State.lineup.includes(q.id) && !(q.injuredWeeks > 0) && (i === 0 ? q.pos === 'GK' : q.pos !== 'GK');
       const bench = State.roster.filter(fit);
       const best = bench.sort((a, b) => (b.stats.def + b.stats.pas + b.stats.spd) - (a.stats.def + a.stats.pas + a.stats.spd))[0] || State.roster.find((q) => !State.lineup.includes(q.id) && !(q.injuredWeeks > 0));
-      State.lineup[i] = best ? best.id : null;
+      State.lineup[i] = best ? best.id : (cur ? cur.id : id);
     }
   }
   function rivalsFor(def) { return State.roster.filter((q) => q.pos === def.pos && State.lineup.includes(q.id)).map((q) => q.name); }
@@ -3024,13 +3028,14 @@
   }
   // a promotion-leg match: no weekly bookkeeping, but growth and morale still apply quietly
   function promoMatch(gk, home, onEnd) {
+    fillLineup();
     const oppData = oppRoster(gk);
     const morale = 0.96 + 0.1 * (State.avgMorale() / 100) + (home ? 0.03 * State.localRatio() : 0);
     return new Match({
       opp: gk, away: oppData.roster, reunion: oppData.reunion, morale, comboOk: (c) => State.comboReady(c), setplay: State.setplay,
       formation: State.formation, tactic: State.tactic, auto: State.auto, autoJust: State.autoJust,
       home: State.lineup.map((id) => State.roster.find((p) => p.id === id)),
-      bench: State.roster.filter((p) => !State.lineup.includes(p.id)),
+      bench: fitBench(),
       onEnd,
     });
   }
@@ -3622,7 +3627,7 @@
 
   // ---------------- entry ----------------
   window.Scenes = {
-    State, Save, oppRoster,
+    State, Save, oppRoster, startMatch,
     start(name, o) {
       State.auto = !!(o && o.auto);
       const map = { title: Title, intro: Intro, hub: () => Hub(true), roster: Roster, train: Training, tactics: Tactics, vs: Versus, pre: PreMatch,
