@@ -1285,6 +1285,11 @@ var CHAT_TODAY=false;const TQ={log:[],skip:new Set(),auto:false,busy:false,sig:'
 const MAIL={items:[],col:null,loaded:false};
 async function mailWrite(id,patch){if(!MAIL.col||!canWrite)return false;try{await MAIL.col.doc(id).update(patch);const m=MAIL.items.find(x=>x.id===id);if(m)Object.assign(m,patch);return true}catch(e){return false}}
 const tqKey=i=>i.k+':'+i.id;
+function pmOv(){try{const o=JSON.parse(localStorage.getItem('ck-pmdone')||'null');return o&&o.p&&o.m?o:{p:{},m:{}}}catch(e){return {p:{},m:{}}}}
+function pmOvSave(o){const cut=Date.now()-30*864e5;for(const g of ['p','m'])for(const k in o[g])if(o[g][k]<cut)delete o[g][k];try{localStorage.setItem('ck-pmdone',JSON.stringify(o))}catch(e){}}
+function pmApply(tl){if(!tl)return tl;const o=pmOv(),up=tl.updatedAt||0;(tl.projects||[]).forEach(p=>{if((o.p[p.id]||0)>up){p.status='done';p.progress=100}(p.milestones||[]).forEach(m=>{if((o.m[p.id+'|'+m.d+'|'+m.label]||0)>up)m.done=true})});return tl}
+function noteToKani(text){const n={text:String(text).slice(0,500),to:'kani',request:true,createdAt:Date.now(),replies:[]};if(db&&canWrite){db.collection('notes').add(n).then(ref=>{if(!NOTES.find(x=>x.id===ref.id)){NOTES.push({id:ref.id,...n});try{renderNotes()}catch(e){}}}).catch(()=>{})}}
+function pmMark(kind,p,ms){const o=pmOv(),now=Date.now();if(kind==='p'){o.p[p.id]=now;noteToKani(`プロジェクト「${clip(p.title,60)}」は、もう終わっています（そーやんが画面で「終わってる」と答えました）。進行表と記録を、完了に直してください。`)}else{o.m[p.id+'|'+ms.d+'|'+ms.label]=now;noteToKani(`プロジェクト「${clip(p.title,50)}」の「${clip(ms.label,40)}」（${ms.d}）は、もう終わっています（そーやんが画面で答えました）。進行表を直してください。`)}pmOvSave(o);TL=pmApply(TL);try{renderTL()}catch(e){}try{renderChatList()}catch(e){}}
 function pmSnz(){try{return JSON.parse(localStorage.getItem('ck-pmsnz')||'{}')}catch(e){return {}}}
 function pmSnoozed(id){const o=pmSnz();return (o[id]||0)>Date.now()}
 function pmSnoozeSet(id,days){const o=pmSnz();o[id]=Date.now()+days*864e5;for(const k in o)if(o[k]<Date.now())delete o[k];try{localStorage.setItem('ck-pmsnz',JSON.stringify(o))}catch(e){}}
@@ -1306,8 +1311,8 @@ function todayItems(){const it=[];
 const mdOf=d=>d?String(d).slice(5).replace('-','/'):'';
 function todayMsg(it){
   if(it.k==='pmsum')return {text:`🗓 今週の見立てを話すね。\n${clip(it.note,260)}`,chips:[{a:'pmok',t:'わかった'},{a:'pmask',t:'くわしく相談する'}]};
-  if(it.k==='pm'){const p=it.p;if(it.ms){const dd=Math.round((dnum(it.ms.d)-dnum(todayKey()))/864e5);return {text:`🗓 「${clip(p.title,34)}」の「${clip(it.ms.label,30)}」まで${dd<=0?'きょう':'あと'+dd+'日'}（${mdOf(it.ms.d)}）。準備できてる？`,chips:[{a:'pmgood',t:'できてる'},{a:'pmask',t:'相談する'},{a:'later',t:'あとで'}]}}
-    return {text:`🗓 「${clip(p.title,34)}」が${p.status==='late'?'遅れてる':'ちょっと気になる'}よ${p.due?`（期限 ${mdOf(p.due)}）`:''}。${p.next?`\n次の一手：${clip(p.next,90)}`:''}${p.why?`\n${clip(p.why,110)}`:''}\nどうする？`,chips:[{a:'pmask',t:'相談する'},{a:'pmgood',t:'順調だよ（3日だまる）'},{a:'later',t:'あとで'}]}}
+  if(it.k==='pm'){const p=it.p;if(it.ms){const dd=Math.round((dnum(it.ms.d)-dnum(todayKey()))/864e5);return {text:`🗓 「${clip(p.title,34)}」の「${clip(it.ms.label,30)}」まで${dd<=0?'きょう':'あと'+dd+'日'}（${mdOf(it.ms.d)}）。準備できてる？`,chips:[{a:'pmmsdone',t:'もう終わってる'},{a:'pmask',t:'相談する'},{a:'later',t:'あとで'}]}}
+    return {text:`🗓 「${clip(p.title,34)}」が${p.status==='late'?'遅れてる':'ちょっと気になる'}よ${p.due?`（期限 ${mdOf(p.due)}）`:''}。${p.next?`\n次の一手：${clip(p.next,90)}`:''}${p.why?`\n${clip(p.why,110)}`:''}\nどうする？`,chips:[{a:'pmask',t:'相談する'},{a:'pmfin',t:'もう終わってる'},{a:'pmgood',t:'順調だよ（3日だまる）'},{a:'later',t:'あとで'}]}}
   if(it.k==='mail'){const m=it.m;return {text:`✉️ ${clip(m.from,24)}さんからメール「${clip(m.subject,40)}」\n${clip(m.summary,160)}${m.risk?'\n⚠️ お金や約束のことが入っています。内容をよく見てね':''}\n\n返信の下書き：\n${clip(m.draft,900)}\n\nこの内容で返信していい？`,chips:[{a:'mok',t:'この内容でOK'},{a:'mfix',t:'直したい'},{a:'mno',t:'返信しない'},{a:'later',t:'あとで'}]}}
   if(it.k==='card'){const x=it.x;return {text:x.question+(x.why?'\n'+clip(x.why,110):''),chips:[...(x.options||[]).slice(0,3).map(o=>({a:'ans',k:o.key,t:o.key+'　'+clip(o.label,18)})),{a:'ans',k:'保留',t:'保留（あとで）'}]}}
   if(it.k==='rev'){return {text:`「${clip(it.b.title,40)}」ができたよ。確認してくれる？`,chips:[{a:'ok',t:'OK、完了にする'},{a:'fix',t:'直してほしい'},{a:'later',t:'あとで'}]}}
@@ -1328,6 +1333,8 @@ async function todayAct(a,k,label){if(TQ.busy)return;const it=todayItems()[0];if
       if(it.k==='pmsum'){try{localStorage.setItem('ck-pmsum',todayKey())}catch(e){}}
       if(a==='pmask'){skip();CHAT_TODAY=false;askPM(it.k==='pm'?it.id:undefined);TQ.busy=false;return}
       else if(a==='pmgood'){pmSnoozeSet(it.id,3);skip();ack='了解、3日は静かにしとくね'}
+      else if(a==='pmfin'){pmMark('p',it.p);skip();ack='了解、終わったことにしたよ。進行表にも直してもらうね'}
+      else if(a==='pmmsdone'){pmMark('m',it.p,it.ms);skip();ack='了解、終わったことにしたよ。進行表にも直してもらうね'}
       else if(a==='pmok'){skip();ack='うん、今週もいっしょにがんばろ'}
       else{skip();ack='わかった、あとでまた聞くね'}}
     else if(it.k==='mail'){const id=it.id;
@@ -1414,6 +1421,11 @@ function chatContext(){const d=STATUS.digest||{};const v=$('chatTask').value;let
   // 会社のいまの状況メモ（見回りのアスカが、Claude Code での会話や画面のチャットから毎回まとめる）。そーやんだけのメモは本人の画面にしかない
   if(BRIEF.shared&&BRIEF.shared.text)L.push('\n【会社のいまの状況メモ（'+(BRIEF.shared.updatedAt?fmt(BRIEF.shared.updatedAt):'')+'）】\n'+clip(BRIEF.shared.text,6000));
   if(BRIEF.mine&&BRIEF.mine.text)L.push('\n【そーやんだけのメモ（お金・人のこと。'+(BRIEF.mine.updatedAt?fmt(BRIEF.mine.updatedAt):'')+'）】\n'+clip(BRIEF.mine.text,4000));
+  {const cut=Date.now()-14*864e5;const rd=[];TASKS.filter(t=>t.done&&(t.doneAt||0)>cut).sort((a,b)=>(b.doneAt||0)-(a.doneAt||0)).slice(0,15).forEach(t=>rd.push('・終わった仕事：'+clip(t.title,60)+'（'+fmt(t.doneAt)+'）'));
+    BOARD.filter(b=>b.status==='done'&&(b.updatedAt||b.doneAt||0)>cut).slice(0,10).forEach(b=>rd.push('・ボードで完了：'+clip(b.title,60)));
+    XCS.filter(x=>x.status==='answered'&&(x.answeredAt||0)>cut).sort((a,b)=>(b.answeredAt||0)-(a.answeredAt||0)).slice(0,10).forEach(x=>rd.push('・決めた：'+clip(x.question,60)+' → '+(x.answer==='記述'?clip(x.note||'',60):x.answer)));
+    const o=pmOv();Object.keys(o.p).forEach(id=>{const pj=(TL&&TL.projects||[]).find(x=>x.id===id);if(pj)rd.push('・プロジェクト「'+clip(pj.title,40)+'」は、そーやんが終わったと答えた')});
+    if(rd.length)L.push('\n【そーやんが最近、終わらせた・決めたこと（いちばん新しい事実。進行表やメモと食い違うときは、こちらを優先する）】\n'+rd.join('\n'))}
   const dc=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,15).map(x=>'・'+(x.date||'')+' '+clip(x.title||'',50)+'：'+clip(x.decided||'',120));if(dc.length)L.push('\n最近の決定記録：\n'+dc.join('\n'));
   const nt=NOTES.filter(n=>!n.fromChat).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,6).map(n=>'・'+fmt(n.createdAt)+' '+clip(n.text,200)+((n.replies||[])[0]?' → 返事：'+clip(n.replies[0].text,120):''));if(nt.length)L.push('\n最近のつぶやき：\n'+nt.join('\n'));
   const open=BOARD.filter(x=>x.status!=='done'&&(!sel||x.id!==sel.id)).slice(0,12).map(x=>'・'+clip(x.title,40)+'（'+x.status+'・'+(x.owner||'')+'）');if(open.length)L.push('\nボードの他のタスク：\n'+open.join('\n'));
@@ -1423,6 +1435,7 @@ function chatContext(){const d=STATUS.digest||{};const v=$('chatTask').value;let
 function chatRules(){const id=chatChar,r=ROLES[id];const gg=CHAT_GRP?grpOf(CHAT_GRP):null;return `${gg?`いまは、事業「${gg.area}」のグループチャットです。メンバーは ${grpMembers(gg).join('、')} とそーやん。この事業のプロジェクトを前に進める会話をします。決めること・次の一手は、1回に1つだけ、選択肢つきで聞いてください。\n`:''}あなたは「ちいかわ株式会社」の${NAMES[id]}（${r[0]}）です。${CHAT_TONE[id]}相手は、鹿児島で農業・YouTube・講座をしている経営者のそーやんです。ここはなかま全員がいる1つの部屋で、ほかのなかまの発言も（○○の発言）として見えている。【会社のいまの状況メモ】とこれまでの会話を踏まえ、そーやんに同じ説明をさせない。そーやんの仕事の相談に乗ってください。
 話し方：${id==='asuka'?'関西弁のかわいいタメ口（上の人物像どおり）。中身は具体的で実務的に。':'やさしく、ちいかわの世界のキャラらしい少しやわらかい口調（語尾に「…」や「！」を少し）。ただし中身は具体的で実務的に。'}
 返事のルール：
+・【そーやんが最近、終わらせた・決めたこと】に書いてあることは、もう終わったこととして扱う。進行表や状況メモに「未完了」「遅れ」と残っていても、それは更新が追いついていないだけなので、「まだ」「遅れている」とは言わず、「終わっているよね、進行表を直しておくね」と受け止める。
 ・そーやんが聞いたことだけに答える。聞かれていない提案、次にやること、おすすめ、確認の質問、励まし、注意の追加、関連する話題は書かない。答えが短く済むなら短くする。
 ・選択肢やおすすめを出すのは、「どうしたらいい？」「どれがいい？」など、そーやんが求めたときだけ。
 ・答えるために、どうしても足りない情報があるとき、またはそーやんが「これは何する？」「どうする？」と判断を求めるやり取りになっているときは、1回に1問だけ聞く。質問文のあとの最後の行に、「選択肢： A | B | C」の形で2〜4個の短い選択肢（20字まで）をつける（そーやんはボタンを押すだけで答えられる）。「その他」は入れない（ことばでも答えられるので）。選択肢の行は、質問のときだけつける。聞きたいことが複数あるときは、全部を並べず、いちばん大事な1問だけを聞き、答えをもらってから次の1問に進む（残りがあれば質問文の頭に「あと○問」とつける）。1問ずつ答えが決まるたびに、そのことを1文で受けて次へ進む。
@@ -2148,7 +2161,7 @@ async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)r
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
   db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
   db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
-  db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?s.data():null;if(TL)renderTL();renderQuest()},()=>{});
+  db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?pmApply(JSON.parse(JSON.stringify(s.data()))):null;if(TL)renderTL();renderQuest()},()=>{});
   db.doc('tokens/now').onSnapshot(s=>{TOK=s.exists?s.data():null;renderTok()},()=>{});
   // クエスト欄は廃止（2026-10-02）
   db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
