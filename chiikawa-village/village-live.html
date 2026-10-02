@@ -1208,7 +1208,7 @@ const OPT_RE=/(?:^|\n)\s*選択肢\s*[:：]\s*([^\n]+)\s*$/;
 function chatOpts(c){const m=OPT_RE.exec(String(c||''));if(!m)return {text:String(c||''),opts:[]};const opts=m[1].split(/\s*[|｜]\s*/).map(x=>x.trim()).filter(Boolean).slice(0,4);return {text:String(c).slice(0,m.index).trimEnd(),opts}}
 var CHIPS_ON=false,CHAT_SEEN=false;function syncChips(){document.body.classList.toggle('chips-on',CHIPS_ON&&CHAT_SEEN)}
 try{new IntersectionObserver(es=>{CHAT_SEEN=es.some(x=>x.isIntersecting);syncChips()}).observe($('chatLog'))}catch(e){}
-function renderChatLog(){const log=LOGS[chatKey()]||[];const el=$('chatLog');
+function renderChatLog(){const log=LOGS[chatKey()]||[];const el=$('chatLog');{const sig=JSON.stringify([chatKey(),chatBusy,log.map(m=>[m.role,m.who,m.content,m.partial,m.err])]);if(el.dataset.sig===sig&&el.childElementCount)return;el.dataset.sig=sig}
   el.innerHTML=log.length?log.map(m=>m.role==='sys'?`<div class="msg sys">${esc(m.content)}</div>`:m.role==='user'?`<div class="msg me">${esc(m.content)}</div>`:`<div class="msg ai${m.err?' err':''}"><div class="who"><img src="${ICON[m.who]||ICON.chiikawa}" alt="">${esc(NAMES[m.who]||'')}${m.partial?'（とちゅう）':''}</div>${esc(chatOpts(m.content).text)}</div>`).join('')
     :`<p class="empty">なかま全員がいる1つの部屋です。いまは${esc(NAMES[chatChar])}（${esc(ROLES[chatChar][0])}）が答えます。だれに聞いても話はつながっていて、会社のいまの状況メモ・決定記録・これまでの会話を読んでから答えます。</p>`;
   {const last=log[log.length-1];if(last&&last.role==='assistant'&&!last.partial&&!last.err&&!chatBusy){const o=chatOpts(last.content).opts;if(o.length)el.insertAdjacentHTML('beforeend','<div class="chips" role="group" aria-label="こたえをえらぶ">'+o.map(x=>`<button type="button" class="chip" data-opt="${esc(x)}">${esc(x)}</button>`).join('')+'</div>')}}
@@ -1348,7 +1348,12 @@ async function chatSave(){const key=chatKey(),log=(LOGS[key]||[]).filter(m=>!m.e
 $('chatWho').addEventListener('click',e=>{const b=e.target.closest('button[data-c]');if(!b||chatBusy)return;chatChar=b.dataset.c;$('chatNote').textContent='';renderChatUi()});
 $('chatTask').addEventListener('change',()=>{if(!chatBusy){$('chatNote').textContent='';renderChatLog()}});
 $('chatForm').addEventListener('submit',e=>{e.preventDefault();chatSend()});
-$('chatLog').addEventListener('click',e=>{const b=e.target.closest('button[data-opt]');if(!b||chatBusy||!SAMPLE)return;const dr=$('chatIn').value;$('chatIn').value=b.dataset.opt;chatSend();$('chatIn').value=dr});
+$('chatLog').addEventListener('click',e=>{const b=e.target.closest('button[data-opt]');if(!b)return;const note=$('chatNote');
+  if(!SAMPLE){note.textContent='いまはチャットが使えないので、ボタンでは送れません（画面を開き直してみてね）';return}
+  if(chatBusy){note.textContent='いま返事を待っています。終わってからもう一度押してね';return}
+  const dr=$('chatIn').value;$('chatIn').value=b.dataset.opt;note.textContent='送りました：'+b.dataset.opt;
+  try{const pr=chatSend();if(pr&&pr.catch)pr.catch(x=>{note.textContent='送れませんでした：'+((x&&x.message)||x)})}catch(x){note.textContent='送れませんでした：'+((x&&x.message)||x)}
+  $('chatIn').value=dr});
 $('chatIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();chatSend()}});
 $('chatStop').addEventListener('click',()=>{if(chatCtl)chatCtl.abort()});
 $('chatSave').addEventListener('click',chatSave);
