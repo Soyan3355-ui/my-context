@@ -1301,8 +1301,8 @@ function pmItems(){const out=[];if(!TL)return out;const day=todayKey();let seen=
     else{const ms=(p.milestones||[]).filter(m=>!m.done&&m.d&&dnum(m.d)>=today&&dnum(m.d)-today<=3*864e5).sort((a,b)=>dnum(a.d)-dnum(b.d))[0];if(ms)out.push({k:'pm',id:p.id,p,ms})}});
   return out.sort((a,b)=>(a.k==='pmsum'?0:1)-(b.k==='pmsum'?0:1)||((a.p&&a.p.status==='late'?0:1)-(b.p&&b.p.status==='late'?0:1)))}
 const spkOf=it=>it&&(it.k==='pm'||it.k==='pmsum')?'kani':'hachiware';
-function thrHidden(){try{const o=JSON.parse(localStorage.getItem('ck-thrhide')||'{}'),t=todayKey();let ch=false;for(const k in o)if(o[k]!==t){delete o[k];ch=true}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(o));return o}catch(e){return {}}}
-function thrHide(key){const o=thrHidden();o[key]=todayKey();try{localStorage.setItem('ck-thrhide',JSON.stringify(o))}catch(e){}}
+function thrHidden(){try{const o=JSON.parse(localStorage.getItem('ck-thrhide')||'{}'),cut=Date.now()-30*864e5;let ch=false;for(const k in o){if(typeof o[k]!=='number'){o[k]=Date.now();ch=true}else if(o[k]<cut){delete o[k];ch=true}}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(o));return o}catch(e){return {}}}
+function thrHide(key){const o=thrHidden();o[key]=Date.now();try{localStorage.setItem('ck-thrhide',JSON.stringify(o))}catch(e){}}
 function allItems(){const it=[];
   MAIL.items.filter(m=>m.status==='pending'||m.status==='revised').sort((a,b)=>(a.receivedAt||0)-(b.receivedAt||0)).forEach(m=>it.push({k:'mail',id:m.id,m}));
   XCS.filter(x=>x.status!=='answered').sort(byTime).forEach(x=>it.push({k:'card',id:x.id,x}));
