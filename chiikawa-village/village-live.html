@@ -1302,7 +1302,7 @@ function pmItems(){const out=[];if(!TL)return out;const day=todayKey();let seen=
   return out.sort((a,b)=>(a.k==='pmsum'?0:1)-(b.k==='pmsum'?0:1)||((a.p&&a.p.status==='late'?0:1)-(b.p&&b.p.status==='late'?0:1)))}
 const spkOf=it=>it&&(it.k==='pm'||it.k==='pmsum')?'kani':'hachiware';
 function thrHidden(){try{const o=JSON.parse(localStorage.getItem('ck-thrhide')||'{}'),cut=Date.now()-30*864e5;let ch=false;for(const k in o){if(typeof o[k]!=='number'){o[k]=Date.now();ch=true}else if(o[k]<cut){delete o[k];ch=true}}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(o));return o}catch(e){return {}}}
-function thrHide(key){const o=thrHidden();o[key]=Date.now();try{localStorage.setItem('ck-thrhide',JSON.stringify(o))}catch(e){}}
+function thrHide(key){const o=thrHidden();o[key]=Date.now();try{localStorage.setItem('ck-thrhide',JSON.stringify(o))}catch(e){}try{chatPersist()}catch(e){}}
 function allItems(){const it=[];
   MAIL.items.filter(m=>m.status==='pending'||m.status==='revised').sort((a,b)=>(a.receivedAt||0)-(b.receivedAt||0)).forEach(m=>it.push({k:'mail',id:m.id,m}));
   XCS.filter(x=>x.status!=='answered').sort(byTime).forEach(x=>it.push({k:'card',id:x.id,x}));
@@ -1545,8 +1545,8 @@ let chatSaveT=0,chatLoaded=false;const LOGAT={};function chatPersist(){if(!MIND.
   // 文書の上限（256KiB）に届かないよう、全体を約180KB までにする（新しく話したキーを優先し、古い発言から削る）
   const keys=Object.keys(LOGS).filter(k=>k==='room'&&LOGS[k].length).sort((a,b)=>(LOGAT[b]||0)-(LOGAT[a]||0));const o={};let bytes=0;const enc=new TextEncoder();
   for(const k of keys){const a=LOGS[k].filter(m=>!m.partial&&!m.err).slice(-40).map(m=>({role:m.role,who:m.who||'',to:m.to||'',grp:m.grp||'',at:m.at||0,content:String(m.content).slice(0,3000)}));while(a.length){const b=enc.encode(JSON.stringify(a)).length;if(bytes+b<=180000){o[k]=a;bytes+=b;break}a.shift()}if(bytes>=180000)break}
-  const at={};for(const k in o)at[k]=LOGAT[k]||0;db.doc('data/users/'+MIND.uid+'/chat').set({logs:o,at,updatedAt:Date.now()}).catch(()=>{$('chatNote').textContent='会話を保存できませんでした（この画面のあいだは残ります）'})},800)}
-async function chatLoad(){if(!MIND.uid||!db)return;try{chatLoaded=false;const sn=await db.doc('data/users/'+MIND.uid+'/chat').get();const sd=sn&&sn.exists?sn.data():{};const o=sd.logs||{};Object.assign(LOGAT,sd.at||{},{...LOGAT});for(const k in o){if(k!=='room')continue;if(!LOGS[k]||!LOGS[k].length)LOGS[k]=(o[k]||[]).map(m=>({...m}))}renderChatLog()}catch(e){}chatLoaded=true}
+  const at={};for(const k in o)at[k]=LOGAT[k]||0;db.doc('data/users/'+MIND.uid+'/chat').set({logs:o,at,closed:thrHidden(),updatedAt:Date.now()}).catch(()=>{$('chatNote').textContent='会話を保存できませんでした（この画面のあいだは残ります）'})},800)}
+async function chatLoad(){if(!MIND.uid||!db)return;try{chatLoaded=false;const sn=await db.doc('data/users/'+MIND.uid+'/chat').get();const sd=sn&&sn.exists?sn.data():{};const o=sd.logs||{};try{const cl=sd.closed||{},cur=thrHidden();let ch=false;for(const k in cl)if(typeof cl[k]==='number'&&(!cur[k]||cur[k]<cl[k])){cur[k]=cl[k];ch=true}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(cur))}catch(e){}Object.assign(LOGAT,sd.at||{},{...LOGAT});for(const k in o){if(k!=='room')continue;if(!LOGS[k]||!LOGS[k].length)LOGS[k]=(o[k]||[]).map(m=>({...m}))}renderChatLog();try{renderChatList()}catch(e){}}catch(e){}chatLoaded=true}
 async function chatSend(){if(CHAT_TODAY)return;{const r=topicSend();if(r)return r}if(chatBusy||!SAMPLE)return;const txt=$('chatIn').value.trim();if(!txt)return;const key=chatKey();let who=chatChar,to=chatChar;if(CHAT_GRP){const g=grpOf(CHAT_GRP);to='g:'+CHAT_GRP;who=grpResponder(g,txt);chatChar=who;CHAT_SHOWN=who}
   if(LOGS[key]&&Object.isFrozen(LOGS[key]))LOGS[key]=LOGS[key].map(m=>({...m}));
   const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000),to,at:Date.now()});$('chatIn').value='';UNR={id:'',n:0};
