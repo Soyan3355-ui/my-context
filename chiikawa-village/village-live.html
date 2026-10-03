@@ -417,7 +417,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 <div class="app">
   <header>
     <div><h1>ちいかわ株式会社</h1><div class="date" id="date"></div></div>
-    <div class="hud"><button class="btn-s" id="simpleBtn" type="button" aria-pressed="true">📋 ぜんぶの画面</button><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button">📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
+    <div class="hud"><button class="btn-s" id="simpleBtn" type="button" aria-pressed="true">📋 ぜんぶの画面</button><span class="pill" id="phase">フェーズ0</span><button class="btn-s" id="newsBtn" type="button" hidden>📰 新聞</button><button class="btn-s" id="sceneBtn" type="button">🏡 村にする</button><button class="btn-s" id="replay" type="button">ダイジェストをきく</button><button class="btn-s" id="arrBtn" type="button" aria-pressed="false">並べかえ</button><button class="btn-s" id="boxAll" type="button">全部ひらく</button><button class="btn-s" id="wake" type="button" aria-label="画面をつけっぱなしにする">💡</button></div>
   </header>
   <div class="top">
   <button type="button" class="md-nudge" id="mdNudge" hidden></button><div class="stage" id="stage"><canvas id="cv" width="224" height="196" aria-label="ちいかわ株式会社の敷地のようす"></canvas><div id="meetTag" class="meettag" hidden></div></div>
@@ -2053,7 +2053,7 @@ $('sceneBtn').textContent=BASE?'🏡 村にする':'🛰 基地にする';$('sce
 $('news').addEventListener('click',e=>{if(e.target.id==='news'||e.target.closest('[data-nclose]')){closeNews();return}const w=e.target.closest('button[data-nxsend]');if(w){const r=xSend($('newsBody'),w.dataset.nxsend,w.parentElement.querySelector('small'));if(r){r.then(()=>renderNews());renderNews()}return}
   const b=e.target.closest('button[data-nx]');if(b){answer(b.dataset.nx,b.dataset.k,xNote($('newsBody'),b.dataset.nx)).then(()=>renderNews());renderNews()}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('news').hidden)closeNews()});
-function newsAuto(n){let seen=true;try{seen=!!localStorage.getItem('ck-news-'+newsEd().key)}catch(e){}if(seen)return;if(scene&&(n||0)<20){setTimeout(()=>newsAuto((n||0)+1),3000);return}openNews()}
+function newsAuto(n){return;let seen=true;try{seen=!!localStorage.getItem('ck-news-'+newsEd().key)}catch(e){}if(seen)return;if(scene&&(n||0)<20){setTimeout(()=>newsAuto((n||0)+1),3000);return}openNews()}
 
 // ---------- 基地の部屋を押すと、その部署の欄がひらく（夜の自走 A） ----------
 const ROOM_GO={cmd:['h-bd','司令室：タスクボード'],meet:['h-dg','会議室：きょうのダイジェスト'],kaikei:['h-fin','帳場：お金の見通し'],studio:['h-app','制作室：アプリ制作部'],pm:['h-tl','進行表：タイムライン'],kenshu:['h-bd','検収室：タスクボード'],kiroku:['h-dc','記録庫：決定記録'],rest:['h-chat','休憩室：社内チャット'],gym:['focusBox','ジム：集中タイム'],field:['h-tl','田んぼ：タイムライン'],meadow:['focusBox','討伐の草原：集中タイム（討伐）'],gate:['h-nt','郵便受け：つぶやき箱']};
