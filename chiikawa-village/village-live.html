@@ -636,7 +636,7 @@ var CHAT_WHO=null;const WORK_FRESH=45*60000;
 function isWorking(id){if(id==='chiikawa'||id==='soyan')return true;const a=(STATUS.agents||{})[id];if(!a||a.state!=='active')return false;const at=a.at||STATUS.updatedAt||0;return Date.now()-at<WORK_FRESH}
 function workedToday(id){const a=(STATUS.agents||{})[id];if(!a)return false;const t=a.at||(a.state==='active'?STATUS.updatedAt:0);return !!t&&ymd(t)===ymd(Date.now())}
 function offDuty(id){return id!=='chiikawa'&&id!=='soyan'&&!isWorking(id)&&workedToday(id)}
-function isShown(id){if(id==='chiikawa'||id==='soyan')return true;const e=ent[id];if(!e)return true;return isWorking(id)||workedToday(id)||e.st!=='home'||!!e.gym||!!e.hunt||CHAT_WHO===id||(e.jump>0)}
+function isShown(id){return true}
 function isFree(id){return !isScout(id)&&(id==='chiikawa'||agentState(id)==='bench'||offDuty(id))}
 function homeOf(id){if(isFree(id)){const e=ent[id];if(e&&e.act)return {x:e.act.x,y:e.act.y,face:e.act.face||1};return {x:PLAY.sand.x,y:PLAY.sand.y,face:1}}
   const a=(STATUS.agents||{})[id];const p=PLACES[(a&&a.place)||DEFAULT_PLACE[id]]||PLACES.board;return p}
