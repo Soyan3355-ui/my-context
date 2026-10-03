@@ -1620,6 +1620,7 @@ async function vcSend(){if(VOICE.busy)return;const ta=$('vcIn'),text=ta.value.tr
     if(it.task.title){try{const r=await addTaskFromChat(it.task.title,it.task.due);if(!/^すでに/.test(r||''))it.taskAdded=true}catch(e){}}
     await VOICE.ref.set({items:[it,...keep],updatedAt:Date.now()});
     ta.value='';$('vcWork').checked=false;msg.textContent=`入れたよ：${it.type}「${it.title}」${it.taskAdded?'（タスクにも追加）':''}`;
+    setTimeout(()=>{try{setBox('h-vc',false,true)}catch(e){}},1200);
   }catch(e){msg.textContent='保存できませんでした。文はそのまま残してあります。もう一度押してね'}
   finally{VOICE.busy=false;$('vcSend').disabled=false}}
 renderVoice();
