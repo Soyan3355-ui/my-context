@@ -9,10 +9,10 @@ const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n))
 
 // mood by usage: face, colour, one-liner
 const mood = (p: number) =>
-  p < 40 ? { face: '(´▽`)', color: '#4ade80', say: 'ゆとりあるで～' }
-  : p < 70 ? { face: '(・ω・)', color: '#facc15', say: 'ええペースやね' }
-  : p < 90 ? { face: '(;´Д`)', color: '#fb923c', say: 'ちょい多めやで' }
-  : { face: '(>_<)', color: '#f87171', say: 'compactしよか！' }
+  p < 40 ? { face: '(´▽`)', color: 'green', say: 'ゆとりあるで～' }
+  : p < 70 ? { face: '(・ω・)', color: 'yellow', say: 'ええペースやね' }
+  : p < 90 ? { face: '(;´Д`)', color: 'magenta', say: 'ちょい多めやで' }
+  : { face: '(>_<)', color: 'red', say: 'compactしよか！' }
 
 const bar = (p: number, n = 10) => {
   const f = Math.max(0, Math.min(n, Math.round((p / 100) * n)))
@@ -62,7 +62,7 @@ export const register: Register = on => {
         <Text color={k.color}>{bar(m.percent)} </Text>
         <Text color={k.color} bold>{Math.round(m.percent)}% </Text>
         <Text dimColor>({fmt(m.tokens)}/{fmt(m.window)}){cost}{limits}  </Text>
-        <Text color={k.color} italic>{k.say}</Text>
+        <Text color={k.color}>{k.say}</Text>
       </Box>
     )
   })
