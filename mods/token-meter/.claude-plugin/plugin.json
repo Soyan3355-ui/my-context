@@ -1,0 +1,1 @@
+{ "name": "token-meter", "version": "0.1.0", "description": "Always-visible token / context / cost meter above the prompt", "types": "./types/index.d.ts" }
