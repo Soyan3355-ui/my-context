@@ -8,6 +8,9 @@
 - [working_style.md](working_style.md) — AIとの対話の好み
 - [values.md](values.md) — 価値観・判断軸
 - [standards/agent-org-standard.md](standards/agent-org-standard.md) — AIエージェント・組織を作るときの基準書（Claude Codeでエージェント・スキル・フック・定期実行を作る前に必ず読む）
+- [CLAUDE.md](CLAUDE.md) — AIの共通ルール（毎回守ってほしいこと）
+- [standards/session-review.md](standards/session-review.md) — セッション履歴からハーネスを改善する手順
+- [standards/dreaming-design.md](standards/dreaming-design.md) — 夜間の自動改善（設計案・未稼働）
 
 ## 私について（要約）
 - 名前：橋口創也（そーやん）
