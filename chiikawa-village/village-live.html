@@ -213,6 +213,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
   .msg{font-size:12.5px}.chat-who button{font-size:11.5px}
   .nowbox h2{font-size:13px}.nw .n{font-size:12px}.nw .d{font-size:11.5px}.nw img{width:22px;height:22px}.nw{grid-template-columns:24px minmax(0,1fr);padding:4px 0}
 }
+.attlist{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}.attlist .att{font-family:var(--body);font-size:12px;border:1.5px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;background:var(--bg)}.attlist .att button{border:0;background:none;cursor:pointer;color:var(--sub);min-height:28px;min-width:28px}.attl{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.attl a{color:inherit;font-size:12.5px}.attimg{max-width:180px;max-height:140px;border-radius:8px;display:block}
 .chat-who{display:flex;gap:6px;flex-wrap:wrap}
 .chat-who button{display:inline-flex;gap:5px;align-items:center;font:inherit;font-size:12.5px;border:2px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}
 .chat-who button img{width:20px;height:20px;image-rendering:pixelated}
@@ -441,8 +442,8 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     <section style="order:0" class="box" aria-labelledby="h-vc">
     <h2 id="h-vc">🎤 つぶやき受信箱 <small id="vcCnt"></small></h2>
     <form class="notef" id="vcForm"><textarea id="vcIn" placeholder="思いついたこと、やらなきゃ、仕事のやり方。キーボードのマイクで話してもOK。" aria-label="つぶやき（受信箱）"></textarea>
-      <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="bt" id="vcMic" hidden>🎤 話す</button><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
-      <small id="vcMsg" role="status" style="color:var(--sub);font-family:var(--body)"></small></form>
+      <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="bt" id="vcMic" hidden>🎤 話す</button><button type="button" class="btn-s attbtn" id="vcAtt">📎 添付</button><input type="file" id="vcFile" multiple hidden accept="image/*,application/pdf,.txt,.md,.csv,.json"><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
+      <div id="vcAttList" class="attlist"></div><small id="vcMsg" role="status" style="color:var(--sub);font-family:var(--body)"></small></form>
     <div id="vcList"></div>
   </section>
   <section style="order:2" class="box tl" aria-labelledby="h-tl"><h2 id="h-tl">🗓 進み具合のタイムライン <small id="tlCnt"></small></h2><div id="tl"><p class="empty">PM の古本屋さんが、プロジェクトとルーティンの進み具合を時系列でここに並べます。</p></div></section>
@@ -463,7 +464,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     <div class="chat-log" id="chatLog" aria-live="polite"></div>
     <div class="pend" id="chatPend" hidden></div>
     <form class="notef" id="chatForm"><textarea id="chatIn" placeholder="なんでも話してな。たとえば「10/23 の振込どうしよ？」「きょう何からやる？」" aria-label="相談の内容"></textarea>
-      <div class="row"><button type="submit" class="bt" id="chatSend">送る</button><button type="button" class="btn-s" id="chatStop" hidden>止める</button>
+      <div id="chatAttList" class="attlist"></div><div class="row"><button type="button" class="btn-s attbtn" id="chatAtt">📎 添付</button><input type="file" id="chatFile" multiple hidden accept="image/*,application/pdf,.txt,.md,.csv,.json"><button type="submit" class="bt" id="chatSend">送る</button><button type="button" class="btn-s" id="chatStop" hidden>止める</button>
         <label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="chatDeep" checked>じっくり考える</label></div>
       <div class="row"><button type="button" class="btn-s" id="chatSave">つぶやき箱に残す</button><button type="button" class="btn-s" id="chatClear">この会話をけす</button></div></form>
     <p class="empty" id="chatNote"></p>
@@ -1424,7 +1425,7 @@ function renderChatLog(){if(CHAT_TODAY){renderToday();return}if(document.activeE
   const pre=CHAT_GRP?grpIntro():'';
   el.innerHTML=pre+(log.length?log.map(m=>{const tm=m.at?`<time class="mt">${hhmm(m.at)}</time>`:'';
     if(m.role==='sys')return `<div class="msg sys">${esc(m.content)}</div>`;
-    if(m.role==='user')return `<div class="mrow me">${tm}<div class="msg me">${esc(m.content)}</div></div>`;
+    if(m.role==='user')return `<div class="mrow me">${tm}<div class="msg me">${esc(m.content)}${attHtml(m.att)}</div></div>`;
     let dv='';if(!m.partial&&!m.err){ai++;if(un&&ai===na-un+1)dv='<div class="unrd">ここから未読メッセージ</div>'}
     return `${dv}<div class="mrow ai"><img class="av" src="${ICON[m.who]||ICON.chiikawa}" alt=""><div class="mcol"><div class="nm">${esc(NAMES[m.who]||'')}${m.partial?'（とちゅう）':''}</div><div class="msg ai${m.err?' err':''}">${esc(chatOpts(m.content).text)}</div></div>${tm}</div>`}).join('')
     :CHAT_GRP?'':`<p class="empty">${esc(NAMES[chatChar])}（${esc(ROLES[chatChar][0])}）と話せます。ほかの担当と話したことも、会社のいまの状況メモ・決定記録も読んだうえで答えるので、同じ説明はいりません。</p>`);
@@ -1548,13 +1549,19 @@ let chatSaveT=0,chatLoaded=false;const LOGAT={};function chatPersist(){if(!MIND.
   for(const k of keys){const a=LOGS[k].filter(m=>!m.partial&&!m.err).slice(-40).map(m=>({role:m.role,who:m.who||'',to:m.to||'',grp:m.grp||'',at:m.at||0,content:String(m.content).slice(0,3000)}));while(a.length){const b=enc.encode(JSON.stringify(a)).length;if(bytes+b<=180000){o[k]=a;bytes+=b;break}a.shift()}if(bytes>=180000)break}
   const at={};for(const k in o)at[k]=LOGAT[k]||0;db.doc('data/users/'+MIND.uid+'/chat').set({logs:o,at,closed:thrHidden(),updatedAt:Date.now()}).catch(()=>{$('chatNote').textContent='会話を保存できませんでした（この画面のあいだは残ります）'})},800)}
 async function chatLoad(){if(!MIND.uid||!db)return;try{chatLoaded=false;const sn=await db.doc('data/users/'+MIND.uid+'/chat').get();const sd=sn&&sn.exists?sn.data():{};const o=sd.logs||{};try{const cl=sd.closed||{},cur=thrHidden();let ch=false;for(const k in cl)if(typeof cl[k]==='number'&&(!cur[k]||cur[k]<cl[k])){cur[k]=cl[k];ch=true}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(cur))}catch(e){}Object.assign(LOGAT,sd.at||{},{...LOGAT});for(const k in o){if(k!=='room')continue;if(!LOGS[k]||!LOGS[k].length)LOGS[k]=(o[k]||[]).map(m=>({...m}))}renderChatLog();try{renderChatList()}catch(e){}}catch(e){}chatLoaded=true}
-async function chatSend(){if(CHAT_TODAY)return;{const r=topicSend();if(r)return r}if(chatBusy||!SAMPLE)return;const txt=$('chatIn').value.trim();if(!txt)return;const key=chatKey();let who=chatChar,to=chatChar;if(CHAT_GRP){const g=grpOf(CHAT_GRP);to='g:'+CHAT_GRP;who=grpResponder(g,txt);chatChar=who;CHAT_SHOWN=who}
+async function chatSend(){if(CHAT_TODAY)return;{const r=topicSend();if(r)return r}if(chatBusy||!SAMPLE)return;let txt=$('chatIn').value.trim();if(!txt&&!ATT.chat.length)return;let atts=[],imgs=[],extra='';
+  if(ATT.chat.length){const n=$('chatNote');if(!ASSETS){n.textContent='この画面ではファイルを預けられません（編集できる画面で開いてね）';return}
+    chatBusy=true;$('chatSend').disabled=true;n.textContent='ファイルを預けています…';
+    try{for(const f of ATT.chat){if(/^image\//.test(f.type)&&CHAT_IMG_OK&&imgs.length<3)imgs.push(f);else if(/^text\//.test(f.type)||/\.(md|csv|json|txt)$/i.test(f.name))extra+='\n\n【添付：'+f.name+'】\n'+(await f.text()).slice(0,ATT_TXT)}atts=await attUpload('chat')}
+    catch(e){n.textContent='ファイルを預けられませんでした。もう一度押してね（文は残してあります）';chatBusy=false;$('chatSend').disabled=false;return}
+    ATT.chat=[];attRender('chat');n.textContent='';chatBusy=false;if(!txt)txt='（ファイルを送ります）'}
+  const key=chatKey();let who=chatChar,to=chatChar;if(CHAT_GRP){const g=grpOf(CHAT_GRP);to='g:'+CHAT_GRP;who=grpResponder(g,txt);chatChar=who;CHAT_SHOWN=who}
   if(LOGS[key]&&Object.isFrozen(LOGS[key]))LOGS[key]=LOGS[key].map(m=>({...m}));
-  const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000),to,at:Date.now()});$('chatIn').value='';UNR={id:'',n:0};
+  const log=LOGS[key]=LOGS[key]||[];LOGAT[key]=Date.now();log.push({role:'user',content:txt.slice(0,2000),to,at:Date.now(),...(atts.length?{att:atts}:{})});if(atts.length)vcRaw('【チャットで預けたファイル】'+txt.slice(0,300),atts);$('chatIn').value='';UNR={id:'',n:0};
   const ans={role:'assistant',who,at:Date.now(),content:'かんがえ中…',partial:true};if(CHAT_GRP)ans.grp='g:'+CHAT_GRP;log.push(ans);chatBusy=true;CHAT_WHO=who;$('chatSend').disabled=true;$('chatStop').hidden=false;renderChatLog();ent[who].jump=.8;
-  const turns=log.filter(m=>m!==ans&&!m.err&&m.role!=='sys').slice(-30).map(m=>({role:m.role,content:m.role==='assistant'&&m.who&&m.who!==who?'（'+NAMES[m.who]+'の発言）'+m.content:m.content}));{const enc=new TextEncoder();let tot=turns.reduce((a,t)=>a+enc.encode(t.content).length,0);while(turns.length>1&&tot>110000){tot-=enc.encode(turns[0].content).length;turns.shift()}}while(turns.length&&turns[0].role!=='user')turns.shift();
+  const turns=log.filter(m=>m!==ans&&!m.err&&m.role!=='sys').slice(-30).map(m=>({role:m.role,content:m.role==='assistant'&&m.who&&m.who!==who?'（'+NAMES[m.who]+'の発言）'+m.content:m.content}));{const enc=new TextEncoder();let tot=turns.reduce((a,t)=>a+enc.encode(t.content).length,0);while(turns.length>1&&tot>110000){tot-=enc.encode(turns[0].content).length;turns.shift()}}while(turns.length&&turns[0].role!=='user')turns.shift();if(turns.length&&atts.length){const t=turns[turns.length-1];t.content+='\n（添付：'+atts.map(a=>a.name+(/^image\//.test(a.type)&&!imgs.length?'・画像はこの画面では読めないので見回りのときに見る':/pdf$/i.test(a.type)||/\.pdf$/i.test(a.name)?'・PDFは見回りのときに読む':'')).join('、')+'）'+extra}
   chatCtl=new AbortController();
-  try{const r=await SAMPLE([{role:'user',content:chatRules()},...turns],{cache:false,signal:chatCtl.signal,modelTier:$('chatDeep').checked?'complex':'default',...(CHAT_TOOLS_OK?{tools:chatToolList()}:{}),onText:({text})=>{ans.content=text;if(chatKey()===key)renderChatLog()}});
+  try{const r=await SAMPLE([{role:'user',content:chatRules()},...turns],{cache:false,signal:chatCtl.signal,modelTier:$('chatDeep').checked?'complex':'default',...(imgs.length?{images:imgs}:{}),...(CHAT_TOOLS_OK?{tools:chatToolList()}:{}),onText:({text})=>{ans.content=text;if(chatKey()===key)renderChatLog()}});
     ans.content=r.text+(r.truncated?'\n（ここで途切れました。続きを聞いてね）':'');ans.partial=false;ent[who].jump=1;floater('💬',ent[who])}
   catch(e){const m=chatErr(e);if(e&&e.text){ans.content=e.text;ans.partial=true}else{log.splice(log.indexOf(ans),1);if(m)log.push({role:'assistant',who,at:Date.now(),content:m,err:true})}
     if(e&&e.text&&m)log.push({role:'assistant',who,at:Date.now(),content:m,err:true});
@@ -1606,13 +1613,16 @@ function vcParse(t){try{const m=/\{[\s\S]*\}/.exec(String(t||''));const d=m?JSON
     worklog:{name:clip(wl.name||'',80),field:clip(wl.field||'その他',20),steps:clip(wl.steps||'',1500),tips:clip(wl.tips||'',800),tools:clip(wl.tools||'',300)}}}catch(e){return null}}
 function vcItems(){return (VOICE.data&&Array.isArray(VOICE.data.items))?VOICE.data.items:[]}
 function renderVoice(){const el=$('vcList');if(!el)return;const L=vcItems().slice(0,6);const wait=vcItems().filter(x=>!x.handled).length;$('vcCnt').textContent=wait?`見回り待ち ${wait}件`:'';
-  el.innerHTML=L.length?L.map(x=>`<div class="vci"><span class="ty">${esc(x.type||'メモ')}</span><span>${esc(x.title||clip(x.text,30))}</span><span class="st">${x.handled?'✅ Notion に入った':'⏳ 見回り待ち'}</span></div>`).join(''):(VOICE.loaded?'<p class="empty">まだありません。話してみてね。</p>':'<p class="empty">よみこみ中…</p>')}
-async function vcSend(){if(VOICE.busy)return;const ta=$('vcIn'),text=ta.value.trim(),msg=$('vcMsg');if(!text)return;
+  el.innerHTML=L.length?L.map(x=>`<div class="vci"><span class="ty">${esc(x.type||'メモ')}</span><span>${esc(x.title||clip(x.text,30))}</span>${x.files&&x.files.length?attHtml(x.files):''}<span class="st">${x.handled?'✅ Notion に入った':'⏳ 見回り待ち'}</span></div>`).join(''):(VOICE.loaded?'<p class="empty">まだありません。話してみてね。</p>':'<p class="empty">よみこみ中…</p>')}
+async function vcSend(){if(VOICE.busy)return;const ta=$('vcIn'),msg=$('vcMsg');let text=ta.value.trim();if(!text&&!ATT.vc.length)return;
   if(!VOICE.ref||!MIND.uid){msg.textContent='ログインすると使えます（そーやんだけの場所に残すため）';return}
   if(!canWrite){msg.textContent='この画面では保存できません';return}
   if(!VOICE.loaded){msg.textContent='よみこみ中です。少し待ってからもう一度押してね';return}
   VOICE.busy=true;$('vcSend').disabled=true;const hint=$('vcWork').checked?'work':'auto';msg.textContent=SAMPLE?'整理しています…':'保存しています…';
-  const it={id:'v'+Date.now().toString(36),at:Date.now(),text:text.slice(0,2000),hint,type:hint==='work'?'仕事ログ':'メモ',title:clip(text.replace(/\s+/g,' '),30),summary:'',tags:[],task:{title:'',due:'',priority:'中'},worklog:{name:'',field:'その他',steps:'',tips:'',tools:''},handled:false};
+  let atts=[];if(ATT.vc.length){if(!ASSETS){msg.textContent='この画面ではファイルを預けられません（編集できる画面で開いてね）';VOICE.busy=false;$('vcSend').disabled=false;return}
+    try{msg.textContent='ファイルを預けています…';atts=await attUpload('vc')}catch(e){msg.textContent='ファイルを預けられませんでした。もう一度押してね（文は残してあります）';VOICE.busy=false;$('vcSend').disabled=false;return}
+    ATT.vc=[];attRender('vc');if(!text)text='（ファイル：'+atts.map(a=>a.name).join('、')+'）'}
+  const it={id:'v'+Date.now().toString(36),at:Date.now(),text:text.slice(0,2000),hint,type:hint==='work'?'仕事ログ':'メモ',title:clip(text.replace(/\s+/g,' '),30),summary:'',tags:[],task:{title:'',due:'',priority:'中'},worklog:{name:'',field:'その他',steps:'',tips:'',tools:''},handled:false,files:atts};
   try{
     if(SAMPLE){try{const r=await Promise.race([SAMPLE([{role:'user',content:vcPrompt(it.text,hint)}],{cache:false,modelTier:'default'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),25000))]);const p=vcParse(r&&r.text);if(p){Object.assign(it,p);if(hint==='work')it.type='仕事ログ';if(!it.title)it.title=clip(text,30)}}catch(e){}}
     let cur=vcItems();try{const g=await VOICE.ref.get();if(g&&g.exists){const d=typeof g.data==='function'?g.data():g.data;if(d&&Array.isArray(d.items))cur=d.items}}catch(e){}
@@ -1632,7 +1642,7 @@ $('vcForm').addEventListener('submit',e=>{e.preventDefault();vcSend()});
     rec.onerror=()=>{$('vcMsg').textContent='マイクが使えませんでした。キーボードのマイクで話してね'};rec.onend=()=>{rec=null;b.textContent='🎤 話す'};rec.start();b.textContent='⏹ とめる'}catch(e){rec=null;$('vcMsg').textContent='マイクが使えませんでした。キーボードのマイクで話してね'}})})();
 // ホーム画面のショートカットから開いたとき（#tsubuyaki または ?tsubuyaki）：つぶやき欄まで移動して入力待ちにする
 (function(){const on=/tsubuyaki/.test(location.hash+location.search);if(!on)return;const go=()=>{const ta=$('vcIn');if(!ta)return;try{setBox('h-vc',true,true)}catch(e){}ta.scrollIntoView({block:'center'});try{ta.focus({preventScroll:true})}catch(e){}};setTimeout(go,300);setTimeout(go,1500)})();
-async function chatProbe(){try{const l=await SAMPLE.limits();CHAT_TOOLS_OK=!!(l&&l.tools&&MCP);if(l&&l.tools&&l.tools.maxCount)CHAT_TOOL_MAX=l.tools.maxCount}catch(e){CHAT_TOOLS_OK=false}}
+async function chatProbe(){try{const l=await SAMPLE.limits();CHAT_TOOLS_OK=!!(l&&l.tools&&MCP);CHAT_IMG_OK=!!(l&&l.images);if(l&&l.tools&&l.tools.maxCount)CHAT_TOOL_MAX=l.tools.maxCount}catch(e){CHAT_TOOLS_OK=false}}
 function chatAvail(){const ok=!!SAMPLE;$('chatIn').disabled=!ok;$('chatSend').disabled=!ok||chatBusy;$('chatSt').textContent=ok?'':'（いまは使えません）';if(!ok)$('chatNote').textContent='この画面では相談が使えません。Claude のアプリかブラウザで開くと使えます。';else if($('chatNote').textContent.startsWith('この画面では相談が使えません'))$('chatNote').textContent=''}
 renderChatUi();chatAvail();
 setInterval(()=>{if(!chatBusy&&!document.activeElement.closest?.('#chatForm'))renderChatUi()},4000);
@@ -2176,9 +2186,27 @@ async function layRemote(u){try{const id=u&&u.id?await u.id():null;if(!id||!db)r
   let loc=null;try{loc=JSON.parse(localStorage.getItem('ck-layout')||'null')}catch(e){}
   const snap=await LAY.ref.get();if(snap&&snap.exists){const d=snap.data();if(!loc||(d.updatedAt||0)>(loc.at||0)){layApply(d.items);try{localStorage.setItem('ck-layout',JSON.stringify({items:d.items,at:d.updatedAt||Date.now()}))}catch(e){}}}
   else if(loc&&loc.items&&canWrite){LAY.ref.set({items:loc.items,updatedAt:loc.at||Date.now()}).catch(()=>{})}}catch(e){}}
+// ---------- 添付（画像・資料）：assets に預けて、id を会話・受信箱に残す ----------
+let ASSETS=null,CHAT_IMG_OK=false;const ATT={chat:[],vc:[]},ATT_MAX=4,ATT_BYTES=20*1024*1024,ATT_TXT=20000;
+function attOk(f){return /^(image\/|application\/pdf|text\/)/.test(f.type)||/\.(md|csv|json|txt|pdf)$/i.test(f.name)}
+function attNote(k){return $(k==='chat'?'chatNote':'vcMsg')}
+function attRender(k){const el=$(k+'AttList');if(!el)return;el.innerHTML=ATT[k].map((f,i)=>`<span class="att">${esc(clip(f.name,20))}<button type="button" data-i="${i}" aria-label="${esc(f.name)}を外す">✕</button></span>`).join('');el.querySelectorAll('button').forEach(b=>b.onclick=()=>{ATT[k].splice(+b.dataset.i,1);attRender(k)})}
+function attInit(k){const b=$(k+'Att'),inp=$(k+'File');if(!b||!inp)return;
+  b.addEventListener('click',()=>inp.click());
+  inp.addEventListener('change',()=>{const n=attNote(k);const add=[...inp.files];inp.value='';let msg='';
+    for(const f of add){if(!attOk(f)){msg='「'+f.name+'」は預けられない形式です（画像・PDF・テキストだけ）';continue}if(f.size>ATT_BYTES){msg='「'+f.name+'」は20MBを超えています';continue}if(ATT[k].length>=ATT_MAX){msg='いちどに付けられるのは'+ATT_MAX+'つまでです';break}ATT[k].push(f)}
+    attRender(k);if(msg&&n)n.textContent=msg})}
+async function attUpload(k){const out=[];for(const f of ATT[k]){const r=await ASSETS.upload(f);out.push({id:r.id,name:f.name,type:f.type||r.contentType||'',size:f.size})}return out}
+function attHtml(a){return (a&&a.length)?'<div class="attl">'+a.map(x=>/^image\//.test(x.type)?`<a href="/_blob/${esc(x.id)}" target="_blank" rel="noopener"><img class="attimg" src="/_blob/${esc(x.id)}" alt="${esc(x.name)}"></a>`:`<a href="/_blob/${esc(x.id)}" target="_blank" rel="noopener">📎 ${esc(clip(x.name,24))}</a>`).join('')+'</div>':''}
+// チャットで預けたファイルも、見回りが拾えるよう受信箱にそっと残す
+async function vcRaw(text,files){try{if(!VOICE.ref||!MIND.uid||!canWrite||!VOICE.loaded)return;let cur=vcItems();try{const g=await VOICE.ref.get();if(g&&g.exists){const d=typeof g.data==='function'?g.data():g.data;if(d&&Array.isArray(d.items))cur=d.items}}catch(e){}
+  const open=cur.filter(x=>!x.handled);if(open.length>=150)return;
+  const it={id:'v'+Date.now().toString(36),at:Date.now(),text:text.slice(0,2000),hint:'auto',type:'メモ',title:clip(text.replace(/\s+/g,' '),30),summary:'',tags:[],task:{title:'',due:'',priority:'中'},worklog:{name:'',field:'その他',steps:'',tips:'',tools:''},handled:false,files};
+  await VOICE.ref.set({items:[it,...open.concat(cur.filter(x=>x.handled).slice(0,30))],updatedAt:Date.now()})}catch(e){}}
+attInit('chat');attInit('vc');
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
-  if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}}if(SAMPLE)await chatProbe();chatAvail();renderChatUi();
+  if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}try{ASSETS=await cl.use('assets')}catch(e){}}if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await chatProbe();chatAvail();renderChatUi();
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
   try{const u=await cl.use('user');if(u){const w=await u.can('data.write');if(w===false)canWrite=false;layRemote(u)}}catch(e){}
   usageStart();
