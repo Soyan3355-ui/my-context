@@ -8,3 +8,6 @@
 transcripts/
 prompt.md
 __pycache__/
+outbox/
+*.corrected.json
+corrections.json

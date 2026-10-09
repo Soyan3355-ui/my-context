@@ -141,5 +141,52 @@ class PipelineTest(Base):
         self.assertAlmostEqual(spans[0]["start"], 2.0, delta=0.2)
 
 
+class GlossaryTest(unittest.TestCase):
+    ENTRIES = [
+        {"term": "堆肥", "patterns": ["たいひ", "対比"], "status": "確定", "category": ""},
+        {"term": "稲刈り", "patterns": ["稲刈"], "status": "確定", "category": ""},
+        {"term": "川上", "patterns": ["河上"], "status": "要確認", "category": ""},
+    ]
+
+    def test_fixes_confirmed_terms_only(self):
+        import glossary
+        text, fixes, sug = glossary.correct_text("たいひと対比と河上", self.ENTRIES)
+        self.assertEqual(text, "堆肥と堆肥と河上")  # 要確認は直さない
+        self.assertEqual(sum(f["count"] for f in fixes), 2)
+        self.assertEqual([x["term"] for x in sug], ["川上"])
+
+    def test_does_not_double_fix_inside_correct_term(self):
+        import glossary
+        text, fixes, _ = glossary.correct_text("稲刈りと稲刈", self.ENTRIES)
+        self.assertEqual(text, "稲刈りと稲刈り")
+        self.assertEqual(sum(f["count"] for f in fixes), 1)
+
+    def test_load_csv_with_notion_columns(self):
+        import glossary
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "g.csv"
+            p.write_text("用語,言い間違いパターン,区分,状態\n堆肥,\"たいひ,対比\",農業用語,確定\n", encoding="utf-8-sig")
+            e = glossary.load(p)
+        self.assertEqual(e[0]["patterns"], ["たいひ", "対比"])
+
+
+class RecordTest(Base):
+    def test_record_row_has_only_numbers_and_known_columns(self):
+        p = self.edl([{"source": "A", "in": 0, "out": 6}, {"source": "A", "in": 6, "out": 9, "keep": False}])
+        ob = self.d / "outbox"
+        cmd = [sys.executable, str(ROOT / "pipeline.py"), "record", str(p), "--title", "テスト", "--outbox", str(ob)]
+        r1 = subprocess.run(cmd, capture_output=True, text=True)
+        self.assertEqual(r1.returncode, 0, r1.stderr)
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        rows = [json.loads(x) for x in (ob / "records.jsonl").read_text().splitlines()]
+        self.assertEqual(rows[0]["完成の長さ（分）"], 0.1)
+        self.assertEqual(rows[0]["カットした数"], 1)
+        self.assertNotEqual(rows[0]["動画番号"], rows[1]["動画番号"])  # 連番
+        self.assertFalse(rows[0]["_sent"])
+        allowed = {"動画タイトル", "動画番号", "状態", "元の長さ（分）", "完成の長さ（分）", "カットした数",
+                   "直した用語の数", "撮影日", "編集完了日", "編集にかかった時間（分）", "動画リンク", "メモ", "_sent"}
+        self.assertLessEqual(set(rows[0]), allowed)  # Notionの表にない列は書かない
+
+
 if __name__ == "__main__":
     unittest.main()

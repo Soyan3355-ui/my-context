@@ -27,6 +27,11 @@ python3 pipeline.py build proposal.json transcripts/*.json --out edit.json
 python3 pipeline.py srt edit.json transcripts/*.json --out subs.srt
 python3 pipeline.py silence a.mp4 --noise=-40dB       # 無音区間の検出（補助）
 
+# ちいかわ株式会社との連携（詳細は chiikawa-integration.md）
+python3 pipeline.py transcribe a.mp4 --glossary glossary.json         # 辞書の用語をWhisperに伝える
+python3 pipeline.py correct transcripts/*.transcript.json --glossary glossary.json   # 確定の用語を自動修正
+python3 pipeline.py record edit.json --title "動画タイトル" --corrections corrections.json   # 編集の記録を送信待ちに積む
+
 # テスト
 python3 -m unittest discover -s tests -v
 ```
@@ -43,7 +48,8 @@ python3 -m unittest discover -s tests -v
 - 確認用の `--preview`：48秒の編集で約12秒。
 - HDR：SDR原本の平均輝度126.2に対し、PQ/HLGの変換後は119.7（変換なしだと約99〜105でくすむ）。設定は合成素材で調整したので、実素材では目視確認が必要。
 - 文字起こし→指示書→字幕→書き出しは、手作りの文字起こしで一通り確認した。Whisperのモデルは、このクラウド環境から取得できず未実行。
-- 自動テスト9本が通る。壊した場合に失敗することも確認済み。
+- 辞書による修正と編集の記録（手作りデータ）を確認した。Notionへの実際の書き込みは行っていない。
+- 自動テスト13本が通る。壊した場合に失敗することも確認済み。
 
 ## 未対応（次の候補）
 1. 実際のHDR素材（iPhone HLG、Dolby Visionなど）での目視確認と、トーンマップ設定の調整。

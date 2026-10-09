@@ -5,19 +5,24 @@
   1. transcribe  素材ごとに文字起こしを保存（faster-whisper。PC内で動く）
   2. prompt      文字起こしからAI（Claude Code等）への依頼文を作る
   3. （AIが proposal.json を書く。時刻ではなく「発話番号」で範囲を指定する）
+  2b. correct    用語辞書で文字起こしの用語を直す（ちいかわ株式会社の用語辞書と同じ列）
   4. build       proposal.json と文字起こしから、render.py用の指示書を作る
   5. srt         指示書と文字起こしから、書き出し後の時刻に合わせた字幕(SRT)を作る
+  6. record      「編集の記録」に書く1行を作り、送信待ちの箱（outbox）に積む
   （補助）silence 無音区間を検出する
 
 AIに秒数を直接書かせず発話番号で指定させるのは、秒数の幻覚と、
 単語の途中で切れる事故を防ぐため。秒数への変換と余白付けはスクリプトが行う。
 """
 import argparse
+import datetime
 import json
 import re
 import subprocess
 import sys
 from pathlib import Path
+
+import glossary
 
 PAD_BEFORE, PAD_AFTER = 0.15, 0.25  # 発話の前後に付ける余白（秒）
 
@@ -38,9 +43,10 @@ def transcribe(args):
     except ImportError:
         sys.exit("faster-whisper が未導入です: pip install faster-whisper")
     model = WhisperModel(args.model, device="cpu", compute_type="int8")
+    hot = glossary.hotwords(glossary.load(args.glossary)) if args.glossary else None
     for media in args.media:
         name = Path(media).stem
-        segs, info = model.transcribe(media, language=args.language, vad_filter=True)
+        segs, info = model.transcribe(media, language=args.language, vad_filter=True, hotwords=hot)
         out = {"source": name, "path": str(media), "language": info.language,
                "segments": [{"i": i, "start": round(s.start, 2), "end": round(s.end, 2),
                              "text": s.text.strip()} for i, s in enumerate(segs)]}
@@ -48,6 +54,59 @@ def transcribe(args):
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"{dest}: {len(out['segments'])} 発話")
+
+
+def correct(args):
+    """用語辞書で文字起こしを直す。元ファイルは残し、*.corrected.json と corrections.json を作る。"""
+    entries = glossary.load(args.glossary)
+    all_fixes, all_sug = [], []
+    for p in args.transcripts:
+        t = json.loads(Path(p).read_text(encoding="utf-8"))
+        fixed, fixes, sug = glossary.correct_transcript(t, entries)
+        dest = Path(p).with_name(Path(p).name.replace(".transcript.json", ".corrected.json"))
+        dest.write_text(json.dumps(fixed, ensure_ascii=False, indent=1), encoding="utf-8")
+        all_fixes += fixes
+        all_sug += sug
+        print(f"{dest}: {sum(f['count'] for f in fixes)}か所を修正")
+    Path(args.out).write_text(json.dumps({"fixes": all_fixes, "suggestions": all_sug,
+                                          "total": sum(f["count"] for f in all_fixes)},
+                                         ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"修正 {sum(f['count'] for f in all_fixes)}か所 / 要確認の候補 {len(all_sug)}件 → {args.out}")
+
+
+def record(args):
+    """ちいかわ株式会社の「編集の記録」に書く1行を作り、送信待ちの箱（outbox）に積む。
+    映像・音声は含めず、タイトル・長さ・件数などの数字だけにする。"""
+    import render
+    edl, sources, clips = render.load(args.edl)
+    raw = json.loads(Path(args.edl).read_text(encoding="utf-8"))["timeline"]
+    outbox = Path(args.outbox)
+    outbox.mkdir(parents=True, exist_ok=True)
+    ledger = outbox / "records.jsonl"
+    today = datetime.date.today().strftime("%Y%m%d")
+    existing = [json.loads(x) for x in ledger.read_text(encoding="utf-8").splitlines()] if ledger.exists() else []
+    seq = 1 + sum(1 for r in existing if str(r.get("動画番号", "")).startswith(f"V-{today}-"))
+    fixes = 0
+    if args.corrections:
+        fixes = json.loads(Path(args.corrections).read_text(encoding="utf-8"))["total"]
+    used = {c["source"] for c in clips}
+    row = {
+        "動画タイトル": args.title,
+        "動画番号": args.number or f"V-{today}-{seq:02}",
+        "状態": args.status,
+        "元の長さ（分）": round(sum(sources[n]["duration"] for n in used) / 60, 1),
+        "完成の長さ（分）": round(sum(c["out"] - c["in"] for c in clips) / 60, 1),
+        "カットした数": sum(1 for c in raw if not c.get("keep", True)),
+        "直した用語の数": fixes,
+    }
+    for key, val in (("撮影日", args.shot_date), ("編集完了日", args.done_date),
+                     ("編集にかかった時間（分）", args.minutes), ("動画リンク", args.link), ("メモ", args.memo)):
+        if val is not None:  # わかるものだけ書く
+            row[key] = val
+    with ledger.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({**row, "_sent": False}, ensure_ascii=False) + "\n")
+    print(json.dumps(row, ensure_ascii=False, indent=1))
+    print(f"送信待ちの箱に追加: {ledger}（Notionへの反映はまだ。内容を確認してから）", file=sys.stderr)
 
 
 def load_transcripts(paths):
@@ -151,7 +210,15 @@ if __name__ == "__main__":
     sp = ap.add_subparsers(dest="cmd", required=True)
     a = sp.add_parser("transcribe"); a.add_argument("media", nargs="+")
     a.add_argument("--out", default="transcripts"); a.add_argument("--model", default="small")
-    a.add_argument("--language", default="ja"); a.set_defaults(fn=transcribe)
+    a.add_argument("--language", default="ja"); a.add_argument("--glossary", help="用語辞書（JSON/CSV）。正しい表記が出やすくなる")
+    a.set_defaults(fn=transcribe)
+    f = sp.add_parser("correct"); f.add_argument("transcripts", nargs="+"); f.add_argument("--glossary", required=True)
+    f.add_argument("--out", default="corrections.json"); f.set_defaults(fn=correct)
+    g = sp.add_parser("record"); g.add_argument("edl"); g.add_argument("--title", required=True)
+    g.add_argument("--status", default="編集中", choices=["編集中", "確認待ち", "完成", "公開"])
+    g.add_argument("--number"); g.add_argument("--corrections"); g.add_argument("--outbox", default="outbox")
+    g.add_argument("--shot-date"); g.add_argument("--done-date"); g.add_argument("--minutes", type=float)
+    g.add_argument("--link"); g.add_argument("--memo"); g.set_defaults(fn=record)
     b = sp.add_parser("prompt"); b.add_argument("transcripts", nargs="+")
     b.add_argument("--out", default="prompt.md"); b.add_argument("--proposal", default="proposal.json")
     b.set_defaults(fn=prompt)
