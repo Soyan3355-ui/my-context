@@ -216,6 +216,9 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .attlist{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}.attlist .att{font-family:var(--body);font-size:12px;border:1.5px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;background:var(--bg)}.attlist .att button{border:0;background:none;cursor:pointer;color:var(--sub);min-height:28px;min-width:28px}.attl{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.attl a{color:inherit;font-size:12.5px}.attimg{max-width:180px;max-height:140px;border-radius:8px;display:block}
 /* 2026-10-09 そーやんの指示で「ふりかえり」欄をなくした（コードは残す） */
 .box[aria-labelledby="h-ci"],.md-nudge{display:none!important}
+/* 2026-10-09 そーやんの指示：タスクボード・記録監査・決定記録は画面から外す（記録は Notion・db に残る）。判断・提案は社内チャットへ。役員名簿は一番下 */
+.box[aria-labelledby="h-bd"],.box[aria-labelledby="h-au"],.box[aria-labelledby="h-dc"],.box[aria-labelledby="h-xc"],.box[aria-labelledby="h-idea"]{display:none!important}
+.box[aria-labelledby="h-rs"]{order:99!important}
 .chat-who{display:flex;gap:6px;flex-wrap:wrap}
 .chat-who button{display:inline-flex;gap:5px;align-items:center;font:inherit;font-size:12.5px;border:2px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}
 .chat-who button img{width:20px;height:20px;image-rendering:pixelated}
@@ -444,7 +447,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
     <section style="order:0" class="box" aria-labelledby="h-vc">
     <h2 id="h-vc">🎤 つぶやき受信箱 <small id="vcCnt"></small></h2>
     <form class="notef" id="vcForm"><textarea id="vcIn" placeholder="思いついたこと、やらなきゃ、仕事のやり方。キーボードのマイクで話してもOK。" aria-label="つぶやき（受信箱）"></textarea>
-      <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="bt" id="vcMic" hidden>🎤 話す</button><button type="button" class="btn-s attbtn" id="vcAtt">📎 添付</button><input type="file" id="vcFile" multiple hidden accept="image/*,application/pdf,.txt,.md,.csv,.json"><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
+      <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="btn-s attbtn" id="vcAtt">📎 添付</button><input type="file" id="vcFile" multiple hidden accept="image/*,application/pdf,.txt,.md,.csv,.json"><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
       <div id="vcAttList" class="attlist"></div><small id="vcMsg" role="status" style="color:var(--sub);font-family:var(--body)"></small></form>
     <div id="vcList"></div>
   </section>
@@ -1304,12 +1307,13 @@ function pmItems(){const out=[];if(!TL)return out;const day=todayKey();let seen=
     if(p.status==='late'||p.status==='warn')out.push({k:'pm',id:p.id,p});
     else{const ms=(p.milestones||[]).filter(m=>!m.done&&m.d&&dnum(m.d)>=today&&dnum(m.d)-today<=3*864e5).sort((a,b)=>dnum(a.d)-dnum(b.d))[0];if(ms)out.push({k:'pm',id:p.id,p,ms})}});
   return out.sort((a,b)=>(a.k==='pmsum'?0:1)-(b.k==='pmsum'?0:1)||((a.p&&a.p.status==='late'?0:1)-(b.p&&b.p.status==='late'?0:1)))}
-const spkOf=it=>it&&(it.k==='pm'||it.k==='pmsum')?'kani':'hachiware';
+const spkOf=it=>it&&(it.k==='pm'||it.k==='pmsum')?'kani':(it&&it.k==='idea'&&it.x.who&&NAMES[it.x.who]&&ICON[it.x.who]?it.x.who:'hachiware');
 function thrHidden(){try{const o=JSON.parse(localStorage.getItem('ck-thrhide')||'{}'),cut=Date.now()-30*864e5;let ch=false;for(const k in o){if(typeof o[k]!=='number'){o[k]=Date.now();ch=true}else if(o[k]<cut){delete o[k];ch=true}}if(ch)localStorage.setItem('ck-thrhide',JSON.stringify(o));return o}catch(e){return {}}}
 function thrHide(key){const o=thrHidden();o[key]=Date.now();try{localStorage.setItem('ck-thrhide',JSON.stringify(o))}catch(e){}try{chatPersist()}catch(e){}}
 function allItems(){const it=[];
   MAIL.items.filter(m=>m.status==='pending'||m.status==='revised').sort((a,b)=>(a.receivedAt||0)-(b.receivedAt||0)).forEach(m=>it.push({k:'mail',id:m.id,m}));
   XCS.filter(x=>x.status!=='answered').sort(byTime).forEach(x=>it.push({k:'card',id:x.id,x}));
+  IDEAS.filter(x=>x.status==='open').sort((a,b)=>((b.kind==='structure')-(a.kind==='structure'))||byTime(a,b)).forEach(x=>it.push({k:'idea',id:x.id,x}));
   BOARD.filter(b=>b.status==='review').forEach(b=>it.push({k:'rev',id:b.id,b}));
   pmItems().forEach(x=>it.push(x));
   TASKS.filter(t=>!t.done).slice().sort((a,b)=>(a.due?dnum(a.due):9e15)-(b.due?dnum(b.due):9e15)||(a.createdAt||0)-(b.createdAt||0)).forEach(t=>it.push({k:'task',id:t.id,t}));
@@ -1322,6 +1326,7 @@ function todayMsg(it){
     return {text:`🗓 「${clip(p.title,34)}」が${p.status==='late'?'遅れてる':'ちょっと気になる'}よ${p.due?`（期限 ${mdOf(p.due)}）`:''}。${p.next?`\n次の一手：${clip(p.next,90)}`:''}${p.why?`\n【背景】${clip(p.why,400)}`:''}\nどうする？`,chips:[{a:'pmask',t:'相談する'},{a:'pmfin',t:'もう終わってる'},{a:'pmgood',t:'順調だよ（3日だまる）'},{a:'later',t:'あとで'}]}}
   if(it.k==='mail'){const m=it.m;return {text:`✉️ ${clip(m.from,24)}${/(さん|先生|様)$/.test(m.from||'')?'':'さん'}からメール「${clip(m.subject,40)}」${m.risk?'\n⚠️ お金や約束のことが入っています。内容をよく見てね':''}\n\n【相手のメール】${m.originalAt?'（'+hhmm(m.originalAt)+'）':''}\n${m.original?clip(m.original,1200):clip(m.summary,300)+'\n（元の本文はまだ取り込めていません。Gmail で確認してね）'}\n\n【返信の下書き】\n${clip(m.draft,900)}\n\nこの内容で返信していい？`,chips:[{a:'mok',t:'この内容でOK'},{a:'mfix',t:'直したい'},{a:'mno',t:'返信しない'},{a:'later',t:'あとで'}]}}
   if(it.k==='card'){const x=it.x;const ops=(x.options||[]).map(o=>`${o.key}：${clip(o.label,60)}${o.detail?'（'+clip(o.detail,80)+'）':''}`).join('\n');return {text:x.question+(x.why?'\n\n【背景・経緯】\n'+clip(x.why,700):'')+(ops?'\n\n【選べること】\n'+ops:'')+(x.recommend?'\n\n【ウチのおすすめ】\n'+clip(x.recommend,200):'')+(x.ifNothing?'\n\n【返事がないとき】\n'+clip(x.ifNothing,150):''),chips:[...(x.options||[]).slice(0,3).map(o=>({a:'ans',k:o.key,t:o.key+'　'+clip(o.label,18)})),{a:'ans',k:'保留',t:'保留（あとで）'}]}}
+  if(it.k==='idea'){const x=it.x;return {text:`💡 提案：${clip(x.title,80)}${x.kind==='ui'?'\n（画面についての提案です）':''}${x.what?'\n\n【やること】\n'+clip(x.what,500):''}${x.why?'\n\n【なぜ】\n'+clip(x.why,400):''}${x.evidence?'\n\n【根拠】\n'+clip(x.evidence,200):''}${x.effort?'\n\n【手間の見込み】'+clip(x.effort,30):''}${x.doneDef?'\n【できあがりの目安】'+clip(x.doneDef,200):''}\n\nどうする？`,chips:[{a:'igo',t:'やってみて'},{a:'ino',t:'見送り'},{a:'ilater',t:'あとで考える'}]}}
   if(it.k==='rev'){return {text:`「${clip(it.b.title,40)}」ができたよ。確認してくれる？`,chips:[{a:'ok',t:'OK、完了にする'},{a:'fix',t:'直してほしい'},{a:'later',t:'あとで'}]}}
   const t=it.t;const od=t.due&&dnum(t.due)<dnum(todayKey());
   return {text:`「${clip(t.title,50)}」${t.due?`（期限 ${mdOf(t.due)}${od?'・すぎてるよ…':''}）`:''}${(t.memo||t.note||t.why)?'\n【メモ・経緯】'+clip(t.memo||t.note||t.why,400):''}${t.fromNotion?'\n（Notion のタスクです）':''}\nどんな感じ？`,chips:[{a:'done',t:'終わった ✅'},{a:'today',t:'今日やる'},{a:'week',t:'来週に回す'},{a:'help',t:'手伝って'},{a:'later',t:'あとで'}]}}
@@ -1359,6 +1364,8 @@ async function todayAct(a,k,label){if(TQ.busy||!CHAT_GRP)return;const g=grpOf(CH
       else if(a==='cdone'){const lt=(LOGS[chatKey()]||[]).filter(m=>m.role==='user'&&m.to==='g:'+key&&m.content!==label).slice(-1)[0];if((await answer(it.id,'記述','（社内チャットの会話で解決）'+(lt?lt.content:'')))===false)throw 0;ack='会話で解決したことにして、閉じたよ。ありがとう！'}
       else if(a==='later'){ack='わかった、あとでまた聞くね';toList=true}
       else{if((await answer(it.id,k,undefined))===false)throw 0;ack=k==='保留'?'保留にしたよ。あとで聞くね':'決めたよ。ありがとう！'}}
+    else if(it.k==='idea'){const x=it.x;const patch={status:a==='igo'?'approved':a==='ino'?'declined':'later',decidedAt:Date.now()};Object.assign(x,patch);if(a==='igo'){if(ent[x.who])ent[x.who].jump=1;floater('✨',ent[x.who]||ent.hachiware)}
+      if((await write('ideas',x.id,patch))===false)throw 0;ack=a==='igo'?'やってみるね。次の見回りで進めるよ':a==='ino'?'見送りにしたよ':'わかった、あとでまた聞くね'}
     else if(it.k==='rev'){
       if(a==='ok'){if(!(await write('board',it.id,{status:'done'})))throw 0;const b=BOARD.find(x=>x.id===it.id);if(b)b.status='done';ack='完了にしたよ！'}
       else if(a==='fix'){ack='どこを直してほしい？ ことばで教えてね'}
@@ -1393,8 +1400,8 @@ var GRP_ARM='';
 const KIND_ICON={mail:'✉️',card:'⭐',rev:'🛡️',task:'📝',pm:'🗓',pmsum:'🗓'};
 const KIND_ORD={mail:0,card:1,rev:2,pmsum:3,pm:4,task:5};
 const TOPIC_SNAP={};
-function topicTitle(it){if(it.k==='card')return clip(it.x.question,34);if(it.k==='mail')return clip(it.m.subject,28)+'（'+clip(it.m.from,10)+'）';if(it.k==='rev')return clip(it.b.title,34);if(it.k==='task')return clip(it.t.title,34);if(it.k==='pmsum')return '今週の見立て';return clip(it.p.title,26)+(it.ms?'：'+clip(it.ms.label,12):'')}
-function topicSub(it){if(it.k==='card')return it.x.why?clip(it.x.why,36):'判断してほしい';if(it.k==='mail')return clip(it.m.summary,36);if(it.k==='rev')return '確認してほしい（できたよ）';if(it.k==='task')return it.t.due?`期限 ${mdOf(it.t.due)}`:'やること';if(it.k==='pmsum')return clip(it.note,36);return it.ms?`あと${Math.max(0,Math.round((dnum(it.ms.d)-dnum(todayKey()))/864e5))}日・準備できてる？`:(it.p.status==='late'?'遅れてる':'気になる')+(it.p.next?'：'+clip(it.p.next,24):'')}
+function topicTitle(it){if(it.k==='idea')return '💡 '+clip(it.x.title,32);if(it.k==='card')return clip(it.x.question,34);if(it.k==='mail')return clip(it.m.subject,28)+'（'+clip(it.m.from,10)+'）';if(it.k==='rev')return clip(it.b.title,34);if(it.k==='task')return clip(it.t.title,34);if(it.k==='pmsum')return '今週の見立て';return clip(it.p.title,26)+(it.ms?'：'+clip(it.ms.label,12):'')}
+function topicSub(it){if(it.k==='idea')return '提案（やる／見送り）';if(it.k==='card')return it.x.why?clip(it.x.why,36):'判断してほしい';if(it.k==='mail')return clip(it.m.summary,36);if(it.k==='rev')return '確認してほしい（できたよ）';if(it.k==='task')return it.t.due?`期限 ${mdOf(it.t.due)}`:'やること';if(it.k==='pmsum')return clip(it.note,36);return it.ms?`あと${Math.max(0,Math.round((dnum(it.ms.d)-dnum(todayKey()))/864e5))}日・準備できてる？`:(it.p.status==='late'?'遅れてる':'気になる')+(it.p.next?'：'+clip(it.p.next,24):'')}
 function topicResp(it){if(it.k==='rev'){const o=OWNER_ID[it.b.owner]||it.b.owner;return CHAT_CHARS.includes(o)?o:'hachiware'}if(it.k==='task'){try{const o=taskOwner(it.t);if(CHAT_CHARS.includes(o))return o}catch(e){}return 'hachiware'}if(it.k==='pm'||it.k==='pmsum')return 'kani';return 'hachiware'}
 function grpList(){const hid=thrHidden();return allItems().filter(it=>!hid[tqKey(it)]).map(it=>{TOPIC_SNAP[tqKey(it)]=it;return {id:tqKey(it),it}}).sort((a,b)=>KIND_ORD[a.it.k]-KIND_ORD[b.it.k])}
 function grpOf(id){const l=allItems().find(it=>tqKey(it)===id);if(l){TOPIC_SNAP[id]=l;return {id,it:l,open:true}}const sn=TOPIC_SNAP[id];return sn?{id,it:sn,open:false}:null}
@@ -1403,6 +1410,7 @@ function grpMembers(g){return [NAMES[topicResp(g.it)]]}
 function grpResponder(g,txt){const m=/[@＠]\s*([^\s、，,。:：]+)/.exec(txt||'');if(m&&m[1].length>=2){const id=CHAT_CHARS.find(c=>NAMES[c]===m[1]||NAMES[c].startsWith(m[1])||m[1].startsWith(NAMES[c]));if(id)return id}return grpResponderBase(g)}
 function topicContext(it){const L=[];
   if(it.k==='card'){const x=it.x;L.push('種類：判断カード（回答待ち）');L.push('質問：'+x.question);if(x.why)L.push('理由：'+clip(x.why,300));(x.options||[]).forEach(o=>L.push(`選択肢 ${o.key}：${o.label}${o.detail?'（'+clip(o.detail,100)+'）':''}`));if(x.recommend)L.push('おすすめ：'+x.recommend);if(x.ifNothing)L.push('何もしない場合：'+x.ifNothing)}
+  else if(it.k==='idea'){const x=it.x;L.push('種類：ちいかわからの提案（承認待ち）'+(x.kind==='ui'?'・画面の提案':''));L.push('提案：'+x.title);if(x.what)L.push('やること：'+clip(x.what,400));if(x.why)L.push('なぜ：'+clip(x.why,300));if(x.evidence)L.push('根拠：'+clip(x.evidence,200));if(x.effort)L.push('手間：'+x.effort)}
   else if(it.k==='mail'){const m=it.m;L.push('種類：メールの返信案の確認');L.push('相手：'+m.from+'／件名：'+m.subject);L.push('【相手のメール】\n'+clip(m.original||m.summary,1500));L.push('【返信の下書き】\n'+clip(m.draft,1200))}
   else if(it.k==='rev'){const b=it.b;L.push('種類：できあがった仕事の確認（検収待ち）');L.push('タイトル：'+b.title+'／担当：'+(b.owner||''));[['成果とのつながり','outcome'],['検収','verdict'],['検収メモ','verdictNote'],['メモ','memo']].forEach(([l,k])=>{if(b[k])L.push(l+'：'+clip(b[k],300))})}
   else if(it.k==='task'){const t=it.t;L.push('種類：そーやん自身のタスク');L.push('タイトル：'+t.title+(t.due?'／期限 '+t.due:''));if(t.progress)L.push('進み：'+t.progress+'%')}
