@@ -1,0 +1,10 @@
+{
+  "sources": {"A": "A.mp4", "B": "B.mp4", "C": "C.mp4"},
+  "size": [1920, 1080], "fps": 30,
+  "timeline": [
+    {"source": "A", "in": 0,  "out": 20, "chapter": "オープニング"},
+    {"source": "A", "in": 20, "out": 30, "keep": false},
+    {"source": "B", "in": 15, "out": 90, "chapter": "本編"},
+    {"source": "C", "chapter": "縦動画・音声なし"}
+  ]
+}
