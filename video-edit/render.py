@@ -14,7 +14,7 @@ from pathlib import Path
 def probe(path):
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries",
-         "format=duration:stream=codec_type,width,height,r_frame_rate",
+         "format=duration:stream=codec_type,width,height,r_frame_rate,color_transfer",
          "-of", "json", str(path)],
         check=True, capture_output=True, text=True).stdout
     info = json.loads(out)
@@ -24,6 +24,16 @@ def probe(path):
         "has_audio": any(s["codec_type"] == "audio" for s in streams),
         "video": next((s for s in streams if s["codec_type"] == "video"), None),
     }
+
+
+HDR_TRANSFERS = {"smpte2084", "arib-std-b67"}  # PQ（HDR10/Dolby Vision系）, HLG（iPhone等）
+
+
+def tonemap_filter(transfer):
+    """HDR素材をBT.709のSDRへ。入力の色情報（タグ）が付いている前提。"""
+    return (
+        "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,"
+        "tonemap=mobius:param=0.7:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
 
 
 def load(edl_path):
@@ -49,7 +59,9 @@ def plan(edl_path):
     t = 0.0
     for i, c in enumerate(clips):
         d = c["out"] - c["in"]
-        print(f"{t:7.1f}s  [{c['source']}] {c['in']:.1f}-{c['out']:.1f}s ({d:.1f}s)  {c.get('chapter', '')}")
+        trc = (sources[c["source"]]["video"] or {}).get("color_transfer")
+        hdr = f" [HDR:{trc}→SDR変換]" if trc in HDR_TRANSFERS else ""
+        print(f"{t:7.1f}s  [{c['source']}] {c['in']:.1f}-{c['out']:.1f}s ({d:.1f}s)  {c.get('chapter', '')}{hdr}")
         t += d
     print(f"合計 {t:.1f}s / 素材 {len(sources)}本（結合・変換はまだしてない）")
 
@@ -65,10 +77,12 @@ def render(edl_path, out_path):
     for i, c in enumerate(clips):
         k, s = names.index(c["source"]), sources[c["source"]]
         d = c["out"] - c["in"]
+        trc = (s["video"] or {}).get("color_transfer")
+        tone = f"{tonemap_filter(trc)}," if trc in HDR_TRANSFERS else ""
         filters.append(
             f"[{k}:v]trim={c['in']}:{c['out']},setpts=PTS-STARTPTS,"
             f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
-            f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={fps},format=yuv420p[v{i}]")
+            f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1,{tone}fps={fps},format=yuv420p[v{i}]")
         if s["has_audio"]:
             filters.append(
                 f"[{k}:a]atrim={c['in']}:{c['out']},asetpts=PTS-STARTPTS,"
