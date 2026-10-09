@@ -219,6 +219,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 /* 2026-10-09 そーやんの指示：タスクボード・記録監査・決定記録は画面から外す（記録は Notion・db に残る）。判断・提案は社内チャットへ。役員名簿は一番下 */
 .box[aria-labelledby="h-bd"],.box[aria-labelledby="h-au"],.box[aria-labelledby="h-dc"],.box[aria-labelledby="h-xc"],.box[aria-labelledby="h-idea"]{display:none!important}
 .box[aria-labelledby="h-rs"]{order:99!important}
+.tlfocus{margin:0 0 10px;padding:8px 10px;border:2px solid var(--line);border-radius:10px}.tlfocus h3{font-size:14px;margin:0 0 4px}.tlh{font-family:var(--body);font-size:11.5px;color:var(--sub);margin:6px 0 2px}.tlf{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;font:inherit;background:none;border:0;border-top:1px dashed var(--line);padding:6px 0;cursor:pointer;color:inherit;min-height:44px}.tlf b{font-size:13.5px}.tlf small{font-family:var(--body);font-size:12px;color:var(--sub)}.tllist{margin-top:8px}.tllist>summary{cursor:pointer;font-family:var(--body);font-size:12.5px;color:var(--sub);padding:6px 0;min-height:36px}
 .chat-who{display:flex;gap:6px;flex-wrap:wrap}
 .chat-who button{display:inline-flex;gap:5px;align-items:center;font:inherit;font-size:12.5px;border:2px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 9px 2px 4px;cursor:pointer}
 .chat-who button img{width:20px;height:20px;image-rendering:pixelated}
@@ -2014,6 +2015,14 @@ let TL_TAB='r';try{TL_TAB=localStorage.getItem('ck-tltab')||'r'}catch(e){}const 
 const ST_LABEL={ok:['✅','順調'],warn:['⚠️','注意'],late:['🔴','遅れ'],done:['🎉','完了']};
 const dnum=d=>{const t=Date.parse(String(d||'')+'T00:00:00+09:00');return isNaN(t)?null:t};
 const md=t=>{const d=new Date(t+9*36e5);return (d.getUTCMonth()+1)+'/'+d.getUTCDate()};
+var TL_LIST=false;
+// ⏱ きょう見るところ（2026-10-09 そーやん承認）：①今週の山場（期限が近い順に3件）②遅れているもの ③昨日からの変化は上の古本屋さんの欄に出る。行を押すと一覧のその行がひらく
+function tlFocus(){const ps=(TL.projects||[]).filter(p=>p.status!=='done');const today=dnum(todayKey());
+  const wk=p=>p.week&&(p.week.done!=null)?`・今週のタスク 完了 ${+p.week.done||0}／残り ${+p.week.left||0}`:'';
+  const line=p=>{const dd=p.due?Math.round((dnum(p.due)-today)/864e5):null;return `<button type="button" class="tlf" data-focusp="${esc(p.id)}"><b>${esc(clip(p.title,30))}</b><small>${dd==null?'':dd<0?'期限を'+(-dd)+'日すぎてる':dd===0?'きょうが期限':'あと'+dd+'日'}・進み ${Math.max(0,Math.min(100,+p.progress||0))}%${wk(p)}${p.status==='late'?'・遅れ':p.status==='warn'?'・注意':''}</small></button>`};
+  const peaks=ps.filter(p=>p.due).sort((a,b)=>dnum(a.due)-dnum(b.due)).slice(0,3),late=ps.filter(p=>p.status==='late'&&!peaks.includes(p));
+  if(!peaks.length&&!late.length)return '';
+  return `<div class="tlfocus"><h3>きょう見るところ</h3>${peaks.length?`<div class="tlh">今週の山場（期限が近い順）</div>${peaks.map(line).join('')}`:''}${late.length?`<div class="tlh">遅れているもの</div>${late.map(line).join('')}`:''}</div>`}
 function tlProjects(){const ps=(TL.projects||[]).slice();const today=dnum(todayKey());const order={late:0,warn:1,ok:2,done:3};ps.sort((a,b)=>(order[a.status]??2)-(order[b.status]??2)||(dnum(a.due)||9e15)-(dnum(b.due)||9e15));
   const ds=ps.flatMap(p=>[dnum(p.start),dnum(p.due),...(p.milestones||[]).map(m=>dnum(m.d))]).filter(x=>x!=null);
   let a=Math.min(today-7*864e5,...ds),b=Math.max(today+30*864e5,...ds);a=Math.max(a,today-30*864e5);b=Math.min(b,today+120*864e5);const span=b-a||1;const pct=t=>Math.max(0,Math.min(100,(t-a)/span*100));
@@ -2041,12 +2050,12 @@ function tlGoal(){const g=TL.goal;if(!g)return '';const r=tlRate(g.windowDays||2
   return `<div class="goal"><div class="gt1">🎯 古本屋さんの目標</div><div class="gt2">${esc(g.title)}</div><div class="gm"><div class="gbar" role="img" aria-label="実施率 ${pct??'-'}%（目標 ${tgt}%）"><i style="width:${pct??0}%" class="${cls}"></i><b style="left:${tgt}%"></b></div><div class="gnum"><span class="big">${pct??'−'}<small>%</small></span> ${ic} ${lb}<br><small>直近${g.windowDays||28}日の実施率（目標 ${tgt}%）・止まった回 ${r.miss}</small></div></div>${g.kpi?`<div class="gk">ものさし：${esc(g.kpi)}</div>`:''}</div>`}
 function renderTL(){const box=$('tl');if(!TL)return;const ps=TL.projects||[];const n=k=>ps.filter(p=>p.status===k).length;$('tlCnt').textContent=ps.length?`遅れ ${n('late')}・注意 ${n('warn')}・順調 ${n('ok')}`:'';
   const tab=TL_TAB==='r'?'r':'p';
-  box.innerHTML=`${tlGoal()}${TL.pmNote?`<div class="pmn"><img src="${ICON.kani}" alt=""><div><b>古本屋さん（PM）</b><br>${esc(TL.pmNote)}</div></div>`:''}
+  box.innerHTML=`${tlGoal()}${(TL.pmNote||TL.changes)?`<div class="pmn"><img src="${ICON.kani}" alt=""><div><b>古本屋さん（PM）</b>${TL.changes?`<br><b>昨日からの変化：</b>${esc(TL.changes)}`:''}${TL.pmNote?`<br>${esc(TL.pmNote)}`:''}</div></div>`:''}
     <div class="tabs" role="group" aria-label="表示の切り替え"><button type="button" data-tltab="r" aria-pressed="${tab==='r'}">毎週・毎月のルーティン</button><button type="button" data-tltab="p" aria-pressed="${tab==='p'}">プロジェクト</button><button type="button" class="askb" data-tlask="" style="margin-left:auto"><img src="${ICON.kani}" alt="">古本屋さんに相談</button></div>
-    ${tab==='p'?tlProjects():tlRoutines()}<div class="foot">古本屋さんが朝・夕の見回りで更新（最終 ${TL.updatedAt?fmt(TL.updatedAt):'-'}）。行を押すと、理由・次の一歩・節目が見られます。</div>`}
+    ${tab==='p'?tlFocus()+`<details class="tllist"${TL_LIST?' open':''}><summary>プロジェクトの一覧（ぜんぶ）</summary>${tlProjects()}</details>`:tlRoutines()}<div class="foot">古本屋さんが朝・夕の見回りで更新（最終 ${TL.updatedAt?fmt(TL.updatedAt):'-'}）。行を押すと、理由・次の一歩・節目が見られます。</div>`}
 function askPM(pid){setBox('h-chat',true);if(pid&&grpOf('pm:'+pid)){openGroup('pm:'+pid);$('h-chat').closest('section').scrollIntoView({behavior:'smooth',block:'start'});return}chatChar='kani';CHAT_GRP=null;renderChatUi();$('chatTask').value='';renderChatLog();$('chatIn').placeholder='進み具合や段取りを古本屋さんに相談（例：今週は何に集中する？）'
   $('h-chat').closest('section').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
-$('tl').addEventListener('click',e=>{const tb=e.target.closest('button[data-tltab]');if(tb){TL_TAB=tb.dataset.tltab;try{localStorage.setItem('ck-tltab',TL_TAB)}catch(x){}renderTL();return}
+$('tl').addEventListener('click',e=>{const fp=e.target.closest('button[data-focusp]');if(fp){TL_OPEN.add(fp.dataset.focusp);TL_LIST=true;renderTL();setTimeout(()=>{const r=$('tl').querySelector('.gr[data-p="'+CSS.escape(fp.dataset.focusp)+'"]');if(r)r.scrollIntoView({block:'center',behavior:'smooth'})},50);return}const sm=e.target.closest('details.tllist>summary');if(sm){const d=sm.parentElement;setTimeout(()=>{TL_LIST=d.open},0);return}const tb=e.target.closest('button[data-tltab]');if(tb){TL_TAB=tb.dataset.tltab;try{localStorage.setItem('ck-tltab',TL_TAB)}catch(x){}renderTL();return}
   const ak=e.target.closest('button[data-tlask]');if(ak){e.stopPropagation();askPM(ak.dataset.tlask);return}if(e.target.closest('a,.gd'))return;
   const r=e.target.closest('.gr[data-p]');if(r){const id=r.dataset.p;TL_OPEN.has(id)?TL_OPEN.delete(id):TL_OPEN.add(id);renderTL()}});
 $('tl').addEventListener('keydown',e=>{const r=e.target.closest('.gr[data-p]');if(r&&e.target===r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();r.click()}});
