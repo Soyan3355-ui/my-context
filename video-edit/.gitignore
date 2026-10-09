@@ -1,0 +1,10 @@
+# 動画・音声・生成物は入れない（元素材と指示書JSONだけが正）
+*.mp4
+*.mov
+*.m4a
+*.wav
+*.mkv
+*.png
+transcripts/
+prompt.md
+__pycache__/

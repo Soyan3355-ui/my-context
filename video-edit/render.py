@@ -4,7 +4,10 @@
 使い方:
   python3 render.py plan   edit.json            # 指示書の検証と全体像の表示
   python3 render.py render edit.json out.mp4    # 書き出し（エンコードは1回だけ）
+  python3 render.py render edit.json out.mp4 --preview            # 確認用の速い書き出し
+  python3 render.py render edit.json out.mp4 --subs subs.srt      # 字幕を焼き込む
 """
+import argparse
 import json
 import subprocess
 import sys
@@ -66,43 +69,62 @@ def plan(edl_path):
     print(f"合計 {t:.1f}s / 素材 {len(sources)}本（結合・変換はまだしてない）")
 
 
-def render(edl_path, out_path):
+def srt_filter(srt_path):
+    p = str(Path(srt_path).resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+    style = "FontName=IPAGothic,FontSize=22,Outline=2,MarginV=40"
+    return f"subtitles=filename='{p}':force_style='{style}'"
+
+
+def render(edl_path, out_path, preview=False, subs=None):
     edl, sources, clips = load(edl_path)
     w, h, fps = edl.get("size", [1920, 1080]) + [edl.get("fps", 30)]
-    names = list(sources)
+    if preview:  # 確認用: 小さく・速く・粗く
+        w, h = 640, 360
     cmd = ["ffmpeg", "-y", "-v", "error"]
-    for n in names:
-        cmd += ["-i", str(sources[n]["path"])]
     filters, labels = [], []
     for i, c in enumerate(clips):
-        k, s = names.index(c["source"]), sources[c["source"]]
+        s = sources[c["source"]]
         d = c["out"] - c["in"]
+        # 入力側でシークして、必要な区間だけを読む（長い素材でも頭から読み進めない）
+        cmd += ["-ss", f"{c['in']}", "-t", f"{d}", "-i", str(s["path"])]
         trc = (s["video"] or {}).get("color_transfer")
         tone = f"{tonemap_filter(trc)}," if trc in HDR_TRANSFERS else ""
         filters.append(
-            f"[{k}:v]trim={c['in']}:{c['out']},setpts=PTS-STARTPTS,"
+            f"[{i}:v]setpts=PTS-STARTPTS,"
             f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
             f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,setsar=1,{tone}fps={fps},format=yuv420p[v{i}]")
         if s["has_audio"]:
             filters.append(
-                f"[{k}:a]atrim={c['in']}:{c['out']},asetpts=PTS-STARTPTS,"
+                f"[{i}:a]asetpts=PTS-STARTPTS,"
                 f"aresample=48000,aformat=channel_layouts=stereo[a{i}]")
         else:
             filters.append(f"anullsrc=r=48000:cl=stereo,atrim=0:{d}[a{i}]")
         labels.append(f"[v{i}][a{i}]")
-    filters.append(f"{''.join(labels)}concat=n={len(clips)}:v=1:a=1[v][a]")
-    cmd += ["-filter_complex", ";".join(filters), "-map", "[v]", "-map", "[a]",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+    vlabel = "[v]"
+    if subs:
+        filters.append(f"{''.join(labels)}concat=n={len(clips)}:v=1:a=1[vc][a]")
+        filters.append(f"[vc]{srt_filter(subs)}[v]")
+    else:
+        filters.append(f"{''.join(labels)}concat=n={len(clips)}:v=1:a=1[v][a]")
+    preset, crf = ("ultrafast", "30") if preview else ("veryfast", "20")
+    cmd += ["-filter_complex", ";".join(filters), "-map", vlabel, "-map", "[a]",
+            "-c:v", "libx264", "-preset", preset, "-crf", crf,
             "-c:a", "aac", str(out_path)]
     subprocess.run(cmd, check=True)
     print(f"書き出し完了: {out_path}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 3 and sys.argv[1] == "plan":
-        plan(sys.argv[2])
-    elif len(sys.argv) == 4 and sys.argv[1] == "render":
-        render(sys.argv[2], sys.argv[3])
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("mode", choices=["plan", "render"])
+    ap.add_argument("edl")
+    ap.add_argument("out", nargs="?")
+    ap.add_argument("--preview", action="store_true", help="640x360・高速・低画質で書き出す")
+    ap.add_argument("--subs", help="焼き込む字幕(SRT)。pipeline.py srt で作れる")
+    a = ap.parse_args()
+    if a.mode == "plan":
+        plan(a.edl)
+    elif a.out:
+        render(a.edl, a.out, a.preview, a.subs)
     else:
-        print(__doc__)
-        sys.exit(1)
+        ap.error("render には出力ファイル名が必要です")
