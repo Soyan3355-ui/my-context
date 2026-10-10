@@ -617,3 +617,10 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
   - `changes`（朝の回だけ）: 「昨日からの変化」を1文。前日の `projects` の progress／status／milestones と比べ、動いたものと、動きがないもの（遅れ・注意のもの）を書く。前日の状態は Notion の進捗ログ（「やったこと」）か、前回の `timeline/now` から読む
   - 各 `projects[]` の `week: {done, left}`: そのプロジェクトの今週の ✅タスク（Notion）の完了数と残り数。取れないときは書かない（画面には出ない）
 - 提案「数字のもと」と「最後に動いた日」（i-20261009-tl2）は、まだ決まっていない（決まるまで実装しない）。
+
+## ホームページリニューアル（引き継ぎ・2026-10-10）
+- 別スレッド（ブランチ `claude/optimistic-ramanujan-q0maw5`）で作られた引き継ぎ書: `reports/website-handover-chiikawa-2026-10-10.md`（同ブランチ。基準書は `standards/website-standard.md`、ページ構成案 v0.1 は `reports/website-sitemap-draft-2026-10-10.md`）。このブランチ（`claude/elegant-mccarthy-v4gj4k`）には取り込んでいない。内容を読むときは `git show origin/claude/optimistic-ramanujan-q0maw5:<パス>` を使う。
+- タイムラインに「ホームページリニューアル（notefarm.info）」を追加した（id `hp`。公開日が未定なので期限は入れていない）。進みの数字は、引き継ぎ書の「進捗」から見積もった15%で、根拠は Notion のプロジェクトページ（https://app.notion.com/p/3eea93e485ff81fab476f2a7ba043b45）。
+- 守ること（引き継ぎ書の「作業上の注意」より）: Wix の TXT レコードは削除しない／Wix の A・CNAME は切り替え作業まで変更しない／Wix の「接続する」は押さない／DNS・公開・外部送信は実行前にそーやんへ確認する。
+- 役割は仮置き（そーやんが決める）: 方針の判断と素材の提供＝そーやん、更新作業＝舞、制作・点検・数字の見回りは見回り役。Google ドライブの「ホームページ制作」2フォルダは未確認。
+- タスク「ホームページリニューアルを引き継いで進める」の実行日は 10/14（朝の回で 10/4→10/14 に直した）。
