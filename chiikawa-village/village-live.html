@@ -955,7 +955,7 @@ function goPage(){const p=pages[pi];if(!p)return;meetTag();const who=p.who||'chi
   showPage()}
 function setTag(id){$('tagImg').src=ICON[id];$('tagName').textContent=NAMES[id];const r=ROLES[id];$('tagRole').textContent=r?r[0]:'';$('tagRole').style.setProperty('--rc',r?r[1]:'')}
 function setText(h,t,x,who){$('dHead').textContent=h;$('dTitle').textContent=t;$('dText').textContent=x;if(who)setTag(who)}
-function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'','',p.who||'chiikawa');full=p.text||'';let n=0;clearInterval(typing);$('more').hidden=true;renderActs(false);
+function showPage(){const p=pages[pi];if(!p)return;setText(p.head||'',p.title||'','',p.who||'chiikawa');full=p.text||'';{const ax=p.xid&&XCS.find(c=>c.id===p.xid);if(ax&&ax.status==='answered'&&ax.answer){const o=(ax.options||[]).find(o=>o.key===ax.answer);full=`✅ 回答ずみ：${ax.answer}${o?'　'+o.label:''}${ax.handled?'（反映ずみ）':'（次の見回りで進めます）'}\n\n`+full}}let n=0;clearInterval(typing);$('more').hidden=true;renderActs(false);
   typing=setInterval(()=>{n+=2;$('dText').textContent=full.slice(0,n);if(n>=full.length){clearInterval(typing);typing=null;renderActs(true)}},24)}
 function renderActs(ready){const a=$('dActs'),p=pages[pi];if(!ready||!p){a.innerHTML='';return}let h='';
   const x=p.xid&&XCS.find(c=>c.id===p.xid);
@@ -970,7 +970,9 @@ $('dText').addEventListener('click',()=>{if(scene&&speaker&&ent[speaker].st==='t
 $('dActs').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const act=b.dataset.act,p=pages[pi];
   if(act==='next')next();if(act==='close')endScene();
   if(act==='xwrite'&&p&&p.xid){setBox('h-xc',true);const t=$('xcs').querySelector(`textarea[data-xn="${CSS.escape(p.xid)}"]`);if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.focus({preventScroll:true})}return}
-  if(act==='ans'&&p&&p.xid){await answer(p.xid,b.dataset.k,xNote($('xcs'),p.xid));renderActs(true);const keep=full;$('dText').textContent=b.dataset.k==='保留'?'わかった…！ またあとで…！':'わかった…！ ハチワレにつたえる…！';setTimeout(()=>{if(!typing&&pages[pi]===p)$('dText').textContent=keep},1500)}});
+  if(act==='ans'&&p&&p.xid){const k=b.dataset.k;const ok=await answer(p.xid,k,xNote($('xcs'),p.xid));renderActs(true);const x=XCS.find(c=>c.id===p.xid),o=x&&(x.options||[]).find(o=>o.key===k);
+    if(ok===false){$('dText').textContent='保存できなかった…！ もういちど、おしてみて…！';return}
+    full=k==='保留'?'保留にしたよ…！ またあとで聞くね…！\n（かえたいときは、ほかの選択肢をおしてね）':`✅ ${k}${o?'：'+o.label:''} に決めたよ…！\nハチワレに伝えたよ。次の見回りで進めるね。\n（かえたいときは、ほかの選択肢をおしてね）`;$('dText').textContent=full}});
 const dgText=x=>typeof x==='string'?x:String((x&&x.t)||'');
 const dgVisible=x=>{if(typeof x==='string')return true;if(x.task){const t=TASKS.find(y=>y.id===x.task);if(t&&t.done)return false}if(x.card){const c=XCS.find(y=>y.id===x.card);if(c&&c.status==='answered')return false}return true};
 const DG=[['approvals','🙋 承認待ち','#c2463d'],['blocked','⛔ ブロック','#b7791f'],['redflags','🚩 赤信号','#9a62d0'],['outcomes','🌱 成果の動き','#4f8f4a']];
