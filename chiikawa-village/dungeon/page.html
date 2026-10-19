@@ -2041,7 +2041,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   function renderTop() {
     var d = cur();
     $('#dname').textContent = d.name; $('#dfloor').textContent = d.floor + 'F'; $('#dfloors').textContent = '/ ' + d.floors + 'F';
-    $('#runinfo').innerHTML = '<span>挑戦 <b>' + d.tries + '</b>回目</span><span>前回 <b>' + (d.last === null ? '—' : d.last + '体') + '</b></span><span>ベスト <b>' + d.best + ' / ' + C.minions + '</b></span>';
+    $('#runinfo').innerHTML = '<span>挑戦 <b>' + d.tries + '</b>回目</span><span>前回 <b>' + (d.last === null ? '—' : d.last + '体') + '</b></span><span>ベスト <b>' + d.best + ' / ' + C.minions + '</b></span>' + (HOST.exp ? '<span>遠征 <b>' + HOST.exp.left + '/' + HOST.exp.max + '</b>回</span>' : '');
     $('#stage').setAttribute('data-theme', d.theme);
   }
   function render() { save(); renderTop(); renderTrack(); renderMetrics(); renderHP(); renderEnemy(); if (!S.busy) setCmds(S.battle ? 'battle' : 'field'); $('#eplate').style.display = S.view === 'battle' ? '' : 'none'; $('#obj').style.display = S.view === 'field' ? '' : 'none'; }
@@ -2119,7 +2119,10 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     var r = S.run; if (!r.open) { say('封印の扉は まだ 閉じている。 ざこを あと ' + (C.minions - r.cleared) + '体 たおそう。'); await sleep(450); keys.up = keys.down = keys.left = keys.right = false; return; }
     encounter(true);
   }
+  // 討伐遠征: 親（ちいかわ株式会社）が回数を持つ。1回の挑戦＝全滅かフロアクリアで終わる1周。のこり0なら、次の見回りまで敵に会えない
+  function spend(kind) { if (!HOST.on || !HOST.exp) return; HOST.exp.left = Math.max(0, HOST.exp.left - 1); toHost('attempt', { kind: kind, dungeon: cur().id }); renderTop(); }
   async function encounter(boss) {
+    if (HOST.on && HOST.exp && HOST.exp.left <= 0) { var nw = Date.now(); if (!encounter.t || nw - encounter.t > 4000) { encounter.t = nw; say('今回の遠征は おしまい。次の見回り（' + HOST.exp.next + 'ごろ）で また ' + HOST.exp.max + '回 挑戦できる。 いまは タスクの強化や そうびの整理を しておこう。'); } keys.up = keys.down = keys.left = keys.right = false; return; }
     if (S.busy) return; S.busy = true; var d = cur(), r = S.run, idx = r.cleared;
     keys.up = keys.down = keys.left = keys.right = false; SFX.enc(); flash('#fff'); shake(8); await sleep(250); $('#fade').classList.add('on'); await sleep(380);
     var e = newEnemy(d, boss, idx); S.battle = { e: e }; setView('battle'); if (AC) musicNow(); loadEnemy(); $('#fade').classList.remove('on'); S.busy = false; render();
@@ -2181,9 +2184,9 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   }
   async function defeat(d) {
     var r = S.run, n = r.cleared; bgmHold(3); SFX.lose(); for (var k in allyImgs) allyImgs[k].classList.add('fall'); say('' + cur().hname + 'は 力つきた…'); await sleep(1400);
-    d.last = n; if (n > d.best) d.best = n;
+    d.last = n; if (n > d.best) d.best = n; spend('defeat');
     var rec = n >= d.best && n > 0;
-    var sub = n >= C.minions ? 'ざこは ぜんぶ たおした！ あとは ボスだけや。' : '今回は ' + n + ' 体 たおして ここまで。';
+    var sub = (n >= C.minions ? 'ざこは ぜんぶ たおした！ あとは ボスだけや。' : '今回は ' + n + ' 体 たおして ここまで。') + (HOST.exp && HOST.exp.left <= 0 ? '<br>今回の遠征は ここまで。次の見回り（' + HOST.exp.next + 'ごろ）で ' + HOST.exp.max + '回ぶん 回復する。' : '');
     openModal('<div class="dropbox"><div class="dtitle">ひんし…</div><div class="dname2">' + n + ' / ' + C.minions + ' 体</div><div class="dsub">' + sub + (rec ? '<br>これが 今までの ベスト記録！' : '<br>ベスト記録は ' + d.best + ' 体。') + '<br>' + d.floor + 'F の はじめから やり直しになる。<br>タスクをこなして 強化チャンスと素材を ためよう。<br>いまは 強化チャンス ' + S.charges + '回・素材 ' + S.mats + 'こ。</div>' +
       '<div style="display:flex;gap:10px;justify-content:center"><button class="mbtn" data-retry>そのまま 再挑戦</button><button class="mbtn sub" data-prep>タスク・強化へ</button></div></div>', 'center');
     S.battle = null; renderEnemy(); for (var k2 in allyImgs) allyImgs[k2].classList.remove('fall'); enemyImg.style.opacity = 0;
@@ -2194,7 +2197,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     S.mats += 3; S.charges += 1; var bit = rollDrop(10, true), beq = equipItem(bit); gain += '　さらに ' + bit.name + '[' + bit.rare + '] ' + itemDesc(bit) + (beq ? '（そうびした）' : '（素材+1）'); equipArt();
     openModal('<div class="dropbox"><div class="dtitle">フロア クリア！</div><div class="dicon" id="dicon"></div><div class="dname2">' + dr.name + ' <b class="r-' + dr.rare + '">' + dr.rare + '</b></div><div class="dsub">攻撃力 ' + fmt(dr.base) + (better ? '　（そうび中）' : '') + '　／ 素材 +3 ・ 強化チャンス +1</div><button class="mbtn" data-next>次の階へ すすむ</button></div>', 'center');
     var ic = makeSword(dr.ramp); ic.style.width = '160px'; ic.style.height = '160px'; $('#dicon').appendChild(ic); say(gain);
-    toHost('floorClear', { dungeon: d.id, floor: d.floor });
+    spend('clear'); toHost('floorClear', { dungeon: d.id, floor: d.floor });
     d.floor = Math.min(d.floors, d.floor + 1); d.cleared++; d.best = 0; d.last = null; d.tries = 0;
   }
   modal.addEventListener('click', function (e) {
@@ -2348,6 +2351,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     if (first && ai < 0 && sv && Number.isInteger(sv.idx) && sv.idx < D.length) ai = sv.idx;
     if (ai < 0) { D.forEach(function (d, i) { if (d.id === prevId) ai = i; }); }
     S.idx = ai >= 0 ? ai : 0;
+    HOST.exp = p.expedition && typeof p.expedition === 'object' ? { max: Math.max(1, num(p.expedition.max, 3)), left: Math.max(0, num(p.expedition.left, 3)), next: txt(p.expedition.next, 8) } : null;
     document.documentElement.classList.add('hosted');
     var w = document.getElementById('hostwait'); if (w) w.remove();
     if (first || cur().id !== prevId) { startRun(cur()); enemyImg.style.opacity = 0; equipArt(); if (AC) musicNow(); }
