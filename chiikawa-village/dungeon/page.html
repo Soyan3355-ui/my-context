@@ -90,7 +90,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .chip { font-size: 13px; padding: 1px 8px; border: 2px solid var(--ink); background: var(--paper-2); } .chip.rare { background: #f4d86a; } .chip.warn { background: #f08a7a; }
 .push { margin-left: auto; font-size: 16px; }
 .hpbar { margin-top: 5px; height: 20px; background: #2b2540; border: 3px solid var(--ink); position: relative; overflow: hidden; }
-.hpfill { height: 100%; background: linear-gradient(var(--hp), #2f8a4a); transition: width .5s steps(12); } .hpfill.low { background: linear-gradient(#f0a03a, #c8402e); } .hpfill.foe { background: linear-gradient(#e0605a, #a02a2a); }
+.hpghost { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #f0c040; transition: width .7s ease .45s; } .hpfill { position: relative; height: 100%; background: linear-gradient(var(--hp), #2f8a4a); transition: width .5s steps(12); } .hpfill.low { background: linear-gradient(#f0a03a, #c8402e); } .hpfill.foe { background: linear-gradient(#e0605a, #a02a2a); }
 .hptext { font-size: 15px; margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
 .sp { letter-spacing: 3px; color: #2a6ad8; }
 
@@ -104,7 +104,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 .cmd:hover:not(:disabled) { background: #fff6dc; transform: translateY(1px); } .cmd:disabled { opacity: .4; cursor: not-allowed; }
 .cmd.main { border-color: var(--red); background: #fff1d8; } .cmd.main b::after { content: ' ▶'; color: var(--red); animation: blink 1s steps(2) infinite; }
 #mhead { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; color: #cfc8ee; flex: none; }
-#mlog { color: #9af0b0; } #mhead button { font-size: 13px; background: #23234c; border: 2px solid #4a4a8a; padding: 1px 10px; }
+#mlog { color: #9af0b0; } .pw { color: #8a2a1c; } .pw b { font-weight: normal; font-size: 1.1em; } .pw.ok b { color: #1f7a3c; } .pw.ng b { color: #b0301f; } #mhead button { font-size: 13px; background: #23234c; border: 2px solid #4a4a8a; padding: 1px 10px; }
 #metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; flex: 1; min-height: 0; }
 .mc { background: #15153a; border: 3px solid #2e2e6a; padding: 6px 10px 6px; display: flex; flex-direction: column; min-width: 0; position: relative; }
 .mc.up { animation: pulse .9s ease-out; } @keyframes pulse { 0% { background: #2e6a46; border-color: #9af0b0; } 100% { background: #15153a; border-color: #2e2e6a; } }
@@ -169,7 +169,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
       <div id="fx"></div><canvas id="pfx" width="1100" height="410"></canvas><div id="flash"></div><div id="fade"></div>
       <div class="plate" id="pplate">
         <div class="prow"><span class="pname" id="pname">ちび</span><span class="push" id="pstat"></span></div>
-        <div class="hpbar"><div class="hpfill" id="phpfill"></div></div>
+        <div class="hpbar"><div class="hpghost" id="pghost"></div><div class="hpfill" id="phpfill"></div></div>
         <div class="hptext"><span id="phptext"></span><span class="sp" id="sptext"></span></div>
       </div>
       <div class="plate" id="obj"><div class="prow"><span class="pname" style="font-size:18px">もくてき</span></div><div id="objtxt" style="font-size:17px;margin-top:4px"></div></div>
@@ -1862,6 +1862,14 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     if (a) { s.DEF += a.def; s.HP += a.hp; } if (c) { s.CRIT = Math.min(75, s.CRIT + c.crit); s.LUCK = Math.min(75, s.LUCK + c.luck); }
     s.salesATK = M.sales.val * C.salesToATK; return s;
   }
+  // ---- 戦闘力（目安）＝ √(1ターンの与ダメ × 耐久)。敵も味方も同じ式なので、数字が大きいほうが有利。スキル・いやし・ボスの溜め攻撃は含めない
+  function powerOf(dps, ehp) { return Math.sqrt(Math.max(0, dps) * Math.max(0, ehp)); }
+  function myPower(st) { return powerOf(st.ATK * (1 + st.CRIT / 100 * (C.critMult - 1)), st.HP / E.reduce(st.DEF)); }
+  function foePower(e) { return powerOf(e.atk, e.max); }
+  function minionPower(d, i) { var m = E.minion(i), sc = scale(d); return powerOf(m.atk * sc, m.hp * sc); }
+  function bossPower(d) { var sc = scale(d); return powerOf(DATA.boss.atk * sc, DATA.boss.hp * sc); }
+  function powerAfterEnh() { var st = stats(), t = { ATK: st.ATK + DATA.enhStep, CRIT: st.CRIT, HP: st.HP, DEF: st.DEF }; return myPower(t) - myPower(st); }
+  function cmpPow(me, foe) { return foe <= me ? ' <b>いける！</b>' : '（あと ×' + (Math.ceil(foe / Math.max(1, me) * 10) / 10) + '）'; }
   // ---- random equipment drops
   var GN = { weapon: { C: ['木の剣', 'さびた短剣'], R: ['鋼のつるぎ', '月影の剣'], SR: ['竜牙の大剣', '星砕きの剣'] }, armor: { C: ['布の服', '革のよろい'], R: ['鉄のよろい', '森の外套'], SR: ['竜鱗のよろい', '聖なる法衣'] }, acc: { C: ['木のお守り', '石のペンダント'], R: ['銀の指輪', '幸運のブローチ'], SR: ['星のティアラ', '竜の首飾り'] } };
   var SLOTJ = { weapon: '武器', armor: '防具', acc: 'かざり' }, RAMP = { C: 'wood', R: 'steel', SR: 'bone' };
@@ -2001,7 +2009,9 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     for (var i = 0; i < C.minions; i++) h += (i ? '<i class="lnk' + (i <= r.cleared ? ' done' : '') + '"></i>' : '') + '<span class="nd enemy' + (i < r.cleared ? ' done' : i === r.cleared && !r.open ? ' now' : '') + '">' + (i + 1) + '</span>';
     h += '<i class="lnk' + (r.open ? ' done' : '') + '"></i><span class="nd boss' + (r.open ? ' now' : '') + '">王</span>';
     $('#track').innerHTML = h;
-    $('#objtxt').textContent = r.open ? '封印の扉が ひらいた！ ボスの間へ' : 'ざこ ' + r.cleared + ' / ' + C.minions + '体　奥の封印の扉を めざせ';
+    var me = myPower(stats()), d0 = cur(), nx = r.open ? bossPower(d0) : minionPower(d0, r.cleared), bp = bossPower(d0);
+    $('#objtxt').innerHTML = (r.open ? '封印の扉が ひらいた！ ボスの間へ' : 'ざこ ' + r.cleared + ' / ' + C.minions + '体　奥の封印の扉を めざせ') +
+      '<br><span class="pw ' + (nx <= me ? 'ok' : 'ng') + '">戦闘力 あなた <b>' + fmt(me) + '</b>　' + (r.open ? 'ボス' : '次のざこ') + ' <b>' + fmt(nx) + '</b>' + cmpPow(me, nx) + '</span>' + (r.open ? '' : '<br><span class="pw">ボス <b>' + fmt(bp) + '</b></span>');
   }
   function renderMetrics() {
     var s = stats();
@@ -2013,10 +2023,10 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   }
   function renderHP() {
     var st = stats(), r = S.run, p = Math.max(0, r.hp) / st.HP;
-    $('#phpfill').className = barClass(p); $('#phpfill').style.width = Math.max(0, Math.min(100, p * 100)) + '%';
+    $('#phpfill').className = barClass(p); $('#phpfill').style.width = Math.max(0, Math.min(100, p * 100)) + '%'; $('#pghost').style.width = Math.max(0, Math.min(100, p * 100)) + '%';
     $('#phptext').textContent = 'HP ' + fmt(Math.max(0, r.hp)) + ' / ' + fmt(st.HP);
     var sp = ''; for (var i = 0; i < C.spMax; i++) sp += i < r.sp ? '◆' : '◇'; $('#sptext').textContent = 'SP ' + sp;
-    $('#pname').textContent = cur().hname; $('#pstat').textContent = 'ATK ' + fmt(st.ATK) + '　武器 ' + S.weapon.name;
+    $('#pname').textContent = cur().hname; $('#pstat').textContent = '戦闘力 ' + fmt(myPower(st)) + '　ATK ' + fmt(st.ATK);
   }
   function renderEnemy() {
     var b = S.battle, e = b && b.e;
@@ -2024,7 +2034,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     if (!e) return;
     $('#ename').textContent = e.name; $('#erare').textContent = e.rare; $('#enum').textContent = e.boss ? 'BOSS' : (e.idx + 1) + ' / ' + C.minions;
     $('#ehpfill').style.width = Math.max(0, e.hp / e.max * 100) + '%';
-    $('#ehptext').textContent = 'HP ' + fmt(Math.max(0, e.hp)) + ' / ' + fmt(e.max); $('#eatk').textContent = 'ATK ' + fmt(e.atk);
+    $('#ehptext').textContent = 'HP ' + fmt(Math.max(0, e.hp)) + ' / ' + fmt(e.max); $('#eatk').textContent = '戦闘力 ' + fmt(foePower(e)) + '　ATK ' + fmt(e.atk);
     var w = $('#ewarn'); w.style.display = e.charging ? '' : 'none'; w.textContent = '力をためている！';
   }
   function setCmds(mode) {
@@ -2244,7 +2254,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     openModal('<div class="mpanel forge"><div class="mhead"><b>鍛冶屋</b><button class="mclose" data-close>とじる</button></div>' +
       '<div class="fgrid"><div class="ficon" id="ficon"></div><div class="finfo"><div class="fname">' + w.name + ' <b class="r-' + w.rare + '">' + w.rare + '</b></div>' +
       '<div class="fstat">攻撃力 <b>' + fmt(st.ATK) + '</b>　（剣 ' + fmt(w.base) + ' ＋ 強化 ' + fmt(S.enh * DATA.enhStep) + ' ＋ 売上 ' + fmt(st.salesATK) + '）</div>' +
-      '<div class="fstat">強化チャンス <b>' + S.charges + '</b> 回　／　素材 <b>' + S.mats + '</b></div>' +
+      '<div class="fstat">戦闘力 <b>' + fmt(myPower(st)) + '</b>　（強化1回で +' + fmt(powerAfterEnh()) + '）　次のボス ' + fmt(bossPower(cur())) + '</div>' + '<div class="fstat">強化チャンス <b>' + S.charges + '</b> 回　／　素材 <b>' + S.mats + '</b></div>' +
       '<div class="fbtns"><button class="mbtn" id="fenh"' + (S.charges ? '' : ' disabled') + '>強化する（ATK +' + fmt(DATA.enhStep) + '）</button><button class="mbtn sub" id="fmat"' + (S.mats >= DATA.matsPerChance ? '' : ' disabled') + '>素材' + DATA.matsPerChance + 'つ → 強化チャンス+1</button></div>' +
       '<p class="mnote">強化は かならず 成功する。たおした敵の素材も 強化チャンスになる。</p></div></div></div>');
     var ic = makeSword(w.ramp); ic.style.width = '180px'; ic.style.height = '180px'; $('#ficon').appendChild(ic);
@@ -2255,7 +2265,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     if (S.busy) return;
     var cards = D.map(function (d, i) {
       return '<button class="dcard th-' + d.theme + (i === S.idx ? ' sel' : '') + '" data-dun="' + i + '"><span class="dc-name">' + esc(d.name) + '</span><span class="dc-floor">' + d.floor + 'F <small>/ ' + d.floors + 'F</small></span>' +
-        '<span class="dc-boss">ボス: ' + d.boss + '</span><span class="dc-key">ベスト ' + d.best + ' / ' + C.minions + '体　挑戦 ' + d.tries + '回</span><span class="dc-gap">未完了タスク ' + d.tasks.filter(function (t) { return !t.done; }).length + '</span></button>';
+        '<span class="dc-boss">ボス: ' + d.boss + '（戦闘力 ' + fmt(bossPower(d)) + '）</span><span class="dc-key">ベスト ' + d.best + ' / ' + C.minions + '体　挑戦 ' + d.tries + '回</span><span class="dc-gap">未完了タスク ' + d.tasks.filter(function (t) { return !t.done; }).length + '</span></button>';
     }).join('');
     openModal('<div class="mpanel wide"><div class="mhead"><b>ダンジョン一覧</b><button class="mclose" data-close>とじる</button></div><div class="dgrid">' + cards + '</div></div>');
   }
@@ -2267,7 +2277,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   });
   function openDetail() {
     var s = stats();
-    var rows = [['ATK 攻撃力', fmt(s.ATK), '剣 ' + fmt(S.weapon.base) + ' ＋ 強化 ' + fmt(S.enh * DATA.enhStep) + ' ＋ 売上 ' + fmt(s.salesATK)], ['そうび', S.weapon.name + '／' + (S.gear.armor ? S.gear.armor.name : '防具なし') + '／' + (S.gear.acc ? S.gear.acc.name : 'かざりなし'), '敵のドロップで入手。強いものは自動でそうび'], ['MAG スキル', fmt(s.MAG), '記事公開 ' + M.articles.val + '本'], ['HP 最大体力', fmt(s.HP), 'タスク完了 ' + M.tasks.val + '件'], ['DEF ぼうぎょ', fmt(s.DEF), '連続稼働 ' + M.streak.val + '日（被ダメ -' + Math.round((1 - E.reduce(s.DEF)) * 100) + '%）'], ['CRIT 会心率', Math.round(s.CRIT) + '%', '動画公開 ' + M.videos.val + '本'], ['LUCK 素材運', Math.round(s.LUCK) + '%', '新規登録 ' + M.signups.val + '人']];
+    var rows = [['戦闘力（目安）', fmt(myPower(s)), '√(与ダメ×耐久)。敵の戦闘力より大きいと勝ちやすい（ボスの溜め攻撃・スキルは含めない）'], ['ATK 攻撃力', fmt(s.ATK), '剣 ' + fmt(S.weapon.base) + ' ＋ 強化 ' + fmt(S.enh * DATA.enhStep) + ' ＋ 売上 ' + fmt(s.salesATK)], ['そうび', S.weapon.name + '／' + (S.gear.armor ? S.gear.armor.name : '防具なし') + '／' + (S.gear.acc ? S.gear.acc.name : 'かざりなし'), '敵のドロップで入手。強いものは自動でそうび'], ['MAG スキル', fmt(s.MAG), '記事公開 ' + M.articles.val + '本'], ['HP 最大体力', fmt(s.HP), 'タスク完了 ' + M.tasks.val + '件'], ['DEF ぼうぎょ', fmt(s.DEF), '連続稼働 ' + M.streak.val + '日（被ダメ -' + Math.round((1 - E.reduce(s.DEF)) * 100) + '%）'], ['CRIT 会心率', Math.round(s.CRIT) + '%', '動画公開 ' + M.videos.val + '本'], ['LUCK 素材運', Math.round(s.LUCK) + '%', '新規登録 ' + M.signups.val + '人']];
     openModal('<div class="mpanel"><div class="mhead"><b>' + cur().hname + 'のステータス</b><button class="mclose" data-close>とじる</button></div><p class="mnote">' + (HOST.on ? 'ちいかわ株式会社の実績が そのまま 戦う力になっている。数字は会社側で更新される。' : '数字は すべて サンプル。ほんとうの実績をつなぐと、仕事の成果が そのまま 戦う力になる。') + '</p><ul class="tlist">' +
       rows.map(function (r) { return '<li class="trow" style="grid-template-columns:150px 130px 1fr"><span>' + r[0] + '</span><b>' + r[1] + '</b><span class="treward">' + r[2] + '</span></li>'; }).join('') + '</ul>' + (HOST.on ? '' : '<div class="tsep">データ</div><button class="mbtn sub" data-reset>セーブを消して はじめから</button>') + '</div>');
   }
