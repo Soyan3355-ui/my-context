@@ -351,6 +351,7 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .tk .bt-row{margin-top:4px}.tk details.bins summary{cursor:pointer;color:var(--info);font-size:12.5px;font-family:var(--body);padding:3px 0}.tk details.bins textarea{font:inherit;font-family:var(--body);font-size:13px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin:4px 0}.tk .bi{margin-top:5px;font-family:var(--body);font-size:12.5px;line-height:1.55;background:var(--bg);border-radius:6px;padding:4px 7px;overflow-wrap:anywhere}.tk .bi .rp{color:var(--sub)}.tk details.bins .bt{padding:6px 12px}
 body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
 body.arrange .cols>div>section{outline:2px dashed var(--info);outline-offset:-2px}
+.cols>div>section.lay-hide{display:none!important}body.arrange .cols>div>section.lay-hide{display:block!important;opacity:.45}.arr .hide-b[aria-pressed="true"]{border-color:var(--warn);color:var(--warn)}
 .arr{display:none;gap:6px;flex-wrap:wrap;margin-top:6px}body.arrange .arr{display:flex}
 .arr button{font:inherit;font-size:13px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:3px 10px;cursor:pointer;min-width:40px}
 .arr button:disabled{opacity:.35;cursor:default}.arr .mv-col{display:none}
@@ -461,7 +462,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
   <section class="focus" id="focusBox" aria-labelledby="h-focus"><h2 id="h-focus">⏱ 集中タイム <small id="focusSt"></small></h2><div id="focusBody"></div></section>
     </div>
   </div>
-  <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
+  <div class="arr-bar" id="arrBar" role="region" aria-label="並べかえ"><span>▲▼で順番、「右の列へ／左の列へ」で場所を変えられます（パソコンの広い画面では2列）。いらない項目は「👁 隠す」で見えなくできます（もう一度押すと戻ります）。</span><button type="button" id="arrReset">元にもどす</button><button type="button" class="y" id="arrDone">できた</button></div>
   <div class="cols">
     <div class="colA">
     <section style="order:0" class="box" aria-labelledby="h-vc">
@@ -2247,19 +2248,19 @@ function laySecs(){return [...document.querySelectorAll('.cols>.colA>section,.co
 function layKey(sec){return sec.getAttribute('aria-labelledby')}
 function layDefault(){const all=[];[['A','.colA'],['B','.colB']].forEach(([c,sel])=>{document.querySelectorAll('.cols>'+sel+'>section').forEach((s,i)=>all.push({id:layKey(s),col:c,o:+(s.style.order||0),i:all.length}))});
   return all.sort((a,b)=>a.o-b.o||a.i-b.i).map(x=>({id:x.id,col:x.col}))}
-function layMerge(saved){const ids=new Set(LAY.def.map(x=>x.id));const out=(saved||[]).filter(x=>x&&ids.has(x.id)&&(x.col==='A'||x.col==='B'));const have=new Set(out.map(x=>x.id));
+function layMerge(saved){const ids=new Set(LAY.def.map(x=>x.id));const out=(saved||[]).filter(x=>x&&ids.has(x.id)&&(x.col==='A'||x.col==='B')).map(x=>({id:x.id,col:x.col,hide:!!x.hide}));const have=new Set(out.map(x=>x.id));
   LAY.def.forEach((d,i)=>{if(have.has(d.id))return;const prev=LAY.def.slice(0,i).reverse().find(p=>have.has(p.id));const at=prev?out.findIndex(x=>x.id===prev.id)+1:0;out.splice(at,0,{id:d.id,col:d.col});have.add(d.id)});return out}
 function layApply(items){LAY.cur=layMerge(items);const A=document.querySelector('.cols>.colA'),B=document.querySelector('.cols>.colB');const map={};laySecs().forEach(s=>map[layKey(s)]=s);
-  LAY.cur.forEach((x,i)=>{const s=map[x.id];if(!s)return;s.style.order=i;(x.col==='B'?B:A).appendChild(s)});layBtns()}
+  LAY.cur.forEach((x,i)=>{const s=map[x.id];if(!s)return;s.style.order=i;s.classList.toggle('lay-hide',!!x.hide);(x.col==='B'?B:A).appendChild(s)});layBtns()}
 const layWide=()=>matchMedia('(min-width:900px)').matches;
 function layNb(i,dir){const c=LAY.cur,w=layWide();for(let j=i+dir;j>=0&&j<c.length;j+=dir){if(!w||c[j].col===c[i].col)return j}return -1}
 function layBtns(){LAY.cur.forEach((x,i)=>{const up=layNb(i,-1)<0,dn=layNb(i,1)<0;const h=document.getElementById(x.id);if(!h)return;const sec=h.closest('section');let bar=sec.querySelector(':scope>.arr');
   if(!bar){bar=document.createElement('div');bar.className='arr';bar.setAttribute('role','group');bar.setAttribute('aria-label',(h.textContent||'').trim().slice(0,20)+'の並べかえ');h.insertAdjacentElement('afterend',bar)}
-  bar.innerHTML=`<button type="button" data-mv="top" data-id="${x.id}" ${up?'disabled':''} aria-label="いちばん上へ">⤒</button><button type="button" data-mv="up" data-id="${x.id}" ${up?'disabled':''} aria-label="ひとつ上へ">▲</button><button type="button" data-mv="down" data-id="${x.id}" ${dn?'disabled':''} aria-label="ひとつ下へ">▼</button><button type="button" class="mv-col" data-mv="col" data-id="${x.id}">${x.col==='A'?'右の列へ →':'← 左の列へ'}</button>`})}
-function laySave(){const items=LAY.cur.map(x=>({id:x.id,col:x.col}));try{localStorage.setItem('ck-layout',JSON.stringify({items,at:Date.now()}))}catch(e){}
+  bar.innerHTML=`<button type="button" data-mv="top" data-id="${x.id}" ${up?'disabled':''} aria-label="いちばん上へ">⤒</button><button type="button" data-mv="up" data-id="${x.id}" ${up?'disabled':''} aria-label="ひとつ上へ">▲</button><button type="button" data-mv="down" data-id="${x.id}" ${dn?'disabled':''} aria-label="ひとつ下へ">▼</button><button type="button" class="mv-col" data-mv="col" data-id="${x.id}">${x.col==='A'?'右の列へ →':'← 左の列へ'}</button><button type="button" class="hide-b" data-mv="hide" data-id="${x.id}" aria-pressed="${x.hide?'true':'false'}">${x.hide?'🙈 隠している（押すと表示）':'👁 隠す'}</button>`})}
+function laySave(){const items=LAY.cur.map(x=>({id:x.id,col:x.col,hide:!!x.hide}));try{localStorage.setItem('ck-layout',JSON.stringify({items,at:Date.now()}))}catch(e){}
   if(LAY.ref&&canWrite){LAY.ref.set({items,updatedAt:Date.now()}).catch(()=>{})}}
 function layMove(id,how){const i=LAY.cur.findIndex(x=>x.id===id);if(i<0)return;const a=LAY.cur.slice();const it=a[i];
-  if(how==='up'||how==='down'){const j=layNb(i,how==='up'?-1:1);if(j<0)return;a[i]=a[j];a[j]=it}else if(how==='top'){a.splice(i,1);a.unshift(it)}else if(how==='col'){it.col=it.col==='A'?'B':'A'}
+  if(how==='up'||how==='down'){const j=layNb(i,how==='up'?-1:1);if(j<0)return;a[i]=a[j];a[j]=it}else if(how==='top'){a.splice(i,1);a.unshift(it)}else if(how==='col'){it.col=it.col==='A'?'B':'A'}else if(how==='hide'){it.hide=!it.hide}
   layApply(a);laySave();const b=document.querySelector(`.arr button[data-mv="${how==='top'?'up':how}"][data-id="${id}"]`)||document.querySelector(`.arr button[data-id="${id}"]`);if(b&&!b.disabled)b.focus({preventScroll:false});else{const h=document.getElementById(id);h&&h.scrollIntoView({block:'nearest'})}}
 document.addEventListener('click',e=>{const b=e.target.closest('.arr button[data-mv]');if(!b)return;e.preventDefault();e.stopPropagation();layMove(b.dataset.id,b.dataset.mv)},true);
 function laySet(on){document.body.classList.toggle('arrange',on);$('arrBtn').setAttribute('aria-pressed',String(on));$('arrBtn').textContent=on?'並べかえ中…':'並べかえ';if(on)$('arrBar').scrollIntoView({behavior:'smooth',block:'start'})}
