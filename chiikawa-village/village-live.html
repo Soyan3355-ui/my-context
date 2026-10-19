@@ -2294,13 +2294,16 @@ attInit('chat');attInit('vc');
 // 連携: ゲーム→画面 {src:'chii-dungeon',v:1,type:'ready'|'save'|'taskUsed'|'floorClear'|'error'} ／ 画面→ゲーム {src:'chii-host',v:1,type:'data',metrics,dungeons,save?}
 // タスクの完了はゲームから書き換えない（読むだけ）。セーブだけ data/users/<uid>/dungeon に残す。ゲーム本体は dungeon/page.html（tools/embed_dungeon.py で埋め込む）
 const DGN={frame:null,save:null,first:true,sig:'',timer:0};
-const DGN_NAMES={'講座':['cave','講座運営の洞窟'],'記事':['tower','発信と記事の塔'],'会計':['ruins','お金と書類の遺跡']};
+const DGN_NAMES={'講座':['cave','講座運営の洞窟'],'記事':['tower','発信と記事の塔'],'会計':['ruins','お金と書類の遺跡'],'YouTube':['tower','YouTubeの塔']};
 function dgnHtml(){const b=atob($('dgnSrc').textContent.trim()),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return new TextDecoder().decode(u)}
-function dgnMetrics(){const m={},now=Date.now(),mine=(a,b)=>doneItems(a,b).filter(x=>x.k==='s'||x.k==='c');
-  m.tasks={val:mine(now-30*864e5,now+1).length,note:'直近30日'};
-  let n=0,d=mine(dayStart(0),dayStart(1)).length?0:1;for(;d<60&&mine(dayStart(-d),dayStart(-d+1)).length;d++)n++;m.streak={val:n,note:'連続日数'};
+function dgnMetrics(){const m={},day=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+  m.tasks={val:doneItems(0,Infinity).filter(x=>x.k==='s'||x.k==='c').length,note:'累計'}; // 自分の仕事（tasks）＋ボードの完了。同じ題の二重数えは doneItems が除く
+  const act=new Set(CHECKINS.map(c=>c.id));doneItems(0,Infinity).forEach(x=>act.add(day(x.t)));
+  let n=0,d=act.has(day(Date.now()))?0:1;for(;d<400&&act.has(day(dayStart(-d)));d++)n++;m.streak={val:n,note:'ふりかえり・集中・完了がある日'};
   const pl=FIN&&Array.isArray(FIN.pl)?FIN.pl.filter(p=>p&&p.sales>0):[];if(pl.length){const p=pl[pl.length-1];m.sales={val:p.sales,note:String(p.m||'')+' 分'}}
-  return m} // 記事公開・動画公開・新規登録は、会社の画面に元データがないので送らない（ゲーム側は 0 表示）
+  const art=BOARD.filter(b=>b.status==='done'&&String(b.dept||'').trim()==='記事').length;if(art)m.articles={val:art,note:'記事ボードの完了'};
+  const vid=((VIDEO&&VIDEO.items)||[]).length;if(vid)m.videos={val:vid,note:'Clipnote 編集の件数'};
+  return m} // 新規登録は会社の画面に元データがないので送らない（ゲーム側は 0 表示）
 function dgnList(){const g=new Map();
   BOARD.forEach(b=>{const k=String(b.dept||'全体').trim()||'全体';if(!g.has(k))g.set(k,[]);g.get(k).push(b)});
   const keys=[...g.keys()].sort((a,b)=>g.get(b).filter(x=>x.status==='done').length-g.get(a).filter(x=>x.status==='done').length);
@@ -2321,7 +2324,7 @@ async function openDungeon(){if(DGN.frame)return;$('dgn').hidden=false;document.
   DGN.timer=setInterval(dgnSend,2000)}
 function closeDungeon(){clearInterval(DGN.timer);DGN.frame=null;$('dgnBody').textContent='';$('dgn').hidden=true;document.body.style.overflow='';$('dgnBtn').focus({preventScroll:true})}
 addEventListener('message',e=>{const f=DGN.frame,m=e.data;if(!f||e.source!==f.contentWindow||!m||m.src!=='chii-dungeon')return;
-  if(m.type==='ready')dgnSend();else if(m.type==='save'&&m.state&&typeof m.state==='object')dgnWrite(m.state);else if(m.type==='error')console.warn('dungeon:',m.message)});
+  if(m.type==='ready'){DGN.first=true;dgnSend()}else if(m.type==='save'&&m.state&&typeof m.state==='object')dgnWrite(m.state);else if(m.type==='error')console.warn('dungeon:',m.message)});
 $('dgnBtn').addEventListener('click',openDungeon);$('dgnClose').addEventListener('click',closeDungeon);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('dgn').hidden)closeDungeon()});
 // ---------- つながる ----------
