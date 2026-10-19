@@ -1959,7 +1959,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   }
   function bgmHold(sec) { try { BGM.hold = AC.currentTime + sec; BGM.next = Math.max(BGM.next, BGM.hold); } catch (e) { } }
   function bgmStop() { BGM.name = null; BGM.song = null; }
-  function musicNow() { if (S.view === 'battle') bgmPlay(S.battle && S.battle.e.boss ? 'boss' : 'battle'); else bgmPlay(cur().id); }
+  function musicNow() { if (S.view === 'battle') bgmPlay(S.battle && S.battle.e.boss ? 'boss' : 'battle'); else bgmPlay(cur().theme); } // 曲は見た目の種類（cave/tower/ruins）で選ぶ。親アプリのダンジョンIDは曲の名前と一致しない
   function setMute(m) { BGM.muted = m; try { localStorage.setItem('chii_mute', m ? '1' : '0'); } catch (e) { } var b = $('#mute'); if (b) b.textContent = m ? '♪ OFF' : '♪ ON'; }
   var msgTimer = null;
   function say(text) { var el = $('#msg'); clearTimeout(msgTimer); el.textContent = ''; var i = 0; (function step() { el.textContent = text.slice(0, ++i); if (i < text.length) msgTimer = setTimeout(step, 16); })(); }
@@ -2355,6 +2355,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     document.documentElement.classList.add('hosted');
     var w = document.getElementById('hostwait'); if (w) w.remove();
     if (first || cur().id !== prevId) { startRun(cur()); enemyImg.style.opacity = 0; equipArt(); if (AC) musicNow(); }
+    if (first) kick(); // 親のボタンで開いた直後なら、ゲームの中をさわる前でも曲を始められることがある（だめなら最初のクリック／キーで始まる）
     render(); if (first) say(cur().name + '。矢印キー（WASD）か 十字ボタンで あるこう。 ざこを ' + C.minions + '体 たおすと 奥の扉が ひらく！');
   }
   window.addEventListener('message', function (e) {
