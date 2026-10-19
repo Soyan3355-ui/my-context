@@ -18,11 +18,11 @@ The client's taste is the **Super Famicom-era Dragon Quest monster sprites** and
 
 | File | What it is |
 |---|---|
-| `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/images/2.png` | SFC DQ monster sprite sheet (bosses and demons) |
-| `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/images/3.png` | SFC DQ monster sprite sheet (mixed) |
-| `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/images/4.png` | SFC DQ monster sprite sheet (plants and beasts) |
-| `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/images/5.webp` | Official illustration encyclopedia cover (charm and personality) |
-| `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/images/1.webp` | Older mobile-RPG ad reference (secondary; only its accessory detail still applies) |
+| `devkit/refs/2.png` | SFC DQ monster sprite sheet (bosses and demons) |
+| `devkit/refs/3.png` | SFC DQ monster sprite sheet (mixed) |
+| `devkit/refs/4.png` | SFC DQ monster sprite sheet (plants and beasts) |
+| `devkit/refs/5.webp` | Official illustration encyclopedia cover (charm and personality) |
+| `devkit/refs/1.webp` | Older mobile-RPG ad reference (secondary; only its accessory detail still applies) |
 
 ---
 
@@ -235,15 +235,11 @@ Everything is cached after the first render. Each reference sprite takes about 3
 
 ## 8. How to preview and self-critique (required)
 
-Use Playwright with the preinstalled Chromium. Do **not** run `playwright install`.
-```js
-const { chromium } = require('/opt/node22/lib/node_modules/playwright');
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
-```
+Use Playwright with the preinstalled Chromium (don't run `playwright install`). All tools live in `devkit/preview/` and use relative paths.
 
-Ready-made pages are in `/tmp/claude-0/-home-user-my-context/33c84ab2-8ee2-5519-9749-42b6d5bb39cf/scratchpad/mon/`. Add your `pixmon_N.js` script tag to them.
-- `mon.html`: `?sheet=1` gives a contact sheet; `?id=1,4` gives detail rows at 6×, 3× and 1× on dark and light. Use `node shot.js 'id=1' out.png`.
-- **`strict.html` (use this for quality sign-off):** each of our sprites next to 3 reference sprites of a similar type, all at the **same integer scale**. Use `node strict.js 2 out.png` and `node strict.js 4 out.png`, adding a third argument such as `1,17` to limit the ids. Add reference crops for new ids to the `REF` table: file, x, y, w, h in the reference sheet's own pixels. Use `grid.html?f=3.png` (`node grid.js 3.png out.png`) to read crop coordinates.
-- `cmp.html` shows the whole-sheet side by side, but **it is not at matching scale**. Don't use it for quality judgements.
+- `node devkit/preview/shot.js sheet.html "sheet=1" all.png`: contact sheet of every sprite.
+- `node devkit/preview/shot.js sheet.html "id=1,4" detail.png`: detail rows at 6×, 3× and 1× on dark and light.
+- **`node devkit/preview/shot.js compare.html "s=4&id=1" cmp.png` (use this for quality sign-off):** each sprite next to reference crops at the **same integer scale**. Put the reference sheets in `devkit/refs/` (see the README there) and add crop rectangles to the `REF` table in `compare.html`.
+- Output goes to `devkit/preview/out/`. The finished game's sheets in `devkit/sheets/` are the quality bar for new work.
 
 Critique at least 3 rounds. After each round write a short **gap list** against the references (density, shading, eyes, silhouette, palette) and close it before the next round. Check the console: an unknown ramp name throws `PIXKIT: unknown ramp "…"`.

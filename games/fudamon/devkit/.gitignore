@@ -1,0 +1,4 @@
+qa/out/
+refs/*
+!refs/README.md
+preview/out/

@@ -1,5 +1,5 @@
 /* 封札モンスターズ — monster sprites, set 5: evolved forms (ids 31–40). 80x80 front-facing battle sprites at SFC density.
- * Requires pixkit.js (v3). House style: see PIXMON_STYLE.md and pixmon_1.js. All designs are original. */
+ * Requires pixkit.js (v3). House style: see devkit/PIXMON_STYLE.md and pixmon_1.js. All designs are original. */
 (function () {
   'use strict';
   var P = window.PIXMON = window.PIXMON || {};

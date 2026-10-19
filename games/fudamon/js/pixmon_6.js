@@ -1,6 +1,6 @@
 /* 封札モンスターズ — evolved forms, set 6 (ids 41–50: grass/thunder evolutions of 11–20).
  * 80x80 front-facing battle sprites at SFC density. Requires pixkit.js (v3).
- * House style: PIXMON_STYLE.md + pixmon_1.js. Each form keeps its base's colours, markings and gag. All designs are original. */
+ * House style: devkit/PIXMON_STYLE.md + pixmon_1.js. Each form keeps its base's colours, markings and gag. All designs are original. */
 (function () {
   'use strict';
   var P = window.PIXMON = window.PIXMON || {};

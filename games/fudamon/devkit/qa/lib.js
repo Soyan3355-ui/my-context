@@ -1,0 +1,8 @@
+require('fs').mkdirSync(require('path').join(__dirname,'out'),{recursive:true});
+const {chromium}=require(require('child_process').execSync('npm root -g').toString().trim()+'/playwright');
+module.exports=async function(fn){const b=await chromium.launch();const p=await b.newPage({viewport:{width:1100,height:820}});const errs=[];p.on('pageerror',e=>errs.push(e.message+' '+(e.stack||'').split('\n').slice(1,3).join(' ')));
+await p.goto('file://'+require('path').resolve(__dirname,'../../index.html'));await p.waitForTimeout(2500);
+const st=()=>p.evaluate(()=>({scene:G.scene,map:G.mapId,x:G.p.x,y:G.p.y,lock:G.lock,ui:UI.stack.length,dlg:document.querySelector('#dlg').hidden?'':document.querySelector('#dlg .dtext').textContent.slice(0,40),flags:S.flags}));
+const until=async(cond,max=120)=>{for(let i=0;i<max;i++){const s=await st();if(cond(s))return s;await p.keyboard.press('z');await p.waitForTimeout(350)}return await st()};
+const setup=async(extra)=>{await p.evaluate(e=>{UI.stack=[];document.querySelector('#title').hidden=true;G.cam=null;S=freshState();S.flags={metSensei:true,starter:1,rivalLeft:true,badge:true};addCard(1,14,'normal');addCard(1,5,'normal');addCard(1,6,'holo');addCard(8,30,'normal');addCard(5,30,'normal');S.party=[S.cards[0].uid,S.cards[3].uid,S.cards[4].uid];S.items={white:9,silver:3,gold:3,potion:5};Object.assign(S.flags,e.flags||{});S.map=e.map||'field';S.x=e.x||26;S.y=e.y||5;S.dir='right';startWorld()},extra||{});await p.waitForTimeout(800)};
+try{await fn({p,st,until,setup})}catch(e){console.log('TESTERR',e.message)}console.log(errs.join('\n')||'no page errors');await b.close()};

@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><title>sheet</title><style>
+body{margin:0;padding:10px;background:#222;font:12px sans-serif;color:#ccc}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
+.cell{padding:4px;text-align:center}.d{background:#1d1a2c}.l{background:#e9efe0}.g{background:#7fba56}
+canvas{image-rendering:pixelated;display:block}
+</style></head><body><div id="t"></div><div id="out"></div>
+<script src="../../js/pixel.js"></script> <script src="../../js/pixkit.js"></script> <script src="../../js/pixmon_1.js"></script> <script src="../../js/pixmon_2.js"></script> <script src="../../js/pixmon_3.js"></script> <script src="../../js/pixmon_4.js"></script> <script src="../../js/pixmon_5.js"></script> <script src="../../js/pixmon_6.js"></script> <script src="../../js/pixmon_7.js"></script> 
+<script>
+// ?sheet=1 → 全モンスター一覧（3倍） / ?id=1,4 → 6倍・3倍・1倍の詳細
+const q=new URLSearchParams(location.search),only=q.get('id');
+const ids=PIXKIT.ids().filter(i=>!only||only.split(',').includes(String(i)));
+let t0=performance.now();PIXKIT.clear();ids.forEach(i=>PIXKIT.render(i));
+document.getElementById('t').textContent='render '+ids.length+' sprites: '+(performance.now()-t0).toFixed(1)+'ms';
+function sc(id,s,cls,lbl){const d=document.createElement('div');d.className='cell '+cls;const c=document.createElement('canvas');const Z=PIXKIT.W;c.width=Z*s;c.height=Z*s;const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(PIXKIT.canvas(id),0,0,Z*s,Z*s);d.appendChild(c);if(lbl){const t=document.createElement('div');t.textContent='#'+id;t.style.color='#fff';d.appendChild(t)}return d;}
+const out=document.getElementById('out');
+if(q.get('sheet')){const r=document.createElement('div');r.className='row';ids.forEach(i=>r.appendChild(sc(i,+(q.get('s')||3),'d',1)));out.appendChild(r);}
+else ids.forEach(i=>{const r=document.createElement('div');r.className='row';[sc(i,6,'d'),sc(i,3,'l'),sc(i,1,'d'),sc(i,1,'l')].forEach(e=>r.appendChild(e));out.appendChild(r);});
+document.title='done';
+</script></body></html>

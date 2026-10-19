@@ -1,0 +1,1 @@
+require('./lib.js')(async({p})=>{console.log(await p.evaluate(()=>{const t=performance.now();for(let i=1;i<=TOTAL;i++)PIXKIT.render(i);return 'all '+TOTAL+' in '+Math.round(performance.now()-t)+'ms, sprites '+Object.keys(PIXMON).length}))});

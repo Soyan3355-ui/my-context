@@ -1,5 +1,5 @@
 /* 封札モンスターズ — monster sprites, set 3 (grass/thunder). 80x80 front-facing battle sprites at SFC density.
- * Requires pixkit.js (v3). House style: see pixmon_1.js + PIXMON_STYLE.md. All designs are original. */
+ * Requires pixkit.js (v3). House style: see pixmon_1.js + devkit/PIXMON_STYLE.md. All designs are original. */
 (function () {
   'use strict';
   var P = window.PIXMON = window.PIXMON || {};

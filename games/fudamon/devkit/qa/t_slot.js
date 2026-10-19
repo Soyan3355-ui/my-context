@@ -1,0 +1,11 @@
+const {chromium}=require(require('child_process').execSync('npm root -g').toString().trim()+'/playwright');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1100,height:820}});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('file://'+require('path').resolve(__dirname,'../../index.html'));await p.waitForTimeout(2500);
+await p.evaluate(()=>{UI.stack=[];document.querySelector('#title').hidden=true;G.cam=null;
+  S=freshState();S.flags={metSensei:true,starter:1,rivalLeft:true,badge:true,b2:true};addCard(1,16,'normal');S.map='valley';S.x=6;S.y=10;S.time=1234;startWorld();SLOT=1;saveGame();
+  S=freshState();S.flags={metSensei:true,starter:6,rivalLeft:true};addCard(6,7,'normal');S.map='field';S.x=13;S.y=40;S.time=321;startWorld();SLOT=3;saveGame();});
+await p.reload();await p.waitForTimeout(2500);
+await p.keyboard.press('z');await p.waitForTimeout(700);await p.screenshot({path:require('path').join(__dirname,'out','slot-load.png')});
+await p.keyboard.press('ArrowDown');await p.waitForTimeout(200);await p.keyboard.press('z');await p.waitForTimeout(1500);
+console.log(await p.evaluate(()=>JSON.stringify({slot:SLOT,map:G.mapId,lead:MON[card(S.party[0]).id].name,scene:G.scene})));
+console.log(errs.join('\n')||'no page errors');await b.close()})();
