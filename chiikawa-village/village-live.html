@@ -351,11 +351,14 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .tk .bt-row{margin-top:4px}.tk details.bins summary{cursor:pointer;color:var(--info);font-size:12.5px;font-family:var(--body);padding:3px 0}.tk details.bins textarea{font:inherit;font-family:var(--body);font-size:13px;width:100%;box-sizing:border-box;min-height:56px;border:2px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink);margin:4px 0}.tk .bi{margin-top:5px;font-family:var(--body);font-size:12.5px;line-height:1.55;background:var(--bg);border-radius:6px;padding:4px 7px;overflow-wrap:anywhere}.tk .bi .rp{color:var(--sub)}.tk details.bins .bt{padding:6px 12px}
 body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
 .exs{position:relative;height:206px;border:3px solid #3b3533;border-radius:8px;overflow:hidden;background-color:var(--s2,#d9f1ff);background-image:var(--st,linear-gradient(transparent,transparent)),linear-gradient(var(--s1,#8ecdf5) 0%,var(--s2,#d9f1ff) 64%);user-select:none;touch-action:manipulation}
-.exs .sun{position:absolute;right:16%;top:16px;width:34px;height:34px;border-radius:50%;background:var(--sun,#fff3a0);box-shadow:0 0 0 5px var(--sunh,rgba(255,243,160,.4)),0 0 22px 8px var(--sunh,rgba(255,243,160,.4))}
+.exs .sun{position:absolute;right:38%;top:16px;width:34px;height:34px;border-radius:50%;background:var(--sun,#fff3a0);box-shadow:0 0 0 5px var(--sunh,rgba(255,243,160,.4)),0 0 22px 8px var(--sunh,rgba(255,243,160,.4))}
 .exs .mt,.exs .tr2{position:absolute;left:0;right:0;background-repeat:repeat-x;image-rendering:pixelated}.exs .mt{bottom:38px;height:96px;background-size:auto 96px;background-image:var(--mt)}.exs .tr2{bottom:36px;height:74px;background-size:auto 74px;background-image:var(--tr)}
 .exs.idle .mt{animation:exsc1 70s linear infinite}.exs.idle .tr2{animation:exsc2 16s linear infinite}.exs.idle .gd{animation:exsc3 3s linear infinite}
 @keyframes exsc1{to{background-position-x:-288px}}@keyframes exsc2{to{background-position-x:-148px}}@keyframes exsc3{to{background-position-x:-56px}}
 .exs .pt .wp{position:absolute;left:auto;right:-9px;bottom:6px;top:auto;width:24px;height:24px;rotate:28deg;transform-origin:50% 90%;filter:drop-shadow(1px 0 0 #3b3533) drop-shadow(-1px 0 0 #3b3533) drop-shadow(0 1px 0 #3b3533) drop-shadow(0 -1px 0 #3b3533)}
+.exs .twr{position:absolute;right:7%;bottom:34px;width:60px;height:140px;background-size:100% 100%;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}.exs .twr.cur::after{content:'';position:absolute;left:50%;top:-6px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#ffd23a;box-shadow:0 0 10px 4px rgba(255,210,58,.8);animation:extw 1.2s ease-in-out infinite}@keyframes extw{50%{opacity:.35}}
+.exs .twl{position:absolute;right:4%;top:6px;background:rgba(255,255,255,.94);border:2px solid #3b3533;border-radius:6px;padding:0 7px;font-family:var(--body);font-size:11px;color:#3b3533;line-height:1.6}
+.ex-help{font-size:12.5px;line-height:1.75;display:grid;gap:8px}.ex-help h4{margin:0;font-size:13px}.ex-help p{margin:2px 0 0}.ex-help ul{margin:2px 0 0;padding-left:1.2em}
 .ex-wps{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-family:var(--body);font-size:11.5px}.ex-wps button{width:38px;height:38px;border:2px solid var(--line);border-radius:8px;background:var(--bg);padding:2px;cursor:pointer}.ex-wps button.on{border-color:#e6a23c;background:#fff3d0}.ex-wps img{width:100%;height:100%;image-rendering:pixelated}
 .exs .gd{position:absolute;left:0;right:0;bottom:0;height:40px;background:var(--gd) repeat-x;background-size:56px 40px;image-rendering:pixelated}
 .exs .cl{position:absolute;top:34px;width:30px;height:9px;background:#fff;border-radius:99px;box-shadow:11px -6px 0 2px #fff,22px 0 0 0 #fff;opacity:.92;animation:excl 30s linear infinite}.exs .cl.c2{top:60px;animation-duration:44s;animation-delay:-16s;transform:scale(.7)}
@@ -2626,7 +2629,7 @@ function expEnemy(s){const L=expL(),t=(s.stage-1)*6+s.wave,boss=s.wave>=6,kind=b
 function expRate(e,st){const r=(st.hp/(e.atk/1.2))/(e.hp/(st.atk*2.3)),n=r>=2.5?1:r>=1.3?2:r>=0.8?3:r>=0.4?4:5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n),label:['楽勝','ふつう','ぎりぎり','強敵','今は無理'][n-1]}}
 // ----- 保存
 async function expRef(){if(EXP.ref)return EXP.ref;try{let id=typeof LAY!=='undefined'&&LAY.uid;if(!id&&window.claude){const u=await window.claude.use('user');id=u&&u.id?await u.id():null}if(id&&db)EXP.ref=db.doc('data/users/'+id+'/dungeon')}catch(e){}return EXP.ref||null}
-async function expLoad(){const r=await expRef();if(!r)return false;try{const g=await Promise.race([r.get(),new Promise(res=>setTimeout(res,3000))]);const d=g&&g.exists?(typeof g.data==='function'?g.data():g.data):null;if(d&&d.v===2&&d.s&&typeof d.s==='object'){const f=expFresh(),s=d.s;EXP.s=Object.assign(f,s,{used:s.used||{},own:Object.assign({w0:1},s.own),items:Object.assign(f.items,s.items),dex:{foes:(s.dex&&s.dex.foes)||{},treasure:(s.dex&&s.dex.treasure)||{}}})}}catch(e){}return true}
+async function expLoad(){const r=await expRef();if(!r)return false;try{const g=await Promise.race([r.get(),new Promise(res=>setTimeout(res,3000))]);const d=g&&g.exists?(typeof g.data==='function'?g.data():g.data):null;if(d&&d.v===2&&d.s&&typeof d.s==='object'){const f=expFresh(),s=d.s;const lu=(EXP.s&&EXP.s.used)||{};EXP.s=Object.assign(f,s,{used:Object.assign({},s.used||{},lu),own:Object.assign({w0:1},s.own),items:Object.assign(f.items,s.items),dex:{foes:(s.dex&&s.dex.foes)||{},treasure:(s.dex&&s.dex.treasure)||{}}})}}catch(e){}return true}
 let expSaveT=0;function expSave(){clearTimeout(expSaveT);expSaveT=setTimeout(async()=>{const r=await expRef();if(!r||!canWrite)return;try{await r.set({v:2,s:EXP.s,updatedAt:Date.now()})}catch(e){}},300)}
 // ----- 音
 let EAC=null;function eb(f,d,t,v,sl){if(EXP.mute)return;try{EAC=EAC||new (window.AudioContext||window.webkitAudioContext)();if(EAC.state==='suspended')EAC.resume();const o=EAC.createOscillator(),g=EAC.createGain();o.type=t||'square';o.frequency.value=f;if(sl)o.frequency.linearRampToValueAtTime(f*sl,EAC.currentTime+d);g.gain.value=v||.04;g.gain.linearRampToValueAtTime(0,EAC.currentTime+d);o.connect(g);g.connect(EAC.destination);o.start();o.stop(EAC.currentTime+d)}catch(e){}}
@@ -2675,7 +2678,7 @@ function expWin(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.
   setTimeout(()=>{EXP.mode=drop?'treasure':'win';expRender()},drop?650:500)}
 function expLose(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e,st=expStats();s.wave=1;EXP.res={e,rate:expRate(e,st),pend:expPend().length};expSave();SND.lose();EXP.mode='lose';expRender()}
 // ----- 力にする
-function expClaim(){const list=expPend();if(!list.length||EXP.claiming)return;EXP.claiming=true;const gap=list.length>12?70:130;list.forEach((t,i)=>setTimeout(()=>{EXP.s.used[t.id]=1;SND.claim(i);fxClaim(i,list.length,'ちから +1');const c=document.getElementById('exLv');if(c)c.textContent='Lv '+expL()},i*gap));setTimeout(()=>{EXP.claiming=false;expSave();expRender()},list.length*gap+350)}
+function expClaim(){if(EXP.claiming&&Date.now()-EXP.claimAt>8000)EXP.claiming=false;const list=expPend();if(!list.length||EXP.claiming)return;EXP.claiming=true;EXP.claimAt=Date.now();list.forEach(t=>{EXP.s.used[t.id]=1});expSave();const gap=list.length>12?70:130;list.forEach((t,i)=>setTimeout(()=>{SND.claim(i);fxClaim(i,list.length,'ちから +1');const c=document.getElementById('exLv');if(c)c.textContent='Lv '+expL()},i*gap));setTimeout(()=>{EXP.claiming=false;expSave();expRender()},list.length*gap+350)}
 // ----- 表示
 const expSay=t=>{const e=document.getElementById('exSay');if(e)e.textContent=t};
 function expBars(){const b=EXP.b;if(!b)return;const m=document.getElementById('exMe'),f=document.getElementById('exFo'),mt=document.getElementById('exMeT'),ft=document.getElementById('exFoT');if(m)m.style.width=Math.max(0,b.php/b.pmax*100)+'%';if(f)f.style.width=Math.max(0,b.ehp/b.e.hp*100)+'%';if(mt)mt.textContent='HP '+b.php+'/'+b.pmax;if(ft)ft.textContent=b.ehp+'/'+b.e.hp}
@@ -2709,13 +2712,36 @@ function expBg(i){const k=i%EXTH.length;if(_bgc[k])return _bgc[k];const T=EXTH[k
   let st='';if(T.stars){let sv='';[[10,12],[40,30],[70,8],[100,40],[130,20],[160,50],[190,14],[220,36],[250,10],[20,60],[90,70],[200,76]].forEach(([x,y])=>sv+=`<rect fill="#fff" x="${x}" y="${y}" width="2" height="2"/>`);st=svgU(280,100,sv)}
   return _bgc[k]={sky:`--s1:${T.s1};--s2:${T.s2};--sun:${T.sun};--sunh:${T.sunh};--mt:${mt};--tr:${trs};--gd:${gd};`+(st?`--st:${st};`:'')}}
 const expWpRow=()=>{const s=EXP.s,o=WP.filter(w=>s.own[w.id]);return o.length>1?`<div class="ex-wps" aria-label="そうびを えらぶ">${o.map(w=>`<button type="button" class="${s.weapon===w.id?'on':''}" data-act="equip" data-id="${w.id}" title="${esc(w.name)} こうげき+${w.atk}" aria-label="${esc(w.name)}"><img src="${wpImg(w.id)}" alt=""></button>`).join('')}<span>← ぶきを えらべる</span></div>`:''};
-function expScene(foe,boss,bars){return `<div class="exs ${EXP.mode==='idle'||EXP.mode==='win'||EXP.mode==='treasure'?'idle':'bt'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}" role="img" aria-label="ちいかわたちが遠征で戦う様子"><i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>${expParty()}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
+
+// ----- 塔（ステージ＝1つの塔、1〜6階。6階がボス）
+const _twc={};
+function expTowerUrl(stage,wave){const T=EXTH[(stage-1)%EXTH.length],key=T.m+wave;if(_twc[key])return _twc[key];
+  const st=['#9aa0aa','#868c98'],dk='#4a4f5c';let b='';
+  b+=`<rect fill="${dk}" x="4" y="126" width="52" height="14"/><rect fill="${st[0]}" x="6" y="126" width="48" height="12"/><rect fill="#3a2a22" x="25" y="128" width="10" height="12"/><rect fill="#3a2a22" x="26" y="126" width="8" height="2"/>`;
+  for(let i=0;i<6;i++){const w=46-i*3,x=(60-w)/2,y=126-(i+1)*17;
+    b+=`<rect fill="${dk}" x="${x-1}" y="${y-1}" width="${w+2}" height="18"/><rect fill="${st[i%2]}" x="${x}" y="${y}" width="${w}" height="16"/><rect fill="rgba(0,0,0,.14)" x="${x}" y="${y+13}" width="${w}" height="3"/>`;
+    const lit=i<wave-1,cur=i===wave-1,c=lit?'#ffe36a':cur?'#ff8a5a':'#2a2a3a';
+    b+=`<rect fill="${dk}" x="26" y="${y+3}" width="8" height="10"/><rect fill="${c}" x="27" y="${y+4}" width="6" height="8"/>`;
+    if(i===5)b+=`<rect fill="#ffd23a" x="22" y="${y+4}" width="3" height="3"/><rect fill="#ffd23a" x="35" y="${y+4}" width="3" height="3"/>`;
+    for(let k=0;k<3;k++)b+=`<rect fill="${st[i%2]}" x="${x+1+k*((w-4)/2.6)}" y="${y-3}" width="4" height="3"/>`}
+  const ty=126-6*17;b+=`<path fill="${dk}" d="M10 ${ty-1}L30 ${ty-22}L50 ${ty-1}Z"/><path fill="#c0453a" d="M13 ${ty-2}L30 ${ty-19}L47 ${ty-2}Z"/><path fill="rgba(0,0,0,.18)" d="M30 ${ty-19}L47 ${ty-2}L30 ${ty-2}Z"/><rect fill="${dk}" x="29" y="${ty-32}" width="2" height="12"/><path fill="#ffd23a" d="M31 ${ty-32}L41 ${ty-28}L31 ${ty-24}Z"/>`;
+  return _twc[key]=svgU(60,140,b)}
+const expTower=()=>{const s=EXP.s;return `<div class="twr cur" style="background-image:${expTowerUrl(s.stage,s.wave)}"></div><div class="twl">🏰 第${s.stage}の塔　${s.wave}F／6F${s.wave>=6?' 👑':''}</div>`};
+function expHelp(){const t=(h,l)=>`<h4>${h}</h4>${l}`;return `<div class="ex-pan"><div class="ex-ph"><b>📘 あそびかた・しくみ</b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-help">
+${t('🏰 塔をのぼる','<p>1つの「ステージ」＝1つの塔。1階〜5階はザコ、6階にボス。1階ずつたおして上をめざそう。ボスをたおすと次の塔（ステージ）へ。</p>')}
+${t('⚡ ちから（Lv）','<ul><li>完了したタスク1件を「力にする」と、<b>ちから Lv が +1</b>。HP と こうげきが少し上がる。</li><li>「力にする」を押すまでは強くならない。押すと数が減って、Lv が増える。</li><li>チャットの会話を片づけたり、「そーやんの仕事」を完了にしたものも数える。</li></ul>')}
+${t('⚔ たたかい','<ul><li>ボタンをれんだして こうげき。敵の HP が 0 で勝ち。</li><li>敵は <b>ちから Lv に合わせて強くなる</b>。階が上がるほど さらに強い。目安は ★（★が少ないほど楽）。</li><li>やられても何度でも挑戦できる。<b>やられると その塔の1階にもどる</b>。</li><li>敵を1体たおすたびに 自動セーブ。</li></ul>')}
+${t('🔁 同じ敵とまた戦うのは？','<p>やられて1階にもどると、また1階のザコと戦えるよ。たおすたびに賞金はもらえるので、<b>お金かせぎ</b>にもなる（ずかんのモンスターは回数がふえる）。お宝は ボスだけ。</p>')}
+${t('💰 賞金と ショップ','<p>ザコの賞金で ショップの<b>武器</b>と<b>アイテム</b>を買える。武器は こうげきがふえて、エフェクトもちがう。持っている武器は、いつでも画面の下のボタンで持ちかえできる（ちいかわたちも装備して持つよ）。</p>')}
+${t('💎 お宝・ずかん','<p>ボスをたおすとお宝が1つ。ダブったときはお金になる。お宝は強さには関係なし、あつめて楽しむだけ。ずかんで お宝・武器・モンスターが見られるよ。</p>')}
+</div></div>`}
+function expScene(foe,boss,bars){return `<div class="exs ${EXP.mode==='idle'||EXP.mode==='win'||EXP.mode==='treasure'?'idle':'bt'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}" role="img" aria-label="ちいかわたちが遠征で戦う様子"><i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>${foe?'':expTower()}${expParty()}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
 function expRender(){const el=document.getElementById('expBody');if(!el||!EXP.s)return;const s=EXP.s,st=expStats(),m=EXP.mode,pend=expPend().length;let h='';
   const snd=`<button type="button" class="ex-mini" data-act="mute" aria-label="音の入切">${EXP.mute?'🔇':'🔊'}</button>`;
   const chips=`<div class="ex-chips"><span class="ex-chip">⭐ ちから <b id="exLv">Lv ${st.L}</b></span><span class="ex-chip">❤ ${st.hp}</span><span class="ex-chip">⚔ ${st.atk}</span><span class="ex-chip">${expWp().ico} ${esc(expWp().name)}</span><span class="ex-chip">💰 <b>${s.gold.toLocaleString('en-US')}</b>G</span>${snd}</div>`;
   const claim=pend>0?`<button type="button" class="ex-claim" data-act="claim">⚡ 力にする（${pend}件）<small>完了したタスクが ちからになる</small></button>`:`<div class="ex-ok">✅ 完了したタスクは すべて ちからになっているよ</div>`;
-  const nav=`<div class="ex-nav"><button type="button" data-act="shop">🛒 ショップ</button><button type="button" data-act="dex">📖 ずかん</button></div>`;
-  if(EXP.view==='shop')h=expShop();else if(EXP.view==='dex')h=expDex();
+  const nav=`<div class="ex-nav"><button type="button" data-act="shop">🛒 ショップ</button><button type="button" data-act="dex">📖 ずかん</button><button type="button" data-act="help">📘 あそびかた</button></div>`;
+  if(EXP.view==='shop')h=expShop();else if(EXP.view==='dex')h=expDex();else if(EXP.view==='help')h=expHelp();
   else if(m==='fight'){const b=EXP.b;h=expScene(foeImg(b.e.kind),b.e.boss,`<div class="exb-bars"><div class="hb me"><span id="exMeT"></span><div class="tr"><i id="exMe"></i></div></div><div class="hb fo"><span>${b.e.boss?'👑 ':''}${esc(b.e.name)} <span id="exFoT"></span></span><div class="tr"><i id="exFo"></i></div></div></div>`)+
     `<div class="exh"><button type="button" class="ex-atk" id="exAtk" data-act="atk">⚔ こうげき！<small>れんだ！</small></button><div class="ex-row2">${s.items.potion>0?`<button type="button" class="ex-sub" id="exPot" data-act="potion">🩹 きずぐすり ×${s.items.potion}</button>`:''}<button type="button" class="ex-sub" data-act="leave">にげる</button></div></div>`}
   else{const e=m==='win'||m==='treasure'?EXP.res.next:m==='lose'?EXP.res.e:expEnemy(s),rt=expRate(e,st);
@@ -2748,6 +2774,7 @@ function expAct(a,id){const s=EXP.s;if(!s)return;
   if(a==='mute'){EXP.mute=!EXP.mute;try{localStorage.setItem('ck-exp-mute',EXP.mute?'1':'0')}catch(e){}expRender();return}
   if(a==='shop'){EXP.view='shop';expRender();return}
   if(a==='dex'){EXP.view='dex';expRender();return}
+  if(a==='help'){EXP.view='help';expRender();return}
   if(a==='back'){EXP.view='main';expRender();return}
   if(a==='tab'){EXP.tab=id;expRender();return}
   if(a==='buy'){const w=WP.find(x=>x.id===id);if(w&&!s.own[w.id]&&s.gold>=w.price){s.gold-=w.price;s.own[w.id]=1;s.weapon=w.id;SND.buy();expSave();expRender()}return}
