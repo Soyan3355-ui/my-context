@@ -1869,6 +1869,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   function minionPower(d, i) { var m = E.minion(i), sc = scale(d); return powerOf(m.atk * sc, m.hp * sc); }
   function bossPower(d) { var sc = scale(d); return powerOf(DATA.boss.atk * sc, DATA.boss.hp * sc); }
   function powerAfterEnh() { var st = stats(), t = { ATK: st.ATK + DATA.enhStep, CRIT: st.CRIT, HP: st.HP, DEF: st.DEF }; return myPower(t) - myPower(st); }
+  function claimable(d) { return HOST.on ? d.tasks.filter(function (t) { return t.done && !t.used; }).length : 0; }
   function cmpPow(me, foe) { return foe <= me ? ' <b>いける！</b>' : '（あと ×' + (Math.ceil(foe / Math.max(1, me) * 10) / 10) + '）'; }
   // ---- random equipment drops
   var GN = { weapon: { C: ['木の剣', 'さびた短剣'], R: ['鋼のつるぎ', '月影の剣'], SR: ['竜牙の大剣', '星砕きの剣'] }, armor: { C: ['布の服', '革のよろい'], R: ['鉄のよろい', '森の外套'], SR: ['竜鱗のよろい', '聖なる法衣'] }, acc: { C: ['木のお守り', '石のペンダント'], R: ['銀の指輪', '幸運のブローチ'], SR: ['星のティアラ', '竜の首飾り'] } };
@@ -2011,7 +2012,8 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     $('#track').innerHTML = h;
     var me = myPower(stats()), d0 = cur(), nx = r.open ? bossPower(d0) : minionPower(d0, r.cleared), bp = bossPower(d0);
     $('#objtxt').innerHTML = (r.open ? '封印の扉が ひらいた！ ボスの間へ' : 'ざこ ' + r.cleared + ' / ' + C.minions + '体　奥の封印の扉を めざせ') +
-      '<br><span class="pw ' + (nx <= me ? 'ok' : 'ng') + '">戦闘力 あなた <b>' + fmt(me) + '</b>　' + (r.open ? 'ボス' : '次のざこ') + ' <b>' + fmt(nx) + '</b>' + cmpPow(me, nx) + '</span>' + (r.open ? '' : '<br><span class="pw">ボス <b>' + fmt(bp) + '</b></span>');
+      '<br><span class="pw ' + (nx <= me ? 'ok' : 'ng') + '">戦闘力 あなた <b>' + fmt(me) + '</b>　' + (r.open ? 'ボス' : '次のざこ') + ' <b>' + fmt(nx) + '</b>' + cmpPow(me, nx) + '</span>' + (r.open ? '' : '<br><span class="pw">ボス <b>' + fmt(bp) + '</b>　差 ' + (me >= bp ? '+' : '-') + fmt(Math.abs(me - bp)) + '</span>') +
+      (claimable(d0) ? '<br><span class="pw ng">⏳ 未反映の完了タスク <b>' + claimable(d0) + '件</b>（「タスク」で力にしてから挑もう）</span>' : '');
   }
   function renderMetrics() {
     var s = stats();
@@ -2044,7 +2046,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
       h = c('attack', 'たたかう', '攻撃 ' + fmt(st.ATK) + '　SP+1', 'main') + c('skill', 'スキル', 'SP' + C.spCostSkill + '・威力×' + C.skillMult, '', r.sp < C.spCostSkill) +
         c('guard', 'まもる', '被ダメ-55%・SP+1', '') + c('heal', 'いやし', 'SP' + C.spCostHeal + '・HP+25%', '', r.sp < C.spCostHeal);
     } else {
-      h = c('tasks', 'タスク', '未完了 ' + open + '・強化チャンス+', 'main') + c('forge', 'そうび・強化', '強化チャンス ' + S.charges + '・素材 ' + S.mats) + c('list', 'ダンジョン', '一覧へ') + c('detail', 'ステータス', '実績の内訳');
+      h = c('tasks', 'タスク', (claimable(d) ? '⏳ 力にできる ' + claimable(d) + '件・' : '') + '未完了 ' + open, 'main') + c('forge', 'そうび・強化', '強化チャンス ' + S.charges + '・素材 ' + S.mats) + c('list', 'ダンジョン', '一覧へ') + c('detail', 'ステータス', '実績の内訳');
     }
     $('#cmds').innerHTML = h; S.mode = mode;
   }
@@ -2265,7 +2267,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     if (S.busy) return;
     var cards = D.map(function (d, i) {
       return '<button class="dcard th-' + d.theme + (i === S.idx ? ' sel' : '') + '" data-dun="' + i + '"><span class="dc-name">' + esc(d.name) + '</span><span class="dc-floor">' + d.floor + 'F <small>/ ' + d.floors + 'F</small></span>' +
-        '<span class="dc-boss">ボス: ' + d.boss + '（戦闘力 ' + fmt(bossPower(d)) + '）</span><span class="dc-key">ベスト ' + d.best + ' / ' + C.minions + '体　挑戦 ' + d.tries + '回</span><span class="dc-gap">未完了タスク ' + d.tasks.filter(function (t) { return !t.done; }).length + '</span></button>';
+        '<span class="dc-boss">ボス: ' + d.boss + '（戦闘力 ' + fmt(bossPower(d)) + '）</span><span class="dc-key">ベスト ' + d.best + ' / ' + C.minions + '体　挑戦 ' + d.tries + '回</span><span class="dc-gap">' + (claimable(d) ? '⏳ 力にできる ' + claimable(d) + '件　' : '') + '未完了タスク ' + d.tasks.filter(function (t) { return !t.done; }).length + '</span></button>';
     }).join('');
     openModal('<div class="mpanel wide"><div class="mhead"><b>ダンジョン一覧</b><button class="mclose" data-close>とじる</button></div><div class="dgrid">' + cards + '</div></div>');
   }
