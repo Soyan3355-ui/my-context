@@ -1864,9 +1864,22 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   // ---------- save (browser storage; the game still runs without it) ----------
   var SAVE_KEY = 'chii_dungeon_v1';
   function snapshot() {
-    return { idx: S.idx, weapon: S.weapon, enh: S.enh, charges: S.charges, mats: S.mats, gear: S.gear, log: S.log, uid: S.uid, used: S.used, gold: S.gold, inv: S.inv, dex: S.dex,
+    return { idx: S.idx, weapon: S.weapon, enh: S.enh, charges: S.charges, mats: S.mats, gear: S.gear, log: S.log, uid: S.uid, used: S.used, gold: S.gold, inv: S.inv, dex: S.dex, run: runSnap(),
       P: D.map(function (d) { return { id: d.id, floor: d.floor, cleared: d.cleared, best: d.best, tries: d.tries, last: d.last }; }) };
   }
+  // オートセーブ：敵を1体たおすごと／宝箱をあけるごとに、いまの周回（たおした数・HP・SP・開いた宝箱・いる場所）を残す。次に開いたとき、そこから再開する
+  function runSnap() {
+    if (!S.run || !S.pl || S.floorDone || S.run.hp <= 0 || !cur()) return null;
+    return { id: cur().id, floor: cur().floor, cleared: S.run.cleared, hp: Math.round(S.run.hp), sp: S.run.sp, nextEnc: S.run.nextEnc, open: !!S.run.open, opened: S.run.opened || [], tx: S.pl.tx, ty: S.pl.ty };
+  }
+  function restoreRun(q) {
+    var d = cur(); if (!q || typeof q !== 'object' || !d || q.id !== d.id || q.floor !== d.floor || !S.run || !S.map) return false;
+    var r = S.run, st = stats(), m = S.map; r.cleared = Math.max(0, Math.min(C.minions, num(q.cleared, 0))); r.open = !!q.open || r.cleared >= C.minions; r.hp = Math.max(1, Math.min(st.HP, num(q.hp, st.HP))); r.sp = Math.max(0, Math.min(C.spMax, num(q.sp, C.spStart))); r.nextEnc = Math.max(1, num(q.nextEnc, 8)); r.steps = 0;
+    r.opened = []; (Array.isArray(q.opened) ? q.opened : []).forEach(function (i) { i = num(i, -1); if (i >= 0 && i < m.t.length && m.t[i] === F.CHEST) { m.t[i] = F.OPENED; r.opened.push(i); } });
+    var tx = num(q.tx, -1), ty = num(q.ty, -1); if (tx >= 0 && ty >= 0 && tileAt(tx, ty) === F.FLOOR) { S.pl.tx = tx; S.pl.ty = ty; S.pl.px = tx * TS; S.pl.py = ty * TS; S.fol.x = S.fol.fx = S.fol.ex = (tx - 1) * TS; S.fol.y = S.fol.fy = S.fol.ey = ty * TS; S.vis = new Uint8Array(m.W * m.H); markVis(tx, ty); }
+    prepNext(d); return true;
+  }
+  function saveNow() { if (!HOST.on) { save(); return; } clearTimeout(postTimer); var j = JSON.stringify(snapshot()); if (j !== lastPosted) { lastPosted = j; toHost('save', { state: JSON.parse(j) }); } }
   var lastPosted = '', postTimer = 0;
   function save() {
     if (HOST.on) { // hosted: the parent app owns persistence (debounced, only when changed)
@@ -2036,7 +2049,7 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   function startRun(d) {
     var st = stats(); d.tries++;
     var m = S.map = F.gen(d.id + ':' + d.floor);
-    S.run = { cleared: 0, hp: st.HP, sp: C.spStart, steps: 0, nextEnc: 8, open: false, chests: 0 };
+    S.floorDone = false; S.run = { cleared: 0, hp: st.HP, sp: C.spStart, steps: 0, nextEnc: 8, open: false, chests: 0, opened: [] };
     S.pl = { tx: m.start.x, ty: m.start.y, px: m.start.x * TS, py: m.start.y * TS, dir: 'right', frame: 0, moving: false, t: 0, fx: 0, fy: 0, tx2: 0, ty2: 0 };
     S.fol = { x: (m.start.x - 1) * TS, y: m.start.y * TS, fx: (m.start.x - 1) * TS, fy: m.start.y * TS, ex: (m.start.x - 1) * TS, ey: m.start.y * TS, img: S.fol ? S.fol.img : null };
     S.vis = new Uint8Array(m.W * m.H); markVis(m.start.x, m.start.y);
@@ -2183,9 +2196,9 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
   }
   async function openChest(x, y) {
     if (S.busy) return; S.busy = true; var st = stats(), r = S.run;
-    setTile(x, y, F.OPENED); SFX.chest(); var heal = Math.round(st.HP * C.chestHeal); r.hp = Math.min(st.HP, r.hp + heal); S.mats += 1;
+    setTile(x, y, F.OPENED); r.opened.push(y * S.map.W + x); SFX.chest(); var heal = Math.round(st.HP * C.chestHeal); r.hp = Math.min(st.HP, r.hp + heal); S.mats += 1;
     floatText('HP +' + fmt(heal), 'heal', 520, 150); floatText('素材 +1', 'good', 520, 200);
-    say('宝箱を あけた！ HPが ' + fmt(heal) + ' かいふくして、素材を1つ ひろった。'); render(); await sleep(700); S.busy = false;
+    say('宝箱を あけた！ HPが ' + fmt(heal) + ' かいふくして、素材を1つ ひろった。'); render(); saveNow(); await sleep(700); S.busy = false;
   }
   async function touchDoor() {
     var r = S.run; if (!r.open) { say('封印の扉は まだ 閉じている。 ざこを あと ' + (C.minions - r.cleared) + '体 たおそう。'); await sleep(450); keys.up = keys.down = keys.left = keys.right = false; return; }
@@ -2251,12 +2264,12 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     var bgm = bounty(e); S.gold += bgm; dexFoe(e); floatText('+' + gf(bgm) + 'G', 'gold', 300, 170); floatText('素材 +' + got, 'good', 260, 220); if (r.cleared > d.best) { d.best = r.cleared; }
     var dropMsg = '';
     if (Math.random() * 100 < 38 + st.LUCK / 3) { var it = rollDrop(e.idx, false), eq = equipItem(it); dropMsg = '　ドロップ！ ' + it.name + '[' + it.rare + '] ' + itemDesc(it) + (eq ? '（そうびした）' : '（今のほうが強い→素材+1）'); toast(it, eq); SFX.drop(it.rare); }
-    prepNext(d); S.busy = false; render();
+    prepNext(d); S.busy = false; render(); saveNow();
     say(e.name + 'を たおした！ （' + r.cleared + ' / ' + C.minions + '体）懸賞金 +' + gf(bgm) + 'G' + (e.shiny ? '（色違い！）' : '') + '　素材 +' + got + '　HP ' + fmt(heal) + ' かいふく。' + dropMsg + (r.open ? ' ……奥の 封印の扉が ひらいた！' : ''));
   }
   async function defeat(d) {
     var r = S.run, n = r.cleared; bgmHold(3); SFX.lose(); for (var k in allyImgs) allyImgs[k].classList.add('fall'); say('' + cur().hname + 'は 力つきた…'); await sleep(1400);
-    d.last = n; if (n > d.best) d.best = n; spend('defeat');
+    d.last = n; if (n > d.best) d.best = n; spend('defeat'); S.floorDone = true; saveNow();
     var rec = n >= d.best && n > 0;
     var sub = (n >= C.minions ? 'ざこは ぜんぶ たおした！ あとは ボスだけや。' : '今回は ' + n + ' 体 たおして ここまで。') + (HOST.exp && HOST.exp.left <= 0 ? '<br>今回の遠征は ここまで。次の見回り（' + HOST.exp.next + 'ごろ）で ' + HOST.exp.max + '回ぶん 回復する。' : '');
     openModal('<div class="dropbox"><div class="dtitle">ひんし…</div><div class="dname2">' + n + ' / ' + C.minions + ' 体</div><div class="dsub">' + sub + (rec ? '<br>これが 今までの ベスト記録！' : '<br>ベスト記録は ' + d.best + ' 体。') + '<br>' + d.floor + 'F の はじめから やり直しになる。<br>タスクをこなして 強化チャンスと素材を ためよう。<br>いまは 強化チャンス ' + S.charges + '回・素材 ' + S.mats + 'こ。</div>' +
@@ -2264,13 +2277,13 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     S.battle = null; renderEnemy(); for (var k2 in allyImgs) allyImgs[k2].classList.remove('fall'); enemyImg.style.opacity = 0;
   }
   async function floorClear(d) {
-    var dr = d.drop, better = dr.base > S.weapon.base, gain; addInv({ slot: 'weapon', name: dr.name, rare: dr.rare, base: dr.base, ramp: dr.ramp });
+    S.floorDone = true; var dr = d.drop, better = dr.base > S.weapon.base, gain; addInv({ slot: 'weapon', name: dr.name, rare: dr.rare, base: dr.base, ramp: dr.ramp });
     if (better) { S.weapon = { name: dr.name, rare: dr.rare, base: dr.base, ramp: dr.ramp }; gain = dr.name + ' を手に入れて そうびした！'; } else gain = dr.name + ' を手に入れた！';
     S.mats += 3; S.charges += 1; var bit = rollDrop(10, true), beq = equipItem(bit); gain += '　さらに ' + bit.name + '[' + bit.rare + '] ' + itemDesc(bit) + (beq ? '（そうびした）' : '（素材+1）'); equipArt();
     openModal('<div class="dropbox"><div class="dtitle">フロア クリア！</div><div class="dicon" id="dicon"></div><div class="dname2">' + dr.name + ' <b class="r-' + dr.rare + '">' + dr.rare + '</b></div><div class="dsub">攻撃力 ' + fmt(dr.base) + (better ? '　（そうび中）' : '') + '　／ 素材 +3 ・ 強化チャンス +1 ・ 懸賞金 +' + gf(S.lastBounty || 0) + 'G</div><button class="mbtn" data-next>次の階へ すすむ</button></div>', 'center');
     var ic = makeSword(dr.ramp); ic.style.width = '160px'; ic.style.height = '160px'; $('#dicon').appendChild(ic); say(gain);
     spend('clear'); toHost('floorClear', { dungeon: d.id, floor: d.floor });
-    d.floor = Math.min(d.floors, d.floor + 1); d.cleared++; d.best = 0; d.last = null; d.tries = 0;
+    d.floor = Math.min(d.floors, d.floor + 1); d.cleared++; d.best = 0; d.last = null; d.tries = 0; saveNow();
   }
   modal.addEventListener('click', function (e) {
     if (e.target.closest('[data-retry]')) { closeModal(); startRun(cur()); S.busy = false; render(); say('もういちど ' + cur().floor + 'F の はじめから！ ' + cur().hname + 'は 回復した。'); }
@@ -2490,9 +2503,9 @@ b.r-SR { background: #7a38c8; color: #fff; padding: 0 6px; font-weight: normal; 
     HOST.exp = p.expedition && typeof p.expedition === 'object' ? { max: Math.max(1, num(p.expedition.max, 3)), left: Math.max(0, num(p.expedition.left, 3)), next: txt(p.expedition.next, 8) } : null;
     document.documentElement.classList.add('hosted');
     var w = document.getElementById('hostwait'); if (w) w.remove();
-    if (first || cur().id !== prevId) { startRun(cur()); enemyImg.style.opacity = 0; equipArt(); if (AC) musicNow(); }
+    var resumed2 = false; if (first || cur().id !== prevId) { startRun(cur()); enemyImg.style.opacity = 0; equipArt(); if (AC) musicNow(); if (first && sv && sv.run) resumed2 = restoreRun(sv.run); }
     if (first) kick(); // 親のボタンで開いた直後なら、ゲームの中をさわる前でも曲を始められることがある（だめなら最初のクリック／キーで始まる）
-    render(); if (first) say(cur().name + '。矢印キー（WASD）か 十字ボタンで あるこう。 ざこを ' + C.minions + '体 たおすと 奥の扉が ひらく！');
+    render(); if (first && resumed2) say('前回の つづきから 再開！ ' + cur().name + '　ざこ ' + S.run.cleared + ' / ' + C.minions + '体。 （敵を1体たおすごとに オートセーブされる）'); else if (first) say(cur().name + '。矢印キー（WASD）か 十字ボタンで あるこう。 ざこを ' + C.minions + '体 たおすと 奥の扉が ひらく！');
   }
   window.addEventListener('message', function (e) {
     if (e.source !== window.parent || !e.data || e.data.src !== 'chii-host' || e.data.type !== 'data') return;
