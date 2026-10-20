@@ -1,0 +1,26 @@
+:root{--paper:#ffffff;--pink:#1a1a1a;--psub:#555555;--pline:#9aa39d;--sans:'Noto Sans JP','IPAGothic','IPAPGothic','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;--serif:'Noto Serif JP','IPAGothic','Hiragino Mincho ProN','Yu Mincho',serif}
+.paper{width:794px;min-height:1123px;background:var(--paper);color:var(--pink);font-family:var(--sans);font-size:13px;line-height:1.6;padding:56px 60px;position:relative}
+.paper h3{font-family:var(--serif);font-weight:700;font-size:30px;letter-spacing:.7em;text-align:center;margin:0 0 26px;padding-left:.7em}
+.paper .meta{display:flex;justify-content:flex-end;gap:22px;font-size:12px;color:var(--psub);margin-bottom:6px}
+.paper .to{display:flex;align-items:baseline;gap:10px;border-bottom:1.5px solid var(--pink);padding-bottom:4px;width:62%;font-size:20px;font-family:var(--serif)}
+.paper .to small{font-size:15px}
+.paper .amt{margin:22px 0 14px;border:2px solid var(--pink);display:flex;align-items:baseline;justify-content:space-between;padding:10px 18px}
+.paper .amt span{font-size:13px;letter-spacing:.2em}
+.paper .amt b{font-family:var(--serif);font-size:32px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.paper .amt i{font-style:normal;font-size:12px;color:var(--psub)}
+.paper .row2{display:flex;gap:24px;align-items:flex-start;justify-content:space-between}
+.paper .iss{font-size:12.5px;line-height:1.7;text-align:left;min-width:250px}
+.paper .iss b{font-size:15px;display:block;font-family:var(--serif)}
+.paper table{width:100%;border-collapse:collapse;margin-top:18px;font-size:12.5px}
+.paper th{background:#eef0ee;border:1px solid var(--pline);padding:5px 8px;font-weight:500;text-align:center}
+.paper td{border:1px solid var(--pline);padding:6px 8px;font-variant-numeric:tabular-nums}
+.paper td.r{text-align:right}.paper td.c{text-align:center}
+.paper .tot{margin-left:auto;margin-top:12px;width:300px;font-size:13px}
+.paper .tot div{display:flex;justify-content:space-between;padding:3px 8px;border-bottom:1px solid var(--pline);font-variant-numeric:tabular-nums}
+.paper .tot .g{font-weight:700;font-size:15px;border-bottom:2px solid var(--pink)}
+.paper .note{margin-top:20px;font-size:12px;white-space:pre-wrap;border-top:1px solid var(--pline);padding-top:8px}
+.paper .stamp{position:absolute;right:60px;bottom:60px;width:130px;height:130px;border:1.5px dashed var(--pline);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--psub);text-align:center}
+.paper .bank{margin-top:14px;font-size:12.5px;white-space:pre-wrap;border:1px solid var(--pline);padding:8px 12px}
+.paper .for{margin:6px 0 4px;font-size:15px}
+.paper .tag{display:inline-block;border:1px solid var(--pink);padding:0 8px;font-size:11px;margin-right:6px}
+@page{size:210mm 297mm;margin:0}html,body{margin:0;background:#fff;height:1100px;overflow:hidden}.paper{height:1100px;min-height:0;overflow:hidden;break-after:avoid}
