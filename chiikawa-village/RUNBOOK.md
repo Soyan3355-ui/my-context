@@ -391,6 +391,12 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
 
 ## お金の見通し（2026-10-01 そーやんの依頼）
 
+### 更新とタスク化のルール（2026-10-20 追加）
+- 朝の回では、freee の楽天銀行の残高と直近の明細（GET のみ：`/api/1/walletables?with_balance=true&with_sync_status=true`、`/api/1/wallet_txns`）を読み、`finance` の `asOf`・`cash.items`・`check`（残高の見込み・これからの入出金）を更新する。前回の `asOf` から3日以上あいていたら必ず更新する（週次だけに頼らない）
+- 更新したら、実績になった入出金は `check.out/in` から外し、見込みの残高（`check.balance`・`forecast`）を最新の残高から計算し直す
+- 「そーやんが動くこと」（期限のある振込・入金・手続き・口座の再接続・確認）が見つかったら、率先して `tasks` に起票する。`tag:'お金'`・`pri`・`due` をつけ、Notion のタスクDBにも同時に作る。画面のタイトル・Notion には金額・名前を書かない（詳細は `data/users/me/finance`）
+- 画面の「お金の見通し」は、会話モードでは「そーやんの仕事」の1つ上に出る。くりまんじゅうに相談する窓口が最上段にある
+
 - 画面の「💰 お金の見通し」に、銀行の残高・月末残高の推移と見込み・月ごとの売上と経費・毎月くり返す入出金・赤信号を出す
 - データは db の `data/users/<そーやんの id>/finance`（ArtifactData では collection `data/users/me`、doc `finance`）。**そーやんだけに見える場所**に置く
   - 家族への振込や家族からの入金など、個人のお金が混ざっているため
