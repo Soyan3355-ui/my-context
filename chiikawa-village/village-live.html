@@ -370,7 +370,7 @@ body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
 .exs .arch{position:absolute;left:46%;top:30px;width:38px;height:58px;border:4px solid var(--wb);border-radius:19px 19px 0 0;background:linear-gradient(var(--s1),var(--s2));box-shadow:inset 0 0 0 2px rgba(0,0,0,.25),0 0 0 2px rgba(0,0,0,.3)}
 .exs .arch::after{content:'';position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--wb)}
 .exs .pil{position:absolute;bottom:34px;top:0;width:20px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.1) 40%,rgba(0,0,0,.3));border-left:2px solid rgba(0,0,0,.35);border-right:2px solid rgba(0,0,0,.35)}
-.exs.in .twl{top:auto;bottom:4px;right:auto;left:6px;z-index:2}
+.exs.in .twl{top:auto;bottom:6px;right:auto;left:50%;transform:translateX(-50%);z-index:2;font-size:15px;font-weight:700;padding:1px 16px;background:#2a2838;color:#ffe8a0;border:2px solid #ffd23a;white-space:nowrap}.exs.in .twl b{font-size:22px;font-family:var(--dot);color:#fff;margin:0 3px}
 .exs .torch{position:absolute;top:50px;width:14px;height:34px}
 .exs .torch::before{content:'';position:absolute;left:4px;bottom:0;width:6px;height:16px;background:#5a3a1e;border:2px solid #2a1a10;border-radius:2px}
 .exs .torch::after{content:'';position:absolute;left:1px;top:0;width:12px;height:18px;border-radius:50% 50% 50% 50%/65% 65% 35% 35%;background:radial-gradient(circle at 50% 70%,#fff6b0 0 25%,#ffb030 55%,#ff5a1a);box-shadow:0 0 18px 9px rgba(255,160,50,.38);animation:extf .45s steps(2) infinite}
@@ -2441,7 +2441,7 @@ const ITM=[{id:'potion',name:'きずぐすり',price:50,ico:'🩹',desc:'戦い�
 const TRS=[['shell','貝がら','🐚','C'],['acorn','きんのどんぐり','🌰','C'],['feather','ふしぎな羽根','🪶','C'],['clover','四つ葉','🍀','C'],['map','古い地図','📜','C'],['ribbon','リボン','🎀','C'],['teddy','ぬいぐるみ','🧸','C'],['candy','あまいアメ','🍬','C'],
  ['ruby','ルビー','🔴','R'],['sapphire','サファイア','🔷','R'],['emerald','エメラルド','🟢','R'],['amethyst','アメジスト','🟣','R'],['topaz','トパーズ','🟡','R'],['pearl','しんじゅ','⚪','R'],['key','古い鍵','🗝️','R'],['pot','ふるいつぼ','🏺','R'],['coin','古代の金貨','🪙','R'],['compass','コンパス','🧭','R'],['crystal','水晶玉','🔮','R'],
  ['diamond','ダイヤモンド','💎','SR'],['crown','王冠','👑','SR'],['trophy','トロフィー','🏆','SR'],['ring','ゆびわ','💍','SR'],['star','星のかけら','🌟','SR'],['moon','つきのしずく','🌙','SR'],['egg','ふしぎなたまご','🥚','SR']].map(a=>({id:a[0],name:a[1],ico:a[2],rare:a[3]}));
-const expFresh=()=>({gold:0,stage:1,wave:1,used:{},weapon:'w0',own:{w0:1},items:{potion:1,charm:0},dex:{foes:{},treasure:{}},wins:0,bossWins:0});
+const expFresh=()=>({tries:3,slot:0,run:false,gold:0,stage:1,wave:1,used:{},weapon:'w0',own:{w0:1},items:{potion:1,charm:0},dex:{foes:{},treasure:{}},wins:0,bossWins:0});
 const expWp=()=>WP.find(w=>w.id===EXP.s.weapon)||WP[0];
 const expL=()=>Object.keys(EXP.s.used).length;
 const expStats=()=>{const L=expL();return {L,hp:60+8*L,atk:6+expWp().atk+Math.round(1.5*L)}};
@@ -2478,7 +2478,20 @@ function fxNum(txt,cls,x,y){fxAdd(`<b class="xf f-num ${cls||''}" style="left:${
 function fxClaim(i,total,txt){const sk=total>12&&i%2;if(sk)return;const x=14+Math.random()*10,y=60,sp=[];for(let k=0;k<10;k++)sp.push(`<i class="xf f-spk" style="left:${x}%;top:${y}%;--dx:${Math.round(Math.cos(k*.63)*70)}px;--dy:${Math.round(Math.sin(k*.63)*60-30)}px"></i>`);
   fxAdd(`<i class="xf f-beam" style="left:${x}%;top:${y}%"></i>`,600);fxAdd(`<i class="xf f-ring y" style="left:${x}%;top:${y}%"></i>`,700);sp.forEach(h=>fxAdd(h,800));fxNum(txt,'gold',x+8,y-18)}
 // ----- 戦闘
-function expStart(){const s=EXP.s,e=expEnemy(s),st=expStats();EXP.b={e,ehp:e.hp,php:st.hp,pmax:st.hp,atk:st.atk,cd:0,nextE:performance.now()+1000,hits:0,charm:false,charmMsg:''};EXP.mode='fight';EXP.view='main';expRender();clearInterval(EXP.tick);EXP.tick=setInterval(expTick,100)}
+// ----- 挑戦回数（3回。見回りの時刻ごとに3回にもどる）
+const EXSL=[5*60+7,10*60+47,13*60+47,17*60+47,20*60+47];
+function expSlotInfo(now){const j=new Date((now||Date.now())+9*36e5),m=j.getUTCHours()*60+j.getUTCMinutes(),day=Date.UTC(j.getUTCFullYear(),j.getUTCMonth(),j.getUTCDate());let cur=null,nxt=null;
+  for(const x of EXSL){if(x<=m)cur=day+x*6e4;else if(nxt==null)nxt=x}
+  if(cur==null)cur=day-864e5+EXSL[EXSL.length-1]*6e4;
+  const nm=nxt==null?EXSL[0]:nxt;return {slot:cur,next:pad2(Math.floor(nm/60))+':'+pad2(nm%60)}}
+const pad2=n=>String(n).padStart(2,'0');
+const expTriesLeft=()=>{const s=EXP.s;return s.slot===expSlotInfo().slot?s.tries:3};
+function expUseTry(){const s=EXP.s,si=expSlotInfo();if(s.slot!==si.slot){s.slot=si.slot;s.tries=3}if(s.tries<=0)return false;s.tries--;return true}
+function expFightBtn(kind){const s=EXP.s;if(s.run&&kind!=='again')return `<button type="button" class="ex-atk go" data-act="fight">▶ ${kind==='win'?'つぎの敵と たたかう':'つづきから たたかう'}</button>`;
+  const n=expTriesLeft(),nx=expSlotInfo().next;
+  return n>0?`<button type="button" class="ex-atk go" data-act="fight">⚔ ${kind==='again'?'もういちど ':''}たたかう！<small>挑戦 あと ${n}回（1回つかう）</small></button>`:`<button type="button" class="ex-atk go" disabled>💤 きょうの挑戦は おしまい<small>${nx} の見回りで 3回に回復するよ</small></button>`}
+const expTriesChip=()=>{const n=expTriesLeft();return `<span class="ex-chip">🎫 挑戦 ${'●'.repeat(n)}${'○'.repeat(3-n)}　次の回復 ${expSlotInfo().next}</span>`};
+function expStart(){const s=EXP.s;if(!s.run){if(!expUseTry()){expRender();return}s.run=true;expSave()}const e=expEnemy(s),st=expStats();EXP.b={e,ehp:e.hp,php:st.hp,pmax:st.hp,atk:st.atk,cd:0,nextE:performance.now()+1000,hits:0,charm:false,charmMsg:''};EXP.mode='fight';EXP.view='main';expRender();clearInterval(EXP.tick);EXP.tick=setInterval(expTick,100)}
 function expLeave(){clearInterval(EXP.tick);EXP.b=null;EXP.mode='idle';expRender()}
 function expAttack(){const b=EXP.b;if(EXP.mode!=='fight'||!b||b.over)return;const n=performance.now();if(n<b.cd)return;b.cd=n+300;const crit=Math.random()<.1,d=Math.max(1,Math.round(b.atk*(.9+Math.random()*.2)*(crit?1.6:1)));b.ehp=Math.max(0,b.ehp-d);b.hits++;
   const pt=document.querySelectorAll('#exScene .pt');const a=pt[b.hits%pt.length];if(a){a.classList.remove('atk');void a.offsetWidth;a.classList.add('atk')}
@@ -2496,10 +2509,10 @@ function expTick(){const b=EXP.b;if(EXP.mode!=='fight'||!b||b.over)return;const 
 function expUsePotion(){const b=EXP.b,s=EXP.s;if(EXP.mode!=='fight'||!b||b.over||s.items.potion<=0||b.php>=b.pmax)return;s.items.potion--;const h=Math.round(b.pmax*.5);b.php=Math.min(b.pmax,b.php+h);fxNum('+'+h,'heal',16,30);SND.buy();expSave();expBars();const q=document.getElementById('exPot');if(q)q.textContent='🩹 きずぐすり ×'+s.items.potion}
 function expWin(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e;s.gold+=e.gold;s.dex.foes[e.kind]=(s.dex.foes[e.kind]||0)+1;s.wins++;let drop=null,dup=0;
   if(e.boss){const un=TRS.filter(t=>!s.dex.treasure[t.id]),pool=un.length&&Math.random()<.8?un:TRS,w={C:55,R:35,SR:10},tot=pool.reduce((a,t)=>a+w[t.rare],0);let r=Math.random()*tot;drop=pool[pool.length-1];for(const t of pool){r-=w[t.rare];if(r<=0){drop=t;break}}
-    dup=s.dex.treasure[drop.id]?{C:60,R:150,SR:400}[drop.rare]:0;s.dex.treasure[drop.id]=(s.dex.treasure[drop.id]||0)+1;if(dup)s.gold+=dup;s.stage++;s.wave=1;s.bossWins++}else s.wave++;
+    dup=s.dex.treasure[drop.id]?{C:60,R:150,SR:400}[drop.rare]:0;s.dex.treasure[drop.id]=(s.dex.treasure[drop.id]||0)+1;if(dup)s.gold+=dup;s.stage++;s.wave=1;s.run=false;s.bossWins++}else s.wave++;
   const f=document.getElementById('exFoe');if(f)f.classList.add('dead');EXP.res={g:e.gold,drop,dup,boss:e.boss,e,next:expEnemy(s)};expSave();SND.win();if(drop)setTimeout(SND.treasure,500);
   setTimeout(()=>{EXP.mode=drop?'treasure':'win';expRender()},drop?650:500)}
-function expLose(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e,st=expStats();s.wave=1;EXP.res={e,rate:expRate(e,st),pend:expPend().length};expSave();SND.lose();EXP.mode='lose';expRender()}
+function expLose(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e,st=expStats();s.wave=1;s.run=false;EXP.res={e,rate:expRate(e,st),pend:expPend().length};expSave();SND.lose();EXP.mode='lose';expRender()}
 // ----- 力にする
 function expClaim(){if(EXP.claiming&&Date.now()-EXP.claimAt>8000)EXP.claiming=false;const list=expPend();if(!list.length||EXP.claiming)return;EXP.claiming=true;EXP.claimAt=Date.now();list.forEach(t=>{EXP.s.used[t.id]=1});expSave();const gap=list.length>12?70:130;list.forEach((t,i)=>setTimeout(()=>{SND.claim(i);fxClaim(i,list.length,'ちから +1');const c=document.getElementById('exLv');if(c)c.textContent='Lv '+expL()},i*gap));setTimeout(()=>{EXP.claiming=false;expSave();expRender()},list.length*gap+350)}
 // ----- 表示
@@ -2553,8 +2566,8 @@ const expTower=()=>{const s=EXP.s;return `<div class="twr cur" style="background
 function expHelp(){const t=(h,l)=>`<h4>${h}</h4>${l}`;return `<div class="ex-pan"><div class="ex-ph"><b>📘 あそびかた・しくみ</b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-help">
 ${t('🏰 塔をのぼる','<p>1つの「ステージ」＝1つの塔。1階〜5階はザコ、6階にボス。1階ずつたおして上をめざそう。ボスをたおすと次の塔（ステージ）へ。</p>')}
 ${t('⚡ ちから（Lv）','<ul><li>完了したタスク1件を「力にする」と、<b>ちから Lv が +1</b>。HP と こうげきが少し上がる。</li><li>「力にする」を押すまでは強くならない。押すと数が減って、Lv が増える。</li><li>チャットの会話を片づけたり、「そーやんの仕事」を完了にしたものも数える。</li></ul>')}
-${t('⚔ たたかい','<ul><li>戦いは<b>オート</b>。みんなが自動でこうげきして、敵の HP が 0 で勝ち。ボタンをタップすると おまけの こうげき。HP がへると きずぐすりも自動で使うよ。</li><li>敵は <b>ちから Lv に合わせて強くなる</b>。階が上がるほど さらに強い。目安は ★（★が少ないほど楽）。</li><li>やられても何度でも挑戦できる。<b>やられると その塔の1階にもどる</b>。</li><li>敵を1体たおすたびに 自動セーブ。</li></ul>')}
-${t('🔁 同じ敵とまた戦うのは？','<p>やられて1階にもどると、また1階のザコと戦えるよ。たおすたびに賞金はもらえるので、<b>お金かせぎ</b>にもなる（ずかんのモンスターは回数がふえる）。お宝は ボスだけ。</p>')}
+${t('⚔ たたかい','<ul><li>戦いは<b>オート</b>。みんなが自動でこうげきして、敵の HP が 0 で勝ち。ボタンをタップすると おまけの こうげき。HP がへると きずぐすりも自動で使うよ。</li><li>敵は <b>ちから Lv に合わせて強くなる</b>。階が上がるほど さらに強い。目安は ★（★が少ないほど楽）。</li><li>塔への<b>挑戦は3回まで</b>。見回りの時刻（5:07・10:47・13:47・17:47・20:47）に、3回にもどる。塔に入るときに1回つかい、勝ち進んでいるあいだは つかわない。<b>やられると その塔の1階にもどる</b>ので、もう1回つかって挑戦する。</li><li>敵を1体たおすたびに 自動セーブ。</li></ul>')}
+${t('🔁 同じ敵とまた戦うのは？','<p>やられて1階にもどると、また1階のザコと戦えるよ（挑戦を1回つかう）。たおすたびに賞金はもらえる。お宝は ボスだけ。</p>')}
 ${t('💰 賞金と ショップ','<p>ザコの賞金で ショップの<b>武器</b>と<b>アイテム</b>を買える。武器は こうげきがふえて、エフェクトもちがう。持っている武器は、いつでも画面の下のボタンで持ちかえできる（ちいかわたちも装備して持つよ）。</p>')}
 ${t('💎 お宝・ずかん','<p>ボスをたおすとお宝が1つ。ダブったときはお金になる。お宝は強さには関係なし、あつめて楽しむだけ。ずかんで お宝・武器・モンスターが見られるよ。</p>')}
 </div></div>`}
@@ -2568,10 +2581,10 @@ function expInBg(wave){const T=EXIN[Math.min(wave,6)-1];if(_inc[wave])return _in
   return _inc[wave]={wl:svgU(48,32,w),fl:svgU(48,40,f),wb:T.m}}
 const expInLayers=wave=>{const g=expInBg(wave);return `<div class="wall"></div><i class="pil" style="left:3%"></i><i class="pil" style="right:3%"></i><i class="arch"></i><i class="torch" style="left:34%"></i><i class="torch" style="left:78%"></i>${wave>=6?'<i class="ban" style="left:24%"></i><i class="ban" style="left:68%"></i>':''}<div class="flr"></div>`};
 function expScene(foe,boss,bars){const inn=!!foe,wv=EXP.s.wave,ig=expInBg(wv);
-  return `<div class="exs ${inn?'in bt'+(wv>=6?' bs':''):'idle'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}${inn?`--wl:${ig.wl};--fl:${ig.fl};--wb:${ig.wb};`:''}" role="img" aria-label="ちいかわたちが遠征で戦う様子">${inn?expInLayers(wv)+`<div class="twl">🏰 第${EXP.s.stage}の塔　${wv}F／6F${wv>=6?' 👑':''}</div>`:'<i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>'+expTower()}${expParty()}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
+  return `<div class="exs ${inn?'in bt'+(wv>=6?' bs':''):'idle'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}${inn?`--wl:${ig.wl};--fl:${ig.fl};--wb:${ig.wb};`:''}" role="img" aria-label="ちいかわたちが遠征で戦う様子">${inn?expInLayers(wv)+`<div class="twl">🏰 第${EXP.s.stage}の塔　<b>${wv}F</b>／6F${wv>=6?' 👑BOSS':''}</div>`:'<i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>'+expTower()}${expParty()}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
 function expRender(){const el=document.getElementById('expBody');if(!el||!EXP.s)return;const s=EXP.s,st=expStats(),m=EXP.mode,pend=expPend().length;let h='';
   const snd=`<button type="button" class="ex-mini" data-act="mute" aria-label="音の入切">${EXP.mute?'🔇':'🔊'}</button>`;
-  const chips=`<div class="ex-chips"><span class="ex-chip">⭐ ちから <b id="exLv">Lv ${st.L}</b></span><span class="ex-chip">❤ ${st.hp}</span><span class="ex-chip">⚔ ${st.atk}</span><span class="ex-chip">${expWp().ico} ${esc(expWp().name)}</span><span class="ex-chip">💰 <b>${s.gold.toLocaleString('en-US')}</b>G</span>${snd}</div>`;
+  const chips=`<div class="ex-chips"><span class="ex-chip">⭐ ちから <b id="exLv">Lv ${st.L}</b></span><span class="ex-chip">❤ ${st.hp}</span><span class="ex-chip">⚔ ${st.atk}</span><span class="ex-chip">${expWp().ico} ${esc(expWp().name)}</span><span class="ex-chip">💰 <b>${s.gold.toLocaleString('en-US')}</b>G</span>${expTriesChip()}${snd}</div>`;
   const claim=pend>0?`<button type="button" class="ex-claim" data-act="claim">⚡ 力にする（${pend}件）<small>完了したタスクが ちからになる</small></button>`:`<div class="ex-ok">✅ 完了したタスクは すべて ちからになっているよ</div>`;
   const nav=`<div class="ex-nav"><button type="button" data-act="shop">🛒 ショップ</button><button type="button" data-act="dex">📖 ずかん</button><button type="button" data-act="help">📘 あそびかた</button></div>`;
   if(EXP.view==='shop')h=expShop();else if(EXP.view==='dex')h=expDex();else if(EXP.view==='help')h=expHelp();
@@ -2579,13 +2592,13 @@ function expRender(){const el=document.getElementById('expBody');if(!el||!EXP.s)
     `<div class="exh"><button type="button" class="ex-atk" id="exAtk" data-act="atk">⚔ オートで たたかい中！<small>タップで おまけの こうげき</small></button><div class="ex-row2">${s.items.potion>0?`<button type="button" class="ex-sub" id="exPot" data-act="potion">🩹 きずぐすり ×${s.items.potion}</button>`:''}<button type="button" class="ex-sub" data-act="leave">にげる</button></div></div>`}
   else{const e=m==='win'||m==='treasure'?EXP.res.next:m==='lose'?EXP.res.e:expEnemy(s),rt=expRate(e,st);
     const poster=`<div class="ex-w"><span class="ic">${foeImg(e.kind)}</span><div><div class="wt">WANTED${e.boss?' ・ BOSS':''}</div><div class="wn">${esc(e.name)}</div><div class="wp">賞金 <b class="gold">${e.gold}G</b>　${rt.stars} ${rt.label}</div></div></div>`;
-    if(m==='win'){const r=EXP.res;h=expScene('',false)+`<div class="exh"><div class="ex-res">🎉 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div>${poster}<button type="button" class="ex-atk go" data-act="fight">▶ つぎの敵と たたかう</button><button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${claim}${nav}</div>`}
+    if(m==='win'){const r=EXP.res;h=expScene('',false)+`<div class="exh"><div class="ex-res">🎉 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div>${poster}${expFightBtn('win')}<button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${claim}${nav}</div>`}
     else if(m==='treasure'){const r=EXP.res,d=r.drop;h=expScene('',false)+`<div class="exh"><div class="ex-res">👑 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div><div class="ex-tr r-${d.rare}"><div class="tic">${d.ico}</div><div><b>${esc(d.name)}</b> <span class="rr">${d.rare}</span><div class="tn">${r.dup?'もう持っていた… ' + r.dup+'G に かわった':'✨ NEW！ ずかんに のこった'}</div></div></div>${poster}<button type="button" class="ex-atk go" data-act="idle">▶ つぎのステージへ（ステージ ${s.stage}）</button>${chips}${expWpRow()}${claim}${nav}</div>`}
-    else if(m==='lose'){const r=EXP.res;h=expScene(foeImg(r.e.kind),r.e.boss)+`<div class="exh"><div class="ex-res lose">💤 やられた…　${esc(r.e.name)}は ${r.rate.label}だった</div><div class="ex-adv">${pend>0?'⚡ まだ「力にする」していない完了タスクが '+pend+'件あるよ！ ちからにして、もういちど！':'いまの ちからでは まだ勝てない。<b>タスクをこなして「力にする」</b>と、もっと強くなれる！ 武器を買うのもアリ。'}</div>${claim}<button type="button" class="ex-atk go" data-act="fight">⚔ もういちど たたかう</button><button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${nav}</div>`}
-    else{h=expScene('',false)+`<div class="exh"><div class="ex-prog"><b>ステージ ${s.stage}</b><span class="pips">${expPips(s)}</span></div>${poster}<button type="button" class="ex-atk go" data-act="fight">⚔ たたかう！</button>${chips}${expWpRow()}${claim}${nav}</div>`}}
+    else if(m==='lose'){const r=EXP.res;h=expScene(foeImg(r.e.kind),r.e.boss)+`<div class="exh"><div class="ex-res lose">💤 やられた…　${esc(r.e.name)}は ${r.rate.label}だった</div><div class="ex-adv">${pend>0?'⚡ まだ「力にする」していない完了タスクが '+pend+'件あるよ！ ちからにして、もういちど！':'いまの ちからでは まだ勝てない。<b>タスクをこなして「力にする」</b>と、もっと強くなれる！ 武器を買うのもアリ。'}</div>${claim}${expFightBtn('again')}<button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${nav}</div>`}
+    else{h=expScene('',false)+`<div class="exh"><div class="ex-prog"><b>ステージ ${s.stage}</b><span class="pips">${expPips(s)}</span></div>${poster}${expFightBtn('idle')}${chips}${expWpRow()}${claim}${nav}</div>`}}
   el.innerHTML=h;const say=document.getElementById('exSay');if(say)say.textContent=m==='fight'?'オートで たたかってるよ！':m==='lose'?'まけちゃった…':m==='treasure'?'お宝を ゲット！':m==='win'?'やったね！':pend>0?'⏳ 力にしてから しゅっぱつしよ！':'ぼうけんに しゅっぱ〜つ！';
   if(m==='fight')expBars();EXP.sig=expSig()}
-const expSig=()=>EXP.s?[expPend().length,expL(),EXP.s.gold,EXP.s.stage,EXP.s.wave].join('|'):'';
+const expSig=()=>EXP.s?[expPend().length,expL(),EXP.s.gold,EXP.s.stage,EXP.s.wave,expTriesLeft(),EXP.s.run?1:0].join('|'):'';
 // ----- ショップ / ずかん
 function expShop(){const s=EXP.s;const w=WP.map(x=>{const own=s.own[x.id],eq=s.weapon===x.id;return `<li class="shr"><span class="si"><img src="${wpImg(x.id)}" alt="" style="width:26px;height:26px;image-rendering:pixelated"></span><span><b>${esc(x.name)}</b><small>こうげき +${x.atk}　エフェクト：${({slash:'斬撃',fire:'ほのお',ice:'こおり',thunder:'かみなり',star:'ほし',rainbow:'にじ'})[x.fx]}</small></span><span class="sp">${x.price?x.price.toLocaleString('en-US')+'G':'—'}</span>${eq?'<span class="sd">そうび中</span>':own?`<button type="button" data-act="equip" data-id="${x.id}">そうびする</button>`:`<button type="button" data-act="buy" data-id="${x.id}"${s.gold>=x.price?'':' disabled'}>買う</button>`}</li>`}).join('');
   const it=ITM.map(x=>`<li class="shr"><span class="si">${x.ico}</span><span><b>${x.name}</b>（もっている：${s.items[x.id]||0}）<small>${x.desc}</small></span><span class="sp">${x.price}G</span><button type="button" data-act="buyi" data-id="${x.id}"${s.gold>=x.price?'':' disabled'}>買う</button></li>`).join('');
