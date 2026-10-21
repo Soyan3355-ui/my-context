@@ -2830,6 +2830,7 @@ const expGo=()=>{const h=$('h-exp');if(h)h.scrollIntoView({behavior:'smooth',blo
 $('dgnBtn').addEventListener('click',expGo);
 document.addEventListener('click',e=>{if(e.target.closest('[data-expgo]')){e.preventDefault();expGo()}});
 expInit();
+let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error';try{console.warn('db error',name,e)}catch(_){}const el=document.getElementById('note');if(el)el.innerHTML='⚠️ 共有データを読み込めませんでした（'+Object.keys(DBERR).map(esc).join('・')+'：'+esc(Object.values(DBERR)[0])+'）。ページを開き直してみてください。'}
 // ---------- つながる ----------
 (async()=>{const cl=window.claude;db=cl?await cl.use('db'):null;
   if(cl){try{SAMPLE=await cl.use('sample')}catch(e){}try{MCP=await cl.use('mcp')}catch(e){}try{ASSETS=await cl.use('assets')}catch(e){}}if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await chatProbe();chatAvail();renderChatUi();
@@ -2843,26 +2844,26 @@ expInit();
     const a=AUDITS.slice().sort(byTime).pop();if(a&&!seen['au:'+a.id]&&Date.now()-(a.createdAt||0)<7*864e5)enqueue(auditScene(a));
     if(!scene)idle()}
   const live=s=>s.docChanges().filter(c=>!c.doc.metadata.hasPendingWrites);
-  db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus();if(!ready.status&&(!s.metadata.fromCache||s.exists)){ready.status=true;boot()}},()=>{});
-  db.collection('board').onSnapshot(s=>{BOARD=s.docs.map(d=>({id:d.id,...d.data()}));renderBoard();renderChatUi()},()=>{});
+  db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus();if(!ready.status&&(!s.metadata.fromCache||s.exists)){ready.status=true;boot()}},e=>dbErr('status/now',e));
+  db.collection('board').onSnapshot(s=>{BOARD=s.docs.map(d=>({id:d.id,...d.data()}));renderBoard();renderChatUi()},e=>dbErr('board',e));
   db.collection('exceptions').onSnapshot(s=>{XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();renderDigest();
     if(!ready.ex){if(!s.metadata.fromCache||XCS.length){ready.ex=true;boot()}return}
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
-  db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},()=>{});
-  db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},()=>{});
-  db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?pmApply(JSON.parse(JSON.stringify(s.data()))):null;if(TL)renderTL();renderQuest()},()=>{});
-  db.doc('tokens/now').onSnapshot(s=>{TOK=s.exists?s.data():null;renderTok()},()=>{});
+  db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},e=>dbErr('work',e));
+  db.collection('focus').onSnapshot(s=>{FLOG=s.docs.map(d=>({id:d.id,...d.data()}));renderFocus(false)},e=>dbErr('focus',e));
+  db.doc('timeline/now').onSnapshot(s=>{TL=s.exists?pmApply(JSON.parse(JSON.stringify(s.data()))):null;if(TL)renderTL();renderQuest()},e=>dbErr('timeline/now',e));
+  db.doc('tokens/now').onSnapshot(s=>{TOK=s.exists?s.data():null;renderTok()},e=>dbErr('tokens/now',e));
   // クエスト欄は廃止（2026-10-02）
-  db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},()=>{});
-  db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},()=>{});
-  db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},()=>{});
-  db.doc('brief/now').onSnapshot(s=>{BRIEF.shared=s.exists?s.data():null},()=>{});
-  db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},()=>{});
-  db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},()=>{});
-  db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine();renderDigest()},()=>{});
-  db.collection('checkins').onSnapshot(s=>{CHECKINS=s.docs.map(d=>({id:d.id,...d.data()}));renderCheckinForm()},()=>{});
-  db.doc('video/now').onSnapshot(s=>{VIDEO=s.exists?s.data():null;renderVideo()},()=>{});
-  db.collection('videoreqs').onSnapshot(s=>{VREQ=s.docs.map(d=>({id:d.id,...d.data()}));renderVideo()},()=>{});
+  db.collection('apps').onSnapshot(s=>{APPS=s.docs.map(d=>({id:d.id,...d.data()}));renderApps()},e=>dbErr('apps',e));
+  db.collection('ideas').onSnapshot(s=>{IDEAS=s.docs.map(d=>({id:d.id,...d.data()}));renderIdeas()},e=>dbErr('ideas',e));
+  db.collection('audits').onSnapshot(s=>{AUDITS=s.docs.map(d=>({id:d.id,...d.data()}));renderAudit()},e=>dbErr('audits',e));
+  db.doc('brief/now').onSnapshot(s=>{BRIEF.shared=s.exists?s.data():null},e=>dbErr('brief/now',e));
+  db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},e=>dbErr('decisions',e));
+  db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},e=>dbErr('notes',e));
+  db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine();renderDigest()},e=>dbErr('tasks',e));
+  db.collection('checkins').onSnapshot(s=>{CHECKINS=s.docs.map(d=>({id:d.id,...d.data()}));renderCheckinForm()},e=>dbErr('checkins',e));
+  db.doc('video/now').onSnapshot(s=>{VIDEO=s.exists?s.data():null;renderVideo()},e=>dbErr('video/now',e));
+  db.collection('videoreqs').onSnapshot(s=>{VREQ=s.docs.map(d=>({id:d.id,...d.data()}));renderVideo()},e=>dbErr('videoreqs',e));
   setTimeout(()=>{ready.status=ready.ex=true;boot()},6000);
   setTimeout(newsAuto,7000);
 })();
