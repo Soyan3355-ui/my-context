@@ -259,8 +259,8 @@ form.add input{flex:1;min-width:0;font-family:var(--body);font-size:14px;padding
 .simple .top>.stage,.simple .top .side>.nowbox,.simple .top .side>.win,.simple .top .side>.focus,.simple .arr-bar,.simple .md-nudge[hidden]{display:none!important}
 .simple .top{display:block}.simple .top .side{display:block}
 .simple .cols{display:flex;flex-direction:column;align-items:stretch}.simple .cols .colA,.simple .cols .colB{display:contents}
-.simple .cols .box:not([aria-labelledby="h-vc"]):not([aria-labelledby="h-chat"]):not([aria-labelledby="h-ci"]):not([aria-labelledby="h-video"]):not([aria-labelledby="h-exp"]):not([aria-labelledby="h-mine"]):not([aria-labelledby="h-fin"]){display:none}
-.simple .box[aria-labelledby="h-video"]{order:-5!important}.simple .box[aria-labelledby="h-exp"]{order:-8!important}.simple .box[aria-labelledby="h-mine"]{order:-18!important}.simple .box[aria-labelledby="h-fin"]{order:-19!important}
+.simple .cols .box:not([aria-labelledby="h-vc"]):not([aria-labelledby="h-chat"]):not([aria-labelledby="h-ci"]):not([aria-labelledby="h-video"]):not([aria-labelledby="h-bc"]):not([aria-labelledby="h-exp"]):not([aria-labelledby="h-mine"]):not([aria-labelledby="h-fin"]){display:none}
+.simple .box[aria-labelledby="h-video"]{order:-5!important}.simple .box[aria-labelledby="h-bc"]{order:-6!important}.simple .box[aria-labelledby="h-exp"]{order:-8!important}.simple .box[aria-labelledby="h-mine"]{order:-18!important}.simple .box[aria-labelledby="h-fin"]{order:-19!important}
 .simple .box[aria-labelledby="h-xc"]{order:-30!important}.simple .box[aria-labelledby="h-chat"]{order:-20!important}.simple .box[aria-labelledby="h-vc"]{order:-10!important}.simple .box[aria-labelledby="h-ci"]{order:10!important}
 .simple #xcs>.xc:not(:first-child),.simple #xcs>details.xdone{display:none}
 .simple .chat-log{max-height:58vh;min-height:140px}
@@ -577,6 +577,11 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
       <div class="row"><label style="font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center"><input type="checkbox" id="vcWork"> 🛠 仕事の記録</label><button type="button" class="btn-s attbtn" id="vcAtt">📎 添付</button><input type="file" id="vcFile" multiple hidden accept="image/*,application/pdf,.txt,.md,.csv,.json"><button type="submit" class="bt" id="vcSend">受信箱に入れる</button></div>
       <div id="vcAttList" class="attlist"></div><small id="vcMsg" role="status" style="color:var(--sub);font-family:var(--body)"></small></form>
     <div id="vcList"></div>
+  </section>
+  <section style="order:1" class="box" aria-labelledby="h-bc"><h2 id="h-bc">📺 ちいかわ放送局 <small id="bcCnt"></small></h2>
+    <p class="vd-lead">担当：ハチワレ（司会）。YouTube チャンネルの配信計画（番組表）・制作の進み・YouTube の数字は、別ページの「ちいかわ放送局」で見ます。ここには、見回りが集めた要点だけが出ます。</p>
+    <div id="bc"><p class="empty">放送局の要点は、見回りのたびにここに出ます。</p></div>
+    <p style="margin:8px 0 0"><a class="btn-s" href="https://claude.ai/artifact/4sR9MaczXq1Ku4X2Tk8QnN" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none">📺 ちいかわ放送局をひらく</a></p>
   </section>
   <section style="order:1" class="box" aria-labelledby="h-video"><h2 id="h-video">🎬 動画の編集（Clipnote） <small id="vdCnt"></small></h2>
     <p class="vd-lead">担当：モモンガ。Clipnote は Mac の中だけで動くので、頼んだことは Claude Code で「Clipnoteの依頼を拾って」と言うと動きます。モモンガが入れるのは<b>提案だけ</b>（カット案は保留、字幕は未確認）。決めるのは Clipnote の画面のそーやんです。</p>
@@ -1294,7 +1299,7 @@ function renderRoster(){$('roster').innerHTML=ORDER.map(id=>{const r=ROLES[id],s
   const so=STATUS.standing||[];$('standing').innerHTML=so.length?so.map(s=>`<li>✅ ${esc(s.title)}　<small style="color:var(--sub)">${esc(s.limit||'')}・${esc(s.autonomy||'')}</small></li>`).join(''):'<li style="color:var(--sub)">まだありません</li>'}
 function renderDecs(){const list=DECS.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,6);
   $('decs').innerHTML=list.length?list.map(d=>`<div class="dec"><div class="t">${esc(d.title)}</div><p>${esc(d.decided||'')}${d.by?`（${esc(d.by)}・${esc(d.date||'')}）`:''}</p></div>`).join(''):'<p class="empty">決まったことがここに残ります。</p>'}
-function renderStatus(){const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;$('phase').textContent='フェーズ'+(STATUS.phase??0);
+function renderStatus(){try{renderBC()}catch(e){}const d=new Date();$('date').textContent=STATUS.dateLabel||`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;$('phase').textContent='フェーズ'+(STATUS.phase??0);
   const nu=safeUrl(STATUS.notionUrl);$('note').innerHTML=(STATUS.note?esc(STATUS.note)+'　':'')+(STATUS.updatedAt?'最終更新 '+fmt(STATUS.updatedAt)+'　':'')+(nu?`<a href="${esc(nu)}" target="_blank" rel="noopener">Notion のAIなかまの部屋 ↗</a>`:'');
   renderDigest();renderRoster();if(typeof renderTrial==='function')renderTrial()}
 
@@ -2363,12 +2368,16 @@ function drawHover(){if(!BASE||!HOVER)return;const rm=ROOMS.find(r=>r.k===HOVER)
   const set=on=>{f.classList.toggle('fold',on);b.setAttribute('aria-expanded',String(!on));b.querySelector('.arw').textContent=on?'▸':'▾'};
   const b=document.createElement('button');b.type='button';b.className='fold-btn';b.setAttribute('aria-controls','focusBody');b.innerHTML='<span class="arw" aria-hidden="true">▸</span> ';h.insertBefore(b,h.firstChild);
   set(v==='1');b.addEventListener('click',()=>{const on=!f.classList.contains('fold');set(on);try{localStorage.setItem('ck-focusfold',on?'1':'0')}catch(e){}})})();
-const BOXES=['h-vc','h-video','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
+const BOXES=['h-vc','h-bc','h-video','h-hr','h-dg','h-done','h-xc','h-tl','h-fin','h-work','h-app','h-idea','h-chat','h-mine','h-nt','h-bd','h-ci','h-au','h-rs','h-dc'];
 let BOXST={};try{BOXST=JSON.parse(localStorage.getItem('ck-box')||'{}')}catch(e){}
 const saveBox=()=>{try{localStorage.setItem('ck-box',JSON.stringify(BOXST))}catch(e){}};
 const chips=(a)=>a.map(([l,n,c])=>`<span class="cp" style="--c:${c||'var(--line)'}">${l} <b>${n}</b></span>`).join('');
 const dgVisibleAll=k=>((STATUS.digest||{})[k]||[]).filter(dgVisible);
+const bcLine=()=>{const b=STATUS.broadcast;if(!b)return '';const p=[`今週 <b>${+b.thisWeek||0}/${+b.goal||0}</b>本`];if(b.next&&b.next.date)p.push(`次の放送 ${esc(String(b.next.date).slice(5).replace('-','/'))}${b.next.title?'「'+esc(clip(b.next.title,22))+'」':''}`);else if(b.onlySamples)p.push('番組は見本のまま');if(b.late)p.push(`<b style="color:var(--bad)">放送日をすぎた番組 ${+b.late}本</b>`);return p.join('・')};
+const bcYt=()=>{const y=(STATUS.broadcast||{}).yt;return y?`YouTube（${esc(String(y.from||'').slice(5).replace('-','/'))}〜${esc(String(y.to||'').slice(5).replace('-','/'))}）：再生 ${(+y.views||0).toLocaleString('ja-JP')}回・登録者 ${(+y.net||0)>=0?'+':''}${+y.net||0}人`:''};
+function renderBC(){const el=document.getElementById('bc');if(!el)return;const b=STATUS.broadcast;if(!b){return}el.innerHTML=`<div class="li">${bcLine()}</div>${bcYt()?`<div class="li" style="font-size:12.5px;color:var(--sub)">${bcYt()}</div>`:''}<div class="li" style="font-size:11.5px;color:var(--sub)">${b.updatedAt?fmt(b.updatedAt)+' 時点':''}</div>`;const c=document.getElementById('bcCnt');if(c)c.textContent=''}
 const SUMS={
+ 'h-bc':()=>{const l=bcLine();return l?`<div class="li">${l}</div>${bcYt()?`<div class="li" style="font-size:12px;color:var(--sub)">${bcYt()}</div>`:''}`:'<div class="li">放送局の要点は、見回りのたびに出ます（別ページをひらけます）</div>'},
  'h-dg':()=>{const rf=dgVisibleAll('redflags'),bl=dgVisibleAll('blocked'),ap=dgVisibleAll('approvals'),oc=dgVisibleAll('outcomes');
    const top=[...rf,...ap,...bl].slice(0,3).map(x=>{const tk=typeof x==='object'&&x.task&&TASKS.find(y=>y.id===x.task);const t=esc(clip(dgText(x),46));return tk?`<div class="li"><label><input type="checkbox" data-dgt="${esc(tk.id)}" aria-label="できた：${esc(tk.title)}"><span>${t}</span></label></div>`:`<div class="li">・${t}</div>`}).join('');
    return chips([['🚩',rf.length,'#9a62d0'],['🙋',ap.length,'#c2463d'],['⛔',bl.length,'#b7791f'],['🌱',oc.length,'#4f8f4a']])+(top||'<div class="li">いまは気になることはありません</div>')},
