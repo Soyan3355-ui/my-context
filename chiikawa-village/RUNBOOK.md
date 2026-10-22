@@ -63,9 +63,9 @@
 - 目的：YouTube チャンネルの運営（配信計画とモチベーション）を、数字で支える。画面は別の Artifact「ちいかわ放送局」 https://claude.ai/artifact/4sR9MaczXq1Ku4X2Tk8QnN 。担当は司令塔（ハチワレ）。**読むだけ**（YouTube への投稿・設定の変更はしない）
 - 取り方：コネクタ「Supermetrics Marketing Analytics」の `data_query`（`ds_id: YT2`、チャンネル ID `UCqJXNGNuiuPkdGEz3dN_KAw`）。`settings` に `report_type` を入れる。数字は 2〜3 日おくれで届く
   1. 動画ごと：`report_type: LatestVideos`、`fields: video,video_title,video_published_date,views,likes,comments,estimatedMinutesWatched,subscribersGained`、`date_range_type: last_90_days`、`max_rows: 30`
-  2. チャンネルの日別：`report_type: ChannelTotals`、`fields: date,views,estimatedMinutesWatched,subscribersGained,subscribersLost`、`date_range_type: last_30_days`
+  2. チャンネルの日別：`report_type: ChannelTotals`、`fields: date,views,estimatedMinutesWatched,subscribersGained,subscribersLost`、`date_range_type: last_60_days`、`max_rows: 100`（直近28日と、その前の期間を比べるため）
   - `channel_subscribers`（登録者の総数）はこの接続では取れない（「集計できない」と返る）。登録者の総数は、そーやんが画面に手で記録する
-- 書き先：ちいかわ放送局の db（ArtifactData、`url` は上の Artifact）。`yt/videos` に `{updatedAt, source, range, items:[{id,title,pub,views,likes,comments,min,subs}]}`、`yt/summary` に `{updatedAt, source, from, to, views, min, gained, lost, days:[{d,views,min,g,l}]}` を `set` で上書きする
+- 書き先：ちいかわ放送局の db（ArtifactData、`url` は上の Artifact）。`yt/videos` に `{updatedAt, source, range, items:[{id,title,pub,views,likes,comments,min,subs}]}`、`yt/summary` に `{updatedAt, source, from, to, views, min, gained, lost（この4つは直近28日の合計）, days:[{d,views,min,g,l}]（取れた日ぶん全部）}` を `set`（`if_version` つき）で上書きする
 - いつ：朝の回（毎日）と夕の回で更新する。新しい数字が前回と同じなら書き換えない。取れなかったときは、ダイジェストの「ブロック」に出す（「更新ずみ」とは書かない）
 - 共有の場所（`status`・ダイジェスト・Notion）には、数字の細かい内訳は書かない。「YouTube の数字を更新した」までにする
 - 番組（動画の計画）の `url` に YouTube の動画 ID が入っていれば、画面が自動でその動画の再生数を出す。公開した動画の URL をそーやんが入れる運用にする
