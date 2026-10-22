@@ -72,7 +72,7 @@
 - 番組のカレンダー反映（2026-10-22 そーやんが質問への回答「見回りで自動（承認つき）」で承認）：ちいかわ放送局の番組に限り、見回りの全部の回（朝・夕・ダイジェスト更新）で、そーやんの主カレンダーにイベントを作る・直す・消すことを、そーやんが承認した。ほかのカレンダー操作は、これまでどおり承認が要る
   - 対象：放送局の db の `videos` のうち、`date` があり、`status` が `idea` 以外で、`example` が付いておらず、`archived` でないもの
   - 目印：`cal: {eventId, hash, at}`。`hash` は `[date, time, title, status, shootDate, editDue].join('|')`（空の項目は空の文字列）。`cal.hash` が今の `hash` と同じなら何もしない
-  - 放送のイベント：題名 `📺 〔{段階}〕{title}`（段階は idea=ネタ、plan=企画、script=原稿、shoot=撮影中、edit=編集中、ready=公開待ち、live=公開済み）。開始は `date`＋`time`（空なら放送枠の時刻。いつもは土曜 17:00）、終了は `channel/settings` の `slot.min`（なければ60）分後。説明に `[ちいかわ放送局:{ドキュメントID}]`・段階・キャッチコピー・出演を書く。`create_event`（`summary`・`startTime`・`endTime`・`description`。時刻は日本時間のローカル時刻で、`Z` や UTC オフセットは付けない）で作り、イベント ID を `cal.eventId` に保存する。`eventId` があれば `update_event` で直す
+  - 放送のイベント：題名 `📺 〔{段階}〕{title}`（段階は idea=ネタ、plan=採用（古い script も同じ）、shoot=撮影中、edit=編集中、ready=公開待ち、live=公開済み）。開始は `date`＋`time`（空なら放送枠の時刻。いつもは土曜 17:00）、終了は `channel/settings` の `slot.min`（なければ60）分後。説明に `[ちいかわ放送局:{ドキュメントID}]`・段階・キャッチコピー・出演を書く。`create_event`（`summary`・`startTime`・`endTime`・`description`。時刻は日本時間のローカル時刻で、`Z` や UTC オフセットは付けない）で作り、イベント ID を `cal.eventId` に保存する。`eventId` があれば `update_event` で直す
   - 撮影・編集：`shootDate` があれば終日のイベント `🎥 撮影：{title}`、`editDue` があれば終日のイベント `✂ 編集のしめきり：{title}`（`allDay: true`）も同じ要領で作る。ID は `cal.shootId`・`cal.editId`。日付を消したら `delete_event` で消す
   - 消す：`archived: true` で `cal.eventId` があるドキュメントは、イベントを `delete_event` で消してから、ドキュメントを `delete` する
   - 書き戻し：`videos/{id}` に `update`（`cal` だけ。`if_version` つき）。参加者は付けない（通知メールが出ないように）。場所は入れない
