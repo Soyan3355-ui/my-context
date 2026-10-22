@@ -1150,7 +1150,8 @@ async function syncNotion(t){const set=async p=>{Object.assign(t,p);renderMine()
   catch(e){const c=(e&&e.code)||'upstream_error';await set({sync:'pending',syncErr:c});
     $('mNote').textContent=({not_in_manifest:'Notion への反映が許可されていません。次の見回りで反映します',needs_reauth:'Notion の接続が切れています。次の見回りで反映します',server_not_connected:'Notion がつながっていません。次の見回りで反映します'})[c]||'Notion への反映に失敗しました。次の見回りで反映します'}}
 $('addForm').addEventListener('submit',async e=>{e.preventDefault();const v=$('taskIn').value.trim();if(!v)return;$('taskIn').value='';const t={title:v.slice(0,120),done:false,createdAt:Date.now(),sync:'none'};
-  if(db&&canWrite){try{const ref=await db.collection('tasks').add(t);if(!TASKS.find(x=>x.id===ref.id)){TASKS.push({id:ref.id,...t});renderMine()}}catch(err){TASKS.push({id:'local'+Date.now(),...t});renderMine()}}else{TASKS.push({id:'local'+Date.now(),...t});renderMine()}floater('📝',ent.soyan)});
+  const toToday=id=>{planFresh();PLAN.today[id]=1;delete PLAN.skip[id];planSave()};
+  if(db&&canWrite){try{const ref=await db.collection('tasks').add(t);toToday(ref.id);if(!TASKS.find(x=>x.id===ref.id)){TASKS.push({id:ref.id,...t})}renderMine()}catch(err){const lid='local'+Date.now();toToday(lid);TASKS.push({id:lid,...t});renderMine()}}else{const lid='local'+Date.now();toToday(lid);TASKS.push({id:lid,...t});renderMine()}floater('📝',ent.soyan)});
 $('mine').addEventListener('click',e=>{const b=e.target.closest('button[data-ask]');if(b){e.preventDefault();askAbout(b.dataset.ask);return}
   const q=e.target.closest('button[data-qk]');if(!q)return;e.preventDefault();const t=TASKS.find(x=>x.id===q.dataset.t);if(!t)return;const k=q.dataset.qk;
   const patch=k==='today'?{due:todayKey()}:{due:dueShift(t,k)};qkApply(t,patch,k==='today'?'期限を今日にしました':`期限を ${patch.due.slice(5).replace('-','/')} にしました`)});
