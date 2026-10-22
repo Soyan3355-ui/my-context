@@ -65,6 +65,7 @@
   1. 動画ごと：`report_type: LatestVideos`、`fields: video,video_title,video_published_date,views,likes,comments,estimatedMinutesWatched,subscribersGained`、`date_range_type: last_90_days`、`max_rows: 30`
   2. チャンネルの日別：`report_type: ChannelTotals`、`fields: date,views,estimatedMinutesWatched,subscribersGained,subscribersLost`、`date_range_type: last_60_days`、`max_rows: 100`（直近28日と、その前の期間を比べるため）
   - `channel_subscribers`（登録者の総数）はこの接続では取れない（「集計できない」と返る）。登録者の総数は、そーやんが画面に手で記録する
+- 全期間の積み上げ（「これまでの歩み」の絵「森の土と菌糸」の元データ）：朝の回で更新する。`report_type: ChannelTotals`、`fields: year_channel_totals,views,estimatedMinutesWatched,subscribersGained,subscribersLost`、`date_range_type: custom`、`start_date: 2020-06-01`、`end_date: 今日` で年ごとの合計を取る。あわせて `fields: yearMonth_channel_totals,views,estimatedMinutesWatched`、`start_date: 今年の1/1` で今年の月ごとの合計を取る。放送局の db の `yt/years` に `{updatedAt, source, from, to, years:[{y,views,min,g,l}], months:[{ym:'2026-10',views,min}]}` を `set`（`if_version` つき）で上書きする。`to` は、日別の数字の最後の日（2〜3日おくれ）にそろえる。そーやんの開始日は `yt/channel` の `startedAt`（2020-06-01）
 - 書き先：ちいかわ放送局の db（ArtifactData、`url` は上の Artifact）。`yt/videos` に `{updatedAt, source, range, items:[{id,title,pub,views,likes,comments,min,subs}]}`、`yt/summary` に `{updatedAt, source, from, to, views, min, gained, lost（この4つは直近28日の合計）, days:[{d,views,min,g,l}]（取れた日ぶん全部）}` を `set`（`if_version` つき）で上書きする
 - いつ：朝の回（毎日）と夕の回で更新する。新しい数字が前回と同じなら書き換えない。取れなかったときは、ダイジェストの「ブロック」に出す（「更新ずみ」とは書かない）
 - 共有の場所（`status`・ダイジェスト・Notion）には、数字の細かい内訳は書かない。「YouTube の数字を更新した」までにする
