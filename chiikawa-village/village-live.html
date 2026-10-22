@@ -375,7 +375,7 @@ body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
 .exs.idle .mt{animation:exsc1 70s linear infinite}.exs.idle .tr2{animation:exsc2 16s linear infinite}.exs.idle .gd{animation:exsc3 3s linear infinite}
 @keyframes exsc1{to{background-position-x:-288px}}@keyframes exsc2{to{background-position-x:-148px}}@keyframes exsc3{to{background-position-x:-56px}}
 .exs .pt .wp{position:absolute;left:auto;right:-9px;bottom:6px;top:auto;width:24px;height:24px;rotate:28deg;transform-origin:50% 90%;filter:drop-shadow(1px 0 0 #3b3533) drop-shadow(-1px 0 0 #3b3533) drop-shadow(0 1px 0 #3b3533) drop-shadow(0 -1px 0 #3b3533)}
-.exs .twr{position:absolute;right:7%;bottom:34px;width:60px;height:140px;background-size:100% 100%;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}.exs .twr.cur::after{content:'';position:absolute;left:50%;top:-6px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#ffd23a;box-shadow:0 0 10px 4px rgba(255,210,58,.8);animation:extw 1.2s ease-in-out infinite}@keyframes extw{50%{opacity:.35}}
+.exs .twr{position:absolute;right:7%;bottom:34px;width:60px;height:140px;background-size:100% 100%;image-rendering:pixelated;filter:drop-shadow(0 0 5px rgba(190,40,80,.7)) drop-shadow(0 3px 0 rgba(0,0,0,.4))}.exs .twm{position:absolute;right:calc(7% - 48px);bottom:26px;width:156px;height:176px;pointer-events:none;background:radial-gradient(ellipse at 50% 62%,rgba(120,20,70,.5),transparent 68%);animation:twmist 3.2s ease-in-out infinite}@keyframes twmist{50%{opacity:.65}}.exs .twr.cur::after{content:'';position:absolute;left:50%;top:-6px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#ff3050;box-shadow:0 0 10px 4px rgba(255,40,70,.85);animation:extw 1.2s ease-in-out infinite}@keyframes extw{50%{opacity:.35}}
 .exs .twl{position:absolute;right:4%;top:6px;background:rgba(255,255,255,.94);border:2px solid #3b3533;border-radius:6px;padding:0 7px;font-family:var(--body);font-size:11px;color:#3b3533;line-height:1.6}
 .ex-help{font-size:12.5px;line-height:1.75;display:grid;gap:8px}.ex-help h4{margin:0;font-size:13px}.ex-help p{margin:2px 0 0}.ex-help ul{margin:2px 0 0;padding-left:1.2em}
 
@@ -398,6 +398,23 @@ body.arrange .cols .bx-body,body.arrange .cols .bx-sum{display:none!important}
 .exs .gd{position:absolute;left:0;right:0;bottom:0;height:40px;background:var(--gd) repeat-x;background-size:56px 40px;image-rendering:pixelated}
 .exs .cl{position:absolute;top:34px;width:30px;height:9px;background:#fff;border-radius:99px;box-shadow:11px -6px 0 2px #fff,22px 0 0 0 #fff;opacity:.92;animation:excl 30s linear infinite}.exs .cl.c2{top:60px;animation-duration:44s;animation-delay:-16s;transform:scale(.7)}
 @keyframes excl{from{left:-15%}to{left:105%}}
+
+.ex-bossbox{display:grid;grid-template-columns:68px 1fr;gap:8px;align-items:center;margin-top:6px;padding:6px 10px;border:3px solid #3b1020;border-radius:8px;background:linear-gradient(135deg,#2a1626,#401a30);color:#ffe9dc;box-shadow:0 0 12px rgba(190,40,80,.45)}.ex-bossbox .ic{display:block;height:64px;background:#1a0e18;border:2px solid #7a2a4a;padding:1px}.ex-bossbox .ic img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}.ex-bossbox .wt{font-size:11px;letter-spacing:.2em;color:#ff8a9a}.ex-bossbox .wn{font-size:16px;font-weight:700}.ex-bossbox .wn small{font-size:11px;font-weight:400;color:#ffd0b8}.ex-bossbox .gift{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:2px;font-size:12px}.ex-bossbox .gl{color:#ffd23a}.ex-bossbox .gi{display:inline-flex;gap:3px;align-items:center;padding:0 7px;border:2px solid #7a5a3a;border-radius:99px;background:rgba(255,255,255,.08)}.ex-bossbox .gi i{font-style:normal;font-size:10px;color:#ffd23a}.ex-bossbox .gi.r-SR{border-color:#ffd23a;box-shadow:0 0 8px rgba(255,210,58,.6)}.ex-bossbox .gi.r-R{border-color:#9ac6ff}.ex-bossbox .gi.sk{border-color:var(--c)}.ex-bossbox em{font-style:normal;font-size:10px;padding:0 5px;border-radius:99px;background:#444;color:#ddd}.ex-bossbox em.n{background:#ff3050;color:#fff;animation:exnew 1s ease-in-out infinite}@keyframes exnew{50%{transform:scale(1.15)}}
+.exsk,.ex-skrow{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.sk{--p:0deg;--c:#999;display:inline-flex;align-items:center;gap:4px;padding:2px 9px 2px 3px;border:2px solid var(--line);border-radius:99px;font-size:11.5px;background:var(--panel);font-family:var(--body)}.sk b{font-weight:600}.sk .ring{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--c) var(--p),rgba(0,0,0,.14) 0)}.sk .ring span{width:20px;height:20px;border-radius:50%;background:var(--panel);display:grid;place-items:center;font-size:12px}
+.sk.fire{animation:skfire .6s ease-out}@keyframes skfire{0%{transform:scale(1)}30%{transform:scale(1.22);box-shadow:0 0 14px 5px var(--c)}100%{transform:scale(1)}}
+.xf.sk-call{left:50%;top:40%;font-family:var(--dot);font-size:26px;color:var(--c);-webkit-text-stroke:3px #3b3533;paint-order:stroke;white-space:nowrap;animation:skcall 1.1s ease-out forwards}@keyframes skcall{0%{transform:translate(-50%,-10%) scale(.4);opacity:0}20%{transform:translate(-50%,-50%) scale(1.25);opacity:1}100%{transform:translate(-50%,-110%) scale(1);opacity:0}}
+.xf.sk-bolt{width:60px;transform:translateX(-50%);overflow:visible}.sk-bolt polyline{fill:none;stroke:#fffbb0;stroke-width:7;stroke-linejoin:round;filter:drop-shadow(0 0 5px #ffd400) drop-shadow(0 0 12px #ffa800);animation:skbolt .5s ease-out forwards}@keyframes skbolt{0%{opacity:1}100%{opacity:0}}
+.xf.sk-ball{font-size:30px;filter:drop-shadow(0 0 8px #ff7a00);animation:skball .6s ease-in forwards}@keyframes skball{0%{left:22%;top:62%;transform:translate(-50%,-50%) scale(.6)}100%{left:80%;top:48%;transform:translate(-50%,-50%) scale(1.7) rotate(360deg)}}
+.xf.sk-frost{left:0;top:0;width:100%;height:100%;transform:none;background:radial-gradient(circle at 80% 50%,rgba(170,225,255,.65),transparent 62%);animation:fflash .9s ease-out forwards}
+.xf.sk-glow{left:18%;top:62%;width:120px;height:80px;border-radius:50%;background:radial-gradient(rgba(130,240,160,.7),transparent 70%);animation:fflash .9s ease-out forwards}
+.xf.sk-meteor{font-size:34px;animation:skmet .65s ease-in forwards}@keyframes skmet{0%{left:102%;top:-8%;transform:translate(-50%,-50%) scale(.8) rotate(-30deg)}100%{left:80%;top:48%;transform:translate(-50%,-50%) scale(1.4) rotate(-30deg);opacity:.2}}
+.exb-foe.frozen .fimg{animation:none;filter:saturate(.45) brightness(1.3) hue-rotate(165deg) drop-shadow(0 0 8px #8fdcff)}.exb-foe.frozen::after{content:'❄️ ❄️';position:absolute;left:0;right:0;top:-4px;text-align:center;font-size:20px;letter-spacing:34px}
+.exb-foe.burning .fimg{filter:sepia(1) saturate(4) hue-rotate(-25deg) brightness(1.1) drop-shadow(0 0 8px #ff6a00)}.exb-foe.shock .fimg{filter:brightness(2.2) contrast(1.3)}
+.exs.shake{animation:skshake .4s}@keyframes skshake{25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,0)}}
+.exs .shb{position:absolute;left:1%;bottom:14px;width:158px;height:68px;border:3px solid rgba(130,180,255,.9);border-radius:50%;background:radial-gradient(rgba(150,200,255,.28),rgba(120,170,255,.05));box-shadow:0 0 12px rgba(120,170,255,.8),inset 0 0 10px rgba(255,255,255,.6);pointer-events:none;animation:shbp 1.6s ease-in-out infinite}.exs .shb.off{display:none}@keyframes shbp{50%{transform:scale(1.05);opacity:.75}}
+.exs.haste .pt img:not(.wp){filter:drop-shadow(-8px 0 0 rgba(160,220,255,.6)) drop-shadow(-16px 0 0 rgba(160,220,255,.3))}.exs.haste::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.5;background:repeating-linear-gradient(100deg,transparent 0 24px,rgba(255,255,255,.4) 24px 26px);background-size:200px 100%;animation:skwind .5s linear infinite}@keyframes skwind{to{background-position:-200px 0}}
+.ex-sk{--c:#f5c518;display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;padding:8px 12px;margin-top:6px;border:3px solid #3b3533;border-radius:10px;background:linear-gradient(135deg,color-mix(in srgb,var(--c) 22%,#fff),#fff);color:#2a2a2a;animation:exskg 1.2s ease-in-out infinite}@keyframes exskg{50%{box-shadow:0 0 16px 4px var(--c)}}.ex-sk .sic{font-size:42px;text-align:center;animation:exsk-pop .8s ease-out}@keyframes exsk-pop{0%{transform:scale(.2) rotate(-40deg)}60%{transform:scale(1.4) rotate(10deg)}100%{transform:scale(1)}}.ex-sk .rr{font-size:11px;border:2px solid #3b3533;border-radius:99px;padding:0 6px}.ex-sk .tn{font-size:12px}
+.xdc.sk:not(.unk) .ic{filter:drop-shadow(0 0 4px var(--c))}
 .exs .pt{position:absolute;bottom:26px;left:-10%;width:44px;height:44px}.exs .pt img{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 .exs.idle .pt{left:calc(8% + var(--i)*50px)}.exs.idle .pt img:not(.wp){animation:exhop .34s steps(2) infinite}.exs.idle .pt.p2 img{animation-delay:-.1s}.exs.idle .pt.p3 img{animation-delay:-.2s}
 @keyframes exgo{0%{left:-10%;opacity:0}6%{opacity:1}70%{left:38%;opacity:1}86%{left:44%;opacity:0}100%{left:44%;opacity:0}}@keyframes exhop{50%{transform:translateY(-5px)}}
@@ -2511,7 +2528,50 @@ const ITM=[{id:'potion',name:'きずぐすり',price:50,ico:'🩹',desc:'戦い�
 const TRS=[['shell','貝がら','🐚','C'],['acorn','きんのどんぐり','🌰','C'],['feather','ふしぎな羽根','🪶','C'],['clover','四つ葉','🍀','C'],['map','古い地図','📜','C'],['ribbon','リボン','🎀','C'],['teddy','ぬいぐるみ','🧸','C'],['candy','あまいアメ','🍬','C'],
  ['ruby','ルビー','🔴','R'],['sapphire','サファイア','🔷','R'],['emerald','エメラルド','🟢','R'],['amethyst','アメジスト','🟣','R'],['topaz','トパーズ','🟡','R'],['pearl','しんじゅ','⚪','R'],['key','古い鍵','🗝️','R'],['pot','ふるいつぼ','🏺','R'],['coin','古代の金貨','🪙','R'],['compass','コンパス','🧭','R'],['crystal','水晶玉','🔮','R'],
  ['diamond','ダイヤモンド','💎','SR'],['crown','王冠','👑','SR'],['trophy','トロフィー','🏆','SR'],['ring','ゆびわ','💍','SR'],['star','星のかけら','🌟','SR'],['moon','つきのしずく','🌙','SR'],['egg','ふしぎなたまご','🥚','SR']].map(a=>({id:a[0],name:a[1],ico:a[2],rare:a[3]}));
-const expFresh=()=>({tries:3,slot:0,run:false,gold:0,stage:1,wave:1,used:{},weapon:'w0',own:{w0:1},items:{potion:1,charm:0},dex:{foes:{},treasure:{}},wins:0,bossWins:0});
+const SKL=[
+{id:'thunder',name:'いかずち',ico:'⚡',col:'#f5c518',d:lv=>`${7-lv}回こうげきするたび、いなずまが落ちて大ダメージ（こうげき×${(2+.5*lv).toFixed(1)}）`},
+{id:'fire',name:'ほのおの玉',ico:'🔥',col:'#ff7a2a',d:lv=>`${9-lv}回こうげきするたび、火の玉が敵を3秒間もやしつづける（毎秒 こうげき×${(.3+.1*lv).toFixed(1)}）`},
+{id:'ice',name:'こおりの結界',ico:'❄️',col:'#6cc4ff',d:lv=>`${10-lv}秒ごとに敵をこおらせて、${(2.5+.5*lv).toFixed(1)}秒 うごきを止める`},
+{id:'heal',name:'いやしの光',ico:'💚',col:'#5fd07a',d:lv=>`5秒ごとに HP が ${2+2*lv}% 回復する`},
+{id:'shield',name:'まもりのたて',ico:'🛡️',col:'#7aa8ff',d:lv=>`敵のこうげきを1回ふせぐ。${10-lv}秒で、また張りなおす`},
+{id:'haste',name:'はやてのかぜ',ico:'💨',col:'#9fdcff',d:lv=>`こうげきの はやさが ${13*lv}% アップ`},
+{id:'star',name:'ながれぼし',ico:'🌠',col:'#ffd84a',d:lv=>`会心が出やすくなり（+${8*lv}%）、会心のダメージもアップ。出るたびに流れ星`}];
+const expSkL=id=>(EXP.s&&EXP.s.skills&&EXP.s.skills[id])||0;
+const SK_ORDER=['thunder','heal','fire','shield','ice','haste','star'];
+function expSkAt(k){const lv=Math.floor((k-1)/7)+1;return lv>3?null:{k:SKL.find(x=>x.id===SK_ORDER[(k-1)%7]),lv}}
+function expTrAt(k){const rareOf=j=>j%5===0?'SR':j%2===0?'R':'C',r=rareOf(k);let o=0;for(let j=1;j<k;j++)if(rareOf(j)===r)o++;const pool=TRS.filter(t=>t.rare===r);return pool[o%pool.length]}
+function expGrantSkill(k){const r=expSkAt(k);if(!r)return null;const s=EXP.s;s.skills=s.skills||{};const cur=s.skills[r.k.id]||0;if(r.lv>cur)s.skills[r.k.id]=r.lv;return {k:r.k,lv:r.lv,nw:!cur}}
+function expBossBox(){const s=EXP.s,st=expStats(),e=expEnemy({stage:s.stage,wave:6}),rt=expRate(e,st),tr=expTrAt(s.stage),sk=expSkAt(s.stage),got=s.dex.treasure[tr.id],em=(has)=>has?'<em>もってる</em>':'<em class="n">NEW</em>';
+  return `<div class="ex-bossbox"><span class="ic">${foeImg(e.kind)}</span><div><div class="wt">👑 第${s.stage}の塔の ボス</div><div class="wn">${esc(e.name)}　<small>${rt.stars} ${rt.label}</small></div><div class="gift"><span class="gl">🎁 クリアすると</span><span class="gi r-${tr.rare}">${tr.ico} ${esc(tr.name)} <i>${tr.rare}</i>${em(got)}</span>${sk?`<span class="gi sk" style="--c:${sk.k.col}">${sk.k.ico} ${esc(sk.k.name)} Lv${sk.lv}${em(expSkL(sk.k.id)>=sk.lv)}</span>`:'<span class="gi">💰 ボーナスのお金</span>'}</div></div></div>`}
+function expSkRetro(){const s=EXP.s;if(!s||s.skInit)return;s.skInit=1;s.skills=s.skills||{};const n=Math.max(s.bossWins||0,(s.stage||1)-1);for(let k=1;k<=n;k++)expGrantSkill(k);if(n>0)expSave()}
+const expSkInit=()=>{const n=performance.now();return {n:0,iceAt:n+(10-expSkL('ice'))*1000,healAt:n+5000,shield:expSkL('shield')>0,shieldAt:0,burn:null}};
+const expSkChip=(k,id)=>`<span class="sk" ${id?`id="skc-${k.id}" `:''}style="--c:${k.col};--p:360deg" title="${esc(k.name)}：${esc(k.d(expSkL(k.id)))}"><span class="ring"><span>${k.ico}</span></span><b>${esc(k.name)} Lv${expSkL(k.id)}</b></span>`;
+const expSkRow=()=>{const o=SKL.filter(k=>expSkL(k.id));return o.length?`<div class="ex-skrow" aria-label="おぼえたスキル">${o.map(k=>expSkChip(k,false)).join('')}</div>`:''};
+const expSkBar=()=>{const o=SKL.filter(k=>expSkL(k.id));return o.length?`<div class="exsk" aria-label="はつどう中のスキル">${o.map(k=>expSkChip(k,true)).join('')}</div>`:''};
+const skFlash=id=>{const c=document.getElementById('skc-'+id);if(c){c.classList.remove('fire');void c.offsetWidth;c.classList.add('fire')}const k=SKL.find(x=>x.id===id);if(k)fxAdd(`<b class="xf sk-call" style="--c:${k.col}">${k.ico} ${k.name}！</b>`,1100)};
+const skFoe=(cls,ms)=>{const f=document.getElementById('exFoe');if(!f)return;f.classList.add(cls);setTimeout(()=>f.classList.remove(cls),ms)};
+const skFx={
+ thunder(d){fxAdd('<i class="xf f-flash"></i>',260);fxAdd('<svg class="xf sk-bolt" viewBox="0 0 60 200" preserveAspectRatio="none" style="left:80%;top:0;height:100%"><polyline points="34,0 22,60 38,64 14,130 30,134 20,200"/></svg>',500);skFoe('shock',500);fxNum('⚡'+d,'crit',74,18);const sc=document.getElementById('exScene');if(sc){sc.classList.remove('shake');void sc.offsetWidth;sc.classList.add('shake')}},
+ fire(){fxAdd('<i class="xf sk-ball">🔥</i>',700);setTimeout(()=>{for(let i=0;i<8;i++)fxAdd(`<i class="xf f-emo" style="left:80%;top:50%;--dx:${Math.round((Math.random()-.5)*120)}px;--dy:${Math.round((Math.random()-.8)*90)}px">🔥</i>`,700);fxAdd('<i class="xf f-ring o" style="left:80%;top:50%"></i>',600)},550)},
+ ice(dur){skFoe('frozen',dur);fxAdd('<i class="xf sk-frost"></i>',900);for(let i=0;i<6;i++)fxAdd(`<i class="xf f-emo" style="left:${72+Math.random()*16}%;top:${35+Math.random()*30}%;--dx:0px;--dy:${-20-Math.round(Math.random()*20)}px">❄️</i>`,800)},
+ heal(){[10,18,26].forEach((x,i)=>fxAdd(`<i class="xf f-emo" style="left:${x}%;top:62%;--dx:0px;--dy:-46px">💚</i>`,900));fxAdd('<i class="xf sk-glow"></i>',900)},
+ block(){fxAdd('<i class="xf f-ring b" style="left:18%;top:62%;width:60px;height:60px"></i>',600)},
+ star(){fxAdd('<i class="xf sk-meteor">🌠</i>',700)}};
+function skShield(){const e=document.getElementById('exShb');if(e&&EXP.b&&EXP.b.sk)e.classList.toggle('off',!EXP.b.sk.shield)}
+function skRings(n){const b=EXP.b,k=b&&b.sk;if(!k)return;const set=(id,p)=>{const c=document.getElementById('skc-'+id);if(c)c.style.setProperty('--p',Math.round(Math.max(0,Math.min(1,p))*360)+'deg')};
+ const lt=expSkL('thunder'),lf=expSkL('fire'),li=expSkL('ice'),lh=expSkL('heal'),ls=expSkL('shield');
+ if(lt)set('thunder',(k.n%(7-lt))/(7-lt));if(lf)set('fire',(k.n%(9-lf))/(9-lf));if(li)set('ice',1-(k.iceAt-n)/((10-li)*1000));if(lh)set('heal',1-(k.healAt-n)/5000);if(ls)set('shield',k.shield?1:1-(k.shieldAt-n)/((10-ls)*1000))}
+function expSkAttack(crit){const b=EXP.b,k=b.sk;if(!k)return;k.n++;const lt=expSkL('thunder'),lf=expSkL('fire');
+ if(crit&&expSkL('star'))skFx.star();
+ if(lt&&k.n%(7-lt)===0){const d=Math.round(b.atk*(2+.5*lt));b.ehp=Math.max(0,b.ehp-d);skFx.thunder(d);skFlash('thunder')}
+ if(lf&&k.n%(9-lf)===0){k.burn={left:6,per:Math.max(1,Math.round(b.atk*(.3+.1*lf)/2)),next:performance.now()+500};skFx.fire();skFlash('fire')}}
+function expSkTick(n){const b=EXP.b,k=b.sk;if(!k)return;
+ if(k.burn&&n>=k.burn.next){k.burn.next=n+500;k.burn.left--;b.ehp=Math.max(0,b.ehp-k.burn.per);fxNum('🔥'+k.burn.per,'burn',74+Math.random()*10,32+Math.random()*10);skFoe('burning',450);if(k.burn.left<=0)k.burn=null;expBars();if(b.ehp<=0){expWin();return}}
+ const li=expSkL('ice');if(li&&n>=k.iceAt){k.iceAt=n+(10-li)*1000;const dur=(2.5+.5*li)*1000;b.nextE=Math.max(b.nextE,n+dur);skFx.ice(dur);skFlash('ice')}
+ const lh=expSkL('heal');if(lh&&n>=k.healAt){k.healAt=n+5000;if(b.php<b.pmax){const h=Math.max(1,Math.round(b.pmax*(.02+.02*lh)));b.php=Math.min(b.pmax,b.php+h);fxNum('+'+h,'heal',16,30);skFx.heal();skFlash('heal');expBars()}}
+ if(expSkL('shield')&&!k.shield&&n>=k.shieldAt){k.shield=true;skShield()}
+ skRings(n)}
+const expFresh=()=>({tries:3,slot:0,run:false,gold:0,stage:1,wave:1,used:{},weapon:'w0',own:{w0:1},items:{potion:1,charm:0},dex:{foes:{},treasure:{}},wins:0,bossWins:0,skills:{}});
 const expWp=()=>WP.find(w=>w.id===EXP.s.weapon)||WP[0];
 const expL=()=>Object.keys(EXP.s.used).length;
 const expStats=()=>{const L=expL();return {L,hp:60+8*L,atk:6+expWp().atk+Math.round(1.5*L)}};
@@ -2520,7 +2580,7 @@ function expEnemy(s){const L=expL(),t=(s.stage-1)*6+s.wave,boss=s.wave>=6,kind=b
 function expRate(e,st){const r=(st.hp/(e.atk/1.2))/(e.hp/(st.atk*2.3)),n=r>=2.5?1:r>=1.3?2:r>=0.8?3:r>=0.4?4:5;return {n,stars:'★'.repeat(n)+'☆'.repeat(5-n),label:['楽勝','ふつう','ぎりぎり','強敵','今は無理'][n-1]}}
 // ----- 保存
 async function expRef(){if(EXP.ref)return EXP.ref;try{let id=typeof LAY!=='undefined'&&LAY.uid;if(!id&&window.claude){const u=await window.claude.use('user');id=u&&u.id?await u.id():null}if(id&&db)EXP.ref=db.doc('data/users/'+id+'/dungeon')}catch(e){}return EXP.ref||null}
-async function expLoad(){const r=await expRef();if(!r)return false;try{const g=await Promise.race([r.get(),new Promise(res=>setTimeout(res,3000))]);const d=g&&g.exists?(typeof g.data==='function'?g.data():g.data):null;if(d&&d.v===2&&d.s&&typeof d.s==='object'){const f=expFresh(),s=d.s;const lu=(EXP.s&&EXP.s.used)||{};EXP.s=Object.assign(f,s,{used:Object.assign({},s.used||{},lu),own:Object.assign({w0:1},s.own),items:Object.assign(f.items,s.items),dex:{foes:(s.dex&&s.dex.foes)||{},treasure:(s.dex&&s.dex.treasure)||{}}})}}catch(e){}return true}
+async function expLoad(){const r=await expRef();if(!r)return false;try{const g=await Promise.race([r.get(),new Promise(res=>setTimeout(res,3000))]);const d=g&&g.exists?(typeof g.data==='function'?g.data():g.data):null;if(d&&d.v===2&&d.s&&typeof d.s==='object'){const f=expFresh(),s=d.s;const lu=(EXP.s&&EXP.s.used)||{};EXP.s=Object.assign(f,s,{used:Object.assign({},s.used||{},lu),own:Object.assign({w0:1},s.own),items:Object.assign(f.items,s.items),dex:{foes:(s.dex&&s.dex.foes)||{},treasure:(s.dex&&s.dex.treasure)||{}},skills:Object.assign({},s.skills||{})})}}catch(e){}expSkRetro();return true}
 let expSaveT=0;function expSave(){clearTimeout(expSaveT);expSaveT=setTimeout(async()=>{const r=await expRef();if(!r||!canWrite)return;try{await r.set({v:2,s:EXP.s,updatedAt:Date.now()})}catch(e){}},300)}
 // ----- 音
 let EAC=null;function eb(f,d,t,v,sl){if(EXP.mute)return;try{EAC=EAC||new (window.AudioContext||window.webkitAudioContext)();if(EAC.state==='suspended')EAC.resume();const o=EAC.createOscillator(),g=EAC.createGain();o.type=t||'square';o.frequency.value=f;if(sl)o.frequency.linearRampToValueAtTime(f*sl,EAC.currentTime+d);g.gain.value=v||.04;g.gain.linearRampToValueAtTime(0,EAC.currentTime+d);o.connect(g);g.connect(EAC.destination);o.start();o.stop(EAC.currentTime+d)}catch(e){}}
@@ -2561,26 +2621,27 @@ function expFightBtn(kind){const s=EXP.s;if(s.run&&kind!=='again')return `<butto
   const n=expTriesLeft(),nx=expSlotInfo().next;
   return n>0?`<button type="button" class="ex-atk go" data-act="fight">⚔ ${kind==='again'?'もういちど ':''}たたかう！<small>挑戦 あと ${n}回（1回つかう）</small></button>`:`<button type="button" class="ex-atk go" disabled>💤 きょうの挑戦は おしまい<small>${nx} の見回りで 3回に回復するよ</small></button>`}
 const expTriesChip=()=>{const n=expTriesLeft();return `<span class="ex-chip">🎫 挑戦 ${'●'.repeat(n)}${'○'.repeat(3-n)}　次の回復 ${expSlotInfo().next}</span>`};
-function expStart(){const s=EXP.s;if(!s.run){if(!expUseTry()){expRender();return}s.run=true;expSave()}const e=expEnemy(s),st=expStats();EXP.b={e,ehp:e.hp,php:st.hp,pmax:st.hp,atk:st.atk,cd:0,nextE:performance.now()+1000,hits:0,charm:false,charmMsg:''};EXP.mode='fight';EXP.view='main';expRender();clearInterval(EXP.tick);EXP.tick=setInterval(expTick,100)}
+function expStart(){const s=EXP.s;if(!s.run){if(!expUseTry()){expRender();return}s.run=true;expSave()}const e=expEnemy(s),st=expStats();EXP.b={e,ehp:e.hp,php:st.hp,pmax:st.hp,atk:st.atk,cd:0,nextE:performance.now()+1000,hits:0,charm:false,charmMsg:'',sk:expSkInit()};EXP.mode='fight';EXP.view='main';expRender();clearInterval(EXP.tick);EXP.tick=setInterval(expTick,100)}
 function expLeave(){clearInterval(EXP.tick);EXP.b=null;EXP.mode='idle';expRender()}
-function expAttack(){const b=EXP.b;if(EXP.mode!=='fight'||!b||b.over)return;const n=performance.now();if(n<b.cd)return;b.cd=n+300;const crit=Math.random()<.1,d=Math.max(1,Math.round(b.atk*(.9+Math.random()*.2)*(crit?1.6:1)));b.ehp=Math.max(0,b.ehp-d);b.hits++;
+function expAttack(){const b=EXP.b;if(EXP.mode!=='fight'||!b||b.over)return;const n=performance.now();if(n<b.cd)return;const lh=expSkL('haste'),ls=expSkL('star');b.cd=n+300*(1-.13*lh);const crit=Math.random()<.1+.08*ls,d=Math.max(1,Math.round(b.atk*(.9+Math.random()*.2)*(crit?1.6+.2*ls:1)));b.ehp=Math.max(0,b.ehp-d);b.hits++;
   const pt=document.querySelectorAll('#exScene .pt');const a=pt[b.hits%pt.length];if(a){a.classList.remove('atk');void a.offsetWidth;a.classList.add('atk')}
   const f=document.getElementById('exFoe');if(f){f.classList.remove('hit');void f.offsetWidth;f.classList.add('hit')}
   fxHit(expWp().fx,crit);fxNum((crit?'💥':'')+d,crit?'crit':'',74+Math.random()*10,18+Math.random()*10);crit?SND.crit():SND.hit();
   const btn=document.getElementById('exAtk');if(btn){btn.classList.remove('cool');void btn.offsetWidth;btn.classList.add('cool')}
-  expBars();if(b.ehp<=0)expWin()}
+  expSkAttack(crit);expBars();if(b.ehp<=0)expWin()}
 function expTick(){const b=EXP.b;if(EXP.mode!=='fight'||!b||b.over)return;const n=performance.now();
-  if(n>=b.cd+200)expAttack();if(b.over)return;if(EXP.s.items.potion>0&&b.php<b.pmax*.35)expUsePotion();
+  if(n>=b.cd+200*(1-.13*expSkL('haste')))expAttack();if(b.over)return;expSkTick(n);if(b.over)return;if(EXP.s.items.potion>0&&b.php<b.pmax*.35)expUsePotion();
   if(n<b.nextE)return;b.nextE=n+1200;let d=Math.max(1,Math.round(b.e.atk*(.85+Math.random()*.3)));
+  if(b.sk&&b.sk.shield){b.sk.shield=false;b.sk.shieldAt=n+(10-expSkL('shield'))*1000;skShield();skFx.block();fxNum('BLOCK','gold',20,26);skFlash('shield');const f0=document.getElementById('exFoe');if(f0){f0.classList.remove('lunge');void f0.offsetWidth;f0.classList.add('lunge')}return}
   if(b.php-d<=0&&EXP.s.items.charm>0&&!b.charm){EXP.s.items.charm--;b.charm=true;b.php=Math.max(1,Math.round(b.pmax*.4));expSay('🧿 おまもりが ひかった！ ふみとどまった！');fxNum('🧿','gold',20,24);expSave()}
   else b.php=Math.max(0,b.php-d);
   const pt=document.querySelectorAll('#exScene .pt'),a=pt[Math.floor(Math.random()*pt.length)];if(a){a.classList.remove('hurt');void a.offsetWidth;a.classList.add('hurt')}
   const f=document.getElementById('exFoe');if(f){f.classList.remove('lunge');void f.offsetWidth;f.classList.add('lunge')}fxNum('-'+d,'foe',16+Math.random()*10,26+Math.random()*10);SND.hurt();expBars();if(b.php<=0)expLose()}
 function expUsePotion(){const b=EXP.b,s=EXP.s;if(EXP.mode!=='fight'||!b||b.over||s.items.potion<=0||b.php>=b.pmax)return;s.items.potion--;const h=Math.round(b.pmax*.5);b.php=Math.min(b.pmax,b.php+h);fxNum('+'+h,'heal',16,30);SND.buy();expSave();expBars();const q=document.getElementById('exPot');if(q)q.textContent='🩹 きずぐすり ×'+s.items.potion}
-function expWin(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e;s.gold+=e.gold;s.dex.foes[e.kind]=(s.dex.foes[e.kind]||0)+1;s.wins++;let drop=null,dup=0;
-  if(e.boss){const un=TRS.filter(t=>!s.dex.treasure[t.id]),pool=un.length&&Math.random()<.8?un:TRS,w={C:55,R:35,SR:10},tot=pool.reduce((a,t)=>a+w[t.rare],0);let r=Math.random()*tot;drop=pool[pool.length-1];for(const t of pool){r-=w[t.rare];if(r<=0){drop=t;break}}
+function expWin(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e;s.gold+=e.gold;s.dex.foes[e.kind]=(s.dex.foes[e.kind]||0)+1;s.wins++;let drop=null,dup=0,skill=null;
+  if(e.boss){skill=expGrantSkill(s.stage);if(!skill)s.gold+=Math.round(e.gold*.5);drop=expTrAt(s.stage);
     dup=s.dex.treasure[drop.id]?{C:60,R:150,SR:400}[drop.rare]:0;s.dex.treasure[drop.id]=(s.dex.treasure[drop.id]||0)+1;if(dup)s.gold+=dup;s.stage++;s.wave=1;s.run=false;s.bossWins++}else s.wave++;
-  const f=document.getElementById('exFoe');if(f)f.classList.add('dead');EXP.res={g:e.gold,drop,dup,boss:e.boss,e,next:expEnemy(s)};expSave();SND.win();if(drop)setTimeout(SND.treasure,500);
+  const f=document.getElementById('exFoe');if(f)f.classList.add('dead');EXP.res={g:e.gold,drop,dup,skill,boss:e.boss,e,next:expEnemy(s)};expSave();SND.win();if(drop)setTimeout(SND.treasure,500);
   setTimeout(()=>{EXP.mode=drop?'treasure':'win';expRender()},drop?650:500)}
 function expLose(){clearInterval(EXP.tick);EXP.b.over=true;const s=EXP.s,e=EXP.b.e,st=expStats();s.wave=1;s.run=false;EXP.res={e,rate:expRate(e,st),pend:expPend().length};expSave();SND.lose();EXP.mode='lose';expRender()}
 // ----- 力にする
@@ -2621,24 +2682,39 @@ const expWpRow=()=>{const s=EXP.s,o=WP.filter(w=>s.own[w.id]);return o.length>1?
 
 // ----- 塔（ステージ＝1つの塔、1〜6階。6階がボス）
 const _twc={};
-function expTowerUrl(stage,wave){const T=EXTH[(stage-1)%EXTH.length],key=T.m+wave;if(_twc[key])return _twc[key];
-  const st=['#9aa0aa','#868c98'],dk='#4a4f5c';let b='';
-  b+=`<rect fill="${dk}" x="4" y="126" width="52" height="14"/><rect fill="${st[0]}" x="6" y="126" width="48" height="12"/><rect fill="#3a2a22" x="25" y="128" width="10" height="12"/><rect fill="#3a2a22" x="26" y="126" width="8" height="2"/>`;
+function expTowerUrl(stage,wave){const T=EXTH[(stage-1)%EXTH.length],ac=['#ff2a3a','#b84cff','#ff8a1e','#2ee0c8'][(stage-1)%4],key=T.m+wave+ac;if(_twc[key])return _twc[key];
+  const st=['#3b3548','#2d2938'],dk='#120e1a',hl='rgba(255,255,255,.08)';let b='';
+  // 土台：とげとげの岩
+  b+=`<path fill="${dk}" d="M0 140L3 128L8 133L12 124L17 132L22 126L38 126L43 132L48 124L52 133L57 128L60 140Z"/><rect fill="${dk}" x="4" y="126" width="52" height="14"/><rect fill="${st[1]}" x="6" y="127" width="48" height="12"/>`;
+  // 門：かいぶつの口
+  b+=`<path fill="#06030a" d="M23 140V131Q30 123 37 131V140Z"/><rect fill="${ac}" x="27" y="132" width="6" height="8"/><path fill="#e8e4ee" d="M24 131l2.5 5 2.5-5 2 5 2-5 2.5 5 2.5-5-1-2h-12Z"/>`;
   for(let i=0;i<6;i++){const w=46-i*3,x=(60-w)/2,y=126-(i+1)*17;
-    b+=`<rect fill="${dk}" x="${x-1}" y="${y-1}" width="${w+2}" height="18"/><rect fill="${st[i%2]}" x="${x}" y="${y}" width="${w}" height="16"/><rect fill="rgba(0,0,0,.14)" x="${x}" y="${y+13}" width="${w}" height="3"/>`;
-    const lit=i<wave-1,cur=i===wave-1,c=lit?'#ffe36a':cur?'#ff8a5a':'#2a2a3a';
-    b+=`<rect fill="${dk}" x="26" y="${y+3}" width="8" height="10"/><rect fill="${c}" x="27" y="${y+4}" width="6" height="8"/>`;
-    if(i===5)b+=`<rect fill="#ffd23a" x="22" y="${y+4}" width="3" height="3"/><rect fill="#ffd23a" x="35" y="${y+4}" width="3" height="3"/>`;
-    for(let k=0;k<3;k++)b+=`<rect fill="${st[i%2]}" x="${x+1+k*((w-4)/2.6)}" y="${y-3}" width="4" height="3"/>`}
-  const ty=126-6*17;b+=`<path fill="${dk}" d="M10 ${ty-1}L30 ${ty-22}L50 ${ty-1}Z"/><path fill="#c0453a" d="M13 ${ty-2}L30 ${ty-19}L47 ${ty-2}Z"/><path fill="rgba(0,0,0,.18)" d="M30 ${ty-19}L47 ${ty-2}L30 ${ty-2}Z"/><rect fill="${dk}" x="29" y="${ty-32}" width="2" height="12"/><path fill="#ffd23a" d="M31 ${ty-32}L41 ${ty-28}L31 ${ty-24}Z"/>`;
+    b+=`<rect fill="${dk}" x="${x-1}" y="${y-1}" width="${w+2}" height="18"/><rect fill="${st[i%2]}" x="${x}" y="${y}" width="${w}" height="16"/><rect fill="${hl}" x="${x}" y="${y+5}" width="${w}" height="1"/><rect fill="${hl}" x="${x}" y="${y+10}" width="${w}" height="1"/><rect fill="rgba(0,0,0,.34)" x="${x}" y="${y+13}" width="${w}" height="3"/>`;
+    // ひび
+    b+=`<rect fill="#0c0812" x="${x+4+(i*5)%11}" y="${y+2}" width="1" height="5"/><rect fill="#0c0812" x="${x+5+(i*5)%11}" y="${y+6}" width="1" height="3"/>`;
+    // 左右のとげ
+    b+=`<path fill="${dk}" d="M${x-1} ${y+4}L${x-7} ${y-1}L${x-1} ${y+10}Z"/><path fill="${dk}" d="M${x+w+1} ${y+4}L${x+w+7} ${y-1}L${x+w+1} ${y+10}Z"/><path fill="#6a5a80" d="M${x-1} ${y+5}L${x-5} ${y+1}L${x-1} ${y+8}Z"/><path fill="#6a5a80" d="M${x+w+1} ${y+5}L${x+w+5} ${y+1}L${x+w+1} ${y+8}Z"/>`;
+    const lit=i<wave-1,cur=i===wave-1,c=lit?'#6b4a8c':cur?ac:'#150c18';
+    if(i===5){const eye=cur?ac:'#4a1c2c';b+=`<rect fill="${dk}" x="22" y="${y+2}" width="16" height="11"/><rect fill="#f4eef0" x="23" y="${y+4}" width="14" height="7"/><rect fill="${eye}" x="27" y="${y+4}" width="6" height="7"/><rect fill="#000" x="29.4" y="${y+4}" width="1.4" height="7"/><path fill="${dk}" d="M21 ${y+1}L30 ${y+5}L39 ${y+1}L39 ${y+3}L30 ${y+7}L21 ${y+3}Z" opacity=".0"/><rect fill="${dk}" x="22" y="${y+1}" width="7" height="2" transform="rotate(14 22 ${y+1})"/><rect fill="${dk}" x="31" y="${y+1}" width="7" height="2" transform="rotate(-14 38 ${y+1})"/><rect fill="${ac}" x="19" y="${y+7}" width="2" height="3"/><rect fill="${ac}" x="39" y="${y+7}" width="2" height="3"/>`}
+    else b+=`<path fill="${dk}" d="M26 ${y+14}V${y+7}L30 ${y+2}L34 ${y+7}V${y+14}Z"/><path fill="${c}" d="M27.5 ${y+13}V${y+8}L30 ${y+4.5}L32.5 ${y+8}V${y+13}Z"/>`;
+    // ぎざぎざの胸壁
+    for(let k=0;k<5;k++){const bx=x+1+k*((w-6)/4);b+=`<path fill="${dk}" d="M${bx} ${y}L${bx+2} ${y-5}L${bx+4} ${y}Z"/>`}}
+  const ty=126-6*17;
+  // やね：まっ黒のとがった屋根と角
+  b+=`<path fill="${dk}" d="M8 ${ty}L30 ${ty-23}L52 ${ty}Z"/><path fill="#201830" d="M10 ${ty-1}L30 ${ty-21}L50 ${ty-1}Z"/><path fill="#150f20" d="M30 ${ty-21}L50 ${ty-1}L30 ${ty-1}Z"/><path fill="${ac}" d="M30 ${ty-21}L31.2 ${ty-21}L51 ${ty-1}L49.6 ${ty-1}Z" opacity=".75"/>`;
+  b+=`<path fill="${dk}" d="M9 ${ty}L1 ${ty-14}L6 ${ty-11}L14 ${ty-6}Z"/><path fill="${dk}" d="M51 ${ty}L59 ${ty-14}L54 ${ty-11}L46 ${ty-6}Z"/><path fill="${dk}" d="M29 ${ty-22}L30 ${ty-27}L31 ${ty-22}Z"/><path fill="#6a5a80" d="M9 ${ty-1}L3 ${ty-12}L7 ${ty-9}Z"/><path fill="#6a5a80" d="M51 ${ty-1}L57 ${ty-12}L53 ${ty-9}Z"/>`;
+  b+=`<rect fill="${ac}" x="27" y="${ty-12}" width="6" height="3"/><rect fill="#000" x="29.4" y="${ty-12}" width="1.2" height="3"/>`;
+  // こうもり
+  b+=`<path fill="${dk}" d="M5 4L8 1L10 4L12 1L15 4L10 3Z"/><path fill="${dk}" d="M45 7L48 4L50 7L52 4L55 7L50 6Z"/>`;
   return _twc[key]=svgU(60,140,b)}
-const expTower=()=>{const s=EXP.s;return `<div class="twr cur" style="background-image:${expTowerUrl(s.stage,s.wave)}"></div><div class="twl">🏰 第${s.stage}の塔　${s.wave}F／6F${s.wave>=6?' 👑':''}</div>`};
+const expTower=()=>{const s=EXP.s;return `<div class="twm"></div><div class="twr cur" style="background-image:${expTowerUrl(s.stage,s.wave)}"></div><div class="twl">🏰 第${s.stage}の塔　${s.wave}F／6F${s.wave>=6?' 👑':''}</div>`};
 function expHelp(){const t=(h,l)=>`<h4>${h}</h4>${l}`;return `<div class="ex-pan"><div class="ex-ph"><b>📘 あそびかた・しくみ</b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-help">
 ${t('🏰 塔をのぼる','<p>1つの「ステージ」＝1つの塔。1階〜5階はザコ、6階にボス。1階ずつたおして上をめざそう。ボスをたおすと次の塔（ステージ）へ。</p>')}
 ${t('⚡ ちから（Lv）','<ul><li>完了したタスク1件を「力にする」と、<b>ちから Lv が +1</b>。HP と こうげきが少し上がる。</li><li>「力にする」を押すまでは強くならない。押すと数が減って、Lv が増える。</li><li>チャットの会話を片づけたり、「そーやんの仕事」を完了にしたものも数える。</li></ul>')}
 ${t('⚔ たたかい','<ul><li>戦いは<b>オート</b>。みんなが自動でこうげきして、敵の HP が 0 で勝ち。ボタンをタップすると おまけの こうげき。HP がへると きずぐすりも自動で使うよ。</li><li>敵は <b>ちから Lv に合わせて強くなる</b>。階が上がるほど さらに強い。目安は ★（★が少ないほど楽）。</li><li>塔への<b>挑戦は3回まで</b>。見回りの時刻（5:07・10:47・13:47・17:47・20:47）に、3回にもどる。塔に入るときに1回つかい、勝ち進んでいるあいだは つかわない。<b>やられると その塔の1階にもどる</b>ので、もう1回つかって挑戦する。</li><li>敵を1体たおすたびに 自動セーブ。</li></ul>')}
 ${t('🔁 同じ敵とまた戦うのは？','<p>やられて1階にもどると、また1階のザコと戦えるよ（挑戦を1回つかう）。たおすたびに賞金はもらえる。お宝は ボスだけ。</p>')}
 ${t('💰 賞金と ショップ','<p>ザコの賞金で ショップの<b>武器</b>と<b>アイテム</b>を買える。武器は こうげきがふえて、エフェクトもちがう。持っている武器は、いつでも画面の下のボタンで持ちかえできる（ちいかわたちも装備して持つよ）。</p>')}
+${t('✨ スキル','<p>ボスをたおすと、お宝のほかに<b>スキル</b>を1つおぼえる。おぼえたスキルは、戦いの中で自動で発動して、画面にもエフェクトが出る：いかずち（大ダメージ）・ほのおの玉（もやしつづける）・こおりの結界（敵を止める）・いやしの光（HP回復）・まもりのたて（こうげきを1回ふせぐ）・はやてのかぜ（こうげきが速くなる）・ながれぼし（会心が出やすい）。塔ごとに もらえるスキルは決まっていて、7つ目の塔のあとは Lv2、さらに先は Lv3 になる。</p>')}
 ${t('💎 お宝・ずかん','<p>ボスをたおすとお宝が1つ。ダブったときはお金になる。お宝は強さには関係なし、あつめて楽しむだけ。ずかんで お宝・武器・モンスターが見られるよ。</p>')}
 </div></div>`}
 
@@ -2651,22 +2727,22 @@ function expInBg(wave){const T=EXIN[Math.min(wave,6)-1];if(_inc[wave])return _in
   return _inc[wave]={wl:svgU(48,32,w),fl:svgU(48,40,f),wb:T.m}}
 const expInLayers=wave=>{const g=expInBg(wave);return `<div class="wall"></div><i class="pil" style="left:3%"></i><i class="pil" style="right:3%"></i><i class="arch"></i><i class="torch" style="left:34%"></i><i class="torch" style="left:78%"></i>${wave>=6?'<i class="ban" style="left:24%"></i><i class="ban" style="left:68%"></i>':''}<div class="flr"></div>`};
 function expScene(foe,boss,bars){const inn=!!foe,wv=EXP.s.wave,ig=expInBg(wv);
-  return `<div class="exs ${inn?'in bt'+(wv>=6?' bs':''):'idle'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}${inn?`--wl:${ig.wl};--fl:${ig.fl};--wb:${ig.wb};`:''}" role="img" aria-label="ちいかわたちが遠征で戦う様子">${inn?expInLayers(wv)+`<div class="twl">🏰 第${EXP.s.stage}の塔　<b>${wv}F</b>／6F${wv>=6?' 👑BOSS':''}</div>`:'<i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>'+expTower()}${expParty()}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
+  return `<div class="exs ${inn?'in bt'+(wv>=6?' bs':''):'idle'}" id="exScene" style="${expBg(EXP.s.stage-1).sky}${inn?`--wl:${ig.wl};--fl:${ig.fl};--wb:${ig.wb};`:''}" role="img" aria-label="ちいかわたちが遠征で戦う様子">${inn?expInLayers(wv)+`<div class="twl">🏰 第${EXP.s.stage}の塔　<b>${wv}F</b>／6F${wv>=6?' 👑BOSS':''}</div>`:'<i class="sun"></i><i class="cl"></i><i class="cl c2"></i><div class="mt"></div><div class="tr2"></div><div class="gd"></div>'+expTower()}${expParty()}${foe&&EXP.mode==='fight'&&expSkL('shield')?'<i class="shb" id="exShb"></i>':''}${foe?`<div class="exb-foe${boss?' boss':''}" id="exFoe">${foe}</div>`:''}${bars||''}<div class="exb-fx" id="exFx"></div><div class="say" id="exSay"></div></div>`}
 function expRender(){const el=document.getElementById('expBody');if(!el||!EXP.s)return;const s=EXP.s,st=expStats(),m=EXP.mode,pend=expPend().length;let h='';
   const snd=`<button type="button" class="ex-mini" data-act="mute" aria-label="音の入切">${EXP.mute?'🔇':'🔊'}</button>`;
-  const chips=`<div class="ex-chips"><span class="ex-chip">⭐ ちから <b id="exLv">Lv ${st.L}</b></span><span class="ex-chip">❤ ${st.hp}</span><span class="ex-chip">⚔ ${st.atk}</span><span class="ex-chip">${expWp().ico} ${esc(expWp().name)}</span><span class="ex-chip">💰 <b>${s.gold.toLocaleString('en-US')}</b>G</span>${expTriesChip()}${snd}</div>`;
+  const chips=`<div class="ex-chips"><span class="ex-chip">⭐ ちから <b id="exLv">Lv ${st.L}</b></span><span class="ex-chip">❤ ${st.hp}</span><span class="ex-chip">⚔ ${st.atk}</span><span class="ex-chip">${expWp().ico} ${esc(expWp().name)}</span><span class="ex-chip">💰 <b>${s.gold.toLocaleString('en-US')}</b>G</span>${expTriesChip()}${snd}</div>${expSkRow()}`;
   const claim=pend>0?`<button type="button" class="ex-claim" data-act="claim">⚡ 力にする（${pend}件）<small>完了したタスクが ちからになる</small></button>`:`<div class="ex-ok">✅ 完了したタスクは すべて ちからになっているよ</div>`;
   const nav=`<div class="ex-nav"><button type="button" data-act="shop">🛒 ショップ</button><button type="button" data-act="dex">📖 ずかん</button><button type="button" data-act="help">📘 あそびかた</button></div>`;
   if(EXP.view==='shop')h=expShop();else if(EXP.view==='dex')h=expDex();else if(EXP.view==='help')h=expHelp();
   else if(m==='fight'){const b=EXP.b;h=expScene(foeImg(b.e.kind),b.e.boss,`<div class="exb-bars"><div class="hb me"><span id="exMeT"></span><div class="tr"><i id="exMe"></i></div></div><div class="hb fo"><span>${b.e.boss?'👑 ':''}${esc(b.e.name)} <span id="exFoT"></span></span><div class="tr"><i id="exFo"></i></div></div></div>`)+
-    `<div class="exh"><button type="button" class="ex-atk" id="exAtk" data-act="atk">⚔ オートで たたかい中！<small>タップで おまけの こうげき</small></button><div class="ex-row2">${s.items.potion>0?`<button type="button" class="ex-sub" id="exPot" data-act="potion">🩹 きずぐすり ×${s.items.potion}</button>`:''}<button type="button" class="ex-sub" data-act="leave">にげる</button></div></div>`}
+    `${expSkBar()}<div class="exh"><button type="button" class="ex-atk" id="exAtk" data-act="atk">⚔ オートで たたかい中！<small>タップで おまけの こうげき</small></button><div class="ex-row2">${s.items.potion>0?`<button type="button" class="ex-sub" id="exPot" data-act="potion">🩹 きずぐすり ×${s.items.potion}</button>`:''}<button type="button" class="ex-sub" data-act="leave">にげる</button></div></div>`}
   else{const e=m==='win'||m==='treasure'?EXP.res.next:m==='lose'?EXP.res.e:expEnemy(s),rt=expRate(e,st);
     const poster=`<div class="ex-w"><span class="ic">${foeImg(e.kind)}</span><div><div class="wt">WANTED${e.boss?' ・ BOSS':''}</div><div class="wn">${esc(e.name)}</div><div class="wp">賞金 <b class="gold">${e.gold}G</b>　${rt.stars} ${rt.label}</div></div></div>`;
-    if(m==='win'){const r=EXP.res;h=expScene('',false)+`<div class="exh"><div class="ex-res">🎉 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div>${poster}${expFightBtn('win')}<button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${claim}${nav}</div>`}
-    else if(m==='treasure'){const r=EXP.res,d=r.drop;h=expScene('',false)+`<div class="exh"><div class="ex-res">👑 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div><div class="ex-tr r-${d.rare}"><div class="tic">${d.ico}</div><div><b>${esc(d.name)}</b> <span class="rr">${d.rare}</span><div class="tn">${r.dup?'もう持っていた… ' + r.dup+'G に かわった':'✨ NEW！ ずかんに のこった'}</div></div></div>${poster}<button type="button" class="ex-atk go" data-act="idle">▶ つぎのステージへ（ステージ ${s.stage}）</button>${chips}${expWpRow()}${claim}${nav}</div>`}
+    if(m==='win'){const r=EXP.res;h=expScene('',false)+`<div class="exh"><div class="ex-res">🎉 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div>${poster}${expBossBox()}${expFightBtn('win')}<button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${claim}${nav}</div>`}
+    else if(m==='treasure'){const r=EXP.res,d=r.drop;h=expScene('',false)+`<div class="exh"><div class="ex-res">👑 ${esc(r.e.name)}を たおした！　<b class="gold">+${r.g}G</b></div><div class="ex-tr r-${d.rare}"><div class="tic">${d.ico}</div><div><b>${esc(d.name)}</b> <span class="rr">${d.rare}</span><div class="tn">${r.dup?'もう持っていた… ' + r.dup+'G に かわった':'✨ NEW！ ずかんに のこった'}</div></div></div>${r.skill?`<div class="ex-sk" style="--c:${r.skill.k.col}"><div class="sic">${r.skill.k.ico}</div><div><b>✨ ${r.skill.nw?'あたらしい スキル！':'スキル レベルアップ！'} ${esc(r.skill.k.name)} <span class="rr">Lv ${r.skill.lv}</span></b><div class="tn">${esc(r.skill.k.d(r.skill.lv))}</div><div class="tn">たたかいで じどうで はつどうするよ</div></div></div>`:''}${poster}${expBossBox()}<button type="button" class="ex-atk go" data-act="idle">▶ つぎのステージへ（ステージ ${s.stage}）</button>${chips}${expWpRow()}${claim}${nav}</div>`}
     else if(m==='lose'){const r=EXP.res;h=expScene(foeImg(r.e.kind),r.e.boss)+`<div class="exh"><div class="ex-res lose">💤 やられた…　${esc(r.e.name)}は ${r.rate.label}だった</div><div class="ex-adv">${pend>0?'⚡ まだ「力にする」していない完了タスクが '+pend+'件あるよ！ ちからにして、もういちど！':'いまの ちからでは まだ勝てない。<b>タスクをこなして「力にする」</b>と、もっと強くなれる！ 武器を買うのもアリ。'}</div>${claim}${expFightBtn('again')}<button type="button" class="ex-sub" data-act="idle">🏠 ホームにもどる</button>${chips}${expWpRow()}${nav}</div>`}
-    else{h=expScene('',false)+`<div class="exh"><div class="ex-prog"><b>ステージ ${s.stage}</b><span class="pips">${expPips(s)}</span></div>${poster}${expFightBtn('idle')}${chips}${expWpRow()}${claim}${nav}</div>`}}
-  el.innerHTML=h;const say=document.getElementById('exSay');if(say)say.textContent=m==='fight'?'オートで たたかってるよ！':m==='lose'?'まけちゃった…':m==='treasure'?'お宝を ゲット！':m==='win'?'やったね！':pend>0?'⏳ 力にしてから しゅっぱつしよ！':'ぼうけんに しゅっぱ〜つ！';
+    else{h=expScene('',false)+`<div class="exh"><div class="ex-prog"><b>ステージ ${s.stage}</b><span class="pips">${expPips(s)}</span></div>${poster}${expBossBox()}${expFightBtn('idle')}${chips}${expWpRow()}${claim}${nav}</div>`}}
+  el.innerHTML=h;if(m==='fight'&&EXP.view==='main'){const sc=document.getElementById('exScene');if(sc)sc.classList.toggle('haste',expSkL('haste')>0);skShield()}const say=document.getElementById('exSay');if(say)say.textContent=m==='fight'?'オートで たたかってるよ！':m==='lose'?'まけちゃった…':m==='treasure'?'お宝を ゲット！':m==='win'?'やったね！':pend>0?'⏳ 力にしてから しゅっぱつしよ！':'ぼうけんに しゅっぱ〜つ！';
   if(m==='fight')expBars();EXP.sig=expSig()}
 const expSig=()=>EXP.s?[expPend().length,expL(),EXP.s.gold,EXP.s.stage,EXP.s.wave,expTriesLeft(),EXP.s.run?1:0].join('|'):'';
 // ----- ショップ / ずかん
@@ -2675,10 +2751,11 @@ function expShop(){const s=EXP.s;const w=WP.map(x=>{const own=s.own[x.id],eq=s.w
   return `<div class="ex-pan"><div class="ex-ph"><b>🛒 ショップ　<span class="gold">💰 ${s.gold.toLocaleString('en-US')}G</span></b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-hint">雑魚をたおして もらえる賞金で 買えるよ。武器によって 攻撃のエフェクトが かわる！</div><ul class="shl">${w}${it}</ul></div>`}
 function expDex(){const s=EXP.s,T=EXP.tab;let g='',n=0,t=0;
   if(T==='treasure'){t=TRS.length;g=TRS.map(x=>{const c=s.dex.treasure[x.id];if(c)n++;return `<div class="xdc r-${x.rare}${c?'':' unk'}"><div class="ic">${x.ico}</div><b>${c?esc(x.name):'？？？'}</b><small>${c?x.rare+(c>1?' ×'+c:''):x.rare}</small></div>`}).join('')}
+  else if(T==='skill'){t=SKL.length;g=SKL.map(k=>{const c=expSkL(k.id);if(c)n++;return `<div class="xdc sk${c?'':' unk'}" style="--c:${k.col}"><div class="ic">${k.ico}</div><b>${c?esc(k.name):'？？？'}</b><small>${c?'Lv '+c+'：'+esc(k.d(c)):'ボスをたおすと'}</small></div>`}).join('')}
   else if(T==='weapon'){t=WP.length;g=WP.map(x=>{const c=s.own[x.id];if(c)n++;return `<div class="xdc${c?'':' unk'}${s.weapon===x.id?' eq':''}"><div class="ic">${x.ico}</div><b>${c?esc(x.name):'？？？'}</b><small>${c?'こうげき +'+x.atk:''}</small></div>`}).join('')}
   else{const ks=EXM.minions.concat(EXM.bosses);t=ks.length;g=ks.map(k=>{const c=s.dex.foes[k];if(c)n++;return `<div class="xdc${c?'':' unk'}"><div class="ic sv">${foeImg(k)}</div><b>${c?esc(EXM.name(k)):'？？？'}</b><small>${c?'たおした '+c+'回':(EXM.isBoss(k)?'BOSS':'')}</small></div>`}).join('')}
   const tb=(k,l)=>`<button type="button" data-act="tab" data-id="${k}" class="${T===k?'on':''}">${l}</button>`;
-  return `<div class="ex-pan"><div class="ex-ph"><b>📖 ずかん　<small>あつめた ${n} / ${t}</small></b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-tabs">${tb('treasure','💎 お宝')}${tb('weapon','🗡 武器')}${tb('mon','👾 モンスター')}</div><div class="ex-hint">お宝は ステージのボスを たおすと もらえるよ（強さには かんけいなし。あつめて たのしむだけ！）</div><div class="xdg">${g}</div></div>`}
+  return `<div class="ex-pan"><div class="ex-ph"><b>📖 ずかん　<small>あつめた ${n} / ${t}</small></b><button type="button" class="ex-sub" data-act="back">もどる</button></div><div class="ex-tabs">${tb('treasure','💎 お宝')}${tb('skill','✨ スキル')}${tb('weapon','🗡 武器')}${tb('mon','👾 モンスター')}</div><div class="ex-hint">ボスを たおすと お宝と スキルが もらえるよ。どの塔で なにが もらえるかは、塔のボスのところに のっているよ（事前にわかる）。お宝は あつめて たのしむだけ。スキルは たたかいの中で じどうで はつどうする！</div><div class="xdg">${g}</div></div>`}
 // ----- 操作
 function expAct(a,id){const s=EXP.s;if(!s)return;
   if(a==='fight'){SND.tick();expStart();return}
