@@ -1090,7 +1090,7 @@ function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage
   const td=tod();if(BASE){ambientBase(t,dt,td&&td.night);drawHover();if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,46);ctx.fillStyle=td.night?'rgba(18,22,64,.16)':td.c;ctx.fillRect(0,46,W,H-46);if(td.night)lightsBase()}return}ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
 var DIAG={t0:Date.now(),cl:!!window.claude,db:null,st:0,ex:0,tk:0,err:''};
 window.addEventListener('error',e=>{DIAG.err=String((e&&e.message)||'error').slice(0,120)});window.addEventListener('unhandledrejection',e=>{DIAG.err=String((e&&e.reason&&e.reason.message)||e.reason||'rejection').slice(0,120)});
-setInterval(()=>{const el=document.getElementById('diag');if(!el)return;const age=Date.now()-DIAG.t0;const rafAge=Date.now()-lastFrameAt;const bad=!DIAG.cl||DIAG.db===null||!DIAG.st||!DIAG.ex||!DIAG.tk||rafAge>3000||DIAG.err;
+setInterval(()=>{const el=document.getElementById('diag');if(!el)return;const age=Date.now()-DIAG.t0;const rafAge=Date.now()-lastFrameAt;const bad=!DIAG.cl||DIAG.db===null||!DIAG.st||!DIAG.ex||!DIAG.tk||rafAge>3000;
   if(age<8000||!bad){el.hidden=true;return}
   const ok=v=>v?'○':'×';el.hidden=false;el.textContent='';const sp=document.createElement('span');sp.textContent='診断（'+Math.round(age/1000)+'秒）：claude '+ok(DIAG.cl)+' ／ データ接続 '+(DIAG.db===null?'待ち×':DIAG.db===false?'なし×':'○ '+DIAG.db+'秒')+' ／ 状態 '+ok(DIAG.st)+' ／ 判断カード '+ok(DIAG.ex)+' ／ タスク '+ok(DIAG.tk)+' ／ 動き '+(rafAge>3000?'止まっている×':'○')+(DIAG.err?' ／ エラー：'+DIAG.err:'');el.appendChild(sp);
   if(!el.querySelector('button')){}const b=document.createElement('button');b.type='button';b.textContent='つなぎなおす';b.addEventListener('click',()=>location.reload());el.appendChild(b)},1000);
@@ -2846,13 +2846,15 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-expgo]')){e.pre
 expInit();
 let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error';try{console.warn('db error',name,e)}catch(_){}const el=document.getElementById('note');if(el)el.innerHTML='⚠️ 共有データを読み込めませんでした（'+Object.keys(DBERR).map(esc).join('・')+'：'+esc(Object.values(DBERR)[0])+'）。ページを開き直してみてください。'}
 // ---------- つながる ----------
-(async()=>{const cl=window.claude;const TO=(p,ms)=>Promise.race([Promise.resolve(p).catch(()=>null),new Promise(r=>setTimeout(()=>r(null),ms))]);
+(async()=>{const cl=window.claude;
+  const TO=(p,ms,nm)=>Promise.race([Promise.resolve(p).catch(e=>{DIAG.err=(nm||'?')+'：'+String((e&&e.message)||e).slice(0,100);return null}),new Promise(r=>setTimeout(()=>r(null),ms))]);
+  const SU=(nm,ms)=>{try{if(!cl||!cl.use)return Promise.resolve(null);return TO(cl.use(nm),ms,nm)}catch(e){DIAG.err=nm+'：'+String((e&&e.message)||e).slice(0,100);return Promise.resolve(null)}};
   const t0=Date.now();let stg='データ';const tick=setInterval(()=>{const e=$('dText');if(e&&e.textContent.startsWith('（会社とつながっています'))e.textContent='（会社とつながっています…'+Math.round((Date.now()-t0)/1000)+'秒・'+stg+'の接続を待っています）';if(Date.now()-t0>180000)clearInterval(tick)},1000);
-  const extras=cl?Promise.all([TO(cl.use('sample'),8000),TO(cl.use('mcp'),8000),TO(cl.use('assets'),8000)]):Promise.resolve([null,null,null]);
-  const userP=cl?TO(cl.use('user'),8000):Promise.resolve(null);
-  db=cl?await TO(cl.use('db'),30000):null;DIAG.db=db?Math.round((Date.now()-t0)/1000):false;
-  extras.then(async([s,m,a])=>{SAMPLE=s;MCP=m;ASSETS=a;if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await TO(chatProbe(),4000);chatAvail();renderChatUi()});
-  if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
+  const extras=Promise.all([SU('sample',8000),SU('mcp',8000),SU('assets',8000)]);
+  const userP=SU('user',8000);
+  db=await SU('db',30000);DIAG.db=db?Math.round((Date.now()-t0)/1000):false;
+  extras.then(async([s,m,a])=>{SAMPLE=s;MCP=m;ASSETS=a;if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await TO(chatProbe(),4000,'chatProbe');chatAvail();renderChatUi()});
+  if(!db){setText('','','（会社のデータにつながれませんでした。下の診断を教えてください）','chiikawa');return}
   userP.then(async u=>{try{if(u){const w=await TO(u.can('data.write'),4000);if(w===false)canWrite=false;layRemote(u)}}catch(e){}usageStart()});
   const ready={status:false,ex:false};let booted=false;
   function boot(){if(booted||!ready.status||!ready.ex)return;booted=true;
