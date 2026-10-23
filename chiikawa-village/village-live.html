@@ -512,8 +512,8 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 .tl .gh2{font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:8px;padding-top:4px;border-top:1px solid var(--line)}
 .dpt{display:inline-block;font-family:var(--body);font-size:11px;border:1.5px solid var(--line);border-radius:999px;padding:0 7px;margin-left:4px;background:var(--bg);color:var(--sub);white-space:nowrap}
 .dov{position:fixed;inset:0;z-index:51;background:rgba(30,26,24,.55);overflow-y:auto;padding:16px;box-sizing:border-box}.dov .dp{max-width:580px;margin:0 auto;background:var(--panel);color:var(--ink);border:3px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-family:var(--body)}.dov h2{margin:0;font-size:16px}.dov .dn{font-size:12px;color:var(--sub)}
-.dov .dr{display:grid;grid-template-columns:46px minmax(0,1fr) 112px auto;gap:5px;align-items:center}.dov .dr input,.dov .dr select{font:inherit;font-size:13px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:3px 6px;min-height:32px;min-width:0;width:100%;box-sizing:border-box}.dov .dr .ic{text-align:center}.dov .dr .mv{display:flex;gap:2px}.dov button{font:inherit;font-size:12.5px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 10px;min-height:30px;cursor:pointer}.dov .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between}.dov .pri{background:var(--ink);color:var(--bg)}
-@media (max-width:520px){.dov .dr{grid-template-columns:40px minmax(0,1fr) auto}.dov .dr select{grid-column:2 / 3}}
+.dov .dr{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:5px;align-items:center}.dov .dr input,.dov .dr select{font:inherit;font-size:13px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:3px 6px;min-height:32px;min-width:0;width:100%;box-sizing:border-box}.dov .dr .ic{text-align:center}.dov .dr .mv{display:flex;gap:2px}.dov button{font:inherit;font-size:12.5px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 10px;min-height:30px;cursor:pointer}.dov .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between}.dov .pri{background:var(--ink);color:var(--bg)}
+@media (max-width:520px){.dov .dr{grid-template-columns:40px minmax(0,1fr) auto}}
 .news{position:fixed;inset:0;z-index:50;background:rgba(30,26,24,.55);overflow-y:auto;padding:16px;box-sizing:border-box}
 .news .np{--np:#f4efe4;--ink2:#1f1b18;max-width:980px;margin:0 auto;background:var(--np);color:var(--ink2);border-radius:6px;padding:20px 22px 18px;font-family:'Zen Maru Gothic',system-ui,sans-serif;box-shadow:0 6px 30px rgba(0,0,0,.35)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .news .np{--np:#22201d;--ink2:#efe8dc}}:root[data-theme="dark"] .news .np{--np:#22201d;--ink2:#efe8dc}
@@ -1162,7 +1162,7 @@ $('mine').addEventListener('click',e=>{const b=e.target.closest('button[data-ask
   const q=e.target.closest('button[data-qk]');if(!q)return;e.preventDefault();const t=TASKS.find(x=>x.id===q.dataset.t);if(!t)return;const k=q.dataset.qk;
   const patch=k==='today'?{due:todayKey()}:{due:dueShift(t,k)};qkApply(t,patch,k==='today'?'期限を今日にしました':`期限を ${patch.due.slice(5).replace('-','/')} にしました`)});
 $('mine').addEventListener('change',e=>{const dsel=e.target.closest('select[data-dept]');if(dsel){const t=TASKS.find(x=>x.id===dsel.dataset.dept);if(!t)return;const d=deptOf(dsel.value);qkApply(t,{dept:dsel.value},d?'部門を「'+d.n+'」にしました':'部門を決めていない状態にしました');return}const sel=e.target.closest('select[data-pri]');if(!sel)return;const t=TASKS.find(x=>x.id===sel.dataset.pri);if(!t)return;qkApply(t,{pri:sel.value},'優先度を「'+sel.value+'」にしました')});
-var DEPT_DEF=[{id:'all',n:'全体・運営',i:'🏢',ch:'hachiware'},{id:'yt',n:'YouTube・放送局',i:'📺',ch:'usagi'},{id:'kouza',n:'講座・コミュニティ',i:'🎓',ch:'usagi'},{id:'kiji',n:'記事・文章',i:'📰',ch:'momonga'},{id:'kaikei',n:'お金・会計',i:'💰',ch:'kuri'},{id:'farm',n:'農園・地域',i:'🌱',ch:'shisa'}];
+var DEPT_DEF=[{id:'all',n:'全体・運営',i:'🏢'},{id:'yt',n:'YouTube・放送局',i:'📺'},{id:'kouza',n:'講座・コミュニティ',i:'🎓'},{id:'kiji',n:'記事・文章',i:'📰'},{id:'kaikei',n:'お金・会計',i:'💰'},{id:'farm',n:'農園・地域',i:'🌱'}];
 var DEPT_LIST=null;
 function deptList(){return (DEPT_LIST&&DEPT_LIST.length)?DEPT_LIST:DEPT_DEF}
 function deptOf(id){if(!id)return null;return deptList().find(function(d){return d.id===id})||null}
@@ -1171,21 +1171,20 @@ function deptChip(t){const d=deptOf(t.dept);return d?'<span class="dpt">'+esc(d.
 function renderDeptSel(){const el=$('taskDept');if(!el)return;let cur=el.value;if(!cur){try{cur=localStorage.getItem('ck-lastdept')||''}catch(_){}}el.innerHTML=deptOpts(cur)}
 var DEPT_ED=null;
 function deptEdRender(){const L=DEPT_ED,b=$('dpBody');b.textContent='';const h=document.createElement('h2');h.id='dpTitle';h.textContent='部門の編集';b.appendChild(h);
-  const n=document.createElement('div');n.className='dn';n.textContent='タスクの「部門」に出る一覧です。名前・アイコン・担当（「〜に聞く」で出てくるキャラ）を変えられます。部門を消しても、タスクは消えません（部門なしの表示になります）。';b.appendChild(n);
+  const n=document.createElement('div');n.className='dn';n.textContent='タスクの「部門」に出る一覧です。名前とアイコンを変えられます。部門を消しても、タスクは消えません（部門なしの表示になります）。';b.appendChild(n);
   L.forEach((d,i)=>{const r=document.createElement('div');r.className='dr';
     const ic=document.createElement('input');ic.className='ic';ic.value=d.i||'';ic.maxLength=4;ic.setAttribute('aria-label','アイコン');ic.addEventListener('input',()=>{d.i=ic.value});
     const nm=document.createElement('input');nm.value=d.n||'';nm.maxLength=20;nm.setAttribute('aria-label','部門の名前');nm.addEventListener('input',()=>{d.n=nm.value});
-    const ch=document.createElement('select');ch.setAttribute('aria-label','担当のキャラ');CHAT_CHARS.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=NAMES[c]||c;if(d.ch===c)o.selected=true;ch.appendChild(o)});ch.addEventListener('change',()=>{d.ch=ch.value});
     const mv=document.createElement('div');mv.className='mv';
     [['▲',-1],['▼',1],['✕',0]].forEach(([t,k])=>{const bt=document.createElement('button');bt.type='button';bt.textContent=t;bt.setAttribute('aria-label',k<0?'上へ':k>0?'下へ':'この部門を消す');bt.addEventListener('click',()=>{if(k===0){L.splice(i,1)}else{const j=i+k;if(j<0||j>=L.length)return;const x=L[i];L[i]=L[j];L[j]=x}deptEdRender()});mv.appendChild(bt)});
-    r.appendChild(ic);r.appendChild(nm);r.appendChild(ch);r.appendChild(mv);b.appendChild(r)});
+    r.appendChild(ic);r.appendChild(nm);r.appendChild(mv);b.appendChild(r)});
   const row=document.createElement('div');row.className='row';
-  const ad=document.createElement('button');ad.type='button';ad.textContent='＋ 部門を足す';ad.addEventListener('click',()=>{L.push({id:'d'+Date.now().toString(36),n:'新しい部門',i:'📁',ch:'hachiware'});deptEdRender()});
+  const ad=document.createElement('button');ad.type='button';ad.textContent='＋ 部門を足す';ad.addEventListener('click',()=>{L.push({id:'d'+Date.now().toString(36),n:'新しい部門',i:'📁'});deptEdRender()});
   const rs=document.createElement('button');rs.type='button';rs.textContent='はじめの一覧にもどす';rs.addEventListener('click',()=>{DEPT_ED=JSON.parse(JSON.stringify(DEPT_DEF));deptEdRender()});
   const sv=document.createElement('button');sv.type='button';sv.className='pri';sv.textContent='保存する';sv.addEventListener('click',deptEdSave);
   const cl=document.createElement('button');cl.type='button';cl.textContent='閉じる';cl.addEventListener('click',()=>{$('dov').hidden=true});
   row.appendChild(ad);row.appendChild(rs);const g=document.createElement('span');g.appendChild(sv);g.appendChild(document.createTextNode(' '));g.appendChild(cl);row.appendChild(g);b.appendChild(row)}
-function deptEdSave(){const L=DEPT_ED.filter(d=>String(d.n||'').trim()).map(d=>({id:d.id,n:String(d.n).trim().slice(0,20),i:String(d.i||'').trim().slice(0,4),ch:CHAT_CHARS.includes(d.ch)?d.ch:'hachiware'}));if(!L.length){alert('部門が1つもありません。1つは残してください');return}
+function deptEdSave(){const L=DEPT_ED.filter(d=>String(d.n||'').trim()).map(d=>({id:d.id,n:String(d.n).trim().slice(0,20),i:String(d.i||'').trim().slice(0,4)}));if(!L.length){alert('部門が1つもありません。1つは残してください');return}
   DEPT_LIST=L;renderMine();renderDeptSel();$('dov').hidden=true;
   if(db&&canWrite){db.doc('settings/depts').set({list:L,updatedAt:Date.now()}).catch(()=>{$('note').textContent='部門の保存に失敗しました。もう一度ためしてください。'})}}
 $('deptBtn').addEventListener('click',()=>{DEPT_ED=JSON.parse(JSON.stringify(deptList()));deptEdRender();$('dov').hidden=false});
@@ -1267,7 +1266,7 @@ function renderNotes(){const list=NOTES.slice().sort((a,b)=>(b.createdAt||0)-(a.
     ${(n.replies||[]).map(r=>`<div class="rep"><img src="${ICON[r.who]||ICON.hachiware}" alt=""><div><small style="color:var(--sub)">${esc(NAMES[r.who]||r.who)}</small><br>${esc(r.text)}</div></div>`).join('')}</div>`).join('')
     :'<p class="empty">書いたことはちいかわが受け取り、ハチワレが次の見回りで読んで、返事や段取りに入れます。</p>'}
 const OWNER_KW=[['kuri',/freee|請求|入金|経理|会計|税|申告|月次|支払|領収|お金/],['momonga',/原稿|記事|マイナビ|下書き|台本|執筆|文章|YouTube|動画|撮影|ネタ/],['shisa',/講座|受講|申込|欠席|寺子屋|カレッジ|議事録|記録|コエテコ/],['usagi',/調べ|土壌|検体|比較|候補|リサーチ/],['rakko',/仕組み|自動化|アプリ|設計/]];
-function taskOwner(t){if(t.owner&&CHAT_CHARS.includes(t.owner))return t.owner;{const d=deptOf(t.dept);if(d&&d.ch&&CHAT_CHARS.includes(d.ch))return d.ch}const s=String(t.title||'');for(const [id,re] of OWNER_KW)if(re.test(s))return id;return 'hachiware'}
+function taskOwner(t){if(t.owner&&CHAT_CHARS.includes(t.owner))return t.owner;const s=String(t.title||'');for(const [id,re] of OWNER_KW)if(re.test(s))return id;return 'hachiware'}
 function askAbout(id){const t=TASKS.find(x=>x.id===id);if(!t)return;CHAT_GRP=null;chatChar=taskOwner(t);renderChatUi();const sel=$('chatTask');sel.value='t:'+id;if(sel.value!=='t:'+id){sel.insertAdjacentHTML('beforeend',`<option value="t:${esc(id)}">そーやんの仕事：${esc(clip(t.title,40))}</option>`);sel.value='t:'+id;sel.dataset.h=''}
   renderChatLog();setBox('h-chat',true);$('chatIn').placeholder=`「${clip(t.title,30)}」について${NAMES[chatChar]}に聞きたいこと（例：どこから手をつける？）`;
   const sec=$('h-chat').closest('section');sec.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{try{$('chatIn').focus({preventScroll:true})}catch(e){}},400)}
