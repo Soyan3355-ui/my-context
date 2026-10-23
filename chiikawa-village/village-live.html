@@ -2835,11 +2835,14 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-expgo]')){e.pre
 expInit();
 let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error';try{console.warn('db error',name,e)}catch(_){}const el=document.getElementById('note');if(el)el.innerHTML='⚠️ 共有データを読み込めませんでした（'+Object.keys(DBERR).map(esc).join('・')+'：'+esc(Object.values(DBERR)[0])+'）。ページを開き直してみてください。'}
 // ---------- つながる ----------
-(async()=>{const cl=window.claude;const TO=(p,ms)=>Promise.race([Promise.resolve(p),new Promise(r=>setTimeout(()=>r(null),ms))]);db=cl?await TO(cl.use('db'),12000):null;
-  if(cl){try{SAMPLE=await TO(cl.use('sample'),4000)}catch(e){}try{MCP=await TO(cl.use('mcp'),4000)}catch(e){}try{ASSETS=await TO(cl.use('assets'),4000)}catch(e){}}if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await TO(chatProbe(),4000);chatAvail();renderChatUi();
+(async()=>{const cl=window.claude;const TO=(p,ms)=>Promise.race([Promise.resolve(p).catch(()=>null),new Promise(r=>setTimeout(()=>r(null),ms))]);
+  const t0=Date.now();let stg='データ';const tick=setInterval(()=>{const e=$('dText');if(e&&e.textContent.startsWith('（会社とつながっています'))e.textContent='（会社とつながっています…'+Math.round((Date.now()-t0)/1000)+'秒・'+stg+'の接続を待っています）';if(Date.now()-t0>180000)clearInterval(tick)},1000);
+  const extras=cl?Promise.all([TO(cl.use('sample'),8000),TO(cl.use('mcp'),8000),TO(cl.use('assets'),8000)]):Promise.resolve([null,null,null]);
+  const userP=cl?TO(cl.use('user'),8000):Promise.resolve(null);
+  db=cl?await TO(cl.use('db'),30000):null;
+  extras.then(async([s,m,a])=>{SAMPLE=s;MCP=m;ASSETS=a;if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await TO(chatProbe(),4000);chatAvail();renderChatUi()});
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
-  try{const u=await TO(cl.use('user'),4000);if(u){const w=await TO(u.can('data.write'),4000);if(w===false)canWrite=false;layRemote(u)}}catch(e){}
-  usageStart();
+  userP.then(async u=>{try{if(u){const w=await TO(u.can('data.write'),4000);if(w===false)canWrite=false;layRemote(u)}}catch(e){}usageStart()});
   const ready={status:false,ex:false};let booted=false;
   function boot(){if(booted||!ready.status||!ready.ex)return;booted=true;
     const key='dg:'+(STATUS.updatedAt||0);const open=XCS.filter(x=>x.status!=='answered');
