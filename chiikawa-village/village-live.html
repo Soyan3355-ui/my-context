@@ -510,6 +510,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 .tl .gm{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}.tl .gbar{position:relative;height:12px;border-radius:6px;background:color-mix(in srgb,var(--line) 60%,var(--panel))}.tl .gbar i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--good)}.tl .gbar i.warn{background:var(--warn)}.tl .gbar i.late{background:var(--bad)}.tl .gbar b{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px dashed var(--ink)}
 .tl .gnum{font-size:12px;line-height:1.4}.tl .gnum .big{font-family:var(--dot);font-size:22px;font-variant-numeric:tabular-nums}.tl .gnum small{color:var(--sub);font-size:11px}.tl .gk{font-size:11.5px;color:var(--sub);margin-top:5px;line-height:1.5}
 .tl .gh2{font-family:var(--body);font-size:11.5px;color:var(--sub);margin-top:8px;padding-top:4px;border-top:1px solid var(--line)}
+.diag{position:fixed;left:8px;bottom:8px;z-index:70;max-width:min(92vw,560px);background:rgba(40,34,30,.94);color:#fff;font:11.5px/1.5 var(--body);border-radius:8px;padding:6px 9px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.diag[hidden]{display:none}.diag button{font:inherit;border:1.5px solid #fff;background:transparent;color:#fff;border-radius:99px;padding:0 9px;cursor:pointer}
 .dpt{display:inline-block;font-family:var(--body);font-size:11px;border:1.5px solid var(--line);border-radius:999px;padding:0 7px;margin-left:4px;background:var(--bg);color:var(--sub);white-space:nowrap}
 .dov{position:fixed;inset:0;z-index:51;background:rgba(30,26,24,.55);overflow-y:auto;padding:16px;box-sizing:border-box}.dov .dp{max-width:580px;margin:0 auto;background:var(--panel);color:var(--ink);border:3px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;font-family:var(--body)}.dov h2{margin:0;font-size:16px}.dov .dn{font-size:12px;color:var(--sub)}
 .dov .dr{display:grid;grid-template-columns:46px minmax(0,1fr) auto;gap:5px;align-items:center}.dov .dr input,.dov .dr select{font:inherit;font-size:13px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:3px 6px;min-height:32px;min-width:0;width:100%;box-sizing:border-box}.dov .dr .ic{text-align:center}.dov .dr .mv{display:flex;gap:2px}.dov button{font:inherit;font-size:12.5px;border:1.5px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);padding:2px 10px;min-height:30px;cursor:pointer}.dov .row{display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between}.dov .pri{background:var(--ink);color:var(--bg)}
@@ -551,6 +552,7 @@ body.arrange .arr-bar{display:flex}.arr-bar button{font:inherit;font-size:13px;b
 @keyframes flashk{0%{box-shadow:0 0 0 0 rgba(255,216,74,.95)}100%{box-shadow:0 0 0 14px rgba(255,216,74,0)}}section.flash{animation:flashk 1.2s ease-out 2}
 </style>
 
+<div class="diag" id="diag" hidden role="status"></div>
 <div class="dov" id="dov" role="dialog" aria-modal="true" aria-labelledby="dpTitle" hidden><div class="dp" id="dpBody"></div></div>
 <div class="news" id="news" role="dialog" aria-modal="true" aria-labelledby="newsTitle" hidden><div class="np" id="newsBody"></div></div>
 <div class="app">
@@ -1086,6 +1088,12 @@ function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage
     if(e.carry)ctx.drawImage(P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
   const td=tod();if(BASE){ambientBase(t,dt,td&&td.night);drawHover();if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,46);ctx.fillStyle=td.night?'rgba(18,22,64,.16)':td.c;ctx.fillRect(0,46,W,H-46);if(td.night)lightsBase()}return}ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
+var DIAG={t0:Date.now(),cl:!!window.claude,db:null,st:0,ex:0,tk:0,err:''};
+window.addEventListener('error',e=>{DIAG.err=String((e&&e.message)||'error').slice(0,120)});window.addEventListener('unhandledrejection',e=>{DIAG.err=String((e&&e.reason&&e.reason.message)||e.reason||'rejection').slice(0,120)});
+setInterval(()=>{const el=document.getElementById('diag');if(!el)return;const age=Date.now()-DIAG.t0;const rafAge=Date.now()-lastFrameAt;const bad=!DIAG.cl||DIAG.db===null||!DIAG.st||!DIAG.ex||!DIAG.tk||rafAge>3000||DIAG.err;
+  if(age<8000||!bad){el.hidden=true;return}
+  const ok=v=>v?'○':'×';el.hidden=false;el.textContent='';const sp=document.createElement('span');sp.textContent='診断（'+Math.round(age/1000)+'秒）：claude '+ok(DIAG.cl)+' ／ データ接続 '+(DIAG.db===null?'待ち×':DIAG.db===false?'なし×':'○ '+DIAG.db+'秒')+' ／ 状態 '+ok(DIAG.st)+' ／ 判断カード '+ok(DIAG.ex)+' ／ タスク '+ok(DIAG.tk)+' ／ 動き '+(rafAge>3000?'止まっている×':'○')+(DIAG.err?' ／ エラー：'+DIAG.err:'');el.appendChild(sp);
+  if(!el.querySelector('button')){}const b=document.createElement('button');b.type='button';b.textContent='つなぎなおす';b.addEventListener('click',()=>location.reload());el.appendChild(b)},1000);
 function frame(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles()}
 var lastFrameAt=Date.now(),loopErrN=0;
 function loopErr(e){if(loopErrN++<3){try{const n=document.getElementById('note');if(n)n.textContent='⚠️ 画面の動きでエラーが出ました（'+((e&&e.message)||e)+'）。動きは続けています。このメッセージを教えてください。'}catch(_){}try{console.error(e)}catch(_){}}}
@@ -2842,7 +2850,7 @@ let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error
   const t0=Date.now();let stg='データ';const tick=setInterval(()=>{const e=$('dText');if(e&&e.textContent.startsWith('（会社とつながっています'))e.textContent='（会社とつながっています…'+Math.round((Date.now()-t0)/1000)+'秒・'+stg+'の接続を待っています）';if(Date.now()-t0>180000)clearInterval(tick)},1000);
   const extras=cl?Promise.all([TO(cl.use('sample'),8000),TO(cl.use('mcp'),8000),TO(cl.use('assets'),8000)]):Promise.resolve([null,null,null]);
   const userP=cl?TO(cl.use('user'),8000):Promise.resolve(null);
-  db=cl?await TO(cl.use('db'),30000):null;
+  db=cl?await TO(cl.use('db'),30000):null;DIAG.db=db?Math.round((Date.now()-t0)/1000):false;
   extras.then(async([s,m,a])=>{SAMPLE=s;MCP=m;ASSETS=a;if(!ASSETS)document.querySelectorAll('.attbtn').forEach(b=>b.hidden=true);if(SAMPLE)await TO(chatProbe(),4000);chatAvail();renderChatUi()});
   if(!db){setText('','','（この画面では会社のデータを読めません。Claude のアプリかブラウザで開いてください）','chiikawa');return}
   userP.then(async u=>{try{if(u){const w=await TO(u.can('data.write'),4000);if(w===false)canWrite=false;layRemote(u)}}catch(e){}usageStart()});
@@ -2853,9 +2861,9 @@ let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error
     const a=AUDITS.slice().sort(byTime).pop();if(a&&!seen['au:'+a.id]&&Date.now()-(a.createdAt||0)<7*864e5)enqueue(auditScene(a));
     if(!scene)idle()}
   const live=s=>s.docChanges().filter(c=>!c.doc.metadata.hasPendingWrites);
-  db.doc('status/now').onSnapshot(s=>{STATUS=s.exists?s.data():{};renderStatus();if(!ready.status&&(!s.metadata.fromCache||s.exists)){ready.status=true;boot()}},e=>dbErr('status/now',e));
+  db.doc('status/now').onSnapshot(s=>{DIAG.st=1;STATUS=s.exists?s.data():{};renderStatus();if(!ready.status&&(!s.metadata.fromCache||s.exists)){ready.status=true;boot()}},e=>dbErr('status/now',e));
   db.collection('board').onSnapshot(s=>{BOARD=s.docs.map(d=>({id:d.id,...d.data()}));renderBoard();renderChatUi()},e=>dbErr('board',e));
-  db.collection('exceptions').onSnapshot(s=>{XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();renderDigest();
+  db.collection('exceptions').onSnapshot(s=>{DIAG.ex=1;XCS=s.docs.map(d=>({id:d.id,...d.data()}));renderXcs();renderDigest();
     if(!ready.ex){if(!s.metadata.fromCache||XCS.length){ready.ex=true;boot()}return}
     const add=live(s).filter(c=>c.type==='added').map(c=>({id:c.doc.id,...c.doc.data()})).filter(x=>x.status!=='answered');if(add.length)enqueue(xcScene(add))},()=>{});
   db.collection('work').onSnapshot(s=>{WORK=s.docs.map(d=>({id:d.id,...d.data()}));renderWork()},e=>dbErr('work',e));
@@ -2870,7 +2878,7 @@ let DBERR={};function dbErr(name,e){DBERR[name]=(e&&(e.code||e.message))||'error
   db.doc('brief/now').onSnapshot(s=>{BRIEF.shared=s.exists?s.data():null},e=>dbErr('brief/now',e));
   db.collection('decisions').onSnapshot(s=>{DECS=s.docs.map(d=>({id:d.id,...d.data()}));renderDecs()},e=>dbErr('decisions',e));
   db.collection('notes').onSnapshot(s=>{NOTES=s.docs.map(d=>({id:d.id,...d.data()}));renderNotes()},e=>dbErr('notes',e));
-  db.collection('tasks').onSnapshot(s=>{TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine();renderDigest()},e=>dbErr('tasks',e));
+  db.collection('tasks').onSnapshot(s=>{DIAG.tk=1;TASKS=s.docs.map(d=>({id:d.id,...d.data()}));renderMine();renderDigest()},e=>dbErr('tasks',e));
   db.collection('checkins').onSnapshot(s=>{CHECKINS=s.docs.map(d=>({id:d.id,...d.data()}));renderCheckinForm()},e=>dbErr('checkins',e));
   db.doc('video/now').onSnapshot(s=>{VIDEO=s.exists?s.data():null;renderVideo()},e=>dbErr('video/now',e));
   db.collection('videoreqs').onSnapshot(s=>{VREQ=s.docs.map(d=>({id:d.id,...d.data()}));renderVideo()},e=>dbErr('videoreqs',e));
