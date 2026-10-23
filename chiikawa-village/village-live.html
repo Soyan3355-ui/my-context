@@ -1086,8 +1086,12 @@ function render(t,dt){ctx.drawImage(bg,0,0);WEEDS.forEach(([x,y])=>ctx.drawImage
     if(e.carry)ctx.drawImage(P.letter,Math.round(e.x-4),e.top-9);
     if(e.pose==='happy'&&Math.floor(t*4)%2){ctx.drawImage(P.spark,e.left-5,e.top+2);ctx.drawImage(P.spark,e.left+e.w,e.top+6)}});
   const td=tod();if(BASE){ambientBase(t,dt,td&&td.night);drawHover();if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,46);ctx.fillStyle=td.night?'rgba(18,22,64,.16)':td.c;ctx.fillRect(0,46,W,H-46);if(td.night)lightsBase()}return}ambient(t,dt,td&&td.night);if(td){ctx.fillStyle=td.c;ctx.fillRect(0,0,W,H);if(td.night)lights()}}
-function loop(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles();requestAnimationFrame(loop)}
+function frame(ts){const dt=Math.min(0.1,(ts-last)/1000||0);last=ts;T+=dt;update(dt);render(T,dt);if(++tick%6===0)placeBubbles()}
+var lastFrameAt=Date.now(),loopErrN=0;
+function loopErr(e){if(loopErrN++<3){try{const n=document.getElementById('note');if(n)n.textContent='⚠️ 画面の動きでエラーが出ました（'+((e&&e.message)||e)+'）。動きは続けています。このメッセージを教えてください。'}catch(_){}try{console.error(e)}catch(_){}}}
+function loop(ts){lastFrameAt=Date.now();try{frame(ts)}catch(e){loopErr(e)}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
+setInterval(()=>{if(Date.now()-lastFrameAt>1500){try{frame(performance.now())}catch(e){loopErr(e)}}},100);
 
 // ---------- 会話（ちいかわが届ける） ----------
 let seen={};try{seen=JSON.parse(localStorage.getItem('ck-seen')||'{}')}catch(e){}
