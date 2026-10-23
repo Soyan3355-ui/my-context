@@ -1495,7 +1495,7 @@ $('hr').addEventListener('click',e=>{const ps=((PEOPLE.data&&PEOPLE.data.people)
 $('hr').addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.hr-ed')){if(d.open)hrOpen.add(d.dataset.pid);else hrOpen.delete(d.dataset.pid)}},true);
 function renderTrial(){const t=STATUS.trial;const el=$('trial');if(!t){el.hidden=true;return}el.hidden=false;
   el.innerHTML=`🎯 <b>${esc(t.title||'')}</b><small>${esc(t.period||'')}${t.note?'　'+esc(t.note):''}</small>`}
-renderStatus();renderMine();renderNotes();renderDecs();renderCheckinForm();idle();renderNow();let _nw=false;try{_nw=localStorage.getItem('ck-now')==='1'}catch(e){}setNow(_nw);
+[renderStatus,renderMine,renderNotes,renderDecs,renderCheckinForm,idle,renderNow].forEach(f=>{try{f()}catch(e){diagNote('初期表示：'+((e&&e.message)||e))}});let _nw=false;try{_nw=localStorage.getItem('ck-now')==='1'}catch(e){}setNow(_nw);
 
 
 // ---------- ちいかわに相談（画面の中のチャット） ----------
@@ -1504,7 +1504,7 @@ const CHAT_TONE={asuka:'アスカ。生命の星・地球のポテンシャル�
 let chatChar='asuka',chatBusy=false,chatCtl=null;const LOGS={};const BRIEF={shared:null,mine:null};
 // 社内チャットは1つの部屋（だれに聞いても話がつながる。2026-10-02 そーやん「同じ話を何度もしたくない」）
 const chatKey=()=>'room';
-const clip=(s,n)=>{s=String(s??'');return s.length>n?s.slice(0,n)+'…':s};
+function clip(s,n){s=String(s??'');return s.length>n?s.slice(0,n)+'…':s}
 function chatTasks(){const b=BOARD.filter(x=>x.status!=='done').map(x=>({v:'b:'+x.id,t:x.title,src:'ボード'}));const m=TASKS.filter(x=>!x.done).map(x=>({v:'t:'+x.id,t:x.title,src:'そーやんの仕事'}));return b.concat(m)}
 function renderChatUi(){
   $('chatWho').classList.add('cw');const wn={};BOARD.filter(x=>x.status!=='done').forEach(x=>{const o=OWNER_ID[x.owner];if(o)wn[o]=(wn[o]||0)+1});
