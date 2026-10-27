@@ -8,6 +8,7 @@
 
 | 履歴レビュー（手動） | 手順書 | soyan3355-ui/my-context `standards/session-review.md` | 繰り返しの指摘をスキル・テスト・CLAUDE.mdへ反映し手戻りを減らす | L1（提案まで） | GOV-02, GOV-04 | 2026-10-05 |
 | ドリーミング | Routine（定期実行） | Claude Code Routines（毎週日曜 22:52 JST・`trig_013r4CJTxAGmDNDEZ61mAksi`） / soyan3355-ui/my-context `standards/session-review.md` | 繰り返しの指摘を検出し、CLAUDE.md・スキルへの改善案をPRで届け手戻りを減らす | L1（提案まで。変更はPRでオーナー承認） | GOV-02, GOV-04, GOV-06 | 2026-10-05 |
+| AI伝言板チェック | Routine（定期実行） | Claude Code Routines（毎日 7:45/10:45/13:45/16:45/19:45/22:45 JST・`trig_0197zvVR37RUDmLvNAJ6Bfpr`） / Notion「AI伝言板（Muse ⇄ Claude Code）」 | Meta Muse（しろ）が集めた連絡の要約を受け取り、宿題・期限を整理して返し、そーやんの伝書鳩の手間を減らす | L1（伝言板への返信まで。外部送信・リポジトリのPRはしない） | PRI-10, ESC-02, ESC-06, MEM-03, GOV-02 | 2026-10-27 |
 
 <!-- 追加例:
 | chief-of-staff | サブエージェント | owner/repo `.claude/agents/chief-of-staff.md` | 週次計画と委任で講座申込数を伸ばす | L3 | ROL-01, TSK-* | YYYY-MM-DD |
