@@ -8,6 +8,7 @@
 
 | 履歴レビュー（手動） | 手順書 | soyan3355-ui/my-context `standards/session-review.md` | 繰り返しの指摘をスキル・テスト・CLAUDE.mdへ反映し手戻りを減らす | L1（提案まで） | GOV-02, GOV-04 | 2026-10-05 |
 | ドリーミング | Routine（定期実行） | Claude Code Routines（毎週日曜 22:52 JST・`trig_013r4CJTxAGmDNDEZ61mAksi`） / soyan3355-ui/my-context `standards/session-review.md` | 繰り返しの指摘を検出し、CLAUDE.md・スキルへの改善案をPRで届け手戻りを減らす | L1（提案まで。変更はPRでオーナー承認） | GOV-02, GOV-04, GOV-06 | 2026-10-05 |
+| 講座録画の定期整理 | Routine（定期実行） | Claude Code Routines（毎週木曜 08:50 JST・`trig_0113i8Fc5bZtpRhCUNd7THXh`） / soyan3355-ui/my-context `reports/drive-organize/2026-10-28_講座録画整理.md` | 新しいZoom講座録画を「講座録画」フォルダへ取り込み、受講生への共有と再利用の手間を減らす | L3（コピー・目次更新のみ。移動・削除・共有はしない） | AUT-01, AUT-05, ESC-01, ESC-06, ESC-09 | 2026-10-29 |
 
 <!-- 追加例:
 | chief-of-staff | サブエージェント | owner/repo `.claude/agents/chief-of-staff.md` | 週次計画と委任で講座申込数を伸ばす | L3 | ROL-01, TSK-* | YYYY-MM-DD |
