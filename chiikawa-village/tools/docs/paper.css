@@ -1,4 +1,5 @@
 :root{--paper:#ffffff;--pink:#1a1a1a;--psub:#555555;--pline:#9aa39d;--sans:'Noto Sans JP','IPAGothic','IPAPGothic','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;--serif:'Noto Serif JP','IPAGothic','Hiragino Mincho ProN','Yu Mincho',serif}
+.paper,.paper *{box-sizing:border-box}
 .paper{width:794px;min-height:1123px;background:var(--paper);color:var(--pink);font-family:var(--sans);font-size:13px;line-height:1.6;padding:56px 60px;position:relative}
 .paper h3{font-family:var(--serif);font-weight:700;font-size:30px;letter-spacing:.7em;text-align:center;margin:0 0 26px;padding-left:.7em}
 .paper .meta{display:flex;justify-content:flex-end;gap:22px;font-size:12px;color:var(--psub);margin-bottom:6px}
