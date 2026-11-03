@@ -512,6 +512,13 @@ Agent ツールで general-purpose のサブエージェントを起動し、次
 
 ## お金の見通し（2026-10-01 そーやんの依頼）
 
+### 自動更新（2026-11-03 そーやんの依頼「自動で更新するようにしてください」）
+- 朝の回・夕の回・ダイジェスト更新の回のどの回でも、`finance.asOf` が今日（日本時間）より前なら、その回のうちに更新する（省かない。10/21 のまま約2週間止まっていたため）。「頼まれたとき」や週次を待たない
+- 軽い更新（毎回）：`/api/1/walletables?with_balance=true&with_sync_status=true` と、楽天銀行（walletable_id 1140916）の `/api/1/wallet_txns`（前回の `asOf` の翌日から）を読み、`cash.items`（楽天銀行の残高は明細の最新の `balance`）・`cash.total`・`asOf`・`updatedAt`・`alerts` を更新する。月が変わったら、前月の `bank`（月末残高・入金・出金）を明細から確定させ、`forecast` から前月を外す
+- 実績になった入出金は `check.out/in` から外し、`check.balance`・`forecast` の末日残高・`check.summary` を最新の残高から計算し直す。納付書など期限の来たものは、口座からの引き落としがあるかを見て、なければ `alerts` に「確認」を出す
+- 月次（月初の朝の回）：`pl`（売上・経費）を freee の損益から前月分まで足す。`cuts`（出費の見直し候補）は、頼まれたときに更新する
+- freee は GET のみ。共有の場所（`status`・Notion）には金額・名前を書かない
+
 ### 更新とタスク化のルール（2026-10-20 追加）
 - 朝の回では、freee の楽天銀行の残高と直近の明細（GET のみ：`/api/1/walletables?with_balance=true&with_sync_status=true`、`/api/1/wallet_txns`）を読み、`finance` の `asOf`・`cash.items`・`check`（残高の見込み・これからの入出金）を更新する。前回の `asOf` から3日以上あいていたら必ず更新する（週次だけに頼らない）
 - 更新したら、実績になった入出金は `check.out/in` から外し、見込みの残高（`check.balance`・`forecast`）を最新の残高から計算し直す
